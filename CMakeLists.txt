@@ -7,7 +7,11 @@ include_directories(include)
 
 set(LIBS m pthread zlog jsoncpp)
 
-set(SRC_DIRS src)
+set(SRC_DIRS src
+        src/log
+        src/ringBuffer
+        src/common
+        src/server)
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} src_dir_file)
@@ -17,3 +21,5 @@ endforeach (src_dir)
 
 add_executable(RVDataFusionServer main.cpp ${SRC_FILES})
 target_link_libraries(RVDataFusionServer ${LIBS})
+
+add_subdirectory(test)

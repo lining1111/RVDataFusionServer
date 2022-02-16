@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <ctime>
 #include <vector>
-#include "ClientInfo.h"
+#include "server/ClientInfo.h"
 
 #ifdef __cplusplus
 extern "C"

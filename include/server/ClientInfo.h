@@ -5,7 +5,7 @@
 #ifndef _CLIENTINFO_H
 #define _CLIENTINFO_H
 
-#include "RingBuffer.h"
+#include "ringBuffer/RingBuffer.h"
 #include <netinet/in.h>
 
 #ifdef __cplusplus
@@ -31,7 +31,11 @@ public:
     unsigned char extraData[1024 * 8];//特性数据
     timeval receive_time;
     RecvStatus status = Start;
-    RingBuffer *rb = nullptr;
+    RingBuffer *rb = nullptr;//接收数据缓存环形buffer
+
+
+    //供给服务端使用的变量
+    bool needRelease = false;//客户端处理线程在发现sock异常时，向上抛出释放队列内容信号
 
 public:
     /**

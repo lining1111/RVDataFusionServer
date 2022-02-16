@@ -4,7 +4,7 @@
 
 #include <cstring>
 #include <sys/time.h>
-#include "ClientInfo.h"
+#include "server/ClientInfo.h"
 
 
 ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {

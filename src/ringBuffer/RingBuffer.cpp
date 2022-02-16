@@ -2,7 +2,7 @@
 // Created by lining on 2/15/22.
 //
 
-#include "RingBuffer.h"
+#include "ringBuffer/RingBuffer.h"
 
 #include <assert.h>
 #include <stdlib.h>
