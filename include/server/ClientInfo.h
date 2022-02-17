@@ -21,7 +21,7 @@ public:
     typedef enum {
         Start = 0, GetHeadStart, GetHead, GetBody,
     } RecvStatus;
-#define MAX_RB (1024*512)
+#define MAX_RB (1024*1024*64)
 public:
     //都是客户端的属性信息
     int msgid = 0;//帧号
@@ -44,7 +44,7 @@ public:
      * @param client_sock 客户端socket
      * @param rbCapacity 客户端循环buffer的最大容量
      */
-    ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity);
+    ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
 
     /**
      * 删除一个客户端

@@ -12,6 +12,11 @@ namespace common {
 
     void
     base64_encode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
+
+        if (input == nullptr || input_length == 0 || output == nullptr || output_length == nullptr) {
+            return;
+        }
+
         const char encodeCharacterTable[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
         char buff1[3];
@@ -52,6 +57,10 @@ namespace common {
 
     void
     base64_decode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
+
+        if (input == nullptr || input_length == 0 || output == nullptr || output_length == nullptr) {
+            return;
+        }
 
         const signed char decodeCharacterTable[256] = {
                 -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,

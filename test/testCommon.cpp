@@ -6,8 +6,10 @@
 #include <sys/time.h>
 #include "common/common.h"
 #include "common/CRC.h"
+#include "log/Log.h"
 
 using namespace common;
+using namespace log;
 
 /**
  * 一次帧数据组包解包过程
@@ -148,6 +150,7 @@ void exampleJsonWatchData() {
 
 int main(int argc, char **argv) {
 
+//    Fatal("1234");
 //    exampleFrame();
 
     exampleJsonWatchData();
