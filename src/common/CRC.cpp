@@ -351,7 +351,7 @@ const uint32_t CrcTab_Crc32Poly0x4C11DB7Ref1[256] =
                 0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D,
         };
 
-//Name:    CRC-8
+//Name:    PkgCRC-8
 //Poly:    0x07	x8+x2+x+1
 //Init:    0x00
 //Refin:   False
@@ -369,7 +369,7 @@ uint8_t Crc8Tab(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-8/ITU
+//Name:    PkgCRC-8/ITU
 //Poly:    0x07	x8+x2+x+1
 //Init:    0x00
 //Refin:   False
@@ -388,7 +388,7 @@ uint8_t Crc8TabITU(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-8/ROHC
+//Name:    PkgCRC-8/ROHC
 //Poly:    0x07 x8+x2+x+1
 //Init:    0xFF
 //Refin:   True
@@ -406,7 +406,7 @@ uint8_t Crc8TabROHC(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-8/MAXIM
+//Name:    PkgCRC-8/MAXIM
 //Poly:    0x31 x8+x5+x4+1
 //Init:    0x00
 //Refin:   True
@@ -424,7 +424,7 @@ uint8_t Crc8TabMAXIM(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/IBM
+//Name:    PkgCRC-16/IBM
 //Poly:    0x8005 x16+x15+x2+1
 //Init:    0x0000
 //Refin:   True
@@ -442,7 +442,7 @@ uint16_t Crc16TabIBM(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/MAXIM
+//Name:    PkgCRC-16/MAXIM
 //Poly:    0x8005 x16+x15+x2+1
 //Init:    0x0000
 //Refin:   True
@@ -461,7 +461,7 @@ uint16_t Crc16TabMAXIM(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/USB
+//Name:    PkgCRC-16/USB
 //Poly:    0x8005 x16+x15+x2+1
 //Init:    0xFFFF
 //Refin:   True
@@ -480,7 +480,7 @@ uint16_t Crc16TabUSB(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/MODBUS
+//Name:    PkgCRC-16/MODBUS
 //Poly:    0x8005 x16+x15+x2+1
 //Init:    0xFFFF
 //Refin:   True
@@ -498,7 +498,7 @@ uint16_t Crc16TabMODBUS(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/CCITT
+//Name:    PkgCRC-16/CCITT
 //Poly:    0x1021 x16+x12+x5+1
 //Init:    0x0000
 //Refin:   True
@@ -516,7 +516,7 @@ uint16_t Crc16TabCCITT(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/CCITT-FALSE
+//Name:    PkgCRC-16/CCITT-FALSE
 //Poly:    0x1021 x16+x12+x5+1
 //Init:    0xFFFF
 //Refin:   False
@@ -534,7 +534,7 @@ uint16_t Crc16TabCCITTFALSE(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/X25
+//Name:    PkgCRC-16/X25
 //Poly:    0x1021  x16+x12+x5+1
 //Init:    0xFFFF
 //Refin:   True
@@ -553,7 +553,7 @@ uint16_t Crc16TabX25(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-16/XMODEM
+//Name:    PkgCRC-16/XMODEM
 //Poly:    0x1021 x16+x12+x5+1
 //Init:    0x0000
 //Refin:   False
@@ -571,7 +571,7 @@ uint16_t Crc16TabXMODEM(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-32
+//Name:    PkgCRC-32
 //Poly:    0x04C11DB7 x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
 //Init:    0xFFFFFFFF
 //Refin:   True
@@ -590,7 +590,7 @@ uint32_t Crc32Tab(uint8_t *data, uint32_t length) {
     return crc;
 }
 
-//Name:    CRC-32/MPEG-2
+//Name:    PkgCRC-32/MPEG-2
 //Poly:    0x04C11DB7 x32+x26+x23+x22+x16+x12+x11+x10+x8+x7+x5+x4+x2+x+1
 //Init:    0xFFFFFFFF
 //Refin:   False

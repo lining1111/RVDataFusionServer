@@ -163,71 +163,71 @@ namespace common {
     }
 
 
-    int Pack(Frame frame, uint8_t *out, uint32_t *len) {
+    int Pack(Pkg pkg, uint8_t *out, uint32_t *len) {
         int index = 0;
 
         //1.头部
-        memcpy(out + index, &frame.head, sizeof(frame.head));
-        index += sizeof(frame.head);
+        memcpy(out + index, &pkg.head, sizeof(pkg.head));
+        index += sizeof(pkg.head);
         //2.正文
         //2.1 方法名
-        memcpy(out + index, &frame.body.methodName.len, sizeof(frame.body.methodName.len));
-        index += sizeof(frame.body.methodName.len);
-        memcpy(out + index, frame.body.methodName.name, frame.body.methodName.len);
-        index += frame.body.methodName.len;
+        memcpy(out + index, &pkg.body.methodName.len, sizeof(pkg.body.methodName.len));
+        index += sizeof(pkg.body.methodName.len);
+        memcpy(out + index, pkg.body.methodName.name.data(), pkg.body.methodName.len);
+        index += pkg.body.methodName.len;
         //2.1 方法参数
-        memcpy(out + index, &frame.body.methodParam.len, sizeof(frame.body.methodParam.len));
-        index += sizeof(frame.body.methodParam.len);
-        memcpy(out + index, frame.body.methodParam.param, frame.body.methodParam.len);
-        index += frame.body.methodParam.len;
+        memcpy(out + index, &pkg.body.methodParam.len, sizeof(pkg.body.methodParam.len));
+        index += sizeof(pkg.body.methodParam.len);
+        memcpy(out + index, pkg.body.methodParam.param.data(), pkg.body.methodParam.len);
+        index += pkg.body.methodParam.len;
         //3.校验值
-        memcpy(out + index, &frame.crc, sizeof(frame.crc));
-        index += sizeof(frame.crc);
+        memcpy(out + index, &pkg.crc, sizeof(pkg.crc));
+        index += sizeof(pkg.crc);
 
         //4.设置长度
-        *len = frame.head.len;
+        *len = pkg.head.len;
 
         //如果最后拷贝的长度和头部信息的长度相同则说明组包成功，否则失败
-        if (index != frame.head.len) {
+        if (index != pkg.head.len) {
             return -1;
         } else {
             return 0;
         }
     }
 
-    int Unpack(uint8_t *in, uint32_t len, Frame &frame) {
+    int Unpack(uint8_t *in, uint32_t len, Pkg &pkg) {
         int index = 0;
 
         //长度小于头部长度 退出
-        if (len < sizeof frame.head) {
+        if (len < sizeof pkg.head) {
             return -1;
         }
 
         //1.头部
-        memcpy(&frame.head, in + index, sizeof(frame.head));
-        index += sizeof(frame.head);
+        memcpy(&pkg.head, in + index, sizeof(pkg.head));
+        index += sizeof(pkg.head);
 
         //判断长度，如果 len小于头部长度则退出
-        if (len < frame.head.len) {
+        if (len < pkg.head.len) {
             return -1;
         }
 
         //2.正文
         //2.1方法名
-        memcpy(&frame.body.methodName.len, in + index, sizeof(frame.body.methodName.len));
-        index += sizeof(frame.body.methodName.len);
-        frame.body.methodName.name = (char *) calloc(sizeof(char), frame.body.methodName.len);
-        memcpy(frame.body.methodName.name, in + index, frame.body.methodName.len);
-        index += frame.body.methodName.len;
+        memcpy(&pkg.body.methodName.len, in + index, sizeof(pkg.body.methodName.len));
+        index += sizeof(pkg.body.methodName.len);
+        pkg.body.methodName.name.clear();
+        pkg.body.methodName.name.append((char *) (in + index), pkg.body.methodName.len);
+        index += pkg.body.methodName.len;
         //2.1方法参数
-        memcpy(&frame.body.methodParam.len, in + index, sizeof(frame.body.methodParam.len));
-        index += sizeof(frame.body.methodParam.len);
-        frame.body.methodParam.param = (char *) calloc(sizeof(char), frame.body.methodParam.len);
-        memcpy(frame.body.methodParam.param, in + index, frame.body.methodParam.len);
-        index += frame.body.methodParam.len;
+        memcpy(&pkg.body.methodParam.len, in + index, sizeof(pkg.body.methodParam.len));
+        index += sizeof(pkg.body.methodParam.len);
+        pkg.body.methodParam.param.clear();
+        pkg.body.methodParam.param.append((char *) (in + index), pkg.body.methodParam.len);
+        index += pkg.body.methodParam.len;
         //3.校验值
-        memcpy(&frame.crc, in + index, sizeof(frame.crc));
-        index += sizeof(frame.crc);
+        memcpy(&pkg.crc, in + index, sizeof(pkg.crc));
+        index += sizeof(pkg.crc);
 
         //如果最后拷贝的长度和参数长度相同则说明组包成功，否则失败
         if (index != len) {
@@ -238,19 +238,6 @@ namespace common {
 
     }
 
-    void ReleaseFrame(Frame &frame) {
-        if (frame.body.methodName.name != nullptr) {
-            free(frame.body.methodName.name);
-            frame.body.methodName.name = nullptr;
-            frame.body.methodName.len = 0;
-        }
-
-        if (frame.body.methodParam.param != nullptr) {
-            free(frame.body.methodParam.param);
-            frame.body.methodParam.param = nullptr;
-            frame.body.methodParam.len = 0;
-        }
-    }
 
     int JsonMarshalWatchData(WatchData watchData, string &out) {
         Json::FastWriter fastWriter;

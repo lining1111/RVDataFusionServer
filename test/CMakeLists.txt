@@ -2,6 +2,7 @@
 add_executable(testCommon testCommon.cpp
         ../src/common/common.cpp
         ../src/common/CRC.cpp
+        ../src/ringBuffer/RingBuffer.cpp
         ../src/log/Log.cpp)
 target_link_libraries(testCommon ${LIBS})
 redefine_file_macro(testCommon)

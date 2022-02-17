@@ -12,54 +12,61 @@
 using namespace std;
 
 namespace common {
-    enum FrameType {
+
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+#define OFFSET(type, member)      \
+    ( (size_t)( &( ((type*)0)->member)  ) )
+#define MEMBER_SIZE(type, member) \
+    sizeof(((type *)0)->member)
+
+    enum PkgType {
         Request = 0x00,//请求
         Response = 0x01,//回复
-    };//帧类型
+    };//包类型
 
 
 #pragma pack(1)
     typedef struct {
-        uint8_t tag;//固定的头开始 ‘$’ 0x24
+        uint8_t tag = '$';//固定的头开始 ‘$’ 0x24
         uint8_t version;//版本号 1.0 hex
-        uint8_t type;//帧类型 详见FrameType
-        uint16_t sn;//帧号
-        uint32_t len;//整帧长度，从帧头到最后的校验位 <帧头>sizeof(FrameHead)+<正文>(1+方法名长度+4+方法参数)+<校验>sizeof(CRC)
-    } FrameHead;//帧头
+        uint8_t type;//包类型 详见PkgType
+        uint16_t sn = 0;//包号
+        uint32_t len = 0;//整包长度，从包头到最后的校验位 <帧头>sizeof(PkgHead)+<正文>(1+方法名长度+4+方法参数)+<校验>sizeof(PkgCRC)
+    } PkgHead;//包头
 
     typedef struct {
         uint16_t data;//校验值，从帧头开始到正文的最后一个字节
-    } CRC;
+    } PkgCRC;
 #pragma pack()
 
     //方法名枚举
 #define Method(s) #s
 
     typedef struct {
-        uint8_t len;
-        char *name;//Method(Beats) Method(DeviceStates) Method(DeviceAlarm) Method(CommanderAlarm) Method(BusinessData) Method(WatchData) Method(SendVideoInfo)
+        uint8_t len = 0;
+        string name;//Method(Beats) Method(DeviceStates) Method(DeviceAlarm) Method(CommanderAlarm) Method(BusinessData) Method(WatchData) Method(SendVideoInfo)
     } MethodName;//方法名
 
     typedef struct {
-        uint32_t len;
-        char *param;
+        uint32_t len = 0;
+        string param;
     } MethodParam;//方法参数
 
     typedef struct {
         MethodName methodName;
         MethodParam methodParam;
-    } FrameBody;
+    } PkgBody;
 
 
-    //一帧数据格式 <帧头>FrameHead+<正文>FrameBody(1+方法名长度+4+方法参数)+<校验>CRC
+    //一帧数据格式 <帧头>PkgHead+<正文>PkgBody(1+方法名长度+4+方法参数)+<校验>PkgCRC
     typedef struct {
-        FrameHead head;
-        FrameBody body;
-        CRC crc;
-    } Frame;
+        PkgHead head;
+        PkgBody body;
+        PkgCRC crc;
+    } Pkg;
 
 
-    //FrameBody.methodParam.param一般都是json数据，以下是json字符串原始的结构体
+    //PkgBody.methodParam.param一般都是json数据，以下是json字符串原始的结构体
     //现在仅有一个监控数据上传业务 Method(WatchData)
 
     enum State {
@@ -70,12 +77,12 @@ namespace common {
         int state;// `json "state"`
         string desc;// `json "desc"`
         string value;// `json "value"`
-    } FrameResponse;//回复帧
+    } Reply;//回复帧
 
     typedef struct {
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timestamp;// `json "timestamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
-    } FrameBeats;//心跳帧 "Beats"
+    } Beats;//心跳帧 "Beats"
 
     typedef struct {
         int LightID;//`json "LightID"`
@@ -113,8 +120,6 @@ namespace common {
     } WatchData;//监控数据
 
 
-
-
     /**
      * base64加密
      * @param input 待加密数据
@@ -145,28 +150,21 @@ namespace common {
     //基本解包组包函数
     /**
      * 组包函数
-     * @param frame 帧数据
+     * @param pkg 帧数据
      * @param out 组帧后的数据地址
      * @param len 组帧后的数据长度
      * @return 0：success -1：fail
      */
-    int Pack(Frame frame, uint8_t *out, uint32_t *len);
+    int Pack(Pkg pkg, uint8_t *out, uint32_t *len);
 
     /**
      * 解包数据
      * @param in 一帧数据包
      * @param len 一阵数据包长度
-     * @param frame 解包后的数据帧
+     * @param pkg 解包后的数据帧
      * @return 0：success -1：fail
      */
-    int Unpack(uint8_t *in, uint32_t len, Frame &frame);
-
-    /**
-     * 释放一个数据帧申请的空间
-     * @param frame
-     */
-    void ReleaseFrame(Frame &frame);
-
+    int Unpack(uint8_t *in, uint32_t len, Pkg &pkg);
 
     /**
      * WatchData 组json
