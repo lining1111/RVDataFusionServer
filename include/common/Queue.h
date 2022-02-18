@@ -70,6 +70,7 @@ T Queue<T>::PopFront() {
     //取出队列头
     t = this->q.front();
     this->q.pop();
+    pthread_cond_broadcast(&cond);
     pthread_mutex_unlock(&lock);
 
     return t;
@@ -86,6 +87,7 @@ T Queue<T>::PopBack() {
     //取出队列头
     t = this->q.back();
     this->q.pop();
+    pthread_cond_broadcast(&cond);
     pthread_mutex_unlock(&lock);
 
     return t;

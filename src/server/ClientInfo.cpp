@@ -21,12 +21,15 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     gettimeofday(&this->receive_time, nullptr);
     this->rb = RingBuffer_New(rbCapacity);
     this->status = Start;
+
+    this->isLive.store(false);
+    this->needRelease.store(false);
 }
 
 ClientInfo::~ClientInfo() {
 
-    if (isLive) {
-        isLive = false;
+    if (isLive.load() == true) {
+        isLive.store(false);
     }
 
     if (sock > 0) {
@@ -43,7 +46,7 @@ ClientInfo::~ClientInfo() {
 }
 
 int ClientInfo::ProcessRecv() {
-    isLive = true;
+    isLive.store(true);
 
     //dump
     threadDump = thread(ThreadDump, this);
@@ -72,14 +75,18 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    while (client->isLive) {
+    while (client->isLive.load()) {
         uint8_t buffer[1024 * 128];
         int len = 0;
+        usleep(10);
+        if (client->sock <= 0) {
+            continue;
+        }
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
-            client->needRelease = true;
+            client->needRelease.store(true);
         } else if (len > 0) {
             //将数据存入缓存
             if (client->rb != nullptr) {
@@ -100,7 +107,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    while (client->isLive) {
+    while (client->isLive.load()) {
 
         usleep(10);
 
@@ -211,7 +218,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    while (client->isLive) {
+    while (client->isLive.load()) {
         usleep(10);
         if (client->queuePkg.Size() == 0) {
             //分别队列为空

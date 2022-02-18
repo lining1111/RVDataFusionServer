@@ -10,6 +10,8 @@
 #include <netinet/in.h>
 #include <queue>
 #include <thread>
+#include <stdbool.h>
+#include <atomic>
 #include "common/Queue.h"
 
 #ifdef __cplusplus
@@ -18,6 +20,7 @@ extern "C"
 #endif
 using namespace std;
 using namespace common;
+
 class ClientInfo {
 public:
 
@@ -37,19 +40,19 @@ public:
     timeval receive_time;
 private:
     RecvStatus status = Start;
-    RingBuffer *rb = nullptr;//接收数据缓存环形buffer
-
     //用于缓存解包
     PkgHead pkgHead;//分包头
     int bodyLen = 0;//获取分包头后，得到的包长度
     uint8_t *pkgBuffer = nullptr;//分包缓冲
     int index = 0;//分包缓冲的索引
 public:
-    bool isLive = false;
+    atomic_bool isLive;
+
 
     //供给服务端使用的变量
-    bool needRelease = false;//客户端处理线程在发现sock异常时，向上抛出释放队列内容信号
+    atomic_bool needRelease;//客户端处理线程在发现sock异常时，向上抛出释放队列内容信号
 
+    RingBuffer *rb = nullptr;//接收数据缓存环形buffer
     //客户端处理线程
     thread threadDump;//接收数据并存入环形buffer
 

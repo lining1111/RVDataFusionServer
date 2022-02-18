@@ -13,16 +13,17 @@
 using namespace log;
 
 FusionServer::FusionServer() {
-
+    this->isRun.store(false);
 }
 
 FusionServer::FusionServer(uint16_t port, int maxListen) {
     this->port = port;
     this->maxListen = maxListen;
+    this->isRun.store(false);
 }
 
 FusionServer::~FusionServer() {
-
+    Close();
 }
 
 int FusionServer::Open() {
@@ -97,12 +98,17 @@ int FusionServer::Run() {
         Error("server sock:%d", sock);
         return -1;
     }
-    isRun = true;
+    isRun.store(true);
 
     //开启服务器箭头客户端线程
     threadMonitor = thread(ThreadMonitor, this);
     pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
     threadMonitor.detach();
+
+    //开启服务器箭头客户端线程
+    threadCheck = thread(ThreadCheck, this);
+    pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
+    threadCheck.detach();
 
     return 0;
 }
@@ -114,7 +120,7 @@ int FusionServer::Close() {
     }
     DeleteAllClient();
 
-    isRun = false;
+    isRun.store(false);
 
     return 0;
 }
@@ -225,7 +231,7 @@ void FusionServer::ThreadMonitor(void *pServer) {
     int client_fd;
 
     Info("%s run", __FUNCTION__);
-    while (server->isRun) {
+    while (server->isRun.load()) {
         // 等待事件发生
         nfds = epoll_wait(server->epoll_fd, server->wait_events, MAX_EVENTS, -1);
 
@@ -243,10 +249,8 @@ void FusionServer::ThreadMonitor(void *pServer) {
                     Error("server accept fail:%s", strerror(errno));
                     continue;
                 }
+                //加入客户端数组，开启客户端处理线程
                 server->AddClient(client_fd, remote_addr);
-                //开启客户端处理线程
-
-
 
             } else if ((server->wait_events[i].data.fd > 2) &&
                        ((server->wait_events[i].events & EPOLLERR) ||
@@ -256,10 +260,8 @@ void FusionServer::ThreadMonitor(void *pServer) {
                 for (int i = 0; i < server->vector_client.size(); i++) {
                     auto iter = server->vector_client.at(i);
                     if (iter->sock == server->wait_events[i].data.fd) {
-                        server->RemoveClient(iter->sock);
-                        //关闭线程
-
-
+                        //抛出一个对方已关闭的异常，等待检测线程进行处理
+                        iter->needRelease.store(true);
                         break;
                     }
                 }
@@ -272,4 +274,62 @@ void FusionServer::ThreadMonitor(void *pServer) {
     server->sock = 0;
 
     Info("%s exit", __FUNCTION__);
+}
+
+void FusionServer::ThreadCheck(void *pServer) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+
+    Info("%s run", __FUNCTION__);
+    while (server->isRun.load()) {
+        usleep(10);
+        //检查客户端数组状态，
+        // 主要是接收时间receive_time receive_time跟现在大于150秒则断开链接
+        // needRelease上抛的释放标志，设置为真后，等待队列全部为空后进行释放
+        if (server->vector_client.empty()) {
+            continue;
+        }
+        for (auto iter: server->vector_client) {
+
+            //检查超时
+//            {
+//                timeval tv;
+//                gettimeofday(&tv, nullptr);
+//                if ((tv.tv_sec - iter->receive_time.tv_sec) >= server->checkStatusTimeval.tv_usec) {
+//                    iter->needRelease.store(true);
+//                }
+//
+//            }
+            //检查needRelease
+            {
+                if (iter->needRelease.load()) {
+                    bool rbEmpty = false;//字节缓冲区为空
+                    //如果队列全部为空，从数组中删除
+                    if (iter->rb != nullptr) {
+                        if (iter->rb->available_for_read == 0) {
+                            rbEmpty = true;
+                        }
+                    }
+                    bool pkgEmpty = false;//分包缓冲区为空
+                    if (iter->queuePkg.Size() == 0) {
+                        pkgEmpty = true;
+                    }
+                    bool watchDataEmpty = false;//WatchData队列为空
+                    if (iter->queueWatchData.Size() == 0) {
+                        watchDataEmpty = true;
+                    }
+
+                    //都为空则从数组删除
+                    if (rbEmpty && pkgEmpty && watchDataEmpty) {
+                        server->RemoveClient(iter->sock);
+                    }
+                }
+            }
+        }
+    }
+
+    Info("%s exit", __FUNCTION__);
+
 }

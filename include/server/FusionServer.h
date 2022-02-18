@@ -38,11 +38,12 @@ public:
     struct epoll_event ev;
 #define MAX_EVENTS 1024
     struct epoll_event wait_events[MAX_EVENTS];
-    bool isRun = false;//运行标志
+    atomic_bool isRun;//运行标志
 
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
+    thread threadCheck;//服务器客户端数组状态线程
 
 public:
     FusionServer();
@@ -99,7 +100,17 @@ private:
      */
     int DeleteAllClient();
 
+    /**
+     * 服务端监听状态监测线程
+     * @param pServer
+     */
     static void ThreadMonitor(void *pServer);
+
+    /**
+     * 服务端存储的客户端数组状态检测线程
+     * @param pServer
+     */
+    static void ThreadCheck(void *pServer);
 };
 
 #ifdef __cplusplus
