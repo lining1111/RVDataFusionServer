@@ -93,6 +93,12 @@ private:
      */
     int RemoveClient(int client_sock);
 
+    /**
+     * 删除客户端数组成员
+     * @return 0
+     */
+    int DeleteAllClient();
+
     static void ThreadMonitor(void *pServer);
 };
 

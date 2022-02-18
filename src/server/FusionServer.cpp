@@ -41,6 +41,7 @@ int FusionServer::Open() {
     if (bind(sock, (struct sockaddr *) &server_addr, (socklen_t) sizeof(server_addr)) < 0) {
         Fatal("server sock bind error:%s", strerror(errno));
         close(sock);
+        sock = 0;
         return -1;
     }
 
@@ -63,6 +64,7 @@ int FusionServer::Open() {
     if (listen(sock, maxListen) != 0) {
         Error("server sock listen fail,error:%s", strerror(errno));
         close(sock);
+        sock = 0;
         return -1;
     }
 
@@ -71,16 +73,20 @@ int FusionServer::Open() {
     if (epoll_fd == -1) {
         Error("epoll create fail");
         close(sock);
+        sock = 0;
         return -1;
     }
-    ev.events = EPOLLIN | EPOLLET;
+    ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET;
     ev.data.fd = sock;
     // 向epoll注册server_sockfd监听事件
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) == -1) {
         Error("epoll_ctl server fd failed:%s", strerror(errno));
         close(sock);
+        sock = 0;
         return -1;
     }
+
+    Info("server sock %d create success", sock);
 
     return 0;
 }
@@ -102,6 +108,14 @@ int FusionServer::Run() {
 }
 
 int FusionServer::Close() {
+    if (sock > 0) {
+        close(sock);
+        sock = 0;
+    }
+    DeleteAllClient();
+
+    isRun = false;
+
     return 0;
 }
 
@@ -117,7 +131,7 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
     //多线程处理，不应该设置非阻塞模式
 //    setNonblock(client_sock);
     // epoll add
-    this->ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLHUP;
+    this->ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
     this->ev.data.fd = client_sock;
     if (epoll_ctl(this->epoll_fd, EPOLL_CTL_ADD, client_sock, &this->ev) == -1) {
         Error("epoll add:%d fail,%s", client_sock, strerror(errno));
@@ -136,6 +150,9 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
     pthread_mutex_unlock(&this->lock_vector_client);
 
     Info("add client %d success", client_sock);
+
+    //开启客户端处理线程
+    clientInfo->ProcessRecv();
 
     return 0;
 }
@@ -166,6 +183,32 @@ int FusionServer::RemoveClient(int client_sock) {
     }
     pthread_cond_broadcast(&this->cond_vector_client);
     pthread_mutex_unlock(&this->lock_vector_client);
+
+    return 0;
+}
+
+int FusionServer::DeleteAllClient() {
+
+    //删除客户端数组
+    if (!vector_client.empty()) {
+
+        pthread_mutex_lock(&lock_vector_client);
+
+        if (vector_client.empty()) {
+            pthread_cond_wait(&cond_vector_client, &lock_vector_client);
+        }
+
+        for (auto iter:vector_client) {
+            if (iter->sock > 0) {
+                close(iter->sock);
+                iter->sock = 0;
+            }
+            delete iter;
+        }
+        vector_client.clear();
+
+        pthread_mutex_unlock(&lock_vector_client);
+    }
 
     return 0;
 }
@@ -206,7 +249,9 @@ void FusionServer::ThreadMonitor(void *pServer) {
 
 
             } else if ((server->wait_events[i].data.fd > 2) &&
-                       ((server->wait_events[i].events & EPOLLERR) || (server->wait_events[i].events & EPOLLHUP))) {
+                       ((server->wait_events[i].events & EPOLLERR) ||
+                        (server->wait_events[i].events & EPOLLRDHUP) ||
+                        (server->wait_events[i].events & EPOLLOUT))) {
                 //有异常发生 close client
                 for (int i = 0; i < server->vector_client.size(); i++) {
                     auto iter = server->vector_client.at(i);
@@ -224,6 +269,7 @@ void FusionServer::ThreadMonitor(void *pServer) {
 
     close(server->epoll_fd);
     close(server->sock);
+    server->sock = 0;
 
     Info("%s exit", __FUNCTION__);
 }

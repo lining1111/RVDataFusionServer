@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <sys/time.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include "server/ClientInfo.h"
 #include "log/Log.h"
@@ -15,7 +16,7 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->msgid = 0;
     this->clientAddr = clientAddr;
     this->sock = client_sock;
-    this->clientType = 0;
+    this->type = 0;
     bzero(this->extraData, sizeof(this->extraData) / sizeof(this->extraData[0]));
     gettimeofday(&this->receive_time, nullptr);
     this->rb = RingBuffer_New(rbCapacity);
@@ -24,15 +25,21 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
 
 ClientInfo::~ClientInfo() {
 
-    if (sock > 0) {
-        close(sock);
-    }
-
     if (isLive) {
         isLive = false;
     }
 
+    if (sock > 0) {
+        close(sock);
+    }
+
+    if (pkgBuffer != nullptr) {
+        free(pkgBuffer);
+        pkgBuffer = nullptr;
+    }
+
     RingBuffer_Delete(this->rb);
+    this->rb = nullptr;
 }
 
 int ClientInfo::ProcessRecv() {
@@ -64,22 +71,24 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("%s run", __FUNCTION__);
+    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive) {
         uint8_t buffer[1024 * 128];
         int len = 0;
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
-        if (len == -1) {
+        if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
             client->needRelease = true;
         } else if (len > 0) {
             //将数据存入缓存
-            RingBuffer_Write(client->rb, buffer, len);
+            if (client->rb != nullptr) {
+                RingBuffer_Write(client->rb, buffer, len);
+            }
         }
     }
 
-    Info("%s exit", __FUNCTION__);
+    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
 
@@ -90,18 +99,13 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("%s run", __FUNCTION__);
+    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive) {
-
-        PkgHead pkgHead;//分包头
-        int bodyLen = 0;//获取分包头后，得到的包长度
-        uint8_t *pkgBuffer = nullptr;//分包缓冲
-        int index = 0;//分包缓冲的索引
 
         usleep(10);
 
-        if (client->rb->available_for_read == 0) {
-            //无数据可读
+        if (client->rb == nullptr) {
+            //状态为开始且无数据可读
             continue;
         }
 
@@ -109,7 +113,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
         switch (client->status) {
             case Start: {
                 //开始,寻找包头的开始标志
-                if (client->rb->available_for_read > MEMBER_SIZE(PkgHead, tag)) {
+                if (client->rb->available_for_read >= MEMBER_SIZE(PkgHead, tag)) {
                     char start = '\0';
                     RingBuffer_Read(client->rb, &start, 1);
                     if (start == '$') {
@@ -121,37 +125,38 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
             case GetHeadStart: {
                 //开始寻找头
-                if (client->rb->available_for_read > (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
+                if (client->rb->available_for_read >= (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
                     //获取完整的包头
-                    pkgHead.tag = '$';
-                    RingBuffer_Read(client->rb, &pkgHead.version, (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
+                    client->pkgHead.tag = '$';
+                    RingBuffer_Read(client->rb, &client->pkgHead.version,
+                                    (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
                     //buffer申请内存
-                    pkgBuffer = (uint8_t *) calloc(1, pkgHead.len);
-                    index = 0;
-                    memcpy(pkgBuffer, &pkgHead, sizeof(pkgHead));
-                    index += sizeof(pkgHead);
-                    client->status = GetBody;
-                    bodyLen = pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
+                    client->pkgBuffer = (uint8_t *) calloc(1, client->pkgHead.len);
+                    client->index = 0;
+                    memcpy(client->pkgBuffer, &client->pkgHead, sizeof(pkgHead));
+                    client->index += sizeof(pkgHead);
+                    client->status = GetHead;
+                    client->bodyLen = client->pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
                 }
             }
                 break;
             case GetHead: {
-                if (bodyLen <= 0) {
-                    bodyLen = pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
+                if (client->bodyLen <= 0) {
+                    client->bodyLen = client->pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
                 }
-                if (client->rb->available_for_read > bodyLen) {
+                if (client->rb->available_for_read >= client->bodyLen) {
                     //获取正文
-                    RingBuffer_Read(client->rb, pkgBuffer + index, bodyLen);
-                    index += bodyLen;
+                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, client->bodyLen);
+                    client->index += client->bodyLen;
                     client->status = GetBody;
                 }
             }
                 break;
             case GetBody: {
-                if (client->rb->available_for_read > sizeof(PkgCRC)) {
+                if (client->rb->available_for_read >= sizeof(PkgCRC)) {
                     //获取CRC
-                    RingBuffer_Read(client->rb, pkgBuffer + index, sizeof(PkgCRC));
-                    index += sizeof(PkgCRC);
+                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, sizeof(PkgCRC));
+                    client->index += sizeof(PkgCRC);
                     client->status = GetCRC;
                 }
             }
@@ -160,7 +165,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 //获取CRC 就获取全部的分包内容，转换为结构体
                 Pkg pkg;
 
-                Unpack(pkgBuffer, pkgHead.len, pkg);
+                Unpack(client->pkgBuffer, client->pkgHead.len, pkg);
 
                 //存入分包队列
                 if (client->queuePkg.Size() >= client->maxQueuePkg) {
@@ -171,30 +176,30 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                     client->queuePkg.Push(pkg);
                 }
 
-                bodyLen = 0;//获取分包头后，得到的包长度
-                if (pkgBuffer) {
-                    free(pkgBuffer);
-                    pkgBuffer = nullptr;//分包缓冲
+                client->bodyLen = 0;//获取分包头后，得到的包长度
+                if (client->pkgBuffer) {
+                    free(client->pkgBuffer);
+                    client->pkgBuffer = nullptr;//分包缓冲
                 }
-                index = 0;//分包缓冲的索引
+                client->index = 0;//分包缓冲的索引
                 client->status = Start;
             }
                 break;
             default: {
                 //意外状态错乱后，回到最初
-                bodyLen = 0;//获取分包头后，得到的包长度
-                if (pkgBuffer) {
-                    free(pkgBuffer);
-                    pkgBuffer = nullptr;//分包缓冲
+                client->bodyLen = 0;//获取分包头后，得到的包长度
+                if (client->pkgBuffer) {
+                    free(client->pkgBuffer);
+                    client->pkgBuffer = nullptr;//分包缓冲
                 }
-                index = 0;//分包缓冲的索引
+                client->index = 0;//分包缓冲的索引
                 client->status = Start;
             }
                 break;
         }
     }
 
-    Info("%s exit", __FUNCTION__);
+    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
 
@@ -205,7 +210,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("%s run", __FUNCTION__);
+    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive) {
         usleep(10);
         if (client->queuePkg.Size() == 0) {
@@ -233,7 +238,6 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         }
     }
 
-
-    Info("%s exit", __FUNCTION__);
+    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }

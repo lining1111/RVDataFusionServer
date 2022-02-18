@@ -17,39 +17,39 @@ using namespace log;
 /**
  * 一次帧数据组包解包过程
  */
-void exampleFrame() {
-    Pkg frame;
+void examplePkg() {
+    Pkg pkg;
     int len = 0;
     //1.头部
-    frame.head.tag = '$';
-    frame.head.version = 1;
-    frame.head.type = PkgType::Request;
-    frame.head.sn = 1;
-    frame.head.len = 0;
-    len += sizeof(frame.head);
+    pkg.head.tag = '$';
+    pkg.head.version = 1;
+    pkg.head.type = PkgType::Request;
+    pkg.head.sn = 1;
+    pkg.head.len = 0;
+    len += sizeof(pkg.head);
     //2.正文
     //2.1方法名
     string methodName = Method(WatchData);
-    frame.body.methodName.len = methodName.length();
-    frame.body.methodName.name = methodName;
-    len += sizeof(frame.body.methodName.len) + frame.body.methodName.len;
+    pkg.body.methodName.len = methodName.length();
+    pkg.body.methodName.name = methodName;
+    len += sizeof(pkg.body.methodName.len) + pkg.body.methodName.len;
 
     //2.2方法参数
     string methodParam = "this is a test";
-    frame.body.methodParam.len = methodParam.length();
-    frame.body.methodParam.param = methodParam;
-    len += sizeof(frame.body.methodParam.len) + frame.body.methodParam.len;
+    pkg.body.methodParam.len = methodParam.length();
+    pkg.body.methodParam.param = methodParam;
+    len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
     //3检验值
-    frame.crc.data = Crc16TabCCITT((uint8_t *) &frame, len);
-    len += sizeof(frame.crc);
+    pkg.crc.data = Crc16TabCCITT((uint8_t *) &pkg, len);
+    len += sizeof(pkg.crc);
     //4 长度信息
-    frame.head.len = len;
+    pkg.head.len = len;
 
     //组包
     uint8_t dataEncode[1024 * 1024];
     uint32_t dataEncodeLen = 0;
     bzero(dataEncode, sizeof(dataEncode) / sizeof(dataEncode[0]));
-    Pack(frame, dataEncode, &dataEncodeLen);
+    Pack(pkg, dataEncode, &dataEncodeLen);
     //解包
     Pkg frameDecode;
     Unpack(dataEncode, dataEncodeLen, frameDecode);
@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 //    }
 
 //    Fatal("1234");
-    exampleFrame();
+    examplePkg();
 
 //    exampleJsonWatchData();
 

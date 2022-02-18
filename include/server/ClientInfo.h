@@ -32,11 +32,19 @@ public:
     int msgid = 0;//帧号
     struct sockaddr_in clientAddr;
     int sock;//客户端socket
-    int clientType = 0;
+    int type = 0;
     unsigned char extraData[1024 * 8];//特性数据
     timeval receive_time;
+private:
     RecvStatus status = Start;
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
+
+    //用于缓存解包
+    PkgHead pkgHead;//分包头
+    int bodyLen = 0;//获取分包头后，得到的包长度
+    uint8_t *pkgBuffer = nullptr;//分包缓冲
+    int index = 0;//分包缓冲的索引
+public:
     bool isLive = false;
 
     //供给服务端使用的变量
@@ -72,7 +80,7 @@ public:
      */
     ~ClientInfo();
 
-private:
+public:
 
     /**
      * 客户端开启线程：1缓存2分包3解包
