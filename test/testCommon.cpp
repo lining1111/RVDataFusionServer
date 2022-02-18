@@ -7,6 +7,7 @@
 #include <sys/time.h>
 #include "common/common.h"
 #include "common/CRC.h"
+#include "common/Queue.h"
 #include "log/Log.h"
 #include "ringBuffer/RingBuffer.h"
 
@@ -181,16 +182,16 @@ int main(int argc, char **argv) {
 //    exampleJsonWatchData();
 
 
-    queue<Pkg> q;
+    Queue<Pkg> q;
     Pkg pkg;
 
     pkg.body.methodName.len = 9;
     pkg.body.methodName.name = "WatchData";
 
-    q.push(pkg);
+    q.Push(pkg);
 
     Pkg pkg1;
-    pkg1 = q.front();
+    pkg1 = q.PopFront();
 
     return 0;
 

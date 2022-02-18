@@ -9,6 +9,7 @@
 #include "log/Log.h"
 
 using namespace log;
+using namespace common;
 
 ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
     this->msgid = 0;
@@ -32,83 +33,6 @@ ClientInfo::~ClientInfo() {
     }
 
     RingBuffer_Delete(this->rb);
-}
-
-int ClientInfo::SetQueuePkg(Pkg &pkg) {
-
-    //最多缓存600
-    if (this->queuePkg.size() >= maxQueuePkg) {
-        return -1;
-    }
-
-
-    pthread_mutex_lock(&this->lockPkg);
-
-    //存入队列
-    queuePkg.push(pkg);
-
-    pthread_cond_broadcast(&this->condPkg);
-    pthread_mutex_unlock(&this->lockPkg);
-
-    return 0;
-}
-
-int ClientInfo::GetQueuePkg(Pkg &pkg) {
-    if (this->queuePkg.empty()) {
-        return -1;
-    }
-
-    pthread_mutex_lock(&this->lockPkg);
-
-    if (this->queuePkg.empty()) {
-        pthread_cond_wait(&this->condPkg, &this->lockPkg);
-    }
-
-    //取出队列头
-    pkg = this->queuePkg.front();
-    this->queuePkg.pop();
-
-    pthread_mutex_unlock(&this->lockPkg);
-
-    return 0;
-}
-
-int ClientInfo::SetQueueWatchData(WatchData &watchData) {
-    //最多缓存600
-    if (this->queueWatchData.size() >= maxQueueWatchData) {
-        return -1;
-    }
-
-
-    pthread_mutex_lock(&this->lockWatchData);
-
-    //存入队列
-    queueWatchData.push(watchData);
-
-    pthread_cond_broadcast(&this->condWatchData);
-    pthread_mutex_unlock(&this->lockWatchData);
-
-    return 0;
-}
-
-int ClientInfo::GetQueueWatchData(WatchData &watchData) {
-    if (this->queueWatchData.empty()) {
-        return -1;
-    }
-
-    pthread_mutex_lock(&this->lockWatchData);
-
-    if (this->queueWatchData.empty()) {
-        pthread_cond_wait(&this->condWatchData, &this->lockWatchData);
-    }
-
-    //取出队列头
-    watchData = this->queueWatchData.front();
-    this->queueWatchData.pop();
-
-    pthread_mutex_unlock(&this->lockWatchData);
-
-    return 0;
 }
 
 int ClientInfo::ProcessRecv() {
@@ -239,35 +163,35 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 Unpack(pkgBuffer, pkgHead.len, pkg);
 
                 //存入分包队列
-                int set = client->SetQueuePkg(pkg);
-                if (set != 0) {
+                if (client->queuePkg.Size() >= client->maxQueuePkg) {
                     Info("分包队列已满，丢弃此包:%s-%s",
                          pkg.body.methodName.name.c_str(),
                          pkg.body.methodParam.param.c_str());
+                } else {
+                    client->queuePkg.Push(pkg);
                 }
 
-                int bodyLen = 0;//获取分包头后，得到的包长度
+                bodyLen = 0;//获取分包头后，得到的包长度
                 if (pkgBuffer) {
                     free(pkgBuffer);
                     pkgBuffer = nullptr;//分包缓冲
                 }
-                int index = 0;//分包缓冲的索引
+                index = 0;//分包缓冲的索引
                 client->status = Start;
             }
                 break;
             default: {
                 //意外状态错乱后，回到最初
-                int bodyLen = 0;//获取分包头后，得到的包长度
+                bodyLen = 0;//获取分包头后，得到的包长度
                 if (pkgBuffer) {
                     free(pkgBuffer);
                     pkgBuffer = nullptr;//分包缓冲
                 }
-                int index = 0;//分包缓冲的索引
+                index = 0;//分包缓冲的索引
                 client->status = Start;
             }
                 break;
         }
-
     }
 
     Info("%s exit", __FUNCTION__);
@@ -284,34 +208,31 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     Info("%s run", __FUNCTION__);
     while (client->isLive) {
         usleep(10);
-        if (client->queuePkg.empty()) {
+        if (client->queuePkg.Size() == 0) {
             //分别队列为空
             continue;
         }
         Pkg pkg;
-        int get = client->GetQueuePkg(pkg);
-        if (get != 0) {
-            Info("获取分包失败");
-        } else {
-            //解析分包，按照方法名不同，存入不同的队列
-            if (string(pkg.body.methodName.name) == Method(WatchData)) {
-                //"WatchData"
-                WatchData watchData;
-                JsonUnmarshalWatchData(string(pkg.body.methodParam.param), watchData);
-                //存入队列
-                int set = client->SetQueueWatchData(watchData);
-                if (set != 0) {
-                    Info("WatchData队列已满,丢弃消息:%s-%s", pkg.body.methodName.name.c_str(),
-                         pkg.body.methodParam.param.c_str());
-                }
+        pkg = client->queuePkg.PopFront();
+
+        //解析分包，按照方法名不同，存入不同的队列
+        if (string(pkg.body.methodName.name) == Method(WatchData)) {
+            //"WatchData"
+            WatchData watchData;
+            JsonUnmarshalWatchData(string(pkg.body.methodParam.param), watchData);
+            //存入队列
+            if (client->queueWatchData.Size() >= client->maxQueueWatchData) {
+                Info("WatchData队列已满,丢弃消息:%s-%s", pkg.body.methodName.name.c_str(),
+                     pkg.body.methodParam.param.c_str());
             } else {
-                //最后没有对应的方法名
-                Info("最后没有对应的方法名:%s,内容:%s", pkg.body.methodName.name.c_str(), pkg.body.methodParam.param.c_str());
+                client->queueWatchData.Push(watchData);
             }
+        } else {
+            //最后没有对应的方法名
+            Info("最后没有对应的方法名:%s,内容:%s", pkg.body.methodName.name.c_str(), pkg.body.methodParam.param.c_str());
         }
-
-
     }
+
 
     Info("%s exit", __FUNCTION__);
 
