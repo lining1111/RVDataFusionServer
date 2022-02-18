@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <thread>
 #include "server/ClientInfo.h"
+#include "merge/merge.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -20,6 +21,7 @@ extern "C"
 using namespace std;
 
 class FusionServer {
+
 public:
     uint16_t port = 5000;//暂定5000
     int maxListen = 5;//最大监听数
@@ -40,10 +42,12 @@ public:
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
 
+    Queue<OBJECT_INFO_NEW> queueMergeData;//融合后的数据
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
     thread threadCheck;//服务器客户端数组状态线程
+    thread threadMerge;//多路数据融合线程
 
 public:
     FusionServer();
@@ -111,6 +115,12 @@ private:
      * @param pServer
      */
     static void ThreadCheck(void *pServer);
+
+    /**
+     * 多路数据融合线程
+     * @param pServer
+     */
+    static void ThreadMerge(void *pServer);
 };
 
 #ifdef __cplusplus

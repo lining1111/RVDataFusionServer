@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include "server/FusionServer.h"
 #include "log/Log.h"
+#include "merge/merge.h"
 
 using namespace log;
 

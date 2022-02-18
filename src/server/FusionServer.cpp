@@ -110,6 +110,11 @@ int FusionServer::Run() {
     pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
     threadCheck.detach();
 
+    //开启服务器多路数据融合线程
+    threadMerge = thread(ThreadMerge, this);
+    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
+    threadMerge.detach();
+
     return 0;
 }
 
@@ -332,4 +337,111 @@ void FusionServer::ThreadCheck(void *pServer) {
 
     Info("%s exit", __FUNCTION__);
 
+}
+
+void FusionServer::ThreadMerge(void *pServer) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+
+    //fix
+    const int repateX = 10;
+    //不同路口标定值不一样
+    const int widthX = 21.3;
+    const int widthY = 20;
+    const int Xmax = 300;
+    const int Ymax = 300;
+    const int gatetx = 30;
+    const int gatety = 30;
+    const int gatex = 10;
+    const int gatey = 5;
+
+    //获取路口数据 ip排序严格按照 南 西 北 东
+    int roadNum = 4;
+    string roadIP[4] = {
+            "192.168.1.100",
+            "192.168.1.101",
+            "192.168.1.102",
+            "192.168.1.103",
+    };
+
+    Info("%s run", __FUNCTION__);
+    while (server->isRun.load()) {
+        usleep(10);
+        if (server->vector_client.size() < roadNum) {
+            continue;
+        }
+
+        pthread_mutex_lock(&server->lock_vector_client);
+        if (server->vector_client.empty()) {
+            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+        }
+
+        //1.判断是否所有的路口线程都已连接上
+        int connected = 0;
+        for (auto iter:server->vector_client) {
+            for (int i = 0; i < roadNum; i++) {
+                if (string(inet_ntoa(iter->clientAddr.sin_addr)) == roadIP[i]) {
+                    connected++;
+                }
+            }
+        }
+        if (connected < roadNum) {
+            pthread_cond_broadcast(&server->cond_vector_client);
+            pthread_mutex_unlock(&server->lock_vector_client);
+            continue;
+        }
+
+        //2.判断所有的路口WatchData队列都有数据,至少3帧
+        int hasData = 0;
+        for (auto iter:server->vector_client) {
+            if (iter->queueWatchData.Size() > 3) {
+                hasData++;
+            }
+        }
+        if (hasData < roadNum) {
+            pthread_cond_broadcast(&server->cond_vector_client);
+            pthread_mutex_unlock(&server->lock_vector_client);
+            continue;
+        }
+
+        int frame = 1;//帧计数
+        //按取帧先后排序 l1第1帧取的  l2第2帧取的  l3第3帧取的
+        OBJECT_INFO_T l1_obj[4];
+        OBJECT_INFO_T l2_obj[4];
+        OBJECT_INFO_T l3_obj[4];
+
+        switch (frame) {
+            case 1:{
+                //第一帧，需要清空所有对象
+                bzero(l1_obj, ARRAY_SIZE(l1_obj)* sizeof(OBJECT_INFO_T));
+                bzero(l2_obj, ARRAY_SIZE(l2_obj)* sizeof(OBJECT_INFO_T));
+                bzero(l3_obj, ARRAY_SIZE(l3_obj)* sizeof(OBJECT_INFO_T));
+            }
+                break;
+            case 2:
+                break;
+        }
+
+
+        //3.寻找在一帧内的数据，判定标准为几个路口的帧 内的RecordDateTime是否都在50ms误差内
+        //判断步骤为，取出4路的头第一包数据，以时间最新的标准，其他路的如果和这个标准误差在50ms外的，
+        //认为是过时帧，丢弃，再在同一路取一帧数据
+        for (auto iter: server->vector_client) {
+
+        }
+
+        //4.将同一帧的路口数据放入融合函数，进行融合
+        //4.1融合步骤，保留前2帧的融合数据，保留前2帧的航角数据
+        //一些固定值
+        //5.将融合后的数据存入队列
+
+
+        releaseLock:
+        pthread_cond_broadcast(&server->cond_vector_client);
+        pthread_mutex_unlock(&server->lock_vector_client);
+
+    }
+    Info("%s exit", __FUNCTION__);
 }
