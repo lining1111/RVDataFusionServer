@@ -105,7 +105,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
         usleep(10);
 
         if (client->rb == nullptr) {
-            //状态为开始且无数据可读
+            //数据缓存区不存在
             continue;
         }
 
