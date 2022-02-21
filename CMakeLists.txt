@@ -9,7 +9,7 @@ function(redefine_file_macro targetname)
     #获取当前目标的所有源文件
     get_target_property(source_files "${targetname}" SOURCES)
     #遍历源文件
-    foreach(sourcefile ${source_files})
+    foreach (sourcefile ${source_files})
         #获取当前源文件的编译参数
         get_property(defs SOURCE "${sourcefile}"
                 PROPERTY COMPILE_DEFINITIONS)
@@ -24,7 +24,7 @@ function(redefine_file_macro targetname)
                 SOURCE "${sourcefile}"
                 PROPERTY COMPILE_DEFINITIONS ${defs}
         )
-    endforeach()
+    endforeach ()
 endfunction()
 
 include_directories(include)
@@ -35,7 +35,8 @@ set(SRC_DIRS src
         src/log
         src/ringBuffer
         src/common
-        src/server)
+        src/server
+        src/merge)
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} src_dir_file)

@@ -38,7 +38,7 @@ size_t RingBuffer_Write(RingBuffer *rb, const void *data, size_t count);
 
 #ifdef __cplusplus
 }
-#endif;
+#endif
 
 
 #endif //_RINGBUFFER_H

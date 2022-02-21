@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "server/FusionServer.h"
+#include "merge/merge.h"
 
 using namespace log;
 
@@ -322,7 +323,7 @@ void FusionServer::ThreadCheck(void *pServer) {
                         pkgEmpty = true;
                     }
                     bool watchDataEmpty = false;//WatchData队列为空
-                    if (iter->queueWatchData.Size() == 0) {
+                    if (iter->queueWatchData.size() == 0) {
                         watchDataEmpty = true;
                     }
 
@@ -339,88 +340,232 @@ void FusionServer::ThreadCheck(void *pServer) {
 
 }
 
-void FusionServer::ThreadMerge(void *pServer) {
+void FusionServer::ThreadFindOneFrame(void *pServer) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
 
-    //fix
-    const int repateX = 10;
-    //不同路口标定值不一样
-    const int widthX = 21.3;
-    const int widthY = 20;
-    const int Xmax = 300;
-    const int Ymax = 300;
-    const int gatetx = 30;
-    const int gatety = 30;
-    const int gatex = 10;
-    const int gatey = 5;
-
     //获取路口数据 ip排序严格按照 南 西 北 东
-    int roadNum = 4;
-    string roadIP[4] = {
+    vector<string> roadIP{
             "192.168.1.100",
             "192.168.1.101",
             "192.168.1.102",
             "192.168.1.103",
     };
 
+
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
         usleep(10);
-        if (server->vector_client.size() < roadNum) {
+
+        //如果连接上的客户端数量为0
+        if (server->vector_client.size() == 0) {
             continue;
         }
 
+        OBJS objs;//容量为4,依次是南、西、北、东
+        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
+
+        //轮询各个连入的客户端，按指定的路口ip来存入数组
         pthread_mutex_lock(&server->lock_vector_client);
         if (server->vector_client.empty()) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
 
-        //1.判断是否所有的路口线程都已连接上
-        int connected = 0;
-        for (auto iter:server->vector_client) {
-            for (int i = 0; i < roadNum; i++) {
-                if (string(inet_ntoa(iter->clientAddr.sin_addr)) == roadIP[i]) {
-                    connected++;
+        int id[4] = {-1, -1, -1, -1};//以IP为目的存入的路口方向对应的客户端数组的索引
+        //1.寻找各个路口的客户端索引，未找到就是默认值-1
+        for (int i = 0; i < server->vector_client.size(); i++) {
+            auto iter = server->vector_client.at(i);
+            for (int j = 0; j < roadIP.size(); j++) {
+                //ip 相同
+                if (string(inet_ntoa(iter->clientAddr.sin_addr)) == roadIP.at(j)) {
+                    id[j] = i;
                 }
             }
         }
-        if (connected < roadNum) {
-            pthread_cond_broadcast(&server->cond_vector_client);
-            pthread_mutex_unlock(&server->lock_vector_client);
-            continue;
+        //2.确定时间戳
+        if (server->curTimestamp == 0) {
+            for (int i = 0; i < ARRAY_SIZE(id); i++) {
+                if (!server->vector_client.at(id[i])->queueWatchData.empty()) {
+                    //这里取各个客户端第一帧的最大值
+                    if (server->curTimestamp < server->vector_client.at(id[i])->queueWatchData.front().timstamp) {
+                        //如果还没有赋值则赋值
+                        server->curTimestamp = server->vector_client.at(id[i])->queueWatchData.front().timstamp;
+                    }
+                }
+            }
+        } else {
+            server->curTimestamp += server->thresholdFrame;
         }
 
-        //2.判断所有的路口WatchData队列都有数据,至少3帧
-        int hasData = 0;
-        for (auto iter:server->vector_client) {
-            if (iter->queueWatchData.Size() > 3) {
-                hasData++;
+        //2.根据时间戳和门限来赋值
+        vector<OBJECT_INFO_T> obj[4];
+        for (int i = 0; i < ARRAY_SIZE(obj); i++) {
+            obj[i].clear();
+        }
+
+        for (int i = 0; i < ARRAY_SIZE(id); i++) {
+            if (id[i] == -1) {
+                //客户端未连入，不填充数据
+            } else {
+                //客户端连入，填充数据
+                //watchData数据
+                if (server->vector_client.at(id[i])->queueWatchData.empty()) {
+                    //客户端未有数据传入，不填充数据
+                } else {
+                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
+                    bool isFind = false;
+                    do {
+                        if (server->vector_client.at(id[i])->queueWatchData.size() == 1) {
+                            auto iter = server->vector_client.at(id[i])->queueWatchData.front();
+                            for (auto item: iter.lstObjTarget) {
+                                OBJECT_INFO_T objectInfoT;
+                                //转换
+                                ObjTarget2OBJECT_INFO_T(item, objectInfoT);
+                                obj[i].push_back(objectInfoT);
+                            }
+                            //出队列
+                            server->vector_client.at(id[i])->queueWatchData.pop();
+                            isFind = true;
+                        } else {
+                            auto iter = server->vector_client.at(id[i])->queueWatchData.front();
+                            if (iter.timstamp > server->curTimestamp) {
+                                //时间戳大于当前时间戳，直接取
+                                for (auto item: iter.lstObjTarget) {
+                                    OBJECT_INFO_T objectInfoT;
+                                    //转换
+                                    ObjTarget2OBJECT_INFO_T(item, objectInfoT);
+                                    obj[i].push_back(objectInfoT);
+                                }
+                                //出队列
+                                server->vector_client.at(id[i])->queueWatchData.pop();
+                                isFind = true;
+                            } else if (iter.timstamp > (server->curTimestamp - server->thresholdFrame)) {
+                                //时间戳在门限范围内,赋值
+                                for (auto item: iter.lstObjTarget) {
+                                    OBJECT_INFO_T objectInfoT;
+                                    //转换
+                                    ObjTarget2OBJECT_INFO_T(item, objectInfoT);
+                                    obj[i].push_back(objectInfoT);
+                                }
+                                //出队列
+                                server->vector_client.at(id[i])->queueWatchData.pop();
+                                isFind = true;
+                            } else {
+                                //小于当前时间戳或者不在门限内，出队列抛弃
+                                //出队列
+                                server->vector_client.at(id[i])->queueWatchData.pop();
+                            }
+                        }
+                    } while (!isFind);
+                }
             }
         }
-        if (hasData < roadNum) {
-            pthread_cond_broadcast(&server->cond_vector_client);
-            pthread_mutex_unlock(&server->lock_vector_client);
+        //3.存入待融合队列，即queueObjs
+        for (int i = 0; i < obj[0].size(); i++) {
+            objs.one.push_back(obj[0].at(i));
+        }
+        for (int i = 0; i < obj[1].size(); i++) {
+            objs.two.push_back(obj[1].at(i));
+        }
+        for (int i = 0; i < obj[2].size(); i++) {
+            objs.three.push_back(obj[2].at(i));
+        }
+        for (int i = 0; i < obj[3].size(); i++) {
+            objs.four.push_back(obj[3].at(i));
+        }
+        if (server->queueObjs.Push(objs) != 0) {
+            Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
+        }
+
+    }
+
+    Info("%s exit", __FUNCTION__);
+}
+
+void FusionServer::ThreadMerge(void *pServer) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+
+    Info("%s run", __FUNCTION__);
+    while (server->isRun.load()) {
+        usleep(10);
+
+        if (server->queueObjs.Size() == 0) {
             continue;
         }
 
-        int frame = 1;//帧计数
-        //按取帧先后排序 l1第1帧取的  l2第2帧取的  l3第3帧取的
-        OBJECT_INFO_T l1_obj[4];
-        OBJECT_INFO_T l2_obj[4];
-        OBJECT_INFO_T l3_obj[4];
+        //开始融合数据
+        OBJS objs = server->queueObjs.PopFront();
 
-        switch (frame) {
-            case 1:{
-                //第一帧，需要清空所有对象
-                bzero(l1_obj, ARRAY_SIZE(l1_obj)* sizeof(OBJECT_INFO_T));
-                bzero(l2_obj, ARRAY_SIZE(l2_obj)* sizeof(OBJECT_INFO_T));
-                bzero(l3_obj, ARRAY_SIZE(l3_obj)* sizeof(OBJECT_INFO_T));
+        vector<OBJECT_INFO_NEW> vectorOBJNEW;
+        OBJECT_INFO_NEW dataOut[1000];
+        memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
+
+        switch (server->frame) {
+            case 1: {
+                //第一帧
+                server->l1_obj.clear();
+                server->l2_obj.clear();
+                server->l1_angle = 0.0;
+                server->l2_angle = 0.0;
+
+                int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
+                                      server->gatetx, server->gatety, server->gatex, server->gatey, true,
+                                      objs.one.data(), objs.one.size(), objs.two.data(), objs.two.size(),
+                                      objs.three.data(), objs.three.size(), objs.four.data(), objs.four.size(),
+                                      server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                      server->l2_obj.size(),
+                                      dataOut, &server->l2_angle, &server->l1_angle, &server->angle,
+                                      server->angle_value);
+                //传递历史数据
+                for (int i = 0; i < num; i++) {
+                    server->l1_obj.push_back(dataOut[i]);
+                }
+                server->l1_angle = server->angle;
+                server->frame++;
+
+                for (int i = 0; i < num; i++) {
+                    vectorOBJNEW.push_back(dataOut[i]);
+                }
+                server->queueMergeData.Push(vectorOBJNEW);
             }
                 break;
-            case 2:
+            default: {
+                int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
+                                      server->gatetx, server->gatety, server->gatex, server->gatey, true,
+                                      objs.one.data(), objs.one.size(), objs.two.data(), objs.two.size(),
+                                      objs.three.data(), objs.three.size(), objs.four.data(), objs.four.size(),
+                                      server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                      server->l2_obj.size(),
+                                      dataOut, &server->l2_angle, &server->l1_angle, &server->angle,
+                                      server->angle_value);
+                //传递历史数据
+
+                server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
+                server->l2_angle = server->l1_angle;
+
+                for (int i = 0; i < num; i++) {
+                    server->l1_obj.push_back(dataOut[i]);
+                }
+                server->l1_angle = server->angle;
+
+                server->frame++;
+                if (server->frame > 2) {
+                    server->frame = 2;
+                }
+
+                for (int i = 0; i < num; i++) {
+                    vectorOBJNEW.push_back(dataOut[i]);
+                }
+                if (server->queueMergeData.Push(vectorOBJNEW) != 0) {
+                    Error("队列已满，抛弃融合数据 ");
+                }
+
+            }
                 break;
         }
 
@@ -436,11 +581,6 @@ void FusionServer::ThreadMerge(void *pServer) {
         //4.1融合步骤，保留前2帧的融合数据，保留前2帧的航角数据
         //一些固定值
         //5.将融合后的数据存入队列
-
-
-        releaseLock:
-        pthread_cond_broadcast(&server->cond_vector_client);
-        pthread_mutex_unlock(&server->lock_vector_client);
 
     }
     Info("%s exit", __FUNCTION__);

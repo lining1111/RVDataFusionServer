@@ -21,6 +21,13 @@ extern "C"
 using namespace std;
 
 class FusionServer {
+public:
+    typedef struct {
+        vector<OBJECT_INFO_T> one;
+        vector<OBJECT_INFO_T> two;
+        vector<OBJECT_INFO_T> three;
+        vector<OBJECT_INFO_T> four;
+    } OBJS;//同一帧多个路口的数据集合
 
 public:
     uint16_t port = 5000;//暂定5000
@@ -28,6 +35,7 @@ public:
 
     const timeval checkStatusTimeval = {150, 0};//连续150s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
+    const uint8_t thresholdFrame = 50;//不同路时间戳相差门限，单位ms
 
     int sock = 0;//服务器socket
     //已连入的客户端列表
@@ -42,11 +50,38 @@ public:
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
 
-    Queue<OBJECT_INFO_NEW> queueMergeData;//融合后的数据
+    Queue<OBJS> queueObjs;//在同一帧的多路数据
+    uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳
+
+    Queue<vector<OBJECT_INFO_NEW>> queueMergeData;//融合后的数据
+
+
+    //临时变量，用于融合
+    int frame = 1;//帧计数
+    vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
+    vector<OBJECT_INFO_NEW> l2_obj;//上上帧输出的
+    double l1_angle;//上帧输出的
+    double l2_angle;//上上帧输出的
+    double angle;//角
+
+
+    //用于融合时的固定变量至
+    double repateX = 10;
+    double widthX = 21.3;
+    double widthY = 20;
+    double Xmax = 300;
+    double Ymax = 300;
+    double gatetx = 30;
+    double gatety = 30;
+    double gatex = 10;
+    double gatey = 5;
+    int angle_value = -1000;
+
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
     thread threadCheck;//服务器客户端数组状态线程
+    thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
     thread threadMerge;//多路数据融合线程
 
 public:
@@ -115,6 +150,9 @@ private:
      * @param pServer
      */
     static void ThreadCheck(void *pServer);
+
+
+    static void ThreadFindOneFrame(void *pServer);
 
     /**
      * 多路数据融合线程

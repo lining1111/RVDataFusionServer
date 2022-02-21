@@ -233,11 +233,15 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             WatchData watchData;
             JsonUnmarshalWatchData(string(pkg.body.methodParam.param), watchData);
             //存入队列
-            if (client->queueWatchData.Size() >= client->maxQueueWatchData) {
+            if (client->queueWatchData.size() >= client->maxQueueWatchData) {
                 Info("WatchData队列已满,丢弃消息:%s-%s", pkg.body.methodName.name.c_str(),
                      pkg.body.methodParam.param.c_str());
             } else {
-                client->queueWatchData.Push(watchData);
+                pthread_mutex_lock(&client->lockWatchData);
+                //存入队列
+                client->queueWatchData.push(watchData);
+                pthread_cond_broadcast(&client->condWatchData);
+                pthread_mutex_unlock(&client->lockWatchData);
             }
         } else {
             //最后没有对应的方法名

@@ -30,16 +30,26 @@ int main(int argc, char **argv) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
         for (auto iter: server->vector_client) {
-            if (iter->queueWatchData.Size() == 0) {
+            if (iter->queueWatchData.size() == 0) {
                 Info("此客户端%d-%s中 watchData为空", iter->sock, inet_ntoa(iter->clientAddr.sin_addr));
             } else {
                 //取出所有消息，并打印部分信息
                 do {
                     WatchData watchData;
-                    watchData = iter->queueWatchData.PopFront();
+                    pthread_mutex_lock(&iter->lockWatchData);
+                    if (iter->queueWatchData.empty()) {
+                        pthread_cond_wait(&iter->condWatchData, &iter->lockWatchData);
+                    }
+
+                    watchData = iter->queueWatchData.front();
+                    iter->queueWatchData.pop();
+
                     Info("WatchData:%s-%f ip:%s", watchData.oprNum.c_str(), watchData.RecordDateTime,
                          watchData.cameraIp.c_str());
-                } while (iter->queueWatchData.Size() > 0);
+                    pthread_cond_broadcast(&iter->condWatchData);
+                    pthread_mutex_unlock(&iter->lockWatchData);
+
+                } while (iter->queueWatchData.size() > 0);
 
             }
         }

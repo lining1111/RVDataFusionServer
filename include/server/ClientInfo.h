@@ -63,7 +63,9 @@ public:
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
 
     //WatchData队列
-    Queue<WatchData> queueWatchData;
+    queue<WatchData> queueWatchData;
+    pthread_mutex_t lockWatchData = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t condWatchData = PTHREAD_COND_INITIALIZER;
     const int maxQueueWatchData = 600;//最多600个
 
     thread threadGetPkg;//将环形buffer内的数据进行分包

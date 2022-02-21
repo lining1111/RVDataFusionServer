@@ -36,11 +36,11 @@ namespace log {
         if(isInit){\
         zlog_fatal(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Fatal]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Fatal]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
@@ -51,11 +51,11 @@ namespace log {
         if(isInit){\
         zlog_error(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Error]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Error]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
@@ -66,11 +66,11 @@ namespace log {
         if(isInit){\
         zlog_warn(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Warn]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Warn]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
@@ -81,11 +81,11 @@ namespace log {
         if(isInit){\
         zlog_notice(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Notice]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Notice]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
@@ -95,11 +95,11 @@ namespace log {
         if(isInit){\
         zlog_info(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Info]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Info]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
@@ -109,11 +109,11 @@ namespace log {
         if(isInit){\
         zlog_debug(m_zlog_category,format,##__VA_ARGS__); \
         }else{             \
-        struct timeval tv; \
+        struct timeval tv = {0,0}; \
         gettimeofday(&tv,nullptr);\
         char time_str[32]; \
         strftime(time_str,sizeof(time_str),"%Y-%m-%d %H:%M:%S",localtime(&tv.tv_sec)); \
-        printf("%s:%d:%d [Debug]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
+        printf("%s:%lu:%lu [Debug]:",time_str,tv.tv_usec/1000,(tv.tv_usec-(tv.tv_usec/1000)*1000));  \
         printf(format,##__VA_ARGS__);                     \
         printf("\n");                   \
         }                       \
