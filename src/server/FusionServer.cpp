@@ -137,20 +137,20 @@ int FusionServer::Run() {
     }
     isRun.store(true);
 
-    //开启服务器箭头客户端线程
+    //开启服务器监视客户端线程
     threadMonitor = thread(ThreadMonitor, this);
     pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
     threadMonitor.detach();
 
-    //开启服务器箭头客户端线程
+    //开启服务器检查客户端线程
     threadCheck = thread(ThreadCheck, this);
     pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
     threadCheck.detach();
 
-    //开启服务器箭头客户端线程
+    //开启服务器获取一帧大数据线程
     threadFindOneFrame = thread(ThreadFindOneFrame, this);
     pthread_setname_np(threadFindOneFrame.native_handle(), "FusionServer findOneFrame");
-    threadCheck.detach();
+    threadFindOneFrame.detach();
 
     //开启服务器多路数据融合线程
     threadMerge = thread(ThreadMerge, this);
