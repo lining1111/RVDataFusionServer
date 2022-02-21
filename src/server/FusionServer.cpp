@@ -111,6 +111,11 @@ int FusionServer::Run() {
     pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
     threadCheck.detach();
 
+    //开启服务器箭头客户端线程
+    threadFindOneFrame = thread(ThreadFindOneFrame, this);
+    pthread_setname_np(threadFindOneFrame.native_handle(), "FusionServer findOneFrame");
+    threadCheck.detach();
+
     //开启服务器多路数据融合线程
     threadMerge = thread(ThreadMerge, this);
     pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
@@ -475,8 +480,13 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         for (int i = 0; i < obj[3].size(); i++) {
             objs.four.push_back(obj[3].at(i));
         }
-        if (server->queueObjs.Push(objs) != 0) {
-            Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
+
+        if (objs.one.empty() && objs.two.empty() && objs.three.empty() && objs.four.empty()) {
+            Info("同一帧数据全部为空");
+        } else {
+            if (server->queueObjs.Push(objs) != 0) {
+                Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
+            }
         }
 
     }
@@ -544,7 +554,6 @@ void FusionServer::ThreadMerge(void *pServer) {
                                       dataOut, &server->l2_angle, &server->l1_angle, &server->angle,
                                       server->angle_value);
                 //传递历史数据
-
                 server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
                 server->l2_angle = server->l1_angle;
 
@@ -568,19 +577,6 @@ void FusionServer::ThreadMerge(void *pServer) {
             }
                 break;
         }
-
-
-        //3.寻找在一帧内的数据，判定标准为几个路口的帧 内的RecordDateTime是否都在50ms误差内
-        //判断步骤为，取出4路的头第一包数据，以时间最新的标准，其他路的如果和这个标准误差在50ms外的，
-        //认为是过时帧，丢弃，再在同一路取一帧数据
-        for (auto iter: server->vector_client) {
-
-        }
-
-        //4.将同一帧的路口数据放入融合函数，进行融合
-        //4.1融合步骤，保留前2帧的融合数据，保留前2帧的航角数据
-        //一些固定值
-        //5.将融合后的数据存入队列
 
     }
     Info("%s exit", __FUNCTION__);
