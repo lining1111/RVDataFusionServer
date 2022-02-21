@@ -20,3 +20,29 @@
     ringbuffer 环形buffer
 
     merge 多路融合
+    simpleini ini文件读写
+    
+## 服务端处理流程
+    1.客户端主要开启4个线程 threadMonitor threadCheck threadFindOneFrame threadMerge
+        1.1
+        threadMonitor 服务端 epoll 模式 发现有链接接入时，在accept一个客户端链接后，开启客户端的线程，
+        客户端有3个线程：threadDump threadGetPkg threadGetPkgContent
+            1.1.1
+            threadDump 无脑的把客户端发送的字节数据，存入环形buffer中 rb
+            1.1.2
+            threadGetPkg 从环形buffer中分包，获取的包内容存入到 queuePkg ,这个队列是加锁的 更新receive_time
+            1.1.3
+            threadGetPkgContent 从queuePkg 获取包，根据包内的方法名，解包到指定的结构体，存入到指定的队列
+            queueWatchData
+                    发现有链接断开时，设置标志位 needRelease,供threadCheck使用
+        1.2
+        threadCheck 本地客户端数组状态检查线程，检查客户端中 receive_time 是否与现在的时间戳相差指定数，如果相差
+                    设置needRelease
+                    不断检查各个客户端的needRelease，如果为真，
+                    且客户端中 rb可读为空，queuePkg没有元素 queueWatchData没有元素，则从客户端数组内删除
+        1.3
+        threadFindOneFrame 从客户端数组元素中的queueWatchData中，横向寻找延迟在误差范围内的数据，组成一个帧的数据
+        OBJS 存入queueObjs队列中
+        1.4
+        threadMerge 从 queueObjs中取出数据进入融合算法，算出融合后的数据vector<OBJECT_INFO_NEW>,存入queueMergeData
+        

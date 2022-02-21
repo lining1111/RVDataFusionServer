@@ -28,6 +28,7 @@ function(redefine_file_macro targetname)
 endfunction()
 
 include_directories(include)
+include_directories(include/simpleini)
 
 set(LIBS m pthread zlog jsoncpp)
 
@@ -36,7 +37,8 @@ set(SRC_DIRS src
         src/ringBuffer
         src/common
         src/server
-        src/merge)
+        src/merge
+        src/simpleini)
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} src_dir_file)

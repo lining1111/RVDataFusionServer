@@ -65,16 +65,17 @@ public:
     double angle;//角
 
 
-    //用于融合时的固定变量至
-    double repateX = 10;
-    double widthX = 21.3;
-    double widthY = 20;
-    double Xmax = 300;
-    double Ymax = 300;
-    double gatetx = 30;
-    double gatety = 30;
-    double gatex = 10;
-    double gatey = 5;
+    //用于融合时的固定变量
+    string config = "./config.ini";
+    double repateX = 10;//fix 不变
+    double widthX = 21.3;//跟路口有关
+    double widthY = 20;//跟路口有关
+    double Xmax = 300;//固定不变
+    double Ymax = 300;//固定不变
+    double gatetx = 30;//跟路口有关
+    double gatety = 30;//跟路口有关
+    double gatex = 10;//跟路口有关
+    double gatey = 5;//跟路口有关
     int angle_value = -1000;
 
 
@@ -87,9 +88,15 @@ public:
 public:
     FusionServer();
 
-    FusionServer(uint16_t port, int maxListen = 5);
+    FusionServer(uint16_t port, string config, int maxListen = 5);
 
     ~FusionServer();
+
+private:
+    /**
+     * 从config指定的文件中读取配置参数
+     */
+    void initConfig();
 
 public:
     /**

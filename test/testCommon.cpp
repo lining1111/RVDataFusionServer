@@ -155,6 +155,21 @@ struct S {
 };
 #pragma pack()
 
+
+void initS(struct S *s) {
+    for (int i = 0; i < 2; i++) {
+        s[i].a = i;
+        s[i].b = i + 1;
+        s[i].c = i + 2;
+    }
+}
+
+void printS(struct S *s, int num) {
+    for (int i = 0; i < num; i++) {
+        printf("a:%d,b:%d,c:%d\n", s[i].a, s[i].b, s[i].c);
+    }
+}
+
 int main(int argc, char **argv) {
 
 
@@ -177,21 +192,37 @@ int main(int argc, char **argv) {
 //    }
 
 //    Fatal("1234");
-    examplePkg();
+//    examplePkg();
 
 //    exampleJsonWatchData();
 
 
-    Queue<Pkg> q;
-    Pkg pkg;
+//    Queue<Pkg> q;
+//    Pkg pkg;
+//
+//    pkg.body.methodName.len = 9;
+//    pkg.body.methodName.name = "WatchData";
+//
+//    q.Push(pkg);
+//
+//    Pkg pkg1;
+//    pkg1 = q.PopFront();
 
-    pkg.body.methodName.len = 9;
-    pkg.body.methodName.name = "WatchData";
+    vector<struct S> vectorS;
+    struct S s1 = {
+            .a= 1,
+            .b = 2,
+            .c = 3,
+    };
+    struct S s2 = {
+            .a= 2,
+            .b = 3,
+            .c = 4,
+    };
+    vectorS.push_back(s1);
+    vectorS.push_back(s2);
+    printS(vectorS.data(), vectorS.size());
 
-    q.Push(pkg);
-
-    Pkg pkg1;
-    pkg1 = q.PopFront();
 
     return 0;
 

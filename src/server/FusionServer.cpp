@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include "server/FusionServer.h"
 #include "merge/merge.h"
+#include "simpleini/SimpleIni.h"
 
 using namespace log;
 
@@ -17,14 +18,49 @@ FusionServer::FusionServer() {
     this->isRun.store(false);
 }
 
-FusionServer::FusionServer(uint16_t port, int maxListen) {
+FusionServer::FusionServer(uint16_t port, string config, int maxListen) {
     this->port = port;
+    this->config = config;
     this->maxListen = maxListen;
     this->isRun.store(false);
 }
 
 FusionServer::~FusionServer() {
     Close();
+}
+
+void FusionServer::initConfig() {
+
+    if (!config.empty()) {
+        FILE *fp = fopen(config.c_str(), "r+");
+        if (fp == nullptr) {
+            Error("can not open file:%s", config.c_str());
+            return;
+        }
+        CSimpleIniA ini;
+        ini.LoadFile(fp);
+
+        const char *S_repateX = ini.GetValue("server", "repateX", "");
+        repateX = atof(S_repateX);
+        const char *S_widthX = ini.GetValue("server", "widthX", "");
+        widthX = atof(S_widthX);
+        const char *S_widthY = ini.GetValue("server", "widthY", "");
+        widthY = atof(S_widthY);
+        const char *S_Xmax = ini.GetValue("server", "Xmax", "");
+        Xmax = atof(S_Xmax);
+        const char *S_Ymax = ini.GetValue("server", "Ymax", "");
+        Ymax = atof(S_Ymax);
+        const char *S_gatetx = ini.GetValue("server", "gatetx", "");
+        gatetx = atof(S_gatetx);
+        const char *S_gatety = ini.GetValue("server", "gatety", "");
+        gatety = atof(S_gatety);
+        const char *S_gatex = ini.GetValue("server", "gatex", "");
+        gatex = atof(S_gatex);
+        const char *S_gatey = ini.GetValue("server", "gatey", "");
+        gatey = atof(S_gatey);
+
+        fclose(fp);
+    }
 }
 
 int FusionServer::Open() {
@@ -446,7 +482,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
                                 isFind = true;
-                            } else if (iter.timstamp > (server->curTimestamp - server->thresholdFrame)) {
+                            } else if (iter.timstamp >= (server->curTimestamp - server->thresholdFrame)) {
                                 //时间戳在门限范围内,赋值
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
@@ -577,7 +613,6 @@ void FusionServer::ThreadMerge(void *pServer) {
             }
                 break;
         }
-
     }
     Info("%s exit", __FUNCTION__);
 }

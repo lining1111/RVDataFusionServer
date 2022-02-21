@@ -174,6 +174,9 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
                 Unpack(client->pkgBuffer, client->pkgHead.len, pkg);
 
+                //记录接包时间
+                gettimeofday(&client->receive_time, nullptr);
+
                 //存入分包队列
                 if (client->queuePkg.Size() >= client->maxQueuePkg) {
                     Info("分包队列已满，丢弃此包:%s-%s",

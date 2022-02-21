@@ -1,3 +1,10 @@
+##testIni
+add_executable(testIni testIni.cpp
+        ../src/simpleini/ConvertUTF.c
+        ../src/ParseFlag.cpp)
+target_link_libraries(testIni ${LIBS})
+redefine_file_macro(testIni)
+
 ##测试通讯
 add_executable(testCommon testCommon.cpp
         ../src/common/common.cpp
