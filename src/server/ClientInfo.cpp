@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "server/ClientInfo.h"
 #include "log/Log.h"
+#include "common/CRC.h"
 
 using namespace log;
 using namespace common;
@@ -173,26 +174,39 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 Pkg pkg;
 
                 Unpack(client->pkgBuffer, client->pkgHead.len, pkg);
-
-                //记录接包时间
-                gettimeofday(&client->receive_time, nullptr);
-
-                //存入分包队列
-                if (client->queuePkg.Size() >= client->maxQueuePkg) {
-                    Info("分包队列已满，丢弃此包:%s-%s",
-                         pkg.body.methodName.name.c_str(),
-                         pkg.body.methodParam.param.c_str());
+                //判断CRC是否正确
+                uint16_t crc = Crc16TabCCITT(client->pkgBuffer, client->pkgHead.len - 2);
+                if (crc != pkg.crc.data) {//CRC校验失败
+                    Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);
+                    client->bodyLen = 0;//获取分包头后，得到的包长度
+                    if (client->pkgBuffer) {
+                        free(client->pkgBuffer);
+                        client->pkgBuffer = nullptr;//分包缓冲
+                    }
+                    client->index = 0;//分包缓冲的索引
+                    client->status = Start;
                 } else {
-                    client->queuePkg.Push(pkg);
-                }
 
-                client->bodyLen = 0;//获取分包头后，得到的包长度
-                if (client->pkgBuffer) {
-                    free(client->pkgBuffer);
-                    client->pkgBuffer = nullptr;//分包缓冲
+                    //记录接包时间
+                    gettimeofday(&client->receive_time, nullptr);
+
+                    //存入分包队列
+                    if (client->queuePkg.Size() >= client->maxQueuePkg) {
+                        Info("分包队列已满，丢弃此包:%s-%s",
+                             pkg.body.methodName.name.c_str(),
+                             pkg.body.methodParam.param.c_str());
+                    } else {
+                        client->queuePkg.Push(pkg);
+                    }
+
+                    client->bodyLen = 0;//获取分包头后，得到的包长度
+                    if (client->pkgBuffer) {
+                        free(client->pkgBuffer);
+                        client->pkgBuffer = nullptr;//分包缓冲
+                    }
+                    client->index = 0;//分包缓冲的索引
+                    client->status = Start;
                 }
-                client->index = 0;//分包缓冲的索引
-                client->status = Start;
             }
                 break;
             default: {
