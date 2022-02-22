@@ -568,10 +568,11 @@ void FusionServer::ThreadMerge(void *pServer) {
                                       dataOut, &server->l2_angle, &server->l1_angle, &server->angle,
                                       server->angle_value);
                 //传递历史数据
+                server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
+
                 for (int i = 0; i < num; i++) {
                     server->l1_obj.push_back(dataOut[i]);
                 }
-                server->l1_angle = server->angle;
                 server->frame++;
 
                 for (int i = 0; i < num; i++) {
@@ -590,15 +591,16 @@ void FusionServer::ThreadMerge(void *pServer) {
                                       dataOut, &server->l2_angle, &server->l1_angle, &server->angle,
                                       server->angle_value);
                 //传递历史数据
-                server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
-                server->l2_angle = server->l1_angle;
-
+                server->l1_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
                 for (int i = 0; i < num; i++) {
                     server->l1_obj.push_back(dataOut[i]);
                 }
+
+                server->l2_angle = server->l1_angle;
                 server->l1_angle = server->angle;
 
                 server->frame++;
+
                 if (server->frame > 2) {
                     server->frame = 2;
                 }
@@ -612,6 +614,7 @@ void FusionServer::ThreadMerge(void *pServer) {
 
             }
                 break;
+
         }
     }
     Info("%s exit", __FUNCTION__);

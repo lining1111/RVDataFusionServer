@@ -56,7 +56,7 @@ public:
     Queue<vector<OBJECT_INFO_NEW>> queueMergeData;//融合后的数据
 
 
-    //临时变量，用于融合
+    //临时变量，用于融合 输出的物体检测从第1帧开始，上上帧拿上帧的，上帧拿这次输出结果。航向角则是从第2帧开始，上上帧拿上帧的，上帧拿这次输出结果
     int frame = 1;//帧计数
     vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
     vector<OBJECT_INFO_NEW> l2_obj;//上上帧输出的
