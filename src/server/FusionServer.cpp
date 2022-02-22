@@ -556,8 +556,8 @@ void FusionServer::ThreadMerge(void *pServer) {
                 //第一帧
                 server->l1_obj.clear();
                 server->l2_obj.clear();
-                server->l1_angle = 0.0;
-                server->l2_angle = 0.0;
+                server->l1_angle = server->angle_value;
+                server->l2_angle = server->angle_value;
 
                 int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
                                       server->gatetx, server->gatety, server->gatex, server->gatey, true,
