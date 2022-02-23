@@ -6,8 +6,8 @@
 
 #include <math.h>
 #include <vector>
-#include <queue>
 #include <algorithm>
+#include <cstring>
 
 #define PI 3.1415926
 using namespace std;
@@ -25,7 +25,7 @@ static bool target_loc_compare_new(const OBJECT_INFO_NEW &a, const OBJECT_INFO_N
 }
 
 //初始化最后融合的数据类型
-static void initvalueNew(OBJECT_INFO_NEW *data) {
+static void initvalueNew(OBJECT_INFO_NEW *data, double angle_value) {
     data->objID1 = -INF;
     data->objID2 = -INF;
     data->objID3 = -INF;
@@ -41,7 +41,7 @@ static void initvalueNew(OBJECT_INFO_NEW *data) {
     data->locationX = -INF;
     data->locationY = -INF;
     memset(data->distance, 0x0, 10);
-    memset(data->directionAngle, 0x0, 10);
+    data->directionAngle = angle_value;
     data->speed = -INF;
 }
 
@@ -60,7 +60,6 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
         obj_info->locationX = dataT->locationX;
         obj_info->locationY = dataT->locationY;
         strcpy(obj_info->distance, dataT->distance);
-        strcpy(obj_info->directionAngle, dataT->directionAngle);
         obj_info->speed = dataT->speed;
     }
     if (dataNew->locationX != -INF) {
@@ -74,7 +73,6 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
         obj_info->locationX = dataNew->locationX;
         obj_info->locationY = dataNew->locationY;
         strcpy(obj_info->distance, dataNew->distance);
-        strcpy(obj_info->directionAngle, dataNew->directionAngle);
         obj_info->speed = dataNew->speed;
     }
 }
@@ -146,7 +144,7 @@ static int search_id(OBJECT_INFO_NEW *data_one, vector<OBJECT_INFO_NEW> &data_be
 //对向路口融合
 static void
 merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_three, double gatex, double gatey,
-               int n_road, vector<OBJECT_INFO_NEW> &data_out) {
+               int n_road, vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
     //n_road：若是1、3路口融合，=1；若是2、3路口融合，=2
     int MaxM = data_one.size();
     int MaxN = data_three.size();
@@ -177,7 +175,7 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
         }
         if (min_value != INF) {
             //初始化目标类型
-            initvalueNew(&obj_info);
+            initvalueNew(&obj_info, angle_value);
             if (n_road == 1) {
                 obj_info.objID1 = data_one[i].objID;
                 obj_info.objID3 = data_three[delete_n].objID;
@@ -192,7 +190,7 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
         } else {
             //没有点匹配，保留下data1的点
             //初始化目标类型
-            initvalueNew(&obj_info);
+            initvalueNew(&obj_info, angle_value);
             if (n_road == 1)
                 obj_info.objID1 = data_one[i].objID;
             else
@@ -205,7 +203,7 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
     temp_n = data_three.size();
     for (i = 0; i < temp_n; i++) {
         //初始化目标类型
-        initvalueNew(&obj_info);
+        initvalueNew(&obj_info, angle_value);
         if (n_road == 1)
             obj_info.objID3 = data_three[i].objID;
         else
@@ -219,7 +217,7 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
 //最后一次融合
 static void
 merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_three, double gatex, double gatey,
-           vector<OBJECT_INFO_NEW> &data_out) {
+           vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
     int MaxM = data_one.size();
     int MaxN = data_three.size();
     int i = 0, j = 0, t = 0, index, temp_n, delete_n;
@@ -250,7 +248,7 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
         }
         if (min_value != INF) {
             //初始化目标类型
-            initvalueNew(&obj_info);
+            initvalueNew(&obj_info, angle_value);
             obj_info.objID1 = data_one[i].objID1;
             obj_info.objID3 = data_one[i].objID3;
             obj_info.objID2 = data_three[delete_n].objID2;
@@ -262,7 +260,7 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
         } else {
             //没有点匹配，保留下data1的点
             //初始化目标类型
-            initvalueNew(&obj_info);
+            initvalueNew(&obj_info, angle_value);
             obj_info.objID1 = data_one[i].objID1;
             obj_info.objID3 = data_one[i].objID3;
             obj_info.objID2 = data_one[i].objID2;
@@ -275,7 +273,7 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
     temp_n = data_three.size();
     for (i = 0; i < temp_n; i++) {
         //初始化目标类型
-        initvalueNew(&obj_info);
+        initvalueNew(&obj_info, angle_value);
 
         obj_info.objID1 = data_three[i].objID1;
         obj_info.objID3 = data_three[i].objID3;
@@ -464,20 +462,20 @@ static void angle_trans(double *angle_input) {
 //第四帧：before2有值、n2、before1有值、n1、angle2有值、angle1有值、angle为默认值：angle输出应当有值：！！！！函数结束后，将上一帧的数据angle1保存为上上一帧数据angle2，将当前的angle为上一帧数据angle1
 static void
 Filter_angle(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, vector<OBJECT_INFO_NEW> &now,
-             double *angle2, double *angle1, double *angle, double angle_value) {
+             double angle_value) {
     //before2:前2帧的数据、before1:前1帧的数据、now：当前帧的数据
     int n2 = before2.size(), n1 = before1.size(), n = now.size(), j, temp1, temp2, flag2, flag1;
     double angle_input[3] = {angle_value, angle_value, angle_value};
     for (j = 0; j < n; j++) {
-        if (angle[j] != angle_value) {
+        if (now[j].directionAngle != angle_value) {
             //寻找id是否存在
             temp2 = search_id_single(now[j], before2);
-            if ((temp2 != -INF) && (angle2[temp2] != angle_value))
+            if ((temp2 != -INF) && (before2[temp2].directionAngle != angle_value))
                 flag2 = 1;
             else
                 flag2 = 0;
             temp1 = search_id_single(now[j], before1);
-            if ((temp1 != -INF) && (angle1[temp1] != angle_value))
+            if ((temp1 != -INF) && (before1[temp1].directionAngle != angle_value))
                 flag1 = 1;
             else
                 flag1 = 0;
@@ -485,39 +483,40 @@ Filter_angle(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1,
             //参数可调：哪帧数据不好，权值就小；数据好，权值就大点
             if (flag2) {
                 if (flag1) {
-                    angle_input[0] = angle2[temp2];
-                    angle_input[1] = angle1[temp1];
-                    angle_input[2] = angle[j];
+                    angle_input[0] = before2[temp2].directionAngle;
+                    angle_input[1] = before1[temp1].directionAngle;
+                    angle_input[2] = now[j].directionAngle;
                     angle_trans(angle_input);
-                    angle2[temp2] = angle_input[0];
-                    angle1[temp1] = angle_input[1];
-                    angle[j] = angle_input[2];
-                    angle[j] = 0.2 * angle2[temp2] + 0.5 * angle1[temp1] + 0.3 * angle[j];
-                    if (angle[j] < 0) {
-                        angle[j] = angle[j] + 360;
+                    before2[temp2].directionAngle = angle_input[0];
+                    before1[temp1].directionAngle = angle_input[1];
+                    now[j].directionAngle = angle_input[2];
+                    now[j].directionAngle = 0.2 * before2[temp2].directionAngle + 0.5 * before1[temp1].directionAngle +
+                                            0.3 * now[j].directionAngle;
+                    if (now[j].directionAngle < 0) {
+                        now[j].directionAngle = now[j].directionAngle + 360;
                     }
-                    if (angle1[temp1] < 0) {
-                        angle1[temp1] = angle1[temp1] + 360;
+                    if (before1[temp1].directionAngle < 0) {
+                        before1[temp1].directionAngle = before1[temp1].directionAngle + 360;
                     }
-                    if (angle2[temp2] < 0) {
-                        angle2[temp2] = angle2[temp2] + 360;
+                    if (before2[temp2].directionAngle < 0) {
+                        before2[temp2].directionAngle = before2[temp2].directionAngle + 360;
                     }
                 }
             } else {
                 if (flag1) {
-                    if (abs(angle[j] - angle1[temp1]) > 180) {
-                        if (angle[j] > angle1[temp1]) {
-                            angle[j] = angle[j] - 360;
+                    if (abs(now[j].directionAngle - before1[temp1].directionAngle) > 180) {
+                        if (now[j].directionAngle > before1[temp1].directionAngle) {
+                            now[j].directionAngle = now[j].directionAngle - 360;
                         } else {
-                            angle1[temp1] = angle1[temp1] - 360;
+                            before1[temp1].directionAngle = before1[temp1].directionAngle - 360;
                         }
                     }
-                    angle[j] = 0.7 * angle1[temp1] + 0.3 * angle[j];
-                    if (angle[j] < 0) {
-                        angle[j] = angle[j] + 360;
+                    now[j].directionAngle = 0.7 * before1[temp1].directionAngle + 0.3 * now[j].directionAngle;
+                    if (now[j].directionAngle < 0) {
+                        now[j].directionAngle = now[j].directionAngle + 360;
                     }
-                    if (angle1[temp1] < 0) {
-                        angle1[temp1] = angle1[temp1] + 360;
+                    if (before1[temp1].directionAngle < 0) {
+                        before1[temp1].directionAngle = before1[temp1].directionAngle + 360;
                     }
                 }
             }
@@ -535,7 +534,7 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
                 double gatex, double gatey, bool time_flag, OBJECT_INFO_T *Data_one, int n1, OBJECT_INFO_T *Data_two,
                 int n2, OBJECT_INFO_T *Data_three, int n3, OBJECT_INFO_T *Data_four, int n4,
                 OBJECT_INFO_NEW *Data_before1, int n_before1, OBJECT_INFO_NEW *Data_before2, int n_before2,
-                OBJECT_INFO_NEW *Data_out, double *angle2, double *angle1, double *angle, double angle_value) {
+                OBJECT_INFO_NEW *Data_out, double angle_value) {
     int N_before, N, i, j, flag, index, used[1000], u0[1000], ubefore[1000], temp, flag1, flag2, tt, delete_n;
     double min_value, tempr, deltaX, deltaY;
     //if (ttest == 1){
@@ -563,10 +562,10 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
     delete_data4(data_four, repateX, widthX, widthY, Xmax, Ymax);
 
     //对向路口融合
-    merge_opposite(data_one, data_three, gatex, gatey, 1, data_first);
-    merge_opposite(data_two, data_four, gatex, gatey, 2, data_last);
+    merge_opposite(data_one, data_three, gatex, gatey, 1, data_first, angle_value);
+    merge_opposite(data_two, data_four, gatex, gatey, 2, data_last, angle_value);
     //最后一次融合
-    merge_last(data_first, data_last, gatex, gatey, data_out);
+    merge_last(data_first, data_last, gatex, gatey, data_out, angle_value);
 
     //每帧读取上一帧的ID号
     N_before = data_before1.size();
@@ -654,16 +653,16 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
                 deltaY = data_out_new[i].locationY - data_before1[j].locationY;
                 if ((deltaX == 0) && (deltaY == 0)) {
                     //目标位置不动，航向角和上一帧相同
-                    angle[i] = angle1[j];
+                    data_out_new[i].directionAngle = data_before1[j].directionAngle;
                 } else {
-                    angle[i] = cal_angle(deltaX, deltaY);
+                    data_out_new[i].directionAngle = cal_angle(deltaX, deltaY);
                 }
                 break;
             }
         }
     }
     //航向角滤波
-    Filter_angle(data_before2, data_before1, data_out_new, angle2, angle1, angle, angle_value);
+    Filter_angle(data_before2, data_before1, data_out_new, angle_value);
 
     //test
     //for (i = 0; i < N; i++) {

@@ -45,7 +45,7 @@ typedef struct {
     double locationX;
     double locationY;
     char distance[10];
-    char directionAngle[10];
+    double directionAngle;
     double speed;
 } OBJECT_INFO_NEW;
 
@@ -54,7 +54,8 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
                 double gatex, double gatey, bool time_flag, OBJECT_INFO_T *Data_one, int n1, OBJECT_INFO_T *Data_two,
                 int n2, OBJECT_INFO_T *Data_three, int n3, OBJECT_INFO_T *Data_four, int n4,
                 OBJECT_INFO_NEW *Data_before1, int n_before1, OBJECT_INFO_NEW *Data_before2, int n_before2,
-                OBJECT_INFO_NEW *Data_out, double *angle2, double *angle1, double *angle, double angle_value);
+                OBJECT_INFO_NEW *Data_out, double angle_value);
+
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget);
 
