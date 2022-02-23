@@ -121,4 +121,17 @@ namespace log {
 };
 
 
+
+//函数版的demo
+//void LogInfo(const char *szlog, ...) {
+//    char log[1024 * 1024] = {0};
+//    memset(log, 0, sizeof(log) / sizeof(log[0]));
+//    va_list args;
+//    va_start(args, szlog);
+//    vsprintf(log, szlog, args);
+//    va_end(args);
+//    zlog_info(m_zlog_category, log);
+//    return;
+//}
+
 #endif //_LOG_H
