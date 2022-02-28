@@ -15,6 +15,51 @@ using namespace std;
 const int INF = 0x7FFFFFFF;
 const int Nmax = 200;
 
+
+void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
+    objTarget.objID = objectInfoT.objID;
+    objTarget.objType = objectInfoT.objType;
+    objTarget.plates = string(objectInfoT.plate_number);
+    objTarget.plateColor = string(objectInfoT.plate_color);
+    objTarget.left = objectInfoT.left;
+    objTarget.top = objectInfoT.top;
+    objTarget.right = objectInfoT.right;
+    objTarget.bottom = objectInfoT.bottom;
+    objTarget.locationX = objectInfoT.locationX;
+    objTarget.locationY = objectInfoT.locationY;
+    objTarget.distance = string(objectInfoT.distance);
+    objTarget.directionAngle = string(objectInfoT.directionAngle);
+    objTarget.speed = to_string(objectInfoT.speed);
+}
+
+void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
+    objectInfoT.objID = objTarget.objID;
+    objectInfoT.objType = objTarget.objType;
+
+    bzero(objectInfoT.plate_number, ARRAY_SIZE(objectInfoT.plate_number));
+    memcpy(objectInfoT.plate_number, objTarget.plates.data(), objTarget.plates.length());
+
+    bzero(objectInfoT.plate_color, ARRAY_SIZE(objectInfoT.plate_color));
+    memcpy(objectInfoT.plate_color, objTarget.plateColor.data(), objTarget.plateColor.length());
+
+    objectInfoT.left = objTarget.left;
+    objectInfoT.top = objTarget.top;
+    objectInfoT.right = objTarget.right;
+    objectInfoT.bottom = objTarget.bottom;
+    objectInfoT.locationX = objTarget.locationX;
+    objectInfoT.locationY = objTarget.locationY;
+
+    bzero(objectInfoT.distance, ARRAY_SIZE(objectInfoT.distance));
+    memcpy(objectInfoT.distance, objTarget.distance.data(), objTarget.distance.length());
+
+    bzero(objectInfoT.directionAngle, ARRAY_SIZE(objectInfoT.directionAngle));
+    memcpy(objectInfoT.directionAngle, objTarget.directionAngle.data(), objTarget.directionAngle.length());
+
+    objectInfoT.left = atof(objTarget.speed.data());
+
+}
+
+
 //升序用比较函数
 static bool target_loc_compare(const OBJECT_INFO_T &a, const OBJECT_INFO_T &b) {
     return a.locationX < b.locationX;
@@ -651,7 +696,9 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
             if (data_out_new[i].showID == data_before1[j].showID) {
                 deltaX = data_out_new[i].locationX - data_before1[j].locationX;
                 deltaY = data_out_new[i].locationY - data_before1[j].locationY;
-                if ((deltaX == 0) && (deltaY == 0)) {
+                if (((abs(deltaX) <= 0.05) && (abs(deltaY) <= 0.05)) ||
+                    (((data_out_new[i].objID1) > 400) || ((data_out_new[i].objID2) > 400) ||
+                     ((data_out_new[i].objID3) > 400) || ((data_out_new[i].objID4) > 400))) {
                     //目标位置不动，航向角和上一帧相同
                     data_out_new[i].directionAngle = data_before1[j].directionAngle;
                 } else {
@@ -681,47 +728,4 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
     //接口转换
     vec_array(data_out_new, N, Data_out);
     return N;
-}
-
-void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
-    objTarget.objID = objectInfoT.objID;
-    objTarget.objType = objectInfoT.objType;
-    objTarget.plates = string(objectInfoT.plate_number);
-    objTarget.plateColor = string(objectInfoT.plate_color);
-    objTarget.left = objectInfoT.left;
-    objTarget.top = objectInfoT.top;
-    objTarget.right = objectInfoT.right;
-    objTarget.bottom = objectInfoT.bottom;
-    objTarget.locationX = objectInfoT.locationX;
-    objTarget.locationY = objectInfoT.locationY;
-    objTarget.distance = string(objectInfoT.distance);
-    objTarget.directionAngle = string(objectInfoT.directionAngle);
-    objTarget.speed = to_string(objectInfoT.speed);
-}
-
-void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
-    objectInfoT.objID = objTarget.objID;
-    objectInfoT.objType = objTarget.objType;
-
-    bzero(objectInfoT.plate_number, ARRAY_SIZE(objectInfoT.plate_number));
-    memcpy(objectInfoT.plate_number, objTarget.plates.data(), objTarget.plates.length());
-
-    bzero(objectInfoT.plate_color, ARRAY_SIZE(objectInfoT.plate_color));
-    memcpy(objectInfoT.plate_color, objTarget.plateColor.data(), objTarget.plateColor.length());
-
-    objectInfoT.left = objTarget.left;
-    objectInfoT.top = objTarget.top;
-    objectInfoT.right = objTarget.right;
-    objectInfoT.bottom = objTarget.bottom;
-    objectInfoT.locationX = objTarget.locationX;
-    objectInfoT.locationY = objTarget.locationY;
-
-    bzero(objectInfoT.distance, ARRAY_SIZE(objectInfoT.distance));
-    memcpy(objectInfoT.distance, objTarget.distance.data(), objTarget.distance.length());
-
-    bzero(objectInfoT.directionAngle, ARRAY_SIZE(objectInfoT.directionAngle));
-    memcpy(objectInfoT.directionAngle, objTarget.directionAngle.data(), objTarget.directionAngle.length());
-
-    objectInfoT.left = atof(objTarget.speed.data());
-
 }
