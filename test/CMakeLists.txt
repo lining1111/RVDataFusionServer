@@ -34,3 +34,9 @@ add_executable(testClient testClient.cpp
         ../src/log/Log.cpp)
 target_link_libraries(testClient ${LIBS})
 redefine_file_macro(testClient)
+
+##testGetData
+add_executable(testGetData testGetData.cpp
+        ../src/GetData.cpp)
+target_link_libraries(testGetData ${LIBS})
+redefine_file_macro(testGetData)
