@@ -4,6 +4,7 @@
 
 #include "common/CRC.h"
 
+
 uint8_t Crc8Cal(uint8_t *data, uint32_t length, uint8_t poly, uint8_t init, uint8_t xorout, uint8_t reversed) {
     uint8_t crc = init;
     uint8_t i;

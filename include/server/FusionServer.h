@@ -66,6 +66,7 @@ public:
 
 
     //用于融合时的固定变量
+    vector<string> roadIP;
     string config = "./config.ini";
     double repateX = 10;//fix 不变
     double widthX = 21.3;//跟路口有关

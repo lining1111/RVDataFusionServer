@@ -87,7 +87,7 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
-            client->needRelease.store(true);
+//            client->needRelease.store(true);
         } else if (len > 0) {
             //将数据存入缓存
             if (client->rb != nullptr) {
@@ -174,7 +174,10 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 Pkg pkg;
 
                 Unpack(client->pkgBuffer, client->pkgHead.len, pkg);
+
                 //判断CRC是否正确
+                //打印下buffer
+                PrintHex(client->pkgBuffer, client->pkgHead.len);
                 uint16_t crc = Crc16TabCCITT(client->pkgBuffer, client->pkgHead.len - 2);
                 if (crc != pkg.crc.data) {//CRC校验失败
                     Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);

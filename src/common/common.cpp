@@ -7,8 +7,22 @@
 #include <jsoncpp/json/json.h>
 #include <iostream>
 #include "common/common.h"
+#include "common/CRC.h"
 
 namespace common {
+
+    void PrintHex(uint8_t *data, uint32_t len) {
+        int count = 0;
+        for (int i = 0; i < len; i++) {
+            printf("%02x ", data[i]);
+            count++;
+            if (count == 16) {
+                printf("\n");
+                count = 0;
+            }
+        }
+        printf("\n");
+    }
 
     void
     base64_encode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
@@ -54,6 +68,7 @@ namespace common {
 
         *output_length = output_cnt;
     }
+
 
     void
     base64_decode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
@@ -162,8 +177,7 @@ namespace common {
         return string(buf);
     }
 
-
-    int Pack(Pkg pkg, uint8_t *out, uint32_t *len) {
+    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len) {
         int index = 0;
 
         //1.头部
@@ -180,7 +194,8 @@ namespace common {
         index += sizeof(pkg.body.methodParam.len);
         memcpy(out + index, pkg.body.methodParam.param.data(), pkg.body.methodParam.len);
         index += pkg.body.methodParam.len;
-        //3.校验值
+        //3.校验值先计算再更新
+        pkg.crc.data = Crc16TabCCITT(out, index);
         memcpy(out + index, &pkg.crc, sizeof(pkg.crc));
         index += sizeof(pkg.crc);
 
@@ -194,6 +209,7 @@ namespace common {
             return 0;
         }
     }
+
 
     int Unpack(uint8_t *in, uint32_t len, Pkg &pkg) {
         int index = 0;
@@ -237,7 +253,6 @@ namespace common {
         }
 
     }
-
 
     int JsonMarshalWatchData(WatchData watchData, string &out) {
         Json::FastWriter fastWriter;

@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <common/CRC.h>
+#include <GetData.h>
 #include "log/Log.h"
 #include "common/common.h"
 
@@ -25,10 +26,10 @@ int Msg1(uint8_t *out, uint32_t *len) {
 
     watchData.oprNum = random_uuid().data();
     watchData.hardCode = "hardCode";
-    watchData.timstamp = tv.tv_sec;
+    watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     watchData.matrixNo = "matrixNo";
     watchData.cameraIp = "192.168.1.100";
-    watchData.RecordDateTime = tv.tv_sec;
+    watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     watchData.isHasImage = 1;
     uint8_t img[4] = {1, 2, 3, 4};
 
@@ -120,7 +121,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     pkg.body.methodParam.param = methodParam;
     pkg_len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
     //3检验值
-    pkg.crc.data = Crc16TabCCITT((uint8_t *) &pkg, pkg_len);
+    pkg.crc.data = 0x0000;
     pkg_len += sizeof(pkg.crc);
     //4 长度信息
     pkg.head.len = pkg_len;
@@ -138,10 +139,10 @@ int Msg2(uint8_t *out, uint32_t *len) {
 
     watchData.oprNum = random_uuid().data();
     watchData.hardCode = "hardCode";
-    watchData.timstamp = tv.tv_sec;
+    watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     watchData.matrixNo = "matrixNo";
     watchData.cameraIp = "192.168.1.101";
-    watchData.RecordDateTime = tv.tv_sec;
+    watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
     watchData.isHasImage = 1;
     uint8_t img[4] = {1, 2, 3, 4};
 
@@ -233,7 +234,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     pkg.body.methodParam.param = methodParam;
     pkg_len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
     //3检验值
-    pkg.crc.data = Crc16TabCCITT((uint8_t *) &pkg, pkg_len);
+    pkg.crc.data = 0x0000;
     pkg_len += sizeof(pkg.crc);
     //4 长度信息
     pkg.head.len = pkg_len;
@@ -306,6 +307,13 @@ int main(int argc, char **argv) {
             //send WatchData 1
             Msg1(msg, &msg_len);
             int len = send(sockfd, msg, msg_len, 0);
+            //打印下buffer
+            PrintHex(msg, msg_len);
+
+            uint16_t crc = 0;
+            memcpy(&crc, msg + msg_len - 2, 2);
+            Info("crc send:%d", crc);
+
             if (len != msg_len) {
                 Error("send fail");
             } else {
@@ -316,12 +324,32 @@ int main(int argc, char **argv) {
             //send WatchData 2
             Msg2(msg, &msg_len);
             int len = send(sockfd, msg, msg_len, 0);
+            //打印下buffer
+            PrintHex(msg, msg_len);
+
             if (len != msg_len) {
                 Error("send fail");
             } else {
                 Info("send success len:%d", len);
             }
         }
+//        int index = 0;
+//        if (user == "send") {
+//            //依次发送
+//            //1.读取路径下所有文件
+//            vector<string> files;
+//            GetOrderListFileName("./test/data_test/merge_data",files);
+//            //2.获取指定文件内的内容，依次发送
+//
+//        } else if (user == "sendall") {
+//            //发送全部
+//            //1.读取路径下所有文件
+//            vector<string> files;
+//            GetOrderListFileName("./test/data_test/merge_data",files);
+//            //2.依次获取文件内的内容，发送
+//        }
+
+
     }
 
     close(sockfd);

@@ -153,9 +153,9 @@ int FusionServer::Run() {
     threadFindOneFrame.detach();
 
     //开启服务器多路数据融合线程
-    threadMerge = thread(ThreadMerge, this);
-    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
-    threadMerge.detach();
+//    threadMerge = thread(ThreadMerge, this);
+//    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
+//    threadMerge.detach();
 
     return 0;
 }
@@ -394,6 +394,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             "192.168.1.102",
             "192.168.1.103",
     };
+    roadIP.assign(server->roadIP.begin(), server->roadIP.end());
 
 
     Info("%s run", __FUNCTION__);
@@ -402,6 +403,18 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 
         //如果连接上的客户端数量为0
         if (server->vector_client.size() == 0) {
+            continue;
+        }
+        //如果所有的客户端都没有数据
+        bool hasData = false;
+        for (int i = 0; i < server->vector_client.size(); i++) {
+            auto iter = server->vector_client.at(i);
+            if (!iter->queueWatchData.empty()){
+                hasData = true;
+                break;
+            }
+        }
+        if (!hasData){
             continue;
         }
 

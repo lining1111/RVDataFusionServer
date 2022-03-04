@@ -7,8 +7,8 @@ using namespace std;
 
 int main(int argc, char **argv) {
 
-//    vector<string> files;
-//    GetFiles("./test",files);
+    vector<string> files;
+    GetOrderListFileName("./test/data_test/merge_data",files);
 
     string file = "./test/data.txt";
     GetData *getData = new GetData(file);

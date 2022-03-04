@@ -14,6 +14,12 @@ int main(int argc, char **argv) {
 
     FusionServer *server = new FusionServer();
 
+    server->roadIP.push_back("127.0.0.1");
+    server->roadIP.push_back("127.0.0.2");
+    server->roadIP.push_back("127.0.0.3");
+    server->roadIP.push_back("127.0.0.4");
+
+
     server->Open();
     server->Run();
 
@@ -25,36 +31,49 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        pthread_mutex_lock(&server->lock_vector_client);
-        if (server->vector_client.empty()) {
-            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+//        //读取客户端的queueWatchData
+//        pthread_mutex_lock(&server->lock_vector_client);
+//        if (server->vector_client.empty()) {
+//            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+//        }
+//        for (auto iter: server->vector_client) {
+//            if (iter->queueWatchData.size() == 0) {
+//                Info("此客户端%d-%s中 watchData为空", iter->sock, inet_ntoa(iter->clientAddr.sin_addr));
+//            } else {
+//                //取出所有消息，并打印部分信息
+//                do {
+//                    WatchData watchData;
+//                    pthread_mutex_lock(&iter->lockWatchData);
+//                    if (iter->queueWatchData.empty()) {
+//                        pthread_cond_wait(&iter->condWatchData, &iter->lockWatchData);
+//                    }
+//
+//                    watchData = iter->queueWatchData.front();
+//                    iter->queueWatchData.pop();
+//
+//                    Info("WatchData:%s-%f ip:%s", watchData.oprNum.c_str(), watchData.RecordDateTime,
+//                         watchData.cameraIp.c_str());
+//                    pthread_cond_broadcast(&iter->condWatchData);
+//                    pthread_mutex_unlock(&iter->lockWatchData);
+//
+//                } while (iter->queueWatchData.size() > 0);
+//
+//            }
+//        }
+//
+//        pthread_mutex_unlock(&server->lock_vector_client);
+        //读取服务端的queueObjs
+        if (server->queueObjs.Size()==0){
+            Info("server 同帧数据队列为空");
+            continue;
         }
-        for (auto iter: server->vector_client) {
-            if (iter->queueWatchData.size() == 0) {
-                Info("此客户端%d-%s中 watchData为空", iter->sock, inet_ntoa(iter->clientAddr.sin_addr));
-            } else {
-                //取出所有消息，并打印部分信息
-                do {
-                    WatchData watchData;
-                    pthread_mutex_lock(&iter->lockWatchData);
-                    if (iter->queueWatchData.empty()) {
-                        pthread_cond_wait(&iter->condWatchData, &iter->lockWatchData);
-                    }
+        FusionServer::OBJS objs = server->queueObjs.PopFront();
+        Info("server queueObjs: one:%d,two:%d,three:%d,four:%d",
+             objs.one.size(),
+             objs.two.size(),
+             objs.three.size(),
+             objs.four.size());
 
-                    watchData = iter->queueWatchData.front();
-                    iter->queueWatchData.pop();
-
-                    Info("WatchData:%s-%f ip:%s", watchData.oprNum.c_str(), watchData.RecordDateTime,
-                         watchData.cameraIp.c_str());
-                    pthread_cond_broadcast(&iter->condWatchData);
-                    pthread_mutex_unlock(&iter->lockWatchData);
-
-                } while (iter->queueWatchData.size() > 0);
-
-            }
-        }
-
-        pthread_mutex_unlock(&server->lock_vector_client);
     }
 
     delete server;

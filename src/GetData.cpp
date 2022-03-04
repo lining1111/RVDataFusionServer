@@ -56,10 +56,10 @@ void GetFiles(string path, vector<string> &files) {
 
 static string getCameraTimestamp(string in) {
     //时间戳m_ct1645679190529_rt1645679189565.txt
-    int begin = in.find_first_of("_ct");
-    int end = in.find_first_of("_rt");
+    int begin = in.find("_ct");
+    int end = in.find("_rt");
     if (begin != in.npos && end != in.npos) {
-        return in.substr(begin + 3, end);
+        return in.substr(begin + 3, (end - (begin + 3)));
     }
 
 }
@@ -86,27 +86,27 @@ int GetOrderListFileName(string path, vector<string> &vectorFileName) {
     //2.剔除文件名不合格的文件，m_ct1645679190529_rt1645679189565.txt，同时具有_ct _rt
     for (int i = 0; i < files.size(); i++) {
         auto iter = files.at(i);
-        int begin = iter.find_first_of("_ct");
-        int end = iter.find_first_of("_rt");
+        int begin = iter.find("_ct");
+        int end = iter.find("_rt");
         if (begin == iter.npos || end == iter.npos) {
             files.erase(files.begin() + i);
             continue;
         }
 
         string cT;
-        uint64_t cV=0;
+        uint64_t cV = 0;
         string rT;
-        uint64_t rV=0;
-        if(begin !=iter.npos){
-            cT = iter.substr(begin+3,end);
+        uint64_t rV = 0;
+        if (begin != iter.npos) {
+            cT = iter.substr(begin + 3, (end - (begin + 3)));
             cV = atoll(cT.c_str());
         }
-        if(end !=iter.npos){
-        rT = iter.substr(end+3,iter.length()-4);
-        rV = atoll(rT.c_str());
+        if (end != iter.npos) {
+            rT = iter.substr(end + 3, ((iter.length() - 4) - (end + 3)));
+            rV = atoll(rT.c_str());
         }
-        if(cV == 0 || rV ==0){
-             files.erase(files.begin() + i);
+        if (cV == 0 || rV == 0) {
+            files.erase(files.begin() + i);
         }
     }
     files.shrink_to_fit();

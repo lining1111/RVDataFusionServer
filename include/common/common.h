@@ -121,6 +121,13 @@ namespace common {
 
 
     /**
+     * 打印hex输出
+     * @param data
+     * @param len
+     */
+    void PrintHex(uint8_t *data,uint32_t len);
+
+    /**
      * base64加密
      * @param input 待加密数据
      * @param input_length 待加密数据长度
@@ -149,13 +156,13 @@ namespace common {
 
     //基本解包组包函数
     /**
-     * 组包函数
+     * 组包函数,此时pkg内 校验码不对，要在组包的时候更新校验码
      * @param pkg 帧数据
      * @param out 组帧后的数据地址
      * @param len 组帧后的数据长度
      * @return 0：success -1：fail
      */
-    int Pack(Pkg pkg, uint8_t *out, uint32_t *len);
+    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len);
 
     /**
      * 解包数据

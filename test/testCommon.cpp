@@ -5,6 +5,7 @@
 #include <cstring>
 #include <queue>
 #include <sys/time.h>
+#include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
 #include "common/Queue.h"
@@ -170,8 +171,17 @@ void printS(struct S *s, int num) {
     }
 }
 
+void testCRC() {
+    uint8_t data[] = {0x31, 0x32, 0x33, 0x34, 0x35};
+//    uint16_t crc = CRC16_CCITT(data, 4);
+    uint16_t crc = Crc16TabCCITT(data, sizeof(data) / sizeof(data[0]));
+    cout << "crc:" << to_string(crc) << endl;
+}
+
 int main(int argc, char **argv) {
 
+    testCRC();
+    return 0;
 
 //    int a = MEMBER_SIZE(S, b);
 
