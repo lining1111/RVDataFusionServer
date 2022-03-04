@@ -572,7 +572,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         }
 
         //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
-        uint64_t sum = 0;
+        __uint128_t sum = 0;
         int num = 0;
         for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
             if (server->xRoadTimestamp[i] != 0) {
