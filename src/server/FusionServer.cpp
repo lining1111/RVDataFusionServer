@@ -451,6 +451,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         }
         //2.确定时间戳
         if (server->curTimestamp == 0) {
+            //第一次取先遍历的帧时间
             for (int i = 0; i < ARRAY_SIZE(id); i++) {
                 if (id[i] == -1) {
                     continue;
@@ -464,6 +465,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 }
             }
         } else {
+            //从第二次开始，暂时定是上一帧的时间加上预设的时间间隔
             server->curTimestamp += server->thresholdFrame;
         }
 
@@ -472,7 +474,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         for (int i = 0; i < ARRAY_SIZE(obj); i++) {
             obj[i].clear();
         }
-
+        //清理第N路的取帧时间戳记录
         for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
             server->xRoadTimestamp[i] = 0;
         }
@@ -568,6 +570,18 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 }
             }
         }
+
+        //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
+        uint64_t sum = 0;
+        int num = 0;
+        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+            if (server->xRoadTimestamp[i] != 0) {
+                sum += server->xRoadTimestamp[i];
+                num++;
+            }
+        }
+        server->curTimestamp = (sum / num);
+        Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
 
         pthread_cond_broadcast(&server->cond_vector_client);
         pthread_mutex_unlock(&server->lock_vector_client);
