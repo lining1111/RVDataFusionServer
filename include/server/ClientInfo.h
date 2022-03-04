@@ -55,6 +55,7 @@ public:
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
     //客户端处理线程
     thread threadDump;//接收数据并存入环形buffer
+    atomic_bool isThreadDumpRun;
 
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
     Queue<Pkg> queuePkg;//包消息队列
@@ -69,7 +70,9 @@ public:
     const int maxQueueWatchData = 600;//最多600个
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
+    atomic_bool isThreadGetPkgRun;
     thread threadGetPkgContent;//获取一包内的数据正文
+    atomic_bool isThreadGetPkgContentRun;
 
 public:
     /**

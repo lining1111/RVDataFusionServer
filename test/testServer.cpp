@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <iostream>
 #include "server/FusionServer.h"
 #include "log/Log.h"
 #include "merge/merge.h"
@@ -23,13 +24,14 @@ int main(int argc, char **argv) {
     server->Open();
     server->Run();
 
-    while (server->isRun) {
+    while (server->isRun.load()) {
         sleep(1);
         //循环出读server各个client内的WatchData队列
-        if (server->vector_client.empty()) {
-            Info("客户端队列为空");
-            continue;
-        }
+//        if (server->vector_client.empty()) {
+//            Info("客户端队列为空");
+//            continue;
+//        }
+        cout << "客户端数量：" << to_string(server->vector_client.size()) << endl;
 
 //        //读取客户端的queueWatchData
 //        pthread_mutex_lock(&server->lock_vector_client);
@@ -63,16 +65,16 @@ int main(int argc, char **argv) {
 //
 //        pthread_mutex_unlock(&server->lock_vector_client);
         //读取服务端的queueObjs
-        if (server->queueObjs.Size()==0){
-            Info("server 同帧数据队列为空");
-            continue;
-        }
-        FusionServer::OBJS objs = server->queueObjs.PopFront();
-        Info("server queueObjs: one:%d,two:%d,three:%d,four:%d",
-             objs.one.size(),
-             objs.two.size(),
-             objs.three.size(),
-             objs.four.size());
+//        if (server->queueObjs.Size() == 0) {
+////            Info("server 同帧数据队列为空");
+//            continue;
+//        }
+//        FusionServer::OBJS objs = server->queueObjs.PopFront();
+//        Info("server queueObjs: one:%d,two:%d,three:%d,four:%d",
+//             objs.one.size(),
+//             objs.two.size(),
+//             objs.three.size(),
+//             objs.four.size());
 
     }
 

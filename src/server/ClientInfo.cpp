@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <iostream>
 #include "server/ClientInfo.h"
 #include "log/Log.h"
 #include "common/CRC.h"
@@ -24,6 +25,9 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->status = Start;
 
     this->isLive.store(false);
+    this->isThreadDumpRun.store(false);
+    this->isThreadGetPkgRun.store(false);
+    this->isThreadGetPkgContentRun.store(false);
     this->needRelease.store(false);
 }
 
@@ -33,7 +37,14 @@ ClientInfo::~ClientInfo() {
         isLive.store(false);
     }
 
+    //等待所有线程退出
+    do {
+        sleep(1);
+        cout << "等待所有线程退出" << endl;
+    } while (isThreadDumpRun.load() || isThreadGetPkgRun.load() || isThreadGetPkgContentRun.load());
+
     if (sock > 0) {
+        cout << "关闭sock：" << to_string(sock) << endl;
         close(sock);
     }
 
@@ -76,6 +87,7 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    client->isThreadDumpRun.store(true);
     while (client->isLive.load()) {
         uint8_t buffer[1024 * 128];
         int len = 0;
@@ -95,7 +107,7 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
             }
         }
     }
-
+    client->isThreadDumpRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -108,6 +120,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    client->isThreadGetPkgRun.store(true);
     while (client->isLive.load()) {
 
         usleep(10);
@@ -177,7 +190,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
                 //判断CRC是否正确
                 //打印下buffer
-                PrintHex(client->pkgBuffer, client->pkgHead.len);
+//                PrintHex(client->pkgBuffer, client->pkgHead.len);
                 uint16_t crc = Crc16TabCCITT(client->pkgBuffer, client->pkgHead.len - 2);
                 if (crc != pkg.crc.data) {//CRC校验失败
                     Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);
@@ -195,7 +208,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
                     //存入分包队列
                     if (client->queuePkg.Size() >= client->maxQueuePkg) {
-                        Info("分包队列已满，丢弃此包:%s-%s",
+                        Info("client:%d 分包队列已满，丢弃此包:%s-%s", client->sock,
                              pkg.body.methodName.name.c_str(),
                              pkg.body.methodParam.param.c_str());
                     } else {
@@ -225,7 +238,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-
+    client->isThreadGetPkgRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -238,6 +251,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    client->isThreadGetPkgContentRun.store(true);
     while (client->isLive.load()) {
         usleep(10);
         if (client->queuePkg.Size() == 0) {
@@ -254,7 +268,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             JsonUnmarshalWatchData(string(pkg.body.methodParam.param), watchData);
             //存入队列
             if (client->queueWatchData.size() >= client->maxQueueWatchData) {
-                Info("WatchData队列已满,丢弃消息:%s-%s", pkg.body.methodName.name.c_str(),
+                Info("client:%d WatchData队列已满,丢弃消息:%s-%s", client->sock, pkg.body.methodName.name.c_str(),
                      pkg.body.methodParam.param.c_str());
             } else {
                 pthread_mutex_lock(&client->lockWatchData);
@@ -262,13 +276,16 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 client->queueWatchData.push(watchData);
                 pthread_cond_broadcast(&client->condWatchData);
                 pthread_mutex_unlock(&client->lockWatchData);
+                Info("client:%d WatchData队列存入消息:%s-%s", client->sock, pkg.body.methodName.name.c_str(),
+                     pkg.body.methodParam.param.c_str());
             }
         } else {
             //最后没有对应的方法名
-            Info("最后没有对应的方法名:%s,内容:%s", pkg.body.methodName.name.c_str(), pkg.body.methodParam.param.c_str());
+            Info("client:%d 最后没有对应的方法名:%s,内容:%s", client->sock, pkg.body.methodName.name.c_str(),
+                 pkg.body.methodParam.param.c_str());
         }
     }
-
+    client->isThreadGetPkgContentRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }

@@ -215,7 +215,8 @@ namespace common {
         int index = 0;
 
         //长度小于头部长度 退出
-        if (len < sizeof pkg.head) {
+        if (len < sizeof(pkg.head)) {
+            cout << "长度小于头部长度" << endl;
             return -1;
         }
 
@@ -225,6 +226,7 @@ namespace common {
 
         //判断长度，如果 len小于头部长度则退出
         if (len < pkg.head.len) {
+            cout << "长度小于数据长度" << endl;
             return -1;
         }
 
@@ -355,43 +357,43 @@ namespace common {
         watchData.imageData = root["imageData"].asString();
 
         //AnnuciatorInfo
-        if (!root["AnnuciatorInfo"].isObject()) {
+        if (!root["AnnuciatorInfo"].isArray()) {
             cout << "json no AnnuciatorInfo" << endl;
-            return -1;
-        }
-        // AnnuciatorInfo list
-        for (auto iter: root["AnnuciatorInfo"]) {
-            AnnuciatorInfo item;
-            item.LightID = iter["LightID"].asInt();
-            item.Light = iter["Light"].asString();
-            item.RT = iter["RT"].asInt();
+        } else {
+            // AnnuciatorInfo list
+            for (auto iter: root["AnnuciatorInfo"]) {
+                AnnuciatorInfo item;
+                item.LightID = iter["LightID"].asInt();
+                item.Light = iter["Light"].asString();
+                item.RT = iter["RT"].asInt();
 
-            watchData.listAnnuciatorInfo.push_back(item);
+                watchData.listAnnuciatorInfo.push_back(item);
+            }
         }
 
         //lstObjTarget
-        if (!root["lstObjTarget"].isObject()) {
+        if (!root["lstObjTarget"].isArray()) {
             cout << "json no lstObjTarget" << endl;
-            return -1;
-        }
-        // lstObjTarget list
-        for (auto iter: root["lstObjTarget"]) {
-            ObjTarget item;
-            item.objID = iter["objID"].asInt();
-            item.objType = iter["objType"].asInt();
-            item.plates = iter["plates"].asString();
-            item.plateColor = iter["plateColor"].asString();
-            item.left = iter["left"].asInt();
-            item.top = iter["top"].asInt();
-            item.right = iter["right"].asInt();
-            item.bottom = iter["bottom"].asInt();
-            item.locationX = iter["locationX"].asDouble();
-            item.locationY = iter["locationY"].asDouble();
-            item.distance = iter["distance"].asString();
-            item.directionAngle = iter["directionAngle"].asString();
-            item.speed = iter["speed"].asString();
+        } else {
+            // lstObjTarget list
+            for (auto iter: root["lstObjTarget"]) {
+                ObjTarget item;
+                item.objID = iter["objID"].asInt();
+                item.objType = iter["objType"].asInt();
+                item.plates = iter["plates"].asString();
+                item.plateColor = iter["plateColor"].asString();
+                item.left = iter["left"].asInt();
+                item.top = iter["top"].asInt();
+                item.right = iter["right"].asInt();
+                item.bottom = iter["bottom"].asInt();
+                item.locationX = iter["locationX"].asDouble();
+                item.locationY = iter["locationY"].asDouble();
+                item.distance = iter["distance"].asString();
+                item.directionAngle = iter["directionAngle"].asString();
+                item.speed = iter["speed"].asString();
 
-            watchData.lstObjTarget.push_back(item);
+                watchData.lstObjTarget.push_back(item);
+            }
         }
 
         return 0;

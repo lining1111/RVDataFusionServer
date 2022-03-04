@@ -49,9 +49,10 @@ public:
 #define MAX_EVENTS 1024
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
-
+#define MaxRoadNum 4 //最多有多少路
     Queue<OBJS> queueObjs;//在同一帧的多路数据
     uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳
+    uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
     Queue<vector<OBJECT_INFO_NEW>> queueMergeData;//融合后的数据
 
@@ -66,6 +67,7 @@ public:
 
 
     //用于融合时的固定变量
+
     vector<string> roadIP;
     string config = "./config.ini";
     double repateX = 10;//fix 不变

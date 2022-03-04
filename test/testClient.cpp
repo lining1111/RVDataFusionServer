@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
             Msg1(msg, &msg_len);
             int len = send(sockfd, msg, msg_len, 0);
             //打印下buffer
-            PrintHex(msg, msg_len);
+//            PrintHex(msg, msg_len);
 
             uint16_t crc = 0;
             memcpy(&crc, msg + msg_len - 2, 2);
@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
             Msg2(msg, &msg_len);
             int len = send(sockfd, msg, msg_len, 0);
             //打印下buffer
-            PrintHex(msg, msg_len);
+//            PrintHex(msg, msg_len);
 
             if (len != msg_len) {
                 Error("send fail");

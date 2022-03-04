@@ -191,8 +191,6 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
         return -1;
     }
 
-    Info("accept client:%d,ip:%s", client_sock, inet_ntoa(remote_addr.sin_addr));
-
     //clientInfo
     ClientInfo *clientInfo = new ClientInfo(remote_addr, client_sock);
 
@@ -259,7 +257,7 @@ int FusionServer::DeleteAllClient() {
             delete iter;
         }
         vector_client.clear();
-
+        pthread_cond_broadcast(&cond_vector_client);
         pthread_mutex_unlock(&lock_vector_client);
     }
 
@@ -296,6 +294,7 @@ void FusionServer::ThreadMonitor(void *pServer) {
                     Error("server accept fail:%s", strerror(errno));
                     continue;
                 }
+                Info("accept client:%d,ip:%s", client_fd, inet_ntoa(remote_addr.sin_addr));
                 //加入客户端数组，开启客户端处理线程
                 server->AddClient(client_fd, remote_addr);
 
@@ -304,8 +303,9 @@ void FusionServer::ThreadMonitor(void *pServer) {
                         (server->wait_events[i].events & EPOLLRDHUP) ||
                         (server->wait_events[i].events & EPOLLOUT))) {
                 //有异常发生 close client
-                for (int i = 0; i < server->vector_client.size(); i++) {
-                    auto iter = server->vector_client.at(i);
+
+                for (int j = 0; j < server->vector_client.size(); j++) {
+                    auto iter = server->vector_client.at(j);
                     if (iter->sock == server->wait_events[i].data.fd) {
                         //抛出一个对方已关闭的异常，等待检测线程进行处理
                         iter->needRelease.store(true);
@@ -338,6 +338,14 @@ void FusionServer::ThreadCheck(void *pServer) {
         if (server->vector_client.empty()) {
             continue;
         }
+//        cout << "当前客户端数量：" << to_string(server->vector_client.size()) << endl;
+
+        //切记，这里删除客户端的时候有加锁解锁操作，所以最外围不要加锁！！！
+//        pthread_mutex_lock(&server->lock_vector_client);
+//        if (server->vector_client.empty()) {
+//            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+//        }
+
         for (auto iter: server->vector_client) {
 
             //检查超时
@@ -375,6 +383,10 @@ void FusionServer::ThreadCheck(void *pServer) {
                 }
             }
         }
+
+//        pthread_cond_broadcast(&server->cond_vector_client);
+//        pthread_mutex_unlock(&server->lock_vector_client);
+
     }
 
     Info("%s exit", __FUNCTION__);
@@ -409,12 +421,11 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         bool hasData = false;
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
-            if (!iter->queueWatchData.empty()){
+            if (!iter->queueWatchData.empty()) {
                 hasData = true;
-                break;
             }
         }
-        if (!hasData){
+        if (!hasData) {
             continue;
         }
 
@@ -427,7 +438,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
 
-        int id[4] = {-1, -1, -1, -1};//以IP为目的存入的路口方向对应的客户端数组的索引
+        int id[4] = {-1, -1, -1, -1};//以IP为目的存入的路口方向对应的客户端数组的索引，存入的是第一路ip对应的sock,第二路ip对应的sock,第三路ip对应的sock,第四路ip对应的sock
         //1.寻找各个路口的客户端索引，未找到就是默认值-1
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
@@ -441,6 +452,9 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         //2.确定时间戳
         if (server->curTimestamp == 0) {
             for (int i = 0; i < ARRAY_SIZE(id); i++) {
+                if (id[i] == -1) {
+                    continue;
+                }
                 if (!server->vector_client.at(id[i])->queueWatchData.empty()) {
                     //这里取各个客户端第一帧的最大值
                     if (server->curTimestamp < server->vector_client.at(id[i])->queueWatchData.front().timstamp) {
@@ -459,6 +473,10 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             obj[i].clear();
         }
 
+        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+            server->xRoadTimestamp[i] = 0;
+        }
+
         for (int i = 0; i < ARRAY_SIZE(id); i++) {
             if (id[i] == -1) {
                 //客户端未连入，不填充数据
@@ -473,6 +491,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                     do {
                         if (server->vector_client.at(id[i])->queueWatchData.size() == 1) {
                             auto iter = server->vector_client.at(id[i])->queueWatchData.front();
+                            //按路记录时间戳
+                            server->xRoadTimestamp[i] = iter.timstamp;
                             for (auto item: iter.lstObjTarget) {
                                 OBJECT_INFO_T objectInfoT;
                                 //转换
@@ -485,6 +505,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                         } else {
                             auto iter = server->vector_client.at(id[i])->queueWatchData.front();
                             if (iter.timstamp > server->curTimestamp) {
+                                //按路记录时间戳
+                                server->xRoadTimestamp[i] = iter.timstamp;
                                 //时间戳大于当前时间戳，直接取
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
@@ -496,6 +518,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                 server->vector_client.at(id[i])->queueWatchData.pop();
                                 isFind = true;
                             } else if (iter.timstamp >= (server->curTimestamp - server->thresholdFrame)) {
+                                //按路记录时间戳
+                                server->xRoadTimestamp[i] = iter.timstamp;
                                 //时间戳在门限范围内,赋值
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
@@ -535,8 +559,18 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         } else {
             if (server->queueObjs.Push(objs) != 0) {
                 Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
+            } else {
+                Info("待融合数据存入:选取的时间戳:%lu", server->curTimestamp);
+                for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+                    if (server->xRoadTimestamp[i] != 0) {
+                        Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                    }
+                }
             }
         }
+
+        pthread_cond_broadcast(&server->cond_vector_client);
+        pthread_mutex_unlock(&server->lock_vector_client);
 
     }
 
