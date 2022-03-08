@@ -183,22 +183,13 @@ namespace common {
         //1.头部
         memcpy(out + index, &pkg.head, sizeof(pkg.head));
         index += sizeof(pkg.head);
-        //2.正文
-        //2.1 方法名
-        memcpy(out + index, &pkg.body.methodName.len, sizeof(pkg.body.methodName.len));
-        index += sizeof(pkg.body.methodName.len);
-        memcpy(out + index, pkg.body.methodName.name.data(), pkg.body.methodName.len);
-        index += pkg.body.methodName.len;
-        //2.1 方法参数
-        memcpy(out + index, &pkg.body.methodParam.len, sizeof(pkg.body.methodParam.len));
-        index += sizeof(pkg.body.methodParam.len);
-        memcpy(out + index, pkg.body.methodParam.param.data(), pkg.body.methodParam.len);
-        index += pkg.body.methodParam.len;
+        //2.正文 string
+        memcpy(out + index, pkg.body.data(), pkg.body.length());
+        index += pkg.body.length();
         //3.校验值先计算再更新
         pkg.crc.data = Crc16TabCCITT(out, index);
         memcpy(out + index, &pkg.crc, sizeof(pkg.crc));
         index += sizeof(pkg.crc);
-
         //4.设置长度
         *len = pkg.head.len;
 
@@ -230,19 +221,10 @@ namespace common {
             return -1;
         }
 
-        //2.正文
-        //2.1方法名
-        memcpy(&pkg.body.methodName.len, in + index, sizeof(pkg.body.methodName.len));
-        index += sizeof(pkg.body.methodName.len);
-        pkg.body.methodName.name.clear();
-        pkg.body.methodName.name.append((char *) (in + index), pkg.body.methodName.len);
-        index += pkg.body.methodName.len;
-        //2.1方法参数
-        memcpy(&pkg.body.methodParam.len, in + index, sizeof(pkg.body.methodParam.len));
-        index += sizeof(pkg.body.methodParam.len);
-        pkg.body.methodParam.param.clear();
-        pkg.body.methodParam.param.append((char *) (in + index), pkg.body.methodParam.len);
-        index += pkg.body.methodParam.len;
+        //2.正文string
+        pkg.body.clear();
+        pkg.body.assign((char *) (in + index), (pkg.head.len - sizeof(pkg.head) - sizeof(pkg.crc)));
+        index += (pkg.head.len - sizeof(pkg.head) - sizeof(pkg.crc));
         //3.校验值
         memcpy(&pkg.crc, in + index, sizeof(pkg.crc));
         index += sizeof(pkg.crc);
@@ -393,6 +375,117 @@ namespace common {
                 item.speed = iter["speed"].asString();
 
                 watchData.lstObjTarget.push_back(item);
+            }
+        }
+
+        return 0;
+    }
+
+    int JsonMarshalFusionData(FusionData fusionData, string &out) {
+        Json::FastWriter fastWriter;
+        Json::Value root;
+
+        //root oprNum
+        root["oprNum"] = fusionData.oprNum;
+        //root timstamp
+        root["timstamp"] = fusionData.timstamp;
+        //root isHasImage
+        root["isHasImage"] = fusionData.isHasImage;
+        //root imageData
+        root["imageData"] = fusionData.imageData;
+
+        // root lstObjTarget
+        Json::Value arrayObjTarget;
+        for (auto iter:fusionData.lstObjTarget) {
+            Json::Value item;
+            //objID
+            item["objID"] = iter.objID;
+            //cameraObjID
+            item["cameraObjID"] = iter.cameraObjID;
+            //objType
+            item["objType"] = iter.objType;
+            //objColor
+            item["objColor"] = iter.objColor;
+            //plates
+            item["plates"] = iter.plates;
+            //plateColor
+            item["plateColor"] = iter.plateColor;
+            //left
+            item["left"] = iter.left;
+            //top
+            item["top"] = iter.top;
+            //right
+            item["right"] = iter.right;
+            //bottom
+            item["bottom"] = iter.bottom;
+            //distance
+            item["distance"] = iter.distance;
+            //directionAngle
+            item["directionAngle"] = iter.directionAngle;
+            //speed
+            item["speed"] = iter.speed;
+            //locationX
+            item["locationX"] = iter.locationX;
+            //locationY
+            item["locationY"] = iter.locationY;
+            //longitude
+            item["longitude"] = iter.longitude;
+            //latitude
+            item["latitude"] = iter.latitude;
+
+            arrayObjTarget.append(item);
+        }
+        root["lstObjTarget"] = arrayObjTarget;
+
+        out = fastWriter.write(root);
+
+        return 0;
+    }
+
+    int JsonUnmarshalFusionData(string in, FusionData &fusionData) {
+        Json::Reader reader;
+        Json::Value root;
+
+        if (!reader.parse(in, root, false)) {
+            cout << "not json drop" << endl;
+            return -1;
+        }
+
+        //oprNum
+        fusionData.oprNum = root["oprNum"].asString();
+        //timstamp
+        fusionData.timstamp = root["timstamp"].asDouble();
+        //isHasImage
+        fusionData.isHasImage = root["isHasImage"].asInt();
+        //imageData
+        fusionData.imageData = root["imageData"].asString();
+
+        //lstObjTarget
+        if (!root["lstObjTarget"].isArray()) {
+            cout << "json no lstObjTarget" << endl;
+        } else {
+            // lstObjTarget list
+            for (auto iter: root["lstObjTarget"]) {
+                ObjMix item;
+                item.objID = iter["objID"].asInt();
+                item.cameraObjID = iter["cameraObjID"].asInt();
+                item.objType = iter["objType"].asInt();
+                item.objColor = iter["objColor"].asString();
+                item.plates = iter["plates"].asString();
+                item.plateColor = iter["plateColor"].asString();
+                item.left = iter["left"].asInt();
+                item.top = iter["top"].asInt();
+                item.right = iter["right"].asInt();
+                item.bottom = iter["bottom"].asInt();
+                item.distance = iter["distance"].asString();
+                item.directionAngle = iter["directionAngle"].asString();
+                item.speed = iter["speed"].asString();
+                item.locationX = iter["locationX"].asDouble();
+                item.locationY = iter["locationY"].asDouble();
+                item.longitude = iter["longitude"].asDouble();
+                item.latitude = iter["latitude"].asDouble();
+
+                fusionData.lstObjTarget.push_back(item);
             }
         }
 

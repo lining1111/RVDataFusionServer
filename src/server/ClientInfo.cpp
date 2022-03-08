@@ -208,9 +208,7 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
                     //存入分包队列
                     if (client->queuePkg.Size() >= client->maxQueuePkg) {
-                        Info("client:%d 分包队列已满，丢弃此包:%s-%s", client->sock,
-                             pkg.body.methodName.name.c_str(),
-                             pkg.body.methodParam.param.c_str());
+                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                     } else {
                         client->queuePkg.Push(pkg);
                     }
@@ -262,28 +260,58 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         pkg = client->queuePkg.PopFront();
 
         //解析分包，按照方法名不同，存入不同的队列
-        if (string(pkg.body.methodName.name) == Method(WatchData)) {
-            //"WatchData"
-            WatchData watchData;
-            JsonUnmarshalWatchData(string(pkg.body.methodParam.param), watchData);
-            //存入队列
-            if (client->queueWatchData.size() >= client->maxQueueWatchData) {
-                Info("client:%d WatchData队列已满,丢弃消息:%s-%s", client->sock, pkg.body.methodName.name.c_str(),
-                     pkg.body.methodParam.param.c_str());
-            } else {
-                pthread_mutex_lock(&client->lockWatchData);
-                //存入队列
-                client->queueWatchData.push(watchData);
-                pthread_cond_broadcast(&client->condWatchData);
-                pthread_mutex_unlock(&client->lockWatchData);
-                Info("client:%d WatchData队列存入消息:%s-%s", client->sock, pkg.body.methodName.name.c_str(),
-                     pkg.body.methodParam.param.c_str());
+        switch (pkg.head.cmd) {
+            case CmdType::Response : {
+                Info("应答指令");
             }
-        } else {
-            //最后没有对应的方法名
-            Info("client:%d 最后没有对应的方法名:%s,内容:%s", client->sock, pkg.body.methodName.name.c_str(),
-                 pkg.body.methodParam.param.c_str());
+                break;
+            case CmdType::Login : {
+                Info("登录指令");
+            }
+                break;
+            case CmdType::HeartBeat : {
+                Info("心跳指令");
+            }
+                break;
+            case CmdType::DeviceData : {
+                Info("监控数据指令");
+                //"WatchData"
+                WatchData watchData;
+                JsonUnmarshalWatchData(pkg.body, watchData);
+                //存入队列
+                if (client->queueWatchData.size() >= client->maxQueueWatchData) {
+                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+                } else {
+                    pthread_mutex_lock(&client->lockWatchData);
+                    //存入队列
+                    client->queueWatchData.push(watchData);
+                    pthread_cond_broadcast(&client->condWatchData);
+                    pthread_mutex_unlock(&client->lockWatchData);
+                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+                }
+
+            }
+                break;
+            case CmdType::DeviceAlarm : {
+                Info("设备报警指令");
+            }
+                break;
+            case CmdType::DeviceStatus : {
+                Info("设备状态指令");
+            }
+                break;
+            case CmdType::DevicePicData : {
+                Info("设备视频数据回传");
+            }
+                break;
+            default: {
+                //最后没有对应的方法名
+                Info("client:%d 最后没有对应的方法名:%d,内容:%s", client->sock, pkg.head.cmd,
+                     pkg.body.c_str());
+            }
+                break;;
         }
+
     }
     client->isThreadGetPkgContentRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);

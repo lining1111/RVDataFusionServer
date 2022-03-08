@@ -287,7 +287,7 @@ enum SI_Error {
     </table>
 
     Note that using other types for the SI_CHAR is supported. For instance,
-    unsigned char, unsigned short, etc. Note that where the alternative type
+    unsigned char, unsigned short, etc. Note that where the alternative cmd
     is a different size to char/wchar_t you may need to supply new helper
     classes for SI_STRLESS and SI_CONVERTER.
  */
@@ -2851,7 +2851,7 @@ public:
         char *          a_pOutputData,
         size_t          a_uOutputDataSize)
     {
-        // calc input string length (SI_CHAR type and size independent)
+        // calc input string length (SI_CHAR cmd and size independent)
         size_t uInputLen = strlen((const char *)a_pInputData) + 1;
         if (uInputLen > a_uOutputDataSize) {
             return false;
@@ -3031,7 +3031,7 @@ public:
         )
     {
         if (m_bStoreIsUtf8) {
-            // calc input string length (SI_CHAR type and size independent)
+            // calc input string length (SI_CHAR cmd and size independent)
             size_t uInputLen = 0;
             while (a_pInputData[uInputLen]) {
                 ++uInputLen;

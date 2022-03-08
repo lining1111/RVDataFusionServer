@@ -19,19 +19,32 @@ namespace common {
 #define MEMBER_SIZE(type, member) \
     sizeof(((type *)0)->member)
 
-    enum PkgType {
-        Request = 0x00,//请求
-        Response = 0x01,//回复
-    };//包类型
+    /**
+     * 整体通信大帧结构
+     *  1byte   1byte   1byte       2bytes  4bytes  4bytes  Nbytes      2bytes
+     *  帧头      版本  命令标识符       帧号  设备编号    帧长  json格式正文    校验码
+     */
+
+
+    enum CmdType {
+        Response = 0x00,//应答指令
+        Login = 0x01,//设备登录
+        HeartBeat = 0x02,//心跳
+        DeviceData = 0x03,//监控数据回传
+        DeviceAlarm = 0x04,//设备报警数据
+        DeviceStatus = 0x05,//设备状态数据
+        DevicePicData = 0x06,//设备视频数据回传
+    };//命令字类型
 
 
 #pragma pack(1)
     typedef struct {
         uint8_t tag = '$';//固定的头开始 ‘$’ 0x24
         uint8_t version;//版本号 1.0 hex
-        uint8_t type;//包类型 详见PkgType
-        uint16_t sn = 0;//包号
-        uint32_t len = 0;//整包长度，从包头到最后的校验位 <帧头>sizeof(PkgHead)+<正文>(1+方法名长度+4+方法参数)+<校验>sizeof(PkgCRC)
+        uint8_t cmd;//命令字类型 详见CmdType
+        uint16_t sn = 0;//帧号
+        uint32_t deviceNO;//设备编号
+        uint32_t len = 0;//整包长度，从包头到最后的校验位 <帧头>sizeof(PkgHead)+<正文>(json)+<校验>sizeof(PkgCRC)
     } PkgHead;//包头
 
     typedef struct {
@@ -40,28 +53,12 @@ namespace common {
 #pragma pack()
 
     //方法名枚举
-#define Method(s) #s
-
-    typedef struct {
-        uint8_t len = 0;
-        string name;//Method(Beats) Method(DeviceStates) Method(DeviceAlarm) Method(CommanderAlarm) Method(BusinessData) Method(WatchData) Method(SendVideoInfo)
-    } MethodName;//方法名
-
-    typedef struct {
-        uint32_t len = 0;
-        string param;
-    } MethodParam;//方法参数
-
-    typedef struct {
-        MethodName methodName;
-        MethodParam methodParam;
-    } PkgBody;
 
 
-    //一帧数据格式 <帧头>PkgHead+<正文>PkgBody(1+方法名长度+4+方法参数)+<校验>PkgCRC
+    //一帧数据格式 <帧头>PkgHead+<正文>string(json)+<校验>PkgCRC
     typedef struct {
         PkgHead head;
-        PkgBody body;
+        string body;
         PkgCRC crc;
     } Pkg;
 
@@ -81,7 +78,7 @@ namespace common {
 
     typedef struct {
         string hardCode;// `json "hardCode"` 设备唯一标识
-        double timestamp;// `json "timestamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
+        double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
     } Beats;//心跳帧 "Beats"
 
     typedef struct {
@@ -109,7 +106,7 @@ namespace common {
     typedef struct {
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
-        double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的秒数
+        double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
         string matrixNo;// `json "matrixNo"` 矩阵编号
         string cameraIp;// `json "cameraIp"` 相机编号
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间
@@ -117,7 +114,35 @@ namespace common {
         string imageData;//`json "imageData"` 当前的视频图像数据
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
-    } WatchData;//监控数据
+    } WatchData;//监控数据,对应命令字DeviceData
+
+    typedef struct {
+        int objID;//目标ID
+        int cameraObjID;//图像目标ID
+        int objType;//目标类型
+        string objColor;//目标颜色
+        string plates;//车牌号
+        string plateColor;//车牌颜色
+        int left;//坐标 左
+        int top;//坐标 上
+        int right;// 坐标 右
+        int bottom;//坐标 下
+        string distance;//距离
+        string directionAngle;//航角度
+        string speed;//速度
+        double locationX;//平面X位置
+        double locationY;//平面Y位置
+        double longitude = 0.0;//经度
+        double latitude = 0.0;//维度
+    } ObjMix;//融合后的目标数据
+
+    typedef struct {
+        string oprNum;// `json "oprNum"`
+        double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        int isHasImage;//`json "isHasImage"` 是否包含图像
+        string imageData;// `json "imageData"` 当前的视频图像数据
+        vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类
+    } FusionData;//多路融合数据,对应命令字DeviceData
 
 
     /**
@@ -125,7 +150,7 @@ namespace common {
      * @param data
      * @param len
      */
-    void PrintHex(uint8_t *data,uint32_t len);
+    void PrintHex(uint8_t *data, uint32_t len);
 
     /**
      * base64加密
@@ -188,6 +213,22 @@ namespace common {
      * @return 0：success -1：fail
      */
     int JsonUnmarshalWatchData(string in, WatchData &watchData);
+
+    /**
+     * FusionData 组json
+     * @param fusionData in FusionData数据输入
+     * @param out out json字符串输出
+     * @return 0：success -1：fail
+     */
+    int JsonMarshalFusionData(FusionData fusionData, string &out);
+
+    /**
+     * FusionData 解json
+     * @param in in json字符串输入
+     * @param fusionData out FusionData结构体输出
+     * @return 0：success -1：fail
+     */
+    int JsonUnmarshalFusionData(string in, FusionData &fusionData);
 
 }
 

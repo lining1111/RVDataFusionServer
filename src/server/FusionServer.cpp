@@ -560,7 +560,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             Info("同一帧数据全部为空");
         } else {
             if (server->queueObjs.Push(objs) != 0) {
-                Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
+                Error("队列已满，未存入数据 timstamp:%lu", server->curTimestamp);
             } else {
                 Info("待融合数据存入:选取的时间戳:%lu", server->curTimestamp);
                 for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {

@@ -104,22 +104,14 @@ int Msg1(uint8_t *out, uint32_t *len) {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.type = PkgType::Request;
+    pkg.head.cmd = CmdType::DeviceData;
     pkg.head.sn = 1;
+    pkg.head.deviceNO = 0x12345678;
     pkg.head.len = 0;
     pkg_len += sizeof(pkg.head);
-    //2.正文
-    //2.1方法名
-    string methodName = Method(WatchData);
-    pkg.body.methodName.len = methodName.length();
-    pkg.body.methodName.name = methodName;
-    pkg_len += sizeof(pkg.body.methodName.len) + pkg.body.methodName.len;
-
-    //2.2方法参数
-    string methodParam = jsonMarshal;
-    pkg.body.methodParam.len = methodParam.length();
-    pkg.body.methodParam.param = methodParam;
-    pkg_len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
+    //2.正文string
+    pkg.body = jsonMarshal;
+    pkg_len += jsonMarshal.length();
     //3检验值
     pkg.crc.data = 0x0000;
     pkg_len += sizeof(pkg.crc);
@@ -217,22 +209,14 @@ int Msg2(uint8_t *out, uint32_t *len) {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.type = PkgType::Request;
+    pkg.head.cmd = CmdType::DeviceData;
     pkg.head.sn = 2;
+    pkg.head.deviceNO = 0x87654321;
     pkg.head.len = 0;
     pkg_len += sizeof(pkg.head);
-    //2.正文
-    //2.1方法名
-    string methodName = Method(WatchData);
-    pkg.body.methodName.len = methodName.length();
-    pkg.body.methodName.name = methodName;
-    pkg_len += sizeof(pkg.body.methodName.len) + pkg.body.methodName.len;
-
-    //2.2方法参数
-    string methodParam = jsonMarshal;
-    pkg.body.methodParam.len = methodParam.length();
-    pkg.body.methodParam.param = methodParam;
-    pkg_len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
+    //2.正文string
+    pkg.body = jsonMarshal;
+    pkg_len += jsonMarshal.length();
     //3检验值
     pkg.crc.data = 0x0000;
     pkg_len += sizeof(pkg.crc);

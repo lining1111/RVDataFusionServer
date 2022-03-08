@@ -24,22 +24,16 @@ void examplePkg() {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.type = PkgType::Request;
+    pkg.head.cmd = CmdType::DeviceData;
     pkg.head.sn = 1;
     pkg.head.len = 0;
     len += sizeof(pkg.head);
     //2.正文
     //2.1方法名
-    string methodName = Method(WatchData);
-    pkg.body.methodName.len = methodName.length();
-    pkg.body.methodName.name = methodName;
-    len += sizeof(pkg.body.methodName.len) + pkg.body.methodName.len;
-
     //2.2方法参数
-    string methodParam = "this is a test";
-    pkg.body.methodParam.len = methodParam.length();
-    pkg.body.methodParam.param = methodParam;
-    len += sizeof(pkg.body.methodParam.len) + pkg.body.methodParam.len;
+    string body = "this is a test";
+    pkg.body = body;
+    len += body.length();
     //3检验值
     pkg.crc.data = Crc16TabCCITT((uint8_t *) &pkg, len);
     len += sizeof(pkg.crc);
