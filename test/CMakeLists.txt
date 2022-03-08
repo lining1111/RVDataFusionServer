@@ -22,6 +22,7 @@ add_executable(testServer testServer.cpp
         ../src/log/Log.cpp
         ../src/server/ClientInfo.cpp
         ../src/server/FusionServer.cpp
+        ../src/client/FusionClient.cpp
         ../src/merge/merge.cpp)
 target_link_libraries(testServer ${LIBS})
 redefine_file_macro(testServer)

@@ -128,7 +128,7 @@ namespace common {
         int right;// 坐标 右
         int bottom;//坐标 下
         string distance;//距离
-        string directionAngle;//航角度
+        string angle;//航角度
         string speed;//速度
         double locationX;//平面X位置
         double locationY;//平面Y位置
@@ -215,6 +215,16 @@ namespace common {
     int JsonUnmarshalWatchData(string in, WatchData &watchData);
 
     /**
+     * 组包监控数据
+     * @param watchData in 监控数据结构体
+     * @param sn 帧号
+     * @param deviceNO 设备编号
+     * @param pkg out 包结构体
+     * @return 0:success -1:fail
+     */
+    int PkgWatchDataWithoutCRC(WatchData watchData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+
+    /**
      * FusionData 组json
      * @param fusionData in FusionData数据输入
      * @param out out json字符串输出
@@ -229,6 +239,16 @@ namespace common {
      * @return 0：success -1：fail
      */
     int JsonUnmarshalFusionData(string in, FusionData &fusionData);
+
+    /**
+     * 组包融合后的数据
+     * @param fusionData 融合后数据结构体
+     * @param sn 帧号
+     * @param deviceNO 设备编号
+     * @param pkg out 包结构体
+     * @return 0：success -1：fail
+     */
+    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
 }
 

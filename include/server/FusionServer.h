@@ -23,6 +23,7 @@ using namespace std;
 class FusionServer {
 public:
     typedef struct {
+        double timestamp;
         vector<OBJECT_INFO_T> one;
         vector<OBJECT_INFO_T> two;
         vector<OBJECT_INFO_T> three;
@@ -54,7 +55,11 @@ public:
     uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳
     uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
-    Queue<vector<OBJECT_INFO_NEW>> queueMergeData;//融合后的数据
+    typedef struct {
+        double timestamp;
+        vector<OBJECT_INFO_NEW> obj;
+    } MergeData;
+    Queue<MergeData> queueMergeData;//融合后的数据
 
 
     //临时变量，用于融合 输出的物体检测从第1帧开始，上上帧拿上帧的，上帧拿这次输出结果。航向角则是从第2帧开始，上上帧拿上帧的，上帧拿这次输出结果

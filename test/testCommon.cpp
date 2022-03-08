@@ -20,22 +20,27 @@ using namespace log;
  */
 void examplePkg() {
     Pkg pkg;
+    uint8_t buf[1024 * 512];
     int len = 0;
+    bzero(buf, ARRAY_SIZE(buf));
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
     pkg.head.cmd = CmdType::DeviceData;
     pkg.head.sn = 1;
+    pkg.head.deviceNO = 0x12345678;
     pkg.head.len = 0;
+    memcpy(buf + len, &pkg.head, sizeof(pkg.head));
     len += sizeof(pkg.head);
     //2.正文
     //2.1方法名
     //2.2方法参数
     string body = "this is a test";
     pkg.body = body;
+    memcpy(buf + len, pkg.body.data(), pkg.body.length());
     len += body.length();
     //3检验值
-    pkg.crc.data = Crc16TabCCITT((uint8_t *) &pkg, len);
+    pkg.crc.data = Crc16TabCCITT(buf, len);
     len += sizeof(pkg.crc);
     //4 长度信息
     pkg.head.len = len;

@@ -37,6 +37,7 @@ set(SRC_DIRS src
         src/ringBuffer
         src/common
         src/server
+        src/client
         src/merge
         src/simpleini)
 

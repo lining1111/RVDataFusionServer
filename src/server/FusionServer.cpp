@@ -556,6 +556,21 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             objs.four.push_back(obj[3].at(i));
         }
 
+        //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
+        __uint128_t sum = 0;
+        int num = 0;
+        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+            if (server->xRoadTimestamp[i] != 0) {
+                sum += server->xRoadTimestamp[i];
+                num++;
+            }
+        }
+        server->curTimestamp = (sum / num);
+        Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
+
+        objs.timestamp = server->curTimestamp;
+
+
         if (objs.one.empty() && objs.two.empty() && objs.three.empty() && objs.four.empty()) {
             Info("同一帧数据全部为空");
         } else {
@@ -570,18 +585,6 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 }
             }
         }
-
-        //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
-        __uint128_t sum = 0;
-        int num = 0;
-        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
-            if (server->xRoadTimestamp[i] != 0) {
-                sum += server->xRoadTimestamp[i];
-                num++;
-            }
-        }
-        server->curTimestamp = (sum / num);
-        Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
 
         pthread_cond_broadcast(&server->cond_vector_client);
         pthread_mutex_unlock(&server->lock_vector_client);
@@ -635,7 +638,14 @@ void FusionServer::ThreadMerge(void *pServer) {
                 for (int i = 0; i < num; i++) {
                     vectorOBJNEW.push_back(dataOut[i]);
                 }
-                server->queueMergeData.Push(vectorOBJNEW);
+                MergeData mergeData;
+                mergeData.timestamp = objs.timestamp;
+                mergeData.obj.clear();
+                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
+
+                if (server->queueMergeData.Push(mergeData) != 0) {
+                    Error("队列已满，抛弃融合数据 ");
+                }
             }
                 break;
             default: {
@@ -660,10 +670,14 @@ void FusionServer::ThreadMerge(void *pServer) {
                 for (int i = 0; i < num; i++) {
                     vectorOBJNEW.push_back(dataOut[i]);
                 }
-                if (server->queueMergeData.Push(vectorOBJNEW) != 0) {
+                MergeData mergeData;
+                mergeData.timestamp = objs.timestamp;
+                mergeData.obj.clear();
+                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
+
+                if (server->queueMergeData.Push(mergeData) != 0) {
                     Error("队列已满，抛弃融合数据 ");
                 }
-
             }
                 break;
         }

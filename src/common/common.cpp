@@ -298,8 +298,8 @@ namespace common {
             item["locationY"] = iter.locationY;
             //distance
             item["distance"] = iter.distance;
-            //directionAngle
-            item["directionAngle"] = iter.directionAngle;
+            //angle
+            item["angle"] = iter.directionAngle;
             //speed
             item["speed"] = iter.speed;
 
@@ -371,12 +371,35 @@ namespace common {
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
                 item.distance = iter["distance"].asString();
-                item.directionAngle = iter["directionAngle"].asString();
+                item.directionAngle = iter["angle"].asString();
                 item.speed = iter["speed"].asString();
 
                 watchData.lstObjTarget.push_back(item);
             }
         }
+
+        return 0;
+    }
+
+    int PkgWatchDataWithoutCRC(WatchData watchData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceData;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        JsonMarshalWatchData(watchData, jsonStr);
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+
+        pkg.head.len = len;
 
         return 0;
     }
@@ -420,8 +443,8 @@ namespace common {
             item["bottom"] = iter.bottom;
             //distance
             item["distance"] = iter.distance;
-            //directionAngle
-            item["directionAngle"] = iter.directionAngle;
+            //angle
+            item["angle"] = iter.angle;
             //speed
             item["speed"] = iter.speed;
             //locationX
@@ -478,7 +501,7 @@ namespace common {
                 item.right = iter["right"].asInt();
                 item.bottom = iter["bottom"].asInt();
                 item.distance = iter["distance"].asString();
-                item.directionAngle = iter["directionAngle"].asString();
+                item.angle = iter["angle"].asString();
                 item.speed = iter["speed"].asString();
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
@@ -488,6 +511,29 @@ namespace common {
                 fusionData.lstObjTarget.push_back(item);
             }
         }
+
+        return 0;
+    }
+
+    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceData;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        JsonMarshalFusionData(fusionData, jsonStr);
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+
+        pkg.head.len = len;
 
         return 0;
     }
