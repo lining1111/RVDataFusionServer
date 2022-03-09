@@ -498,7 +498,7 @@ namespace common {
                 item.objID = iter["objID"].asInt();
                 item.cameraObjID = iter["cameraObjID"].asInt();
                 item.objType = iter["objType"].asInt();
-                item.objColor = iter["objColor"].asString();
+                item.objColor = iter["objColor"].asInt();
                 item.plates = iter["plates"].asString();
                 item.plateColor = iter["plateColor"].asString();
                 item.left = iter["left"].asInt();

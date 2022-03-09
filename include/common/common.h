@@ -129,7 +129,7 @@ namespace common {
         int objID;//目标ID
         int cameraObjID;//图像目标ID
         int objType;//目标类型
-        string objColor;//目标颜色
+        int objColor;//目标颜色
         string plates;//车牌号
         string plateColor;//车牌颜色
         int left;//坐标 左

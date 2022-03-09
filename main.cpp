@@ -50,7 +50,7 @@ static void ThreadProcess(void *p) {
                 objMix.objID = iter.showID;
                 objMix.cameraObjID = iter.showID;
                 objMix.objType = iter.objType;
-                objMix.objColor = "";
+                objMix.objColor = 0;
                 objMix.plates = string(iter.plate_number);
                 objMix.plateColor = string(iter.plate_color);
                 objMix.left = iter.left;
