@@ -70,6 +70,7 @@ static void ThreadProcess(void *p) {
 
             Pkg pkg;
             PkgFusionDataWithoutCRC(fusionData, local->client->sn, local->client->deviceNo, pkg);
+            local->client->sn++;
 
             if (local->client->isRun) {
                 local->client->Send(pkg);
@@ -125,8 +126,9 @@ int main(int argc, char **argv) {
     use["-a"] = "设置a";
     use["-b"] = "设置b";
     use["-cd"] = "设置cd";
+    use["-h"] = "显示帮助信息";
 
-    ParseFlag *parseFlag = new ParseFlag(use);
+    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
     if (argc == 2 && string(argv[1]) == "--version") {
 
 #if defined( PROJECT_VERSION )
@@ -135,6 +137,9 @@ int main(int argc, char **argv) {
 #else
         cout << "build date:" << __DATE__ << endl;
 #endif
+        return 0;
+    } else if (argc == 2 && string(argv[1]) == "-h") {
+        parseFlag->ShowHelp();
         return 0;
     } else {
         parseFlag->Parse(argc, argv);

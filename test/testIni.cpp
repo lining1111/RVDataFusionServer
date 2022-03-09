@@ -12,7 +12,7 @@ using namespace std;
 int main(int argc, char **argv) {
     map<string, string> use;
     use["-path"] = "设置ini路径";
-    ParseFlag *parseFlag = new ParseFlag(use);
+    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
 
     parseFlag->Parse(argc, argv);
 

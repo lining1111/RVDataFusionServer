@@ -5,9 +5,21 @@
 #include <iostream>
 #include "ParseFlag.h"
 
-ParseFlag::ParseFlag(map<string, string> useAge) {
+ParseFlag::ParseFlag(map<string, string> useAge, ArgOption argOption) {
     this->useAgeAll.insert(useAge.begin(), useAge.end());
     this->useAgeSet.clear();
+    switch (argOption) {
+        case SinglePole:
+            this->option = "-";
+            break;
+        case DoublePole:
+            this->option = "--";
+            break;
+        default:
+            this->option = "-";
+            break;
+    }
+
 }
 
 ParseFlag::~ParseFlag() {
@@ -25,7 +37,7 @@ void ParseFlag::Parse(int argc, char **argv) {
         if (iter != useAgeAll.end()) {
             //找到了
             if (index + 1 < argc) {
-                if (string(argv[index + 1]).at(0) != '-') {
+                if (string(argv[index + 1]).find(this->option) != 0) {
                     useAgeSet[iter->first] = argv[index + 1];
                     index += 2;
                 } else {
@@ -37,10 +49,19 @@ void ParseFlag::Parse(int argc, char **argv) {
                 cout << iter->first + "not set" << endl;
             }
         } else {
-            if (string(argv[index]).at(0) == '-') {
+            if (string(argv[index + 1]).find(this->option) != 0) {
                 cout << string(argv[index]) + " not find" << endl;
             }
             index++;
         }
     } while (index < argc);
+}
+
+void ParseFlag::ShowHelp() {
+    auto iter = this->useAgeAll.begin();
+    while (iter != this->useAgeAll.end()) {
+        cout << iter->first << ":" << iter->second << endl;
+        iter++;
+    }
+
 }
