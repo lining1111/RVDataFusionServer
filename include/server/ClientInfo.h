@@ -38,6 +38,7 @@ public:
     int type = 0;
     unsigned char extraData[1024 * 8];//特性数据
     timeval receive_time;
+    atomic_int direction;//方向,在解包的时候更新
 private:
     RecvStatus status = Start;
     //用于缓存解包
@@ -47,7 +48,6 @@ private:
     int index = 0;//分包缓冲的索引
 public:
     atomic_bool isLive;
-
 
     //供给服务端使用的变量
     atomic_bool needRelease;//客户端处理线程在发现sock异常时，向上抛出释放队列内容信号

@@ -15,12 +15,6 @@ int main(int argc, char **argv) {
 
     FusionServer *server = new FusionServer();
 
-    server->roadIP.push_back("127.0.0.1");
-    server->roadIP.push_back("127.0.0.2");
-    server->roadIP.push_back("127.0.0.3");
-    server->roadIP.push_back("127.0.0.4");
-
-
     server->Open();
     server->Run();
 
@@ -64,18 +58,15 @@ int main(int argc, char **argv) {
 //        }
 //
 //        pthread_mutex_unlock(&server->lock_vector_client);
-        //读取服务端的queueObjs
-//        if (server->queueObjs.Size() == 0) {
-////            Info("server 同帧数据队列为空");
-//            continue;
-//        }
-//        FusionServer::OBJS objs = server->queueObjs.PopFront();
-//        Info("server queueObjs: one:%d,two:%d,three:%d,four:%d",
-//             objs.one.size(),
-//             objs.two.size(),
-//             objs.three.size(),
-//             objs.four.size());
-
+        //读取服务端的queueMergeData
+        if (server->queueMergeData.Size() == 0) {
+//            Info("server 融合数据队列为空");
+            continue;
+        }
+        FusionServer::MergeData mergeData = server->queueMergeData.PopFront();
+        Info("server mergeData: timestamp:%lu,size:%d",
+             mergeData.timestamp,
+             mergeData.obj.size());
     }
 
     delete server;

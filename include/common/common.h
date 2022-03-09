@@ -103,6 +103,14 @@ namespace common {
         string speed;//速度
     } ObjTarget;//目标属性
 
+    enum Direction{
+        Unknown=0,//未知
+        West = 1,//东
+        South = 2,//南
+        East = 3,//西
+        North = 4,//北
+    };
+
     typedef struct {
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
@@ -112,6 +120,7 @@ namespace common {
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间
         int isHasImage;//`json "isHasImage"` 是否包含图像
         string imageData;//`json "imageData"` 当前的视频图像数据
+        int direction;//方向，枚举类型 enum Direction
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     } WatchData;//监控数据,对应命令字DeviceData

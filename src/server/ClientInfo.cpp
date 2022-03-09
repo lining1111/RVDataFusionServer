@@ -29,6 +29,7 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->isThreadGetPkgRun.store(false);
     this->isThreadGetPkgContentRun.store(false);
     this->needRelease.store(false);
+    this->direction.store(Unknown);
 }
 
 ClientInfo::~ClientInfo() {
@@ -278,6 +279,9 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //"WatchData"
                 WatchData watchData;
                 JsonUnmarshalWatchData(pkg.body, watchData);
+                //根据结构体内的方向变量设置客户端的方向
+                client->direction.store(watchData.direction);
+
                 //存入队列
                 if (client->queueWatchData.size() >= client->maxQueueWatchData) {
                     Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());

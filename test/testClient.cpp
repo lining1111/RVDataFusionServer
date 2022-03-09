@@ -39,6 +39,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
 
     watchData.imageData = string(imgBase64).data();
+    watchData.direction = East;
 
     //AnnuciatorInfo
 
@@ -144,6 +145,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
 
     watchData.imageData = string(imgBase64).data();
+    watchData.direction = West;
 
     //AnnuciatorInfo
 

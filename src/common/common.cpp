@@ -258,6 +258,9 @@ namespace common {
         root["isHasImage"] = watchData.isHasImage;
         //root imageData
         root["imageData"] = watchData.imageData;
+        //root direction
+        root["direction"] = watchData.direction;
+
         //root AnnuciatorInfo
         Json::Value arrayAnnuciatorInfo;
         for (auto iter: watchData.listAnnuciatorInfo) {
@@ -337,6 +340,8 @@ namespace common {
         watchData.isHasImage = root["isHasImage"].asInt();
         //imageData
         watchData.imageData = root["imageData"].asString();
+        //direction
+        watchData.direction = root["direction"].asInt();
 
         //AnnuciatorInfo
         if (!root["AnnuciatorInfo"].isArray()) {

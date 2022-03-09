@@ -153,9 +153,9 @@ int FusionServer::Run() {
     threadFindOneFrame.detach();
 
     //开启服务器多路数据融合线程
-//    threadMerge = thread(ThreadMerge, this);
-//    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
-//    threadMerge.detach();
+    threadMerge = thread(ThreadMerge, this);
+    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
+    threadMerge.detach();
 
     return 0;
 }
@@ -399,16 +399,6 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
     }
     auto server = (FusionServer *) pServer;
 
-    //获取路口数据 ip排序严格按照 南 西 北 东
-    vector<string> roadIP{
-            "192.168.1.100",
-            "192.168.1.101",
-            "192.168.1.102",
-            "192.168.1.103",
-    };
-    roadIP.assign(server->roadIP.begin(), server->roadIP.end());
-
-
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
         usleep(10);
@@ -442,9 +432,9 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         //1.寻找各个路口的客户端索引，未找到就是默认值-1
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
-            for (int j = 0; j < roadIP.size(); j++) {
+            for (int j = 0; j < server->roadDirection.size(); j++) {
                 //ip 相同
-                if (string(inet_ntoa(iter->clientAddr.sin_addr)) == roadIP.at(j)) {
+                if (iter->direction == server->roadDirection.at(j)) {
                     id[j] = i;
                 }
             }
@@ -575,7 +565,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             Info("同一帧数据全部为空");
         } else {
             if (server->queueObjs.Push(objs) != 0) {
-                Error("队列已满，未存入数据 timstamp:%lu", server->curTimestamp);
+                Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
             } else {
                 Info("待融合数据存入:选取的时间戳:%lu", server->curTimestamp);
                 for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
