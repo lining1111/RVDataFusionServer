@@ -262,55 +262,59 @@ namespace common {
         root["direction"] = watchData.direction;
 
         //root AnnuciatorInfo
-        Json::Value arrayAnnuciatorInfo;
-        for (auto iter: watchData.listAnnuciatorInfo) {
-            Json::Value item;
-            // LightID
-            item["LightID"] = iter.LightID;
-            //Light
-            item["Light"] = iter.Light;
-            //RT
-            item["RT"] = iter.RT;
-            arrayAnnuciatorInfo.append(item);
+        if (!watchData.listAnnuciatorInfo.empty()) {
+            Json::Value arrayAnnuciatorInfo;
+            for (auto iter: watchData.listAnnuciatorInfo) {
+                Json::Value item;
+                // LightID
+                item["LightID"] = iter.LightID;
+                //Light
+                item["Light"] = iter.Light;
+                //RT
+                item["RT"] = iter.RT;
+                arrayAnnuciatorInfo.append(item);
+            }
+            root["AnnuciatorInfo"] = arrayAnnuciatorInfo;
         }
-        root["AnnuciatorInfo"] = arrayAnnuciatorInfo;
 
         // root lstObjTarget
-        Json::Value arrayObjTarget;
-        for (auto iter:watchData.lstObjTarget) {
-            Json::Value item;
-            //objID
-            item["objID"] = iter.objID;
-            //objCameraID
-            item["objCameraID"] = iter.objCameraID;
-            //objType
-            item["objType"] = iter.objType;
-            //plates
-            item["plates"] = iter.plates;
-            //plateColor
-            item["plateColor"] = iter.plateColor;
-            //left
-            item["left"] = iter.left;
-            //top
-            item["top"] = iter.top;
-            //right
-            item["right"] = iter.right;
-            //bottom
-            item["bottom"] = iter.bottom;
-            //locationX
-            item["locationX"] = iter.locationX;
-            //locationY
-            item["locationY"] = iter.locationY;
-            //distance
-            item["distance"] = iter.distance;
-            //angle
-            item["angle"] = iter.directionAngle;
-            //speed
-            item["speed"] = iter.speed;
+        if (!watchData.lstObjTarget.empty()) {
+            Json::Value arrayObjTarget;
+            for (auto iter:watchData.lstObjTarget) {
+                Json::Value item;
+                //objID
+                item["objID"] = iter.objID;
+                //objCameraID
+                item["objCameraID"] = iter.objCameraID;
+                //objType
+                item["objType"] = iter.objType;
+                //plates
+                item["plates"] = iter.plates;
+                //plateColor
+                item["plateColor"] = iter.plateColor;
+                //left
+                item["left"] = iter.left;
+                //top
+                item["top"] = iter.top;
+                //right
+                item["right"] = iter.right;
+                //bottom
+                item["bottom"] = iter.bottom;
+                //locationX
+                item["locationX"] = iter.locationX;
+                //locationY
+                item["locationY"] = iter.locationY;
+                //distance
+                item["distance"] = iter.distance;
+                //angle
+                item["angle"] = iter.directionAngle;
+                //speed
+                item["speed"] = iter.speed;
 
-            arrayObjTarget.append(item);
+                arrayObjTarget.append(item);
+            }
+            root["lstObjTarget"] = arrayObjTarget;
         }
-        root["lstObjTarget"] = arrayObjTarget;
 
         out = fastWriter.write(root);
 
@@ -379,7 +383,7 @@ namespace common {
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
                 item.distance = iter["distance"].asString();
-                item.directionAngle = iter["angle"].asString();
+                item.directionAngle = iter["angle"].asDouble();
                 item.speed = iter["speed"].asString();
 
                 watchData.lstObjTarget.push_back(item);
@@ -406,6 +410,7 @@ namespace common {
         len += jsonStr.length();
         //校验,可以先不设置，等待组包的时候更新
         pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
 
         pkg.head.len = len;
 
@@ -426,47 +431,49 @@ namespace common {
         root["imageData"] = fusionData.imageData;
 
         // root lstObjTarget
-        Json::Value arrayObjTarget;
-        for (auto iter:fusionData.lstObjTarget) {
-            Json::Value item;
-            //objID
-            item["objID"] = iter.objID;
-            //cameraObjID
-            item["cameraObjID"] = iter.cameraObjID;
-            //objType
-            item["objType"] = iter.objType;
-            //objColor
-            item["objColor"] = iter.objColor;
-            //plates
-            item["plates"] = iter.plates;
-            //plateColor
-            item["plateColor"] = iter.plateColor;
-            //left
-            item["left"] = iter.left;
-            //top
-            item["top"] = iter.top;
-            //right
-            item["right"] = iter.right;
-            //bottom
-            item["bottom"] = iter.bottom;
-            //distance
-            item["distance"] = iter.distance;
-            //angle
-            item["angle"] = iter.angle;
-            //speed
-            item["speed"] = iter.speed;
-            //locationX
-            item["locationX"] = iter.locationX;
-            //locationY
-            item["locationY"] = iter.locationY;
-            //longitude
-            item["longitude"] = iter.longitude;
-            //latitude
-            item["latitude"] = iter.latitude;
+        if (!fusionData.lstObjTarget.empty()) {
+            Json::Value arrayObjTarget;
+            for (auto iter:fusionData.lstObjTarget) {
+                Json::Value item;
+                //objID
+                item["objID"] = iter.objID;
+                //cameraObjID
+                item["cameraObjID"] = iter.cameraObjID;
+                //objType
+                item["objType"] = iter.objType;
+                //objColor
+                item["objColor"] = iter.objColor;
+                //plates
+                item["plates"] = iter.plates;
+                //plateColor
+                item["plateColor"] = iter.plateColor;
+                //left
+                item["left"] = iter.left;
+                //top
+                item["top"] = iter.top;
+                //right
+                item["right"] = iter.right;
+                //bottom
+                item["bottom"] = iter.bottom;
+                //distance
+                item["distance"] = iter.distance;
+                //angle
+                item["angle"] = iter.angle;
+                //speed
+                item["speed"] = iter.speed;
+                //locationX
+                item["locationX"] = iter.locationX;
+                //locationY
+                item["locationY"] = iter.locationY;
+                //longitude
+                item["longitude"] = iter.longitude;
+                //latitude
+                item["latitude"] = iter.latitude;
 
-            arrayObjTarget.append(item);
+                arrayObjTarget.append(item);
+            }
+            root["lstObjTarget"] = arrayObjTarget;
         }
-        root["lstObjTarget"] = arrayObjTarget;
 
         out = fastWriter.write(root);
 
@@ -540,6 +547,7 @@ namespace common {
         len += jsonStr.length();
         //校验,可以先不设置，等待组包的时候更新
         pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
 
         pkg.head.len = len;
 

@@ -88,24 +88,24 @@ namespace common {
     } AnnuciatorInfo;//信号机属性
 
     typedef struct {
-        int objID;//目标ID
-        int objCameraID;//摄像头目标ID
-        int objType;//目标类型
+        int objID = 0;//目标ID
+        int objCameraID = 0;//摄像头目标ID
+        int objType = 0;//目标类型
         string plates;//车牌号
         string plateColor;//车牌颜色
-        int left;//坐标 左
-        int top;//坐标 上
-        int right;// 坐标 右
-        int bottom;//坐标 下
-        double locationX;
-        double locationY;
+        int left = 0;//坐标 左
+        int top = 0;//坐标 上
+        int right = 0;// 坐标 右
+        int bottom = 0;//坐标 下
+        double locationX = 0.0;
+        double locationY = 0.0;
         string distance;//距离
-        string directionAngle;//航角度
+        double directionAngle;//航角度
         string speed;//速度
     } ObjTarget;//目标属性
 
-    enum Direction{
-        Unknown=0,//未知
+    enum Direction {
+        Unknown = 0,//未知
         West = 1,//东
         South = 2,//南
         East = 3,//西
