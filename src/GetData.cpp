@@ -9,29 +9,20 @@
 
 using namespace std;
 
-GetData::GetData(string file) {
-    ifstream in(file, ios::in);
-    //按行读取文件内容
-    string line;
-    while (!in.eof()) {
-        getline(in, line);
-        stringstream input(line);
-        string result;
-        vector<string> item;
-        while (input >> result) {
-            item.push_back(result);
-        }
-        data.push_back(item);
-    }
-    in.close();
+GetData::GetData(string path) {
+    this->path = path;
+    this->files.clear();
+    this->data.clear();
+    this->obj.clear();
 }
 
 
 GetData::~GetData() {
     data.clear();
+    obj.clear();
 }
 
-void GetFiles(string path, vector<string> &files) {
+void GetData::GetFiles(string path, vector<string> &files) {
     DIR *dir = opendir(path.c_str());
     if (dir == nullptr) {
         cout << path << " is not a directory" << endl;
@@ -54,7 +45,7 @@ void GetFiles(string path, vector<string> &files) {
 
 }
 
-static string getCameraTimestamp(string in) {
+string GetData::getCameraTimestamp(string in) {
     //时间戳m_ct1645679190529_rt1645679189565.txt
     int begin = in.find("_ct");
     int end = in.find("_rt");
@@ -64,7 +55,7 @@ static string getCameraTimestamp(string in) {
 
 }
 
-static bool compareTimestamp(string a, string b) {
+bool GetData::compareTimestamp(string a, string b) {
     //分别获取 a b的 时间戳m_ct1645679190529_rt1645679189565.txt
     string aT = getCameraTimestamp(a);
     string bT = getCameraTimestamp(b);
@@ -76,7 +67,7 @@ static bool compareTimestamp(string a, string b) {
 
 }
 
-int GetOrderListFileName(string path, vector<string> &vectorFileName) {
+int GetData::GetOrderListFileName(string path) {
     int ret = 0;
 
     //1.先获取无序的文件名集合
@@ -115,8 +106,102 @@ int GetOrderListFileName(string path, vector<string> &vectorFileName) {
     sort(files.begin(), files.end(), compareTimestamp);
 
     //4.将结果拷贝到
-    vectorFileName.assign(files.begin(), files.end());
+    this->files.assign(files.begin(), files.end());
 
-    ret = vectorFileName.size();
+    ret = this->files.size();
     return ret;
+}
+
+int GetData::GetDataFromOneFile(string file) {
+    ifstream in(file, ios::in);
+    //按行读取文件内容
+    string line;
+    int count = 0;
+    this->data.clear();
+    while (!in.eof()) {
+        if (getline(in, line)) {
+            stringstream input(line);
+            string result;
+            vector<string> item;
+            while (input >> result) {
+                item.push_back(result);
+            }
+            data.push_back(item);
+            count++;
+        }
+    }
+    in.close();
+    return count;
+}
+
+int GetData::GetObjFromData(vector<vector<string>> data) {
+    //数据每行和结构体的对应关系
+    //objID objCameraID left top right bottom locationX locationY directionAngle distance speed
+    int count = 0;
+    this->obj.clear();
+    for (int i = 0; i < data.size(); i++) {
+        auto iter = data.at(i);
+        ObjTarget item;
+        int index = 0;
+        //objID
+        if ((index + 1) <= iter.size()) {
+            item.objID = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //objCameraID
+        if ((index + 1) <= iter.size()) {
+            item.objCameraID = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //left
+        if ((index + 1) <= iter.size()) {
+            item.left = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //top
+        if ((index + 1) <= iter.size()) {
+            item.top = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //right
+        if ((index + 1) <= iter.size()) {
+            item.right = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //bottom
+        if ((index + 1) <= iter.size()) {
+            item.bottom = atoi(iter.at(index).c_str());
+            index++;
+        }
+        //locationX
+        if ((index + 1) <= iter.size()) {
+            item.locationX = atof(iter.at(index).c_str());
+            index++;
+        }
+        //locationY
+        if ((index + 1) <= iter.size()) {
+            item.locationY = atof(iter.at(index).c_str());
+            index++;
+        }
+        //directionAngle
+        if ((index + 1) <= iter.size()) {
+            item.directionAngle = atof(iter.at(index).c_str());
+            index++;
+        }
+        //distance
+        if ((index + 1) <= iter.size()) {
+            item.distance = iter.at(index);
+            index++;
+        }
+        //speed
+        if ((index + 1) <= iter.size()) {
+            item.speed = iter.at(index);
+            index++;
+        }
+
+        this->obj.push_back(item);
+        count++;
+    }
+
+    return count;
 }

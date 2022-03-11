@@ -7,11 +7,11 @@ using namespace std;
 
 int main(int argc, char **argv) {
 
+    GetData *getData = new GetData("./test/data_test/merge_data");
     vector<string> files;
-    GetOrderListFileName("./test/data_test/merge_data",files);
+    getData->GetOrderListFileName("./test/data_test/merge_data");
 
     string file = "./test/data.txt";
-    GetData *getData = new GetData(file);
     for (int i = 0; i < getData->data.size(); i++) {
         vector<string> iter = getData->data.at(i);
         for (int j = 0; j < iter.size(); j++) {

@@ -19,13 +19,13 @@ int main(int argc, char **argv) {
     server->Run();
 
     while (server->isRun.load()) {
-        sleep(1);
+        usleep(1);
         //循环出读server各个client内的WatchData队列
 //        if (server->vector_client.empty()) {
 //            Info("客户端队列为空");
 //            continue;
 //        }
-        cout << "客户端数量：" << to_string(server->vector_client.size()) << endl;
+//        cout << "客户端数量：" << to_string(server->vector_client.size()) << endl;
 
 //        //读取客户端的queueWatchData
 //        pthread_mutex_lock(&server->lock_vector_client);
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
             continue;
         }
         FusionServer::MergeData mergeData = server->queueMergeData.PopFront();
-        Info("server mergeData: timestamp:%lu,size:%d",
+        Info("server mergeData: timestamp:%f,size:%d",
              mergeData.timestamp,
              mergeData.obj.size());
     }

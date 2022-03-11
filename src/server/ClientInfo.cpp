@@ -291,7 +291,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     client->queueWatchData.push(watchData);
                     pthread_cond_broadcast(&client->condWatchData);
                     pthread_mutex_unlock(&client->lockWatchData);
-                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+//                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                 }
 
             }

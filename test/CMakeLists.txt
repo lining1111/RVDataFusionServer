@@ -32,7 +32,8 @@ add_executable(testClient testClient.cpp
         ../src/common/common.cpp
         ../src/common/CRC.cpp
         ../src/ringBuffer/RingBuffer.cpp
-        ../src/log/Log.cpp)
+        ../src/log/Log.cpp
+        ../src/GetData.cpp)
 target_link_libraries(testClient ${LIBS})
 redefine_file_macro(testClient)
 

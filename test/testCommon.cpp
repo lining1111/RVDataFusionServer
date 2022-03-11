@@ -115,7 +115,7 @@ void exampleJsonWatchData() {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = "西南45度";
+    objTarget1.directionAngle = -45;
     objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
@@ -130,7 +130,7 @@ void exampleJsonWatchData() {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = "西南45度";
+    objTarget2.directionAngle = -45;
     objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);

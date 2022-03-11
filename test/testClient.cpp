@@ -75,7 +75,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = "西南45度";
+    objTarget1.directionAngle = -45;
     objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
@@ -90,7 +90,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = "西南45度";
+    objTarget2.directionAngle = -45;
     objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
@@ -181,7 +181,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = "西南45度";
+    objTarget1.directionAngle = -45;
     objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
@@ -196,7 +196,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = "西南45度";
+    objTarget2.directionAngle = -45;
     objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
@@ -272,6 +272,15 @@ int main(int argc, char **argv) {
     }
     Info("connect server:%s-%d success", server_ip.c_str(), server_port);
 
+
+    //获取指定目录下的文件列表
+    int roadNum = atoi(argv[1]);
+    string path = string(argv[2]);
+    Info("road:%d,path:%s", roadNum, path.c_str());
+    GetData *getData = new GetData(path);
+    getData->GetOrderListFileName(path);
+
+
     bool isExit = false;
 
     while (!isExit) {
@@ -319,22 +328,108 @@ int main(int argc, char **argv) {
                 Info("send success len:%d", len);
             }
         }
-//        int index = 0;
-//        if (user == "send") {
-//            //依次发送
-//            //1.读取路径下所有文件
-//            vector<string> files;
-//            GetOrderListFileName("./test/data_test/merge_data",files);
-//            //2.获取指定文件内的内容，依次发送
-//
-//        } else if (user == "sendall") {
-//            //发送全部
-//            //1.读取路径下所有文件
-//            vector<string> files;
-//            GetOrderListFileName("./test/data_test/merge_data",files);
-//            //2.依次获取文件内的内容，发送
-//        }
+        int index = 0;
+        if (user == "send") {
+            //依次发送
+            string file;
+            if ((index + 1) < getData->files.size()) {
+                file = getData->files.at(index);
+            } else {
+                index = 0;
+                file = getData->files.at(index);
+            }
+            getData->GetDataFromOneFile(getData->path + "/" + file);
+            getData->GetObjFromData(getData->data);
+            WatchData watchData;
+            timeval tv;
+            gettimeofday(&tv, nullptr);
 
+            watchData.oprNum = random_uuid().data();
+            watchData.hardCode = "hardCode";
+            watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+            watchData.matrixNo = "matrixNo";
+            watchData.cameraIp = "192.168.1.100";
+            watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+            watchData.isHasImage = 1;
+            uint8_t img[4] = {1, 2, 3, 4};
+
+            char imgBase64[16];
+            unsigned int imgBase64Len = 0;
+
+            base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
+
+            watchData.imageData = string(imgBase64).data();
+            watchData.direction = roadNum;
+            //lstObjTarget
+            for (int i = 0; i < getData->obj.size(); i++) {
+                auto iter = getData->obj.at(i);
+                watchData.lstObjTarget.push_back(iter);
+            }
+            //组包
+            Pkg pkg;
+            PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
+            index++;
+            Pack(pkg, msg, &msg_len);
+            int len = send(sockfd, msg, msg_len, 0);
+            //打印下buffer
+//            PrintHex(msg, msg_len);
+
+            if (len != msg_len) {
+                Error("send fail");
+            } else {
+                Info("send success len:%d", len);
+            }
+
+        } else if (user == "sendall") {
+            //发送全部
+            //1.读取路径下所有文件
+            //依次发送
+            for (int i = 0; i < getData->files.size(); i++) {
+                string file = getData->files.at(i);
+                getData->GetDataFromOneFile(getData->path + "/" + file);
+                getData->GetObjFromData(getData->data);
+                WatchData watchData;
+                timeval tv;
+                gettimeofday(&tv, nullptr);
+
+                watchData.oprNum = random_uuid().data();
+                watchData.hardCode = "hardCode";
+                watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+                watchData.matrixNo = "matrixNo";
+                watchData.cameraIp = "192.168.1.100";
+                watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+                watchData.isHasImage = 1;
+                uint8_t img[4] = {1, 2, 3, 4};
+
+                char imgBase64[16];
+                unsigned int imgBase64Len = 0;
+
+                base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
+
+                watchData.imageData = string(imgBase64).data();
+                watchData.direction = roadNum;
+                //lstObjTarget
+                for (int j = 0; j < getData->obj.size(); j++) {
+                    auto iter = getData->obj.at(j);
+                    watchData.lstObjTarget.push_back(iter);
+                }
+                //组包
+                Pkg pkg;
+                PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
+                index++;
+                Pack(pkg, msg, &msg_len);
+                int len = send(sockfd, msg, msg_len, 0);
+                //打印下buffer
+//            PrintHex(msg, msg_len);
+
+                if (len != msg_len) {
+                    Error("send fail");
+                } else {
+                    Info("send success len:%d", len);
+                }
+                usleep(50 * 1000);
+            }
+        }
 
     }
 

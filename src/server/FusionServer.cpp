@@ -635,6 +635,8 @@ void FusionServer::ThreadMerge(void *pServer) {
 
                 if (server->queueMergeData.Push(mergeData) != 0) {
                     Error("队列已满，抛弃融合数据 ");
+                } else {
+                    Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
             }
                 break;
@@ -667,6 +669,8 @@ void FusionServer::ThreadMerge(void *pServer) {
 
                 if (server->queueMergeData.Push(mergeData) != 0) {
                     Error("队列已满，抛弃融合数据 ");
+                } else {
+                    Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
             }
                 break;

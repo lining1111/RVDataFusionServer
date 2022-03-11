@@ -28,7 +28,7 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
     objTarget.locationX = objectInfoT.locationX;
     objTarget.locationY = objectInfoT.locationY;
     objTarget.distance = string(objectInfoT.distance);
-    objTarget.directionAngle = string(objectInfoT.directionAngle);
+    objTarget.directionAngle = atof(objectInfoT.directionAngle);
     objTarget.speed = to_string(objectInfoT.speed);
 }
 
@@ -53,7 +53,7 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
     memcpy(objectInfoT.distance, objTarget.distance.data(), objTarget.distance.length());
 
     bzero(objectInfoT.directionAngle, ARRAY_SIZE(objectInfoT.directionAngle));
-    memcpy(objectInfoT.directionAngle, objTarget.directionAngle.data(), objTarget.directionAngle.length());
+    sprintf(objectInfoT.directionAngle, "%lf", objTarget.directionAngle);
 
     objectInfoT.left = atof(objTarget.speed.data());
 
