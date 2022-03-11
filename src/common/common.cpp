@@ -281,6 +281,8 @@ namespace common {
             Json::Value item;
             //objID
             item["objID"] = iter.objID;
+            //objCameraID
+            item["objCameraID"] = iter.objCameraID;
             //objType
             item["objType"] = iter.objType;
             //plates
@@ -366,6 +368,7 @@ namespace common {
             for (auto iter: root["lstObjTarget"]) {
                 ObjTarget item;
                 item.objID = iter["objID"].asInt();
+                item.objCameraID = iter["objCameraID"].asInt();
                 item.objType = iter["objType"].asInt();
                 item.plates = iter["plates"].asString();
                 item.plateColor = iter["plateColor"].asString();

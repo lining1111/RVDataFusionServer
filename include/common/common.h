@@ -89,6 +89,7 @@ namespace common {
 
     typedef struct {
         int objID;//目标ID
+        int objCameraID;//摄像头目标ID
         int objType;//目标类型
         string plates;//车牌号
         string plateColor;//车牌颜色
