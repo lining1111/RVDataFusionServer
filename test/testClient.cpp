@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
 
     string server_ip = "127.0.0.1";
-    uint16_t server_port = 5000;
+    uint16_t server_port = 10000;
 
     struct sockaddr_in server_addr;
     int ret = 0;

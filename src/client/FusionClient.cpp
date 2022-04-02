@@ -59,8 +59,8 @@ int FusionClient::Open() {
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(this->server_port);
 
-    server_addr.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
     ret = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr));
+    server_addr.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
 
     timeval tv_now;
     gettimeofday(&tv_now, nullptr);

@@ -4,7 +4,15 @@
 
 #include <cstring>
 #include <sys/time.h>
+
+#ifdef x86
 #include <jsoncpp/json/json.h>
+#else
+
+#include <json/json.h>
+
+#endif
+
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"

@@ -31,7 +31,7 @@ public:
     } OBJS;//同一帧多个路口的数据集合
 
 public:
-    uint16_t port = 5000;//暂定5000
+    uint16_t port = 9000;//暂定9000
     int maxListen = 5;//最大监听数
 
     const timeval checkStatusTimeval = {150, 0};//连续150s没有收到客户端请求后，断开客户端

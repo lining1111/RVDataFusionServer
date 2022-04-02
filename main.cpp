@@ -15,6 +15,8 @@ typedef struct {
     bool isRun;
 } Local;
 
+int sn = 0;
+uint32_t deviceNo = 0x12345678;
 
 /**
  * 将服务端得到的融合数据，发送给上层
@@ -27,7 +29,7 @@ static void ThreadProcess(void *p) {
 
     auto local = (Local *) p;
 
-    if (local->server == nullptr || local->client == nullptr) {
+    if (local->server == nullptr /*|| local->client == nullptr*/) {
         return;
     }
 
@@ -69,14 +71,16 @@ static void ThreadProcess(void *p) {
             }
 
             Pkg pkg;
-            PkgFusionDataWithoutCRC(fusionData, local->client->sn, local->client->deviceNo, pkg);
-            local->client->sn++;
+            PkgFusionDataWithoutCRC(fusionData, sn/*local->client->sn*/, deviceNo/*local->client->deviceNo*/, pkg);
+//            local->client->sn++;
+            sn++;
 
-            if (local->client->isRun) {
-                local->client->Send(pkg);
-            } else {
-                Info("未连接到上层，丢弃消息:%s", pkg.body.c_str());
-            }
+            Info("未连接到上层，丢弃消息:%s", pkg.body.c_str());
+//            if (local->client->isRun) {
+//                local->client->Send(pkg);
+//            } else {
+//                Info("未连接到上层，丢弃消息:%s", pkg.body.c_str());
+//            }
 
         } while (local->server->queueMergeData.Size() > 0);
     }
@@ -95,7 +99,7 @@ static void ThreadKeep(void *p) {
 
     auto local = (Local *) p;
 
-    if (local->server == nullptr || local->client == nullptr) {
+    if (local->server == nullptr /*|| local->client == nullptr*/) {
         return;
     }
 
@@ -109,12 +113,12 @@ static void ThreadKeep(void *p) {
             local->server->Run();
         }
 
-        if (!local->client->isRun) {
-            Info("客户端重启");
-            local->client->Close();
-            local->client->Open();
-            local->client->Run();
-        }
+//        if (!local->client->isRun) {
+//            Info("客户端重启");
+//            local->client->Close();
+//            local->client->Open();
+//            local->client->Run();
+//        }
     }
     Info("客户端和服务端状态检测线程 exit");
 }
@@ -122,13 +126,30 @@ static void ThreadKeep(void *p) {
 
 int main(int argc, char **argv) {
 
-    map<string, string> use;
-    use["-a"] = "设置a";
-    use["-b"] = "设置b";
-    use["-cd"] = "设置cd";
-    use["-h"] = "显示帮助信息";
+//    map<string, string> use;
+//    use["-a"] = "设置a";
+//    use["-b"] = "设置b";
+//    use["-cd"] = "设置cd";
+//    use["-h"] = "显示帮助信息";
+//
+//    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
+//    if (argc == 2 && string(argv[1]) == "--version") {
+//
+//#if defined( PROJECT_VERSION )
+//        cout << "" << PROJECT_VERSION << endl;
+//
+//#else
+//        cout << "build date:" << __DATE__ << endl;
+//#endif
+//        return 0;
+//    } else if (argc == 2 && string(argv[1]) == "-h") {
+//        parseFlag->ShowHelp();
+//        return 0;
+//    } else {
+//        parseFlag->Parse(argc, argv);
+//    }
 
-    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
+    uint16_t cloudPort = 0;
     if (argc == 2 && string(argv[1]) == "--version") {
 
 #if defined( PROJECT_VERSION )
@@ -138,28 +159,28 @@ int main(int argc, char **argv) {
         cout << "build date:" << __DATE__ << endl;
 #endif
         return 0;
-    } else if (argc == 2 && string(argv[1]) == "-h") {
-        parseFlag->ShowHelp();
-        return 0;
-    } else {
-        parseFlag->Parse(argc, argv);
+    } else if (argc == 3 && string(argv[1]) == "-p") {
+        cloudPort = atoi(argv[2]);
     }
-
+    if (cloudPort == 0) {
+        cloudPort = 9000;
+    }
+    log::init();
 
     //启动融合服务端接受多个单路RV数据;启动融合客户端连接上层，将融合后的数据发送到上层;启动状态监测线程，检查服务端和客户端状态，断开后重连
     FusionServer *server = new FusionServer();
-    FusionClient *client = new FusionClient("127.0.0.1", 1234);//端口号和ip依实际情况而变
+//    FusionClient *client = new FusionClient("127.0.0.1", cloudPort);//端口号和ip依实际情况而变
 
     Local local;
     local.server = server;
-    local.client = client;
+//    local.client = client;
     local.isRun = true;
 
     server->Open();
     server->Run();
 
-    client->Open();
-    client->Run();
+//    client->Open();
+//    client->Run();
 
     thread threadProcess = thread(ThreadProcess, &local);
     threadProcess.detach();
