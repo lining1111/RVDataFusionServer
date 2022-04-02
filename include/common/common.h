@@ -106,9 +106,9 @@ namespace common {
 
     enum Direction {
         Unknown = 0,//未知
-        West = 1,//东
+        East = 1,//东
         South = 2,//南
-        East = 3,//西
+        West = 3,//西
         North = 4,//北
     };
 
