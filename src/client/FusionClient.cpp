@@ -57,10 +57,10 @@ int FusionClient::Open() {
     int ret = 0;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
     server_addr.sin_port = htons(this->server_port);
 
     ret = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr));
-    server_addr.sin_addr.s_addr = inet_addr(this->server_ip.c_str());
 
     timeval tv_now;
     gettimeofday(&tv_now, nullptr);
@@ -304,6 +304,7 @@ void FusionClient::ThreadProcessSend(void *p) {
             int ret = send(client->sockfd, buf_send, len_send, 0);
             if (ret != len_send) {
                 if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
+                    cout << "send fail errno:" << to_string(errno) << endl;
                     continue;
                 }
                 cout << "msg:" << pkg.body << "send fail,errno:" << to_string((errno)) << endl;
@@ -358,9 +359,18 @@ int FusionClient::Send(Pkg pkg) {
     return 0;
 }
 
-int FusionClient::SendToBase(const char *buf, int len) {
-    int ret = send(sockfd, buf, len, 0);
-    if (ret != len) {
+int FusionClient::SendToBase(Pkg pkg) {
+    uint8_t buf_send[1024 * 512] = {0};
+    uint32_t len_send = 0;
+    bzero(buf_send, ARRAY_SIZE(buf_send));
+    len_send = 0;
+
+    //pack
+    common::Pack(pkg, buf_send, &len_send);
+
+    int ret = send(sockfd, buf_send, len_send, 0);
+    if (ret != len_send) {
+        printf("发送失败");
         return -1;
     }
 

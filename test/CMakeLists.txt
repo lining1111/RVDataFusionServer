@@ -42,3 +42,13 @@ add_executable(testGetData testGetData.cpp
         ../src/GetData.cpp)
 target_link_libraries(testGetData ${LIBS})
 redefine_file_macro(testGetData)
+
+##testGetData
+add_executable(testFusionClient testFusionClient.cpp
+        ../src/client/FusionClient.cpp
+        ../src/common/common.cpp
+        ../src/common/CRC.cpp
+        ../src/log/Log.cpp
+        ../src/ringBuffer/RingBuffer.cpp)
+target_link_libraries(testFusionClient ${LIBS})
+redefine_file_macro(testFusionClient)

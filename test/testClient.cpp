@@ -75,7 +75,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = -45;
+    objTarget1.directionAngle = "-45";
     objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
@@ -90,7 +90,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = -45;
+    objTarget2.directionAngle = "-45";
     objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
@@ -145,7 +145,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
 
     watchData.imageData = string(imgBase64).data();
-    watchData.direction = West;
+    watchData.direction = North;
 
     //AnnuciatorInfo
 
@@ -181,7 +181,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = -45;
+    objTarget1.directionAngle = "-45";
     objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
@@ -196,7 +196,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = -45;
+    objTarget2.directionAngle = "-45";
     objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
     setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
 
     string server_ip = "127.0.0.1";
-    uint16_t server_port = 10000;
+    uint16_t server_port = 9000;
 
     struct sockaddr_in server_addr;
     int ret = 0;

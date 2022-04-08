@@ -36,7 +36,7 @@ public:
 
     const timeval checkStatusTimeval = {150, 0};//连续150s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
-    const uint8_t thresholdFrame = 50;//不同路时间戳相差门限，单位ms
+    const uint8_t thresholdFrame = 100;//不同路时间戳相差门限，单位ms
 
     int sock = 0;//服务器socket
     //已连入的客户端列表
@@ -97,6 +97,8 @@ public:
     thread threadCheck;//服务器客户端数组状态线程
     thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
     thread threadMerge;//多路数据融合线程
+
+    string crossID;//路口编号
 
 public:
     FusionServer();

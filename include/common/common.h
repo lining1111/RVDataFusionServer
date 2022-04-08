@@ -100,7 +100,7 @@ namespace common {
         double locationX = 0.0;
         double locationY = 0.0;
         string distance;//距离
-        double directionAngle;//航角度
+        string directionAngle;//航角度
         string speed;//速度
     } ObjTarget;//目标属性
 
@@ -149,6 +149,7 @@ namespace common {
     typedef struct {
         string oprNum;// `json "oprNum"`
         double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        string crossID;// ``json "crossID"路口编号
         int isHasImage;//`json "isHasImage"` 是否包含图像
         string imageData;// `json "imageData"` 当前的视频图像数据
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类

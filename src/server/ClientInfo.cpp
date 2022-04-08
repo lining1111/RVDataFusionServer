@@ -252,7 +252,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     client->isThreadGetPkgContentRun.store(true);
     while (client->isLive.load()) {
-        usleep(10);
+        usleep(10 * 1000);
         if (client->queuePkg.Size() == 0) {
             //分别队列为空
             continue;
@@ -263,22 +263,25 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         //解析分包，按照方法名不同，存入不同的队列
         switch (pkg.head.cmd) {
             case CmdType::Response : {
-                Info("应答指令");
+                Info("client-%d,应答指令", client->sock);
             }
                 break;
             case CmdType::Login : {
-                Info("登录指令");
+                Info("client-%d,登录指令", client->sock);
             }
                 break;
             case CmdType::HeartBeat : {
-                Info("心跳指令");
+                Info("client-%d,心跳指令", client->sock);
             }
                 break;
             case CmdType::DeviceData : {
-                Info("监控数据指令");
+                Info("client-%d,监控数据指令", client->sock);
                 //"WatchData"
                 WatchData watchData;
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
                 JsonUnmarshalWatchData(pkg.body, watchData);
+                Info("obj size:%d", watchData.lstObjTarget.size());
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
 
@@ -297,15 +300,15 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
                 break;
             case CmdType::DeviceAlarm : {
-                Info("设备报警指令");
+                Info("client-%d,设备报警指令", client->sock);
             }
                 break;
             case CmdType::DeviceStatus : {
-                Info("设备状态指令");
+                Info("client-%d,设备状态指令", client->sock);
             }
                 break;
             case CmdType::DevicePicData : {
-                Info("设备视频数据回传");
+                Info("client-%d,设备视频数据回传", client->sock);
             }
                 break;
             default: {

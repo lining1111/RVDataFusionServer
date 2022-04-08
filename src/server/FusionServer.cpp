@@ -399,23 +399,50 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
     }
     auto server = (FusionServer *) pServer;
 
+    struct timespec begin;
+    struct timespec end;
+    uint64_t timeUsConsume = 0;
+
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
-        usleep(10);
+        Info("耗时:%llu", timeUsConsume);
 
+        if (timeUsConsume > (100 * 1000)) {
+            timeUsConsume = timeUsConsume % (100 * 1000);
+        }
+        usleep(server->thresholdFrame * 1000 - timeUsConsume);
+
+        clock_gettime(CLOCK_REALTIME, &begin);
         //如果连接上的客户端数量为0
         if (server->vector_client.size() == 0) {
+            Info("未连入客户端");
+            clock_gettime(CLOCK_REALTIME, &end);
+            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
+                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
             continue;
         }
-        //如果所有的客户端都没有数据
+        //所有的客户端都要缓存3帧数据
+        int clientNum = server->vector_client.size();//连入的客户端数量
+        int has3PkgCount = 0;//有3帧缓存数据的路数
         bool hasData = false;
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
-            if (!iter->queueWatchData.empty()) {
-                hasData = true;
+            if (iter->queueWatchData.size() >= 3) {
+                has3PkgCount += 1;
             }
         }
+
+        Info("clientNum %d,has3PkgCount %d", clientNum, has3PkgCount);
+
+        if (has3PkgCount > 0) {
+            hasData = true;
+        }
+
         if (!hasData) {
+            Info("全部路数未有3帧数据缓存");
+            clock_gettime(CLOCK_REALTIME, &end);
+            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
+                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
             continue;
         }
 
@@ -428,7 +455,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
 
-        int id[4] = {-1, -1, -1, -1};//以IP为目的存入的路口方向对应的客户端数组的索引，存入的是第一路ip对应的sock,第二路ip对应的sock,第三路ip对应的sock,第四路ip对应的sock
+        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
         //1.寻找各个路口的客户端索引，未找到就是默认值-1
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
@@ -439,6 +466,23 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 }
             }
         }
+
+        //调试输出，查看现在有几路连入
+        bool isConnect = false;
+        for (int i = 0; i < ARRAY_SIZE(id); i++) {
+            if (id[i] != -1) {
+                Info("第%d路 client数组索引%d sock：%d", i + 1, id[i], server->vector_client.at(id[i])->sock);
+                isConnect = true;
+            }
+        }
+        if (!isConnect) {
+            clock_gettime(CLOCK_REALTIME, &end);
+            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
+                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+            continue;
+        }
+
+
         //2.确定时间戳
         if (server->curTimestamp == 0) {
             //第一次取先遍历的帧时间
@@ -469,6 +513,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             server->xRoadTimestamp[i] = 0;
         }
 
+        //取数据
         for (int i = 0; i < ARRAY_SIZE(id); i++) {
             if (id[i] == -1) {
                 //客户端未连入，不填充数据
@@ -477,6 +522,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 //watchData数据
                 if (server->vector_client.at(id[i])->queueWatchData.empty()) {
                     //客户端未有数据传入，不填充数据
+                    Info("客户端%d未有数据传入，不填充数据", server->vector_client.at(id[i])->sock);
                 } else {
                     //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
                     bool isFind = false;
@@ -485,6 +531,11 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                             auto iter = server->vector_client.at(id[i])->queueWatchData.front();
                             //按路记录时间戳
                             server->xRoadTimestamp[i] = iter.timstamp;
+                            Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                            //TODO 赋值路口编号
+                            if (server->crossID.empty()) {
+                                server->crossID = iter.matrixNo;
+                            }
                             for (auto item: iter.lstObjTarget) {
                                 OBJECT_INFO_T objectInfoT;
                                 //转换
@@ -499,6 +550,11 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                             if (iter.timstamp > server->curTimestamp) {
                                 //按路记录时间戳
                                 server->xRoadTimestamp[i] = iter.timstamp;
+                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                //TODO 赋值路口编号
+                                if (server->crossID.empty()) {
+                                    server->crossID = iter.matrixNo;
+                                }
                                 //时间戳大于当前时间戳，直接取
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
@@ -512,6 +568,11 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                             } else if (iter.timstamp >= (server->curTimestamp - server->thresholdFrame)) {
                                 //按路记录时间戳
                                 server->xRoadTimestamp[i] = iter.timstamp;
+                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                //TODO 赋值路口编号
+                                if (server->crossID.empty()) {
+                                    server->crossID = iter.matrixNo;
+                                }
                                 //时间戳在门限范围内,赋值
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
@@ -524,6 +585,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                 isFind = true;
                             } else {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
+                                Info("第%d路时间戳不符合要求，舍弃%lu", i + 1,
+                                     server->vector_client.at(id[i])->queueWatchData.front().timstamp);
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
                             }
@@ -546,17 +609,21 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             objs.four.push_back(obj[3].at(i));
         }
 
+
         //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
-        __uint128_t sum = 0;
+        uint64_t sum = 0;
         int num = 0;
         for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
             if (server->xRoadTimestamp[i] != 0) {
                 sum += server->xRoadTimestamp[i];
-                num++;
+                num += 1;
             }
         }
-        server->curTimestamp = (sum / num);
-        Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
+        if (num != 0) {
+            Info("sum:%lu,num:%d\n", sum, num);
+            server->curTimestamp = (sum / num);
+            Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
+        }
 
         objs.timestamp = server->curTimestamp;
 
@@ -578,6 +645,10 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 
         pthread_cond_broadcast(&server->cond_vector_client);
         pthread_mutex_unlock(&server->lock_vector_client);
+
+        clock_gettime(CLOCK_REALTIME, &end);
+        timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
+                         (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
 
     }
 

@@ -85,7 +85,7 @@ public:
     //send to server
     int Send(Pkg pkg);
 
-    int SendToBase(const char *buf, int len);
+    int SendToBase(Pkg pkg);
 
 };
 

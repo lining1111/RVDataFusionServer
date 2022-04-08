@@ -29,7 +29,7 @@ static void ThreadProcess(void *p) {
 
     auto local = (Local *) p;
 
-    if (local->server == nullptr /*|| local->client == nullptr*/) {
+    if (local->server == nullptr || local->client == nullptr) {
         return;
     }
 
@@ -46,6 +46,7 @@ static void ThreadProcess(void *p) {
             fusionData.isHasImage = 0;
             fusionData.imageData = "";
             fusionData.timstamp = mergeData.timestamp;
+            fusionData.crossID = local->server->crossID;
             for (int i = 0; i < mergeData.obj.size(); i++) {
                 auto iter = mergeData.obj.at(i);
                 ObjMix objMix;
@@ -60,8 +61,8 @@ static void ThreadProcess(void *p) {
                 objMix.right = iter.top;
                 objMix.bottom = iter.bottom;
                 objMix.distance = string(iter.distance);
-                objMix.angle = iter.directionAngle;
-                objMix.speed = iter.speed;
+                objMix.angle = to_string(iter.directionAngle);
+                objMix.speed = to_string(iter.speed);
                 objMix.locationX = iter.locationX;
                 objMix.locationY = iter.locationY;
                 objMix.longitude = 0.0;
@@ -71,16 +72,20 @@ static void ThreadProcess(void *p) {
             }
 
             Pkg pkg;
-            PkgFusionDataWithoutCRC(fusionData, sn/*local->client->sn*/, deviceNo/*local->client->deviceNo*/, pkg);
-//            local->client->sn++;
+            PkgFusionDataWithoutCRC(fusionData, local->client->sn, local->client->deviceNo, pkg);
+            local->client->sn++;
             sn++;
 
-            Info("未连接到上层，丢弃消息:%s", pkg.body.c_str());
-//            if (local->client->isRun) {
+            if (local->client->isRun) {
 //                local->client->Send(pkg);
-//            } else {
-//                Info("未连接到上层，丢弃消息:%s", pkg.body.c_str());
-//            }
+                if (local->client->SendToBase(pkg) == -1) {
+                    local->client->isRun = false;
+                }
+
+                Info("连接到上层，发送消息:%s", pkg.body.c_str());
+            } else {
+                Error("未连接到上层，丢弃消息:%s", pkg.body.c_str());
+            }
 
         } while (local->server->queueMergeData.Size() > 0);
     }
@@ -99,7 +104,7 @@ static void ThreadKeep(void *p) {
 
     auto local = (Local *) p;
 
-    if (local->server == nullptr /*|| local->client == nullptr*/) {
+    if (local->server == nullptr || local->client == nullptr) {
         return;
     }
 
@@ -113,12 +118,12 @@ static void ThreadKeep(void *p) {
             local->server->Run();
         }
 
-//        if (!local->client->isRun) {
-//            Info("客户端重启");
-//            local->client->Close();
-//            local->client->Open();
-//            local->client->Run();
-//        }
+        if (!local->client->isRun) {
+            Info("客户端重启");
+            local->client->Close();
+            local->client->Open();
+            local->client->Run();
+        }
     }
     Info("客户端和服务端状态检测线程 exit");
 }
@@ -169,18 +174,18 @@ int main(int argc, char **argv) {
 
     //启动融合服务端接受多个单路RV数据;启动融合客户端连接上层，将融合后的数据发送到上层;启动状态监测线程，检查服务端和客户端状态，断开后重连
     FusionServer *server = new FusionServer();
-//    FusionClient *client = new FusionClient("127.0.0.1", cloudPort);//端口号和ip依实际情况而变
+    FusionClient *client = new FusionClient("10.100.10.50", cloudPort);//端口号和ip依实际情况而变
 
     Local local;
     local.server = server;
-//    local.client = client;
+    local.client = client;
     local.isRun = true;
 
     server->Open();
     server->Run();
 
-//    client->Open();
-//    client->Run();
+    client->Open();
+    client->Run();
 
     thread threadProcess = thread(ThreadProcess, &local);
     threadProcess.detach();
@@ -191,15 +196,6 @@ int main(int argc, char **argv) {
     while (true) {
         sleep(1);
     }
-
-//    log::init();
-//    int x = 4;
-//    printf("x = %d\n", x);
-//
-//    Fatal("x = %d", x);
-
-
-
 
     return 0;
 }

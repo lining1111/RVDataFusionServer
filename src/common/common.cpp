@@ -6,7 +6,9 @@
 #include <sys/time.h>
 
 #ifdef x86
+
 #include <jsoncpp/json/json.h>
+
 #else
 
 #include <json/json.h>
@@ -391,7 +393,7 @@ namespace common {
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
                 item.distance = iter["distance"].asString();
-                item.directionAngle = iter["angle"].asDouble();
+                item.directionAngle = iter["angle"].asString();
                 item.speed = iter["speed"].asString();
 
                 watchData.lstObjTarget.push_back(item);
@@ -433,6 +435,8 @@ namespace common {
         root["oprNum"] = fusionData.oprNum;
         //root timstamp
         root["timstamp"] = fusionData.timstamp;
+        //root crossID
+        root["crossID"] = fusionData.crossID;
         //root isHasImage
         root["isHasImage"] = fusionData.isHasImage;
         //root imageData
@@ -481,6 +485,8 @@ namespace common {
                 arrayObjTarget.append(item);
             }
             root["lstObjTarget"] = arrayObjTarget;
+        } else {
+            root["lstObjTarget"].resize(0);
         }
 
         out = fastWriter.write(root);
@@ -501,6 +507,8 @@ namespace common {
         fusionData.oprNum = root["oprNum"].asString();
         //timstamp
         fusionData.timstamp = root["timstamp"].asDouble();
+        //crossID
+        fusionData.crossID = root["crossID"].asString();
         //isHasImage
         fusionData.isHasImage = root["isHasImage"].asInt();
         //imageData
