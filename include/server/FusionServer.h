@@ -52,7 +52,7 @@ public:
     atomic_bool isRun;//运行标志
 #define MaxRoadNum 4 //最多有多少路
     Queue<OBJS> queueObjs;//在同一帧的多路数据
-    uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳
+    uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位us
     uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
     typedef struct {
@@ -99,6 +99,9 @@ public:
     thread threadMerge;//多路数据融合线程
 
     string crossID;//路口编号
+    string db = "CLParking.db";
+
+    string matrixNo = "0123456789";
 
 public:
     FusionServer();
@@ -112,6 +115,8 @@ private:
      * 从config指定的文件中读取配置参数
      */
     void initConfig();
+
+    void getMatrixNoFromDb();
 
 public:
     /**

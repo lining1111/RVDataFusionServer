@@ -28,8 +28,10 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
     objTarget.locationX = objectInfoT.locationX;
     objTarget.locationY = objectInfoT.locationY;
     objTarget.distance = string(objectInfoT.distance);
-    objTarget.directionAngle = atof(objectInfoT.directionAngle);
+    objTarget.directionAngle = string(objectInfoT.directionAngle);
     objTarget.speed = to_string(objectInfoT.speed);
+    objTarget.longitude = objectInfoT.longitude;
+    objTarget.latitude = objectInfoT.latitude;
 }
 
 void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
@@ -37,10 +39,10 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
     objectInfoT.objType = objTarget.objType;
 
     bzero(objectInfoT.plate_number, ARRAY_SIZE(objectInfoT.plate_number));
-    memcpy(objectInfoT.plate_number, objTarget.plates.data(), objTarget.plates.length());
+    sprintf(objectInfoT.plate_number, "%s", objTarget.plates.c_str());
 
     bzero(objectInfoT.plate_color, ARRAY_SIZE(objectInfoT.plate_color));
-    memcpy(objectInfoT.plate_color, objTarget.plateColor.data(), objTarget.plateColor.length());
+    sprintf(objectInfoT.plate_color, "%s", objTarget.plateColor.c_str());
 
     objectInfoT.left = objTarget.left;
     objectInfoT.top = objTarget.top;
@@ -50,12 +52,15 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
     objectInfoT.locationY = objTarget.locationY;
 
     bzero(objectInfoT.distance, ARRAY_SIZE(objectInfoT.distance));
-    memcpy(objectInfoT.distance, objTarget.distance.data(), objTarget.distance.length());
+    sprintf(objectInfoT.distance, "%s", objTarget.distance.c_str());
 
     bzero(objectInfoT.directionAngle, ARRAY_SIZE(objectInfoT.directionAngle));
-    sprintf(objectInfoT.directionAngle, "%lf", objTarget.directionAngle);
+    sprintf(objectInfoT.directionAngle, "%s", objTarget.directionAngle.c_str());
 
-    objectInfoT.left = atof(objTarget.speed.data());
+    objectInfoT.speed = atof(objTarget.speed.data());
+
+    objectInfoT.longitude = objTarget.longitude;
+    objectInfoT.latitude = objTarget.latitude;
 
 }
 
@@ -88,6 +93,8 @@ static void initvalueNew(OBJECT_INFO_NEW *data, double angle_value) {
     memset(data->distance, 0x0, 10);
     data->directionAngle = angle_value;
     data->speed = -INF;
+    data->longitude = -INF;
+    data->latitude = -INF;
 }
 
 
@@ -106,6 +113,8 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
         obj_info->locationY = dataT->locationY;
         strcpy(obj_info->distance, dataT->distance);
         obj_info->speed = dataT->speed;
+        obj_info->longitude = dataT->longitude;
+        obj_info->latitude = dataT->latitude;
     }
     if (dataNew->locationX != -INF) {
         obj_info->objType = dataNew->objType;
@@ -119,6 +128,8 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
         obj_info->locationY = dataNew->locationY;
         strcpy(obj_info->distance, dataNew->distance);
         obj_info->speed = dataNew->speed;
+        obj_info->longitude = dataNew->longitude;
+        obj_info->latitude = dataNew->latitude;
     }
 }
 

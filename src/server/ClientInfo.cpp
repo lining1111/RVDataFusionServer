@@ -275,13 +275,14 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
                 break;
             case CmdType::DeviceData : {
-                Info("client-%d,监控数据指令", client->sock);
+                Info("监控数据指令");
                 //"WatchData"
                 WatchData watchData;
                 //打印下接收的内容
-//                Info("%s\n", pkg.body.c_str());
+                Info("%s\n", pkg.body.c_str());
                 JsonUnmarshalWatchData(pkg.body, watchData);
-                Info("obj size:%d", watchData.lstObjTarget.size());
+                Info("client-%d,timestamp:%f,obj size:%d", client->sock, watchData.timstamp,
+                     watchData.lstObjTarget.size());
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
 

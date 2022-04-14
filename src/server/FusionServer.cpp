@@ -12,6 +12,8 @@
 #include "merge/merge.h"
 #include "simpleini/SimpleIni.h"
 
+#include "sqlite3.h"
+
 using namespace log;
 
 FusionServer::FusionServer() {
@@ -61,6 +63,53 @@ void FusionServer::initConfig() {
 
         fclose(fp);
     }
+}
+
+
+static int CallbackGetCL_ParkingArea(void *data, int argc, char **argv, char **azColName) {
+    string colName;
+    if (data != nullptr) {
+        auto server = (FusionServer *) data;
+        for (int i = 0; i < argc; i++) {
+            colName = string(azColName[i]);
+            if (colName.compare("UName") == 0) {
+                server->matrixNo = string(argv[i]);
+                cout << "get matrixNo from db:" + server->matrixNo << endl;
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+void FusionServer::getMatrixNoFromDb() {
+    sqlite3 *db;
+    char *errmsg = nullptr;
+
+    string dbName;
+#ifdef arm64
+    dbName = "/home/nvidianx/bin/" + this->db;
+#else
+    dbName = this->db;
+#endif
+
+
+    //open
+    int rc = sqlite3_open(dbName.c_str(), &db);
+    if (rc != SQLITE_OK) {
+        printf("sqlite open fail\n");
+        sqlite3_close(db);
+    }
+
+    //base
+    char *sqlGetBase = "select * from CL_ParkingArea";
+    rc = sqlite3_exec(db, sqlGetBase, CallbackGetCL_ParkingArea, this, &errmsg);
+    if (rc != SQLITE_OK) {
+        printf("sqlite err:%s\n", errmsg);
+        sqlite3_free(errmsg);
+    }
+
 }
 
 int FusionServer::Open() {
@@ -136,6 +185,9 @@ int FusionServer::Run() {
         return -1;
     }
     isRun.store(true);
+
+    //获取matrixNo
+    getMatrixNoFromDb();
 
     //开启服务器监视客户端线程
     threadMonitor = thread(ThreadMonitor, this);
@@ -421,12 +473,19 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                              (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
             continue;
         }
+
+        pthread_mutex_lock(&server->lock_vector_client);
+        if (server->vector_client.empty()) {
+            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+        }
         //所有的客户端都要缓存3帧数据
         int clientNum = server->vector_client.size();//连入的客户端数量
         int has3PkgCount = 0;//有3帧缓存数据的路数
         bool hasData = false;
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
+
+            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
             if (iter->queueWatchData.size() >= 3) {
                 has3PkgCount += 1;
             }
@@ -443,6 +502,10 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             clock_gettime(CLOCK_REALTIME, &end);
             timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
                              (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+
+            pthread_cond_broadcast(&server->cond_vector_client);
+            pthread_mutex_unlock(&server->lock_vector_client);
+
             continue;
         }
 
@@ -450,10 +513,6 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
         //轮询各个连入的客户端，按指定的路口ip来存入数组
-        pthread_mutex_lock(&server->lock_vector_client);
-        if (server->vector_client.empty()) {
-            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
-        }
 
         int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
         //1.寻找各个路口的客户端索引，未找到就是默认值-1
@@ -479,6 +538,10 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             clock_gettime(CLOCK_REALTIME, &end);
             timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
                              (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+
+            pthread_cond_broadcast(&server->cond_vector_client);
+            pthread_mutex_unlock(&server->lock_vector_client);
+
             continue;
         }
 
@@ -565,7 +628,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
                                 isFind = true;
-                            } else if (iter.timstamp >= (server->curTimestamp - server->thresholdFrame)) {
+                            } else if (iter.timstamp >= (server->curTimestamp - (server->thresholdFrame * 1000))) {
                                 //按路记录时间戳
                                 server->xRoadTimestamp[i] = iter.timstamp;
                                 Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
@@ -585,7 +648,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                 isFind = true;
                             } else {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("第%d路时间戳不符合要求，舍弃%lu", i + 1,
+                                Info("第%d路时间戳不符合要求，舍弃%f", i + 1,
                                      server->vector_client.at(id[i])->queueWatchData.front().timstamp);
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
@@ -643,12 +706,12 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             }
         }
 
-        pthread_cond_broadcast(&server->cond_vector_client);
-        pthread_mutex_unlock(&server->lock_vector_client);
-
         clock_gettime(CLOCK_REALTIME, &end);
         timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
                          (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+
+        pthread_cond_broadcast(&server->cond_vector_client);
+        pthread_mutex_unlock(&server->lock_vector_client);
 
     }
 

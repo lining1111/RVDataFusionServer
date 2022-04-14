@@ -58,7 +58,7 @@ add_definitions(-D${ARCH})
 include_directories(include)
 include_directories(include/simpleini)
 
-set(LIBS m pthread zlog jsoncpp)
+set(LIBS m pthread zlog jsoncpp sqlite3)
 
 set(SRC_DIRS src
         src/log

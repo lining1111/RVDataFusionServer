@@ -60,19 +60,20 @@ static void ThreadProcess(void *p) {
                 objMix.top = iter.top;
                 objMix.right = iter.top;
                 objMix.bottom = iter.bottom;
-                objMix.distance = string(iter.distance);
-                objMix.angle = to_string(iter.directionAngle);
-                objMix.speed = to_string(iter.speed);
+                objMix.distance = atof(string(iter.distance).c_str());
+                objMix.angle = iter.directionAngle;
+                objMix.speed = iter.speed;
                 objMix.locationX = iter.locationX;
                 objMix.locationY = iter.locationY;
-                objMix.longitude = 0.0;
-                objMix.latitude = 0.0;
+                objMix.longitude = iter.longitude;
+                objMix.latitude = iter.latitude;
 
                 fusionData.lstObjTarget.push_back(objMix);
             }
 
+            uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
             Pkg pkg;
-            PkgFusionDataWithoutCRC(fusionData, local->client->sn, local->client->deviceNo, pkg);
+            PkgFusionDataWithoutCRC(fusionData, local->client->sn, deviceNo, pkg);
             local->client->sn++;
             sn++;
 
@@ -81,9 +82,10 @@ static void ThreadProcess(void *p) {
                 if (local->client->SendToBase(pkg) == -1) {
                     local->client->isRun = false;
                 }
-
+                Info("连接到上层，发送消息,matrixNo:%d", pkg.head.deviceNO);
                 Info("连接到上层，发送消息:%s", pkg.body.c_str());
             } else {
+                Error("未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
                 Error("未连接到上层，丢弃消息:%s", pkg.body.c_str());
             }
 
@@ -168,13 +170,13 @@ int main(int argc, char **argv) {
         cloudPort = atoi(argv[2]);
     }
     if (cloudPort == 0) {
-        cloudPort = 9000;
+        cloudPort = 9200;
     }
     log::init();
 
     //启动融合服务端接受多个单路RV数据;启动融合客户端连接上层，将融合后的数据发送到上层;启动状态监测线程，检查服务端和客户端状态，断开后重连
     FusionServer *server = new FusionServer();
-    FusionClient *client = new FusionClient("10.100.10.50", cloudPort);//端口号和ip依实际情况而变
+    FusionClient *client = new FusionClient("10.110.60.121", cloudPort);//端口号和ip依实际情况而变
 
     Local local;
     local.server = server;

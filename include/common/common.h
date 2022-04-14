@@ -102,6 +102,8 @@ namespace common {
         string distance;//距离
         string directionAngle;//航角度
         string speed;//速度
+        double longitude;//经度
+        double latitude;//维度
     } ObjTarget;//目标属性
 
     enum Direction {
@@ -127,21 +129,21 @@ namespace common {
     } WatchData;//监控数据,对应命令字DeviceData
 
     typedef struct {
-        int objID;//目标ID
-        int cameraObjID;//图像目标ID
-        int objType;//目标类型
-        int objColor;//目标颜色
+        int objID = 0;//目标ID
+        int cameraObjID = 0;//图像目标ID
+        int objType = 0;//目标类型
+        int objColor = 0;//目标颜色
         string plates;//车牌号
         string plateColor;//车牌颜色
-        int left;//坐标 左
-        int top;//坐标 上
-        int right;// 坐标 右
-        int bottom;//坐标 下
-        string distance;//距离
-        string angle;//航角度
-        string speed;//速度
-        double locationX;//平面X位置
-        double locationY;//平面Y位置
+        int left = 0;//坐标 左
+        int top = 0;//坐标 上
+        int right = 0;// 坐标 右
+        int bottom = 0;//坐标 下
+        float distance;//距离
+        float angle;//航角度
+        float speed;//速度
+        double locationX = 0.0;//平面X位置
+        double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
         double latitude = 0.0;//维度
     } ObjMix;//融合后的目标数据

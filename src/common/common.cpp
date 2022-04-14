@@ -320,6 +320,10 @@ namespace common {
                 item["angle"] = iter.directionAngle;
                 //speed
                 item["speed"] = iter.speed;
+                //longitude
+                item["longitude"] = iter.longitude;
+                //latitude
+                item["latitude"] = iter.latitude;
 
                 arrayObjTarget.append(item);
             }
@@ -395,6 +399,8 @@ namespace common {
                 item.distance = iter["distance"].asString();
                 item.directionAngle = iter["angle"].asString();
                 item.speed = iter["speed"].asString();
+                item.longitude = iter["longitude"].asDouble();
+                item.latitude = iter["latitude"].asDouble();
 
                 watchData.lstObjTarget.push_back(item);
             }
@@ -531,9 +537,9 @@ namespace common {
                 item.top = iter["top"].asInt();
                 item.right = iter["right"].asInt();
                 item.bottom = iter["bottom"].asInt();
-                item.distance = iter["distance"].asString();
-                item.angle = iter["angle"].asString();
-                item.speed = iter["speed"].asString();
+                item.distance = iter["distance"].asFloat();
+                item.angle = iter["angle"].asFloat();
+                item.speed = iter["speed"].asFloat();
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
                 item.longitude = iter["longitude"].asDouble();

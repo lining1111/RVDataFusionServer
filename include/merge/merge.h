@@ -27,6 +27,8 @@ typedef struct {
     char distance[10];
     char directionAngle[10];
     double speed;
+    double longitude;//经度
+    double latitude;//纬度
 } OBJECT_INFO_T;
 
 typedef struct {
@@ -47,6 +49,8 @@ typedef struct {
     char distance[10];
     double directionAngle;
     double speed;
+    double longitude;//经度
+    double latitude;//纬度
 } OBJECT_INFO_NEW;
 
 
