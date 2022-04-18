@@ -13,7 +13,8 @@ using namespace std;
 
 namespace common {
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
+#define ARRAY_SIZE(x) \
+    (sizeof(x)/sizeof(x[0]))
 #define OFFSET(type, member)      \
     ( (size_t)( &( ((type*)0)->member)  ) )
 #define MEMBER_SIZE(type, member) \

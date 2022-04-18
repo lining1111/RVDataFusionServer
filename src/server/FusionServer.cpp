@@ -103,8 +103,8 @@ void FusionServer::getMatrixNoFromDb() {
     }
 
     //base
-    char *sqlGetBase = "select * from CL_ParkingArea";
-    rc = sqlite3_exec(db, sqlGetBase, CallbackGetCL_ParkingArea, this, &errmsg);
+    char *sqlGetCL_ParkingArea = "select * from CL_ParkingArea";
+    rc = sqlite3_exec(db, sqlGetCL_ParkingArea, CallbackGetCL_ParkingArea, this, &errmsg);
     if (rc != SQLITE_OK) {
         printf("sqlite err:%s\n", errmsg);
         sqlite3_free(errmsg);

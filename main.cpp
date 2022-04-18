@@ -3,6 +3,7 @@
 #include "log/Log.h"
 #include "version.h"
 #include "ParseFlag.h"
+#include <gflags/gflags.h>
 
 #include "client/FusionClient.h"
 #include "server/FusionServer.h"
@@ -130,53 +131,24 @@ static void ThreadKeep(void *p) {
     Info("客户端和服务端状态检测线程 exit");
 }
 
+DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
+DEFINE_string(cloudIp, "10.110.60.121", "云端ip，默认 10.110.60.121");
+DEFINE_int32(cloudPort, 9200, "云端端口号，默认9200");
 
 int main(int argc, char **argv) {
 
-//    map<string, string> use;
-//    use["-a"] = "设置a";
-//    use["-b"] = "设置b";
-//    use["-cd"] = "设置cd";
-//    use["-h"] = "显示帮助信息";
-//
-//    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
-//    if (argc == 2 && string(argv[1]) == "--version") {
-//
-//#if defined( PROJECT_VERSION )
-//        cout << "" << PROJECT_VERSION << endl;
-//
-//#else
-//        cout << "build date:" << __DATE__ << endl;
-//#endif
-//        return 0;
-//    } else if (argc == 2 && string(argv[1]) == "-h") {
-//        parseFlag->ShowHelp();
-//        return 0;
-//    } else {
-//        parseFlag->Parse(argc, argv);
-//    }
-
-    uint16_t cloudPort = 0;
-    if (argc == 2 && string(argv[1]) == "--version") {
-
-#if defined( PROJECT_VERSION )
-        cout << "" << PROJECT_VERSION << endl;
-
-#else
-        cout << "build date:" << __DATE__ << endl;
-#endif
-        return 0;
-    } else if (argc == 3 && string(argv[1]) == "-p") {
-        cloudPort = atoi(argv[2]);
-    }
-    if (cloudPort == 0) {
-        cloudPort = 9200;
-    }
+    google::SetVersionString(PROJECT_VERSION);
+    google::ParseCommandLineFlags(&argc, &argv, true);
     log::init();
+    uint16_t port = FLAGS_port;
+    string cloudIp = FLAGS_cloudIp;
+    uint16_t cloudPort = FLAGS_cloudPort;
+
 
     //启动融合服务端接受多个单路RV数据;启动融合客户端连接上层，将融合后的数据发送到上层;启动状态监测线程，检查服务端和客户端状态，断开后重连
     FusionServer *server = new FusionServer();
-    FusionClient *client = new FusionClient("10.110.60.121", cloudPort);//端口号和ip依实际情况而变
+    server->port = port;
+    FusionClient *client = new FusionClient(cloudIp, cloudPort);//端口号和ip依实际情况而变
 
     Local local;
     local.server = server;

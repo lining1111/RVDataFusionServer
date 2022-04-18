@@ -29,8 +29,8 @@ endfunction()
 
 #根据实际情况设置
 #set(ARCH arm)
-#set(ARCH x86)
-set(ARCH arm64)
+set(ARCH x86)
+#set(ARCH arm64)
 
 if (${ARCH} STREQUAL arm)
     set(CROSS_COMPILE /usr/local/raspberrypi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-)
@@ -76,7 +76,7 @@ endforeach (src_dir)
 
 
 add_executable(RVDataFusionServer main.cpp ${SRC_FILES})
-target_link_libraries(RVDataFusionServer ${LIBS})
+target_link_libraries(RVDataFusionServer libgflags.a ${LIBS})
 redefine_file_macro(RVDataFusionServer)
 
 add_subdirectory(test)
