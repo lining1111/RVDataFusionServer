@@ -64,7 +64,7 @@ T Queue<T>::PopFront() {
     T t;
 
     pthread_mutex_lock(&lock);
-    if (q.empty()) {
+    while (q.empty()) {
         pthread_cond_wait(&cond, &lock);
     }
     //取出队列头
@@ -81,7 +81,7 @@ T Queue<T>::PopBack() {
     T t;
 
     pthread_mutex_lock(&lock);
-    if (q.empty()) {
+    while (q.empty()) {
         pthread_cond_wait(&cond, &lock);
     }
     //取出队列头

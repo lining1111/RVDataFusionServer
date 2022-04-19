@@ -297,7 +297,7 @@ int FusionServer::DeleteAllClient() {
 
         pthread_mutex_lock(&lock_vector_client);
 
-        if (vector_client.empty()) {
+        while (vector_client.empty()) {
             pthread_cond_wait(&cond_vector_client, &lock_vector_client);
         }
 
@@ -475,7 +475,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         }
 
         pthread_mutex_lock(&server->lock_vector_client);
-        if (server->vector_client.empty()) {
+        while (server->vector_client.empty()) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
         //所有的客户端都要缓存3帧数据

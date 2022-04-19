@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include "log/Log.h"
 #include "version.h"
-#include "ParseFlag.h"
 #include <gflags/gflags.h>
 
 #include "client/FusionClient.h"

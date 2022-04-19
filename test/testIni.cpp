@@ -4,33 +4,20 @@
 #include <string>
 #include <map>
 #include <iostream>
-#include "ParseFlag.h"
 #include "simpleini/SimpleIni.h"
 
 using namespace std;
 
 int main(int argc, char **argv) {
-    map<string, string> use;
-    use["-path"] = "设置ini路径";
-    ParseFlag *parseFlag = new ParseFlag(use, ParseFlag::SinglePole);
 
-    parseFlag->Parse(argc, argv);
-
-    string iniPath = "./config.ini";
-    auto iter = parseFlag->useAgeSet.find("-path");
-    if (iter != parseFlag->useAgeSet.end()) {
-        iniPath = iter->second;
-    }
-
-    FILE *fp = fopen(iniPath.c_str(), "r+");
-    if (fp == nullptr) {
-        cout << "can not open file:" + iniPath << endl;
+    if (argc < 2) {
         return -1;
     }
 
     CSimpleIniA ini;
-    ini.LoadFile(fp);
 
+    string filePath = string(argv[1]);
+    ini.LoadFile(filePath.c_str());
     double repateX;//fix 不变
     double widthX;//跟路口有关
     double widthY;//跟路口有关
@@ -61,8 +48,6 @@ int main(int argc, char **argv) {
     gatey = atof(S_gatey);
 
     ini.SetValue("server", "getey", "505");
-    ini.SaveFile(iniPath.c_str());
 
 
-    fclose(fp);
 }
