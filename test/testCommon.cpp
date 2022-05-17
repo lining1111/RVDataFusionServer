@@ -13,7 +13,7 @@
 #include "ringBuffer/RingBuffer.h"
 
 using namespace common;
-using namespace log;
+using namespace z_log;
 
 /**
  * 一次帧数据组包解包过程

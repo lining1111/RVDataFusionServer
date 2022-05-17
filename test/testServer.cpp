@@ -9,7 +9,7 @@
 #include "log/Log.h"
 #include "merge/merge.h"
 
-using namespace log;
+using namespace z_log;
 
 int main(int argc, char **argv) {
 

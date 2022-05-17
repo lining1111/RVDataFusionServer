@@ -445,8 +445,47 @@ namespace common {
         root["crossID"] = fusionData.crossID;
         //root isHasImage
         root["isHasImage"] = fusionData.isHasImage;
-        //root imageData
-        root["imageData"] = fusionData.imageData;
+//        //root imageData
+//        root["imageData"] = fusionData.imageData;
+
+        //root lstVideos
+        if (!fusionData.lstVideos.empty()) {
+            Json::Value arrayVideos;
+            for (auto iter1:fusionData.lstVideos) {
+                Json::Value itemVideos;
+                //rvHardCode
+                itemVideos["rvHardCode"] = iter1.rvHardCode;
+                //imageData
+                itemVideos["imageData"] = iter1.imageData;
+
+                //lstVideoTargets
+                if (!iter1.lstVideoTargets.empty()) {
+                    Json::Value arrayVideoTargets;
+                    for (auto iter2:iter1.lstVideoTargets) {
+                        Json::Value itemVideoTargets;
+                        //cameraObjID
+                        itemVideoTargets["cameraObjID"] = iter2.cameraObjID;
+                        //left
+                        itemVideoTargets["left"] = iter2.left;
+                        //top
+                        itemVideoTargets["top"] = iter2.top;
+                        //right
+                        itemVideoTargets["right"] = iter2.right;
+                        //bottom
+                        itemVideoTargets["bottom"] = iter2.bottom;
+
+                        arrayVideoTargets.append(itemVideoTargets);
+                    }
+                    itemVideos["lstVideoTargets"] = arrayVideoTargets;
+                } else {
+                    itemVideos["lstVideoTargets"].resize(0);
+                }
+                arrayVideos.append(itemVideos);
+            }
+            root["lstVideos"] = arrayVideos;
+        } else {
+            root["lstVideos"].resize(0);
+        }
 
         // root lstObjTarget
         if (!fusionData.lstObjTarget.empty()) {
@@ -456,7 +495,24 @@ namespace common {
                 //objID
                 item["objID"] = iter.objID;
                 //cameraObjID
-                item["cameraObjID"] = iter.cameraObjID;
+//                item["cameraObjID"] = iter.cameraObjID;
+                if (!iter.listRvWayObject.empty()) {
+                    Json::Value arrayObjTarget1;
+                    for (auto iter1:iter.listRvWayObject) {
+                        Json::Value item1;
+                        //wayNo
+                        item1["wayNo"] = iter1.wayNo;
+                        //roID
+                        item1["roID"] = iter1.roID;
+                        //voID
+                        item1["voID"] = iter1.voID;
+                        arrayObjTarget1.append(item1);
+                    }
+                    item["rvWayObject"] = arrayObjTarget1;
+                } else {
+                    item["rvWayObject"].resize(0);
+                }
+
                 //objType
                 item["objType"] = iter.objType;
                 //objColor
@@ -465,14 +521,14 @@ namespace common {
                 item["plates"] = iter.plates;
                 //plateColor
                 item["plateColor"] = iter.plateColor;
-                //left
-                item["left"] = iter.left;
-                //top
-                item["top"] = iter.top;
-                //right
-                item["right"] = iter.right;
-                //bottom
-                item["bottom"] = iter.bottom;
+//                //left
+//                item["left"] = iter.left;
+//                //top
+//                item["top"] = iter.top;
+//                //right
+//                item["right"] = iter.right;
+//                //bottom
+//                item["bottom"] = iter.bottom;
                 //distance
                 item["distance"] = iter.distance;
                 //angle
@@ -517,8 +573,33 @@ namespace common {
         fusionData.crossID = root["crossID"].asString();
         //isHasImage
         fusionData.isHasImage = root["isHasImage"].asInt();
-        //imageData
-        fusionData.imageData = root["imageData"].asString();
+//        //imageData
+//        fusionData.imageData = root["imageData"].asString();
+
+        //lstVideos
+        if (!root["lstVideos"].isArray()) {
+            cout << "json no lstVideos" << endl;
+        } else {
+            for (auto iter:root["lstVideos"]) {
+                VideoData itemVideoData;
+                itemVideoData.rvHardCode = iter["rvHardCode"].asString();
+                itemVideoData.imageData = iter["imageData"].asString();
+                if (iter["lstVideoTargets"].isArray()) {
+                    for (auto iter2:iter["lstVideoTargets"]) {
+                        VideoTargets itemVideoTargets;
+                        itemVideoTargets.cameraObjID = iter2["cameraObjID"].asInt();
+                        itemVideoTargets.left = iter2["left"].asInt();
+                        itemVideoTargets.top = iter2["top"].asInt();
+                        itemVideoTargets.right = iter2["right"].asInt();
+                        itemVideoTargets.bottom = iter2["bottom"].asInt();
+
+                        itemVideoData.lstVideoTargets.push_back(itemVideoTargets);
+                    }
+                }
+                fusionData.lstVideos.push_back(itemVideoData);
+            }
+        }
+
 
         //lstObjTarget
         if (!root["lstObjTarget"].isArray()) {
@@ -528,15 +609,25 @@ namespace common {
             for (auto iter: root["lstObjTarget"]) {
                 ObjMix item;
                 item.objID = iter["objID"].asInt();
-                item.cameraObjID = iter["cameraObjID"].asInt();
+
+                if (iter["rvWayObject"].isArray()) {
+                    for (auto iter1:iter["rvWayObject"]) {
+                        RvWayObject itemRvWayObject;
+                        itemRvWayObject.wayNo = iter1["wayNo"].asInt();
+                        itemRvWayObject.roID = iter1["roID"].asInt();
+                        itemRvWayObject.voID = iter1["voID"].asInt();
+                        item.listRvWayObject.push_back(itemRvWayObject);
+                    }
+                }
+//                item.cameraObjID = iter["cameraObjID"].asInt();
                 item.objType = iter["objType"].asInt();
                 item.objColor = iter["objColor"].asInt();
                 item.plates = iter["plates"].asString();
                 item.plateColor = iter["plateColor"].asString();
-                item.left = iter["left"].asInt();
-                item.top = iter["top"].asInt();
-                item.right = iter["right"].asInt();
-                item.bottom = iter["bottom"].asInt();
+//                item.left = iter["left"].asInt();
+//                item.top = iter["top"].asInt();
+//                item.right = iter["right"].asInt();
+//                item.bottom = iter["bottom"].asInt();
                 item.distance = iter["distance"].asFloat();
                 item.angle = iter["angle"].asFloat();
                 item.speed = iter["speed"].asFloat();
@@ -544,6 +635,7 @@ namespace common {
                 item.locationY = iter["locationY"].asDouble();
                 item.longitude = iter["longitude"].asDouble();
                 item.latitude = iter["latitude"].asDouble();
+
 
                 fusionData.lstObjTarget.push_back(item);
             }

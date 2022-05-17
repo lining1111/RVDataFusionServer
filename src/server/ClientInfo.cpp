@@ -11,7 +11,7 @@
 #include "log/Log.h"
 #include "common/CRC.h"
 
-using namespace log;
+using namespace z_log;
 using namespace common;
 
 ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
@@ -279,7 +279,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //"WatchData"
                 WatchData watchData;
                 //打印下接收的内容
-                Info("%s\n", pkg.body.c_str());
+//                Info("%s\n", pkg.body.c_str());
                 JsonUnmarshalWatchData(pkg.body, watchData);
                 Info("client-%d,timestamp:%f,obj size:%d", client->sock, watchData.timstamp,
                      watchData.lstObjTarget.size());
@@ -288,7 +288,8 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 if (client->queueWatchData.size() >= client->maxQueueWatchData) {
-                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+//                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
                 } else {
                     pthread_mutex_lock(&client->lockWatchData);
                     //存入队列

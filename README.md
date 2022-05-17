@@ -15,7 +15,7 @@
     server/ClientInfo 服务端存储的客户端队列个体，包含客户端sock、客户端属性信息、以及客户端接收缓存、分包后的数据等
     server/FusionServer 服务端主体类，建立server sock，监听接入客户端，开启客户端线程、监视客户端状态并作出反应
     
-    log 基于zlog的日志系统
+    z_log 基于zlog的日志系统
     
     ringbuffer 环形buffer
 

@@ -15,7 +15,7 @@
 #include "log/Log.h"
 
 using namespace common;
-using namespace log;
+using namespace z_log;
 
 FusionClient::FusionClient(string server_ip, unsigned int server_port) {
     this->server_ip = server_ip;
@@ -126,7 +126,7 @@ void FusionClient::ThreadRecv(void *p) {
     while (client->isRun) {
         usleep(10);
         memset(buf, 0, ARRAY_SIZE(buf));
-        nread = recv(client->sockfd, buf, sizeof(buf), 0);
+        nread = recv(client->sockfd, buf, sizeof(buf), MSG_NOSIGNAL);
         if (nread < 0) {
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
                 continue;

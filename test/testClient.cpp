@@ -12,7 +12,7 @@
 #include "log/Log.h"
 #include "common/common.h"
 
-using namespace log;
+using namespace z_log;
 using namespace std;
 using namespace common;
 
@@ -274,12 +274,16 @@ int main(int argc, char **argv) {
 
 
     //获取指定目录下的文件列表
-    int roadNum = atoi(argv[1]);
-    string path = string(argv[2]);
-    Info("road:%d,path:%s", roadNum, path.c_str());
-    GetData *getData = new GetData(path);
-    getData->GetOrderListFileName(path);
-
+    int roadNum = 0;
+    string path;
+    GetData *getData = nullptr;
+    if (argc > 3) {
+        roadNum = atoi(argv[1]);
+        path = string(argv[2]);
+        Info("road:%d,path:%s", roadNum, path.c_str());
+        getData = new GetData(path);
+        getData->GetOrderListFileName(path);
+    }
 
     bool isExit = false;
 

@@ -22,12 +22,19 @@ using namespace std;
 
 class FusionServer {
 public:
+    typedef struct{
+        string hardCode;//图像对应的设备编号
+        vector<OBJECT_INFO_T> listObjs;
+        string imageData;
+    }RoadData;//路口数据，包含目标集合、路口设备编号、图像数据
+
     typedef struct {
         double timestamp;
-        vector<OBJECT_INFO_T> one;
-        vector<OBJECT_INFO_T> two;
-        vector<OBJECT_INFO_T> three;
-        vector<OBJECT_INFO_T> four;
+        bool isOneRoad = false;//是否只有一路数据
+        RoadData one;
+        RoadData two;
+        RoadData three;
+        RoadData four;
     } OBJS;//同一帧多个路口的数据集合
 
 public:
@@ -57,7 +64,8 @@ public:
 
     typedef struct {
         double timestamp;
-        vector<OBJECT_INFO_NEW> obj;
+        vector<OBJECT_INFO_NEW> obj;//融合输出量
+        OBJS objInput;//融合输入量
     } MergeData;
     Queue<MergeData> queueMergeData;//融合后的数据
 
@@ -74,10 +82,10 @@ public:
     //用于融合时的固定变量
 
     vector<int> roadDirection = {
-            West,
-            South,
-            East,
-            North,
+            North,//北
+            East,//东
+            South,//南
+            West,//西
     };
     string config = "./config.ini";
     double repateX = 10;//fix 不变

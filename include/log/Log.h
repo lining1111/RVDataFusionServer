@@ -13,7 +13,7 @@
 
 using namespace std;
 
-namespace log {
+namespace z_log {
 
     extern zlog_category_t *m_zlog_category;
     extern bool isInit;//是否已初始化
@@ -124,13 +124,13 @@ namespace log {
 
 //函数版的demo
 //void LogInfo(const char *szlog, ...) {
-//    char log[1024 * 1024] = {0};
-//    memset(log, 0, sizeof(log) / sizeof(log[0]));
+//    char z_log[1024 * 1024] = {0};
+//    memset(z_log, 0, sizeof(z_log) / sizeof(z_log[0]));
 //    va_list args;
 //    va_start(args, szlog);
-//    vsprintf(log, szlog, args);
+//    vsprintf(z_log, szlog, args);
 //    va_end(args);
-//    zlog_info(m_zlog_category, log);
+//    zlog_info(m_zlog_category, z_log);
 //    return;
 //}
 

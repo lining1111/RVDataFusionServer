@@ -14,7 +14,7 @@
 
 #include "sqlite3.h"
 
-using namespace log;
+using namespace z_log;
 
 FusionServer::FusionServer() {
     this->isRun.store(false);
@@ -528,9 +528,11 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 
         //调试输出，查看现在有几路连入
         bool isConnect = false;
+        int connetClientNum = 0;
         for (int i = 0; i < ARRAY_SIZE(id); i++) {
             if (id[i] != -1) {
                 Info("第%d路 client数组索引%d sock：%d", i + 1, id[i], server->vector_client.at(id[i])->sock);
+                connetClientNum++;
                 isConnect = true;
             }
         }
@@ -567,9 +569,13 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         }
 
         //2.根据时间戳和门限来赋值
-        vector<OBJECT_INFO_T> obj[4];
+        RoadData obj[4];
+
+//        vector<OBJECT_INFO_T> obj[4];
         for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-            obj[i].clear();
+            obj[i].imageData = "";
+            obj[i].hardCode = "";
+            obj[i].listObjs.clear();
         }
         //清理第N路的取帧时间戳记录
         for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
@@ -599,11 +605,14 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                             if (server->crossID.empty()) {
                                 server->crossID = iter.matrixNo;
                             }
+
+                            obj[i].hardCode = iter.hardCode;
+                            obj[i].imageData = iter.imageData;
                             for (auto item: iter.lstObjTarget) {
                                 OBJECT_INFO_T objectInfoT;
                                 //转换
                                 ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                obj[i].push_back(objectInfoT);
+                                obj[i].listObjs.push_back(objectInfoT);
                             }
                             //出队列
                             server->vector_client.at(id[i])->queueWatchData.pop();
@@ -619,11 +628,14 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                     server->crossID = iter.matrixNo;
                                 }
                                 //时间戳大于当前时间戳，直接取
+
+                                obj[i].hardCode = iter.hardCode;
+                                obj[i].imageData = iter.imageData;
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
                                     //转换
                                     ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                    obj[i].push_back(objectInfoT);
+                                    obj[i].listObjs.push_back(objectInfoT);
                                 }
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
@@ -637,11 +649,13 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                     server->crossID = iter.matrixNo;
                                 }
                                 //时间戳在门限范围内,赋值
+                                obj[i].hardCode = iter.hardCode;
+                                obj[i].imageData = iter.imageData;
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
                                     //转换
                                     ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                    obj[i].push_back(objectInfoT);
+                                    obj[i].listObjs.push_back(objectInfoT);
                                 }
                                 //出队列
                                 server->vector_client.at(id[i])->queueWatchData.pop();
@@ -659,17 +673,31 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             }
         }
         //3.存入待融合队列，即queueObjs
-        for (int i = 0; i < obj[0].size(); i++) {
-            objs.one.push_back(obj[0].at(i));
+        if (connetClientNum == 1) {
+            objs.isOneRoad = true;
+        } else {
+            objs.isOneRoad = false;
         }
-        for (int i = 0; i < obj[1].size(); i++) {
-            objs.two.push_back(obj[1].at(i));
+
+        objs.one.hardCode = obj[0].hardCode;
+        objs.one.imageData = obj[0].imageData;
+        for (int i = 0; i < obj[0].listObjs.size(); i++) {
+            objs.one.listObjs.push_back(obj[0].listObjs.at(i));
         }
-        for (int i = 0; i < obj[2].size(); i++) {
-            objs.three.push_back(obj[2].at(i));
+        objs.two.hardCode = obj[1].hardCode;
+        objs.two.imageData = obj[1].imageData;
+        for (int i = 0; i < obj[1].listObjs.size(); i++) {
+            objs.two.listObjs.push_back(obj[1].listObjs.at(i));
         }
-        for (int i = 0; i < obj[3].size(); i++) {
-            objs.four.push_back(obj[3].at(i));
+        objs.three.hardCode = obj[2].hardCode;
+        objs.three.imageData = obj[2].imageData;
+        for (int i = 0; i < obj[2].listObjs.size(); i++) {
+            objs.three.listObjs.push_back(obj[2].listObjs.at(i));
+        }
+        objs.four.hardCode = obj[3].hardCode;
+        objs.four.imageData = obj[3].imageData;
+        for (int i = 0; i < obj[3].listObjs.size(); i++) {
+            objs.four.listObjs.push_back(obj[3].listObjs.at(i));
         }
 
 
@@ -691,7 +719,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         objs.timestamp = server->curTimestamp;
 
 
-        if (objs.one.empty() && objs.two.empty() && objs.three.empty() && objs.four.empty()) {
+        if (objs.one.listObjs.empty() && objs.two.listObjs.empty() && objs.three.listObjs.empty() &&
+            objs.four.listObjs.empty()) {
             Info("同一帧数据全部为空");
         } else {
             if (server->queueObjs.Push(objs) != 0) {
@@ -735,9 +764,72 @@ void FusionServer::ThreadMerge(void *pServer) {
         //开始融合数据
         OBJS objs = server->queueObjs.PopFront();
 
+        //如果只有一路数据，不做多路融合，直接给出
+        if (objs.isOneRoad) {
+            MergeData mergeData;
+            mergeData.timestamp = objs.timestamp;
+            mergeData.obj.clear();
+
+            if (!objs.one.listObjs.empty()) {
+                mergeData.objInput.one.hardCode = objs.one.hardCode;
+                mergeData.objInput.one.imageData = objs.one.imageData;
+                for (auto iter:objs.one.listObjs) {
+                    OBJECT_INFO_NEW item;
+                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
+                    mergeData.obj.push_back(item);
+                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
+                }
+
+            } else if (!objs.two.listObjs.empty()) {
+                mergeData.objInput.two.hardCode = objs.two.hardCode;
+                mergeData.objInput.two.imageData = objs.two.imageData;
+                for (auto iter:objs.two.listObjs) {
+                    OBJECT_INFO_NEW item;
+                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
+                    mergeData.obj.push_back(item);
+                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
+                }
+
+            } else if (!objs.three.listObjs.empty()) {
+                mergeData.objInput.three.hardCode = objs.three.hardCode;
+                mergeData.objInput.three.imageData = objs.three.imageData;
+                for (auto iter:objs.three.listObjs) {
+                    OBJECT_INFO_NEW item;
+                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
+                    mergeData.obj.push_back(item);
+                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
+                }
+
+            } else if (!objs.four.listObjs.empty()) {
+                mergeData.objInput.four.hardCode = objs.four.hardCode;
+                mergeData.objInput.four.imageData = objs.four.imageData;
+                for (auto iter:objs.four.listObjs) {
+                    OBJECT_INFO_NEW item;
+                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
+                    mergeData.obj.push_back(item);
+                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
+                }
+            }
+
+            if (server->queueMergeData.Push(mergeData) != 0) {
+                Error("队列已满，抛弃融合数据 ");
+            } else {
+                Info("存入融合数据，size:%d", mergeData.obj.size());
+            }
+            Info("只有一路数据，不走融合");
+
+            continue;
+        }
+
+
         vector<OBJECT_INFO_NEW> vectorOBJNEW;
         OBJECT_INFO_NEW dataOut[1000];
         memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
+
+        int inOBJS = 0;
+        inOBJS = objs.one.listObjs.size() + objs.two.listObjs.size() + objs.three.listObjs.size() +
+                 objs.four.listObjs.size();
+        Info("传入目标数:%d", inOBJS);
 
         switch (server->frame) {
             case 1: {
@@ -745,10 +837,15 @@ void FusionServer::ThreadMerge(void *pServer) {
                 server->l1_obj.clear();
                 server->l2_obj.clear();
 
+                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.one.listObjs.size(), objs.two.listObjs.size(),
+                     objs.three.listObjs.size(), objs.four.listObjs.size());
+
                 int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
                                       server->gatetx, server->gatety, server->gatex, server->gatey, true,
-                                      objs.one.data(), objs.one.size(), objs.two.data(), objs.two.size(),
-                                      objs.three.data(), objs.three.size(), objs.four.data(), objs.four.size(),
+                                      objs.one.listObjs.data(), objs.one.listObjs.size(),
+                                      objs.two.listObjs.data(), objs.two.listObjs.size(),
+                                      objs.three.listObjs.data(), objs.three.listObjs.size(),
+                                      objs.four.listObjs.data(), objs.four.listObjs.size(),
                                       server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
                                       server->l2_obj.size(), dataOut, server->angle_value);
                 //传递历史数据
@@ -764,6 +861,28 @@ void FusionServer::ThreadMerge(void *pServer) {
                 }
                 MergeData mergeData;
                 mergeData.timestamp = objs.timestamp;
+                //存输入量
+                if (!objs.one.listObjs.empty()) {
+                    mergeData.objInput.one.hardCode = objs.one.hardCode;
+                    mergeData.objInput.one.imageData = objs.one.imageData;
+                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
+                }
+                if (!objs.two.listObjs.empty()) {
+                    mergeData.objInput.two.hardCode = objs.two.hardCode;
+                    mergeData.objInput.two.imageData = objs.two.imageData;
+                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
+                }
+                if (!objs.three.listObjs.empty()) {
+                    mergeData.objInput.three.hardCode = objs.three.hardCode;
+                    mergeData.objInput.three.imageData = objs.three.imageData;
+                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
+                }
+                if (!objs.four.listObjs.empty()) {
+                    mergeData.objInput.four.hardCode = objs.four.hardCode;
+                    mergeData.objInput.four.imageData = objs.four.imageData;
+                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
+                }
+                //存输出量
                 mergeData.obj.clear();
                 mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
 
@@ -772,13 +891,19 @@ void FusionServer::ThreadMerge(void *pServer) {
                 } else {
                     Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
+                Info("融合后，传出目标数:%d", mergeData.obj.size());
             }
                 break;
             default: {
+
+                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.one.listObjs.size(), objs.two.listObjs.size(),
+                     objs.three.listObjs.size(), objs.four.listObjs.size());
                 int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
                                       server->gatetx, server->gatety, server->gatex, server->gatey, true,
-                                      objs.one.data(), objs.one.size(), objs.two.data(), objs.two.size(),
-                                      objs.three.data(), objs.three.size(), objs.four.data(), objs.four.size(),
+                                      objs.one.listObjs.data(), objs.one.listObjs.size(),
+                                      objs.two.listObjs.data(), objs.two.listObjs.size(),
+                                      objs.three.listObjs.data(), objs.three.listObjs.size(),
+                                      objs.four.listObjs.data(), objs.four.listObjs.size(),
                                       server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
                                       server->l2_obj.size(), dataOut, server->angle_value);
                 //传递历史数据
@@ -798,6 +923,29 @@ void FusionServer::ThreadMerge(void *pServer) {
                 }
                 MergeData mergeData;
                 mergeData.timestamp = objs.timestamp;
+                //存输入量
+                //存输入量
+                if (!objs.one.listObjs.empty()) {
+                    mergeData.objInput.one.hardCode = objs.one.hardCode;
+                    mergeData.objInput.one.imageData = objs.one.imageData;
+                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
+                }
+                if (!objs.two.listObjs.empty()) {
+                    mergeData.objInput.two.hardCode = objs.two.hardCode;
+                    mergeData.objInput.two.imageData = objs.two.imageData;
+                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
+                }
+                if (!objs.three.listObjs.empty()) {
+                    mergeData.objInput.three.hardCode = objs.three.hardCode;
+                    mergeData.objInput.three.imageData = objs.three.imageData;
+                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
+                }
+                if (!objs.four.listObjs.empty()) {
+                    mergeData.objInput.four.hardCode = objs.four.hardCode;
+                    mergeData.objInput.four.imageData = objs.four.imageData;
+                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
+                }
+                //存输出量
                 mergeData.obj.clear();
                 mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
 
@@ -806,7 +954,9 @@ void FusionServer::ThreadMerge(void *pServer) {
                 } else {
                     Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
+                Info("融合后，传出目标数:%d", mergeData.obj.size());
             }
+
                 break;
         }
     }

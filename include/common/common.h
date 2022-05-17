@@ -129,17 +129,39 @@ namespace common {
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     } WatchData;//监控数据,对应命令字DeviceData
 
+
     typedef struct {
-        int objID = 0;//目标ID
-        int cameraObjID = 0;//图像目标ID
-        int objType = 0;//目标类型
-        int objColor = 0;//目标颜色
-        string plates;//车牌号
-        string plateColor;//车牌颜色
+        int wayNo;//对应 Direction
+        int roID;//雷达目标编号
+        int voID;//视频目标编号
+    } RvWayObject;
+
+    typedef struct {
+        int cameraObjID;
         int left = 0;//坐标 左
         int top = 0;//坐标 上
         int right = 0;// 坐标 右
         int bottom = 0;//坐标 下
+    }VideoTargets;
+
+    typedef struct {
+        string rvHardCode;
+        vector<VideoTargets> lstVideoTargets;
+        string imageData;//图像数据
+    }VideoData;
+
+    typedef struct {
+        int objID = 0;//目标ID
+//        int cameraObjID = 0;//图像目标ID
+        vector<RvWayObject> listRvWayObject;
+        int objType = 0;//目标类型
+        int objColor = 0;//目标颜色
+        string plates;//车牌号
+        string plateColor;//车牌颜色
+//        int left = 0;//坐标 左
+//        int top = 0;//坐标 上
+//        int right = 0;// 坐标 右
+//        int bottom = 0;//坐标 下
         float distance;//距离
         float angle;//航角度
         float speed;//速度
@@ -154,10 +176,10 @@ namespace common {
         double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         string crossID;// ``json "crossID"路口编号
         int isHasImage;//`json "isHasImage"` 是否包含图像
-        string imageData;// `json "imageData"` 当前的视频图像数据
+//        string imageData;// `json "imageData"` 当前的视频图像数据
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类
+        vector<VideoData>lstVideos;//图像数据，包括图像对应的设备编号、图像识别列表、图像base编码
     } FusionData;//多路融合数据,对应命令字DeviceData
-
 
     /**
      * 打印hex输出

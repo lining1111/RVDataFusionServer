@@ -9,6 +9,10 @@
 #include <algorithm>
 #include <cstring>
 
+#include "log/Log.h"
+
+using namespace z_log;
+
 #define PI 3.1415926
 using namespace std;
 
@@ -18,6 +22,7 @@ const int Nmax = 200;
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
     objTarget.objID = objectInfoT.objID;
+    objTarget.objCameraID = objectInfoT.cameraID;
     objTarget.objType = objectInfoT.objType;
     objTarget.plates = string(objectInfoT.plate_number);
     objTarget.plateColor = string(objectInfoT.plate_color);
@@ -35,7 +40,11 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
 }
 
 void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
+
     objectInfoT.objID = objTarget.objID;
+
+    objectInfoT.cameraID = objTarget.objCameraID;
+
     objectInfoT.objType = objTarget.objType;
 
     bzero(objectInfoT.plate_number, ARRAY_SIZE(objectInfoT.plate_number));
@@ -64,23 +73,56 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
 }
 
+void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &objectInfoNew) {
+    objectInfoNew.objID1 = objectInfoT.objID;
+    objectInfoNew.objID2 = -INF;
+    objectInfoNew.objID3 = -INF;
+    objectInfoNew.objID4 = -INF;
+    objectInfoNew.cameraID1 = objectInfoT.cameraID;
+    objectInfoNew.cameraID2 = -INF;
+    objectInfoNew.cameraID3 = -INF;
+    objectInfoNew.cameraID4 = -INF;
+    objectInfoNew.showID = objectInfoT.objID;
+    objectInfoNew.objType = objectInfoT.objType;
+
+    memcpy(objectInfoNew.plate_number, objectInfoT.plate_number, sizeof(objectInfoNew.plate_number));
+    memcpy(objectInfoNew.plate_color, objectInfoT.plate_color, sizeof(objectInfoNew.plate_color));
+
+    objectInfoNew.left = objectInfoT.left;
+    objectInfoNew.top = objectInfoT.top;
+    objectInfoNew.right = objectInfoT.right;
+    objectInfoNew.bottom = objectInfoT.bottom;
+    objectInfoNew.locationX = objectInfoT.locationX;
+    objectInfoNew.locationY = objectInfoT.locationY;
+
+    memcpy(objectInfoNew.distance, objectInfoT.distance, sizeof(objectInfoNew.distance));
+    objectInfoNew.directionAngle = atof(objectInfoT.directionAngle);
+    objectInfoNew.speed = objectInfoT.speed;
+    objectInfoNew.longitude = objectInfoT.longitude;
+    objectInfoNew.latitude = objectInfoT.latitude;
+}
+
 
 //升序用比较函数
-static bool target_loc_compare(const OBJECT_INFO_T &a, const OBJECT_INFO_T &b) {
+bool target_loc_compare(const OBJECT_INFO_T &a, const OBJECT_INFO_T &b) {
     return a.locationX < b.locationX;
 }
 
-static bool target_loc_compare_new(const OBJECT_INFO_NEW &a, const OBJECT_INFO_NEW &b) {
+bool target_loc_compare_new(const OBJECT_INFO_NEW &a, const OBJECT_INFO_NEW &b) {
     return a.locationX < b.locationX;
 }
 
 //初始化最后融合的数据类型
-static void initvalueNew(OBJECT_INFO_NEW *data, double angle_value) {
+void initvalueNew(OBJECT_INFO_NEW *data, double angle_value) {
     data->objID1 = -INF;
     data->objID2 = -INF;
     data->objID3 = -INF;
     data->objID4 = -INF;
     data->showID = -INF;
+    data->cameraID1 = -INF;
+    data->cameraID2 = -INF;
+    data->cameraID3 = -INF;
+    data->cameraID4 = -INF;
     data->objType = -INF;
     memset(data->plate_number, 0x0, 15);
     memset(data->plate_color, 0x0, 7);
@@ -93,13 +135,13 @@ static void initvalueNew(OBJECT_INFO_NEW *data, double angle_value) {
     memset(data->distance, 0x0, 10);
     data->directionAngle = angle_value;
     data->speed = -INF;
-    data->longitude = -INF;
-    data->latitude = -INF;
+    data->longitude = -INF;;//经度
+    data->latitude = -INF;;//纬度
 }
 
 
 //目标赋值
-static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_INFO_NEW *dataNew) {
+void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_INFO_NEW *dataNew) {
     //只能有一个data;另一个data不存在时，输入初始化X=-INF
     if (dataT->locationX != -INF) {
         obj_info->objType = dataT->objType;
@@ -112,9 +154,9 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
         obj_info->locationX = dataT->locationX;
         obj_info->locationY = dataT->locationY;
         strcpy(obj_info->distance, dataT->distance);
-        obj_info->speed = dataT->speed;
         obj_info->longitude = dataT->longitude;
         obj_info->latitude = dataT->latitude;
+
     }
     if (dataNew->locationX != -INF) {
         obj_info->objType = dataNew->objType;
@@ -135,7 +177,7 @@ static void get_value(OBJECT_INFO_NEW *obj_info, OBJECT_INFO_T *dataT, OBJECT_IN
 
 
 //id搜索
-static int search_id(OBJECT_INFO_NEW *data_one, vector<OBJECT_INFO_NEW> &data_before) {
+int search_id(OBJECT_INFO_NEW *data_one, vector<OBJECT_INFO_NEW> &data_before) {
     int temp[4], temp_data, temp_databefore, temp_n[4], t, N = data_before.size(), j;
     temp_n[0] = -INF;
     temp_n[1] = -INF;
@@ -198,9 +240,8 @@ static int search_id(OBJECT_INFO_NEW *data_one, vector<OBJECT_INFO_NEW> &data_be
 
 
 //对向路口融合
-static void
-merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_three, double gatex, double gatey,
-               int n_road, vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
+void merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_three, double gatex, double gatey,
+                    int n_road, vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
     //n_road：若是1、3路口融合，=1；若是2、3路口融合，=2
     int MaxM = data_one.size();
     int MaxN = data_three.size();
@@ -235,9 +276,13 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
             if (n_road == 1) {
                 obj_info.objID1 = data_one[i].objID;
                 obj_info.objID3 = data_three[delete_n].objID;
+                obj_info.cameraID1 = data_one[i].cameraID;
+                obj_info.cameraID3 = data_three[delete_n].cameraID;
             } else {
                 obj_info.objID2 = data_one[i].objID;
                 obj_info.objID4 = data_three[delete_n].objID;
+                obj_info.cameraID2 = data_one[i].cameraID;
+                obj_info.cameraID4 = data_three[delete_n].cameraID;
             }
             get_value(&obj_info, &data_one[i], &obj_info_NEW);
             data_out.push_back(obj_info);
@@ -247,10 +292,14 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
             //没有点匹配，保留下data1的点
             //初始化目标类型
             initvalueNew(&obj_info, angle_value);
-            if (n_road == 1)
+            if (n_road == 1) {
                 obj_info.objID1 = data_one[i].objID;
-            else
+                obj_info.cameraID1 = data_one[i].cameraID;
+            } else {
                 obj_info.objID2 = data_one[i].objID;
+                obj_info.cameraID2 = data_one[i].cameraID;
+
+            }
             get_value(&obj_info, &data_one[i], &obj_info_NEW);
             data_out.push_back(obj_info);
         }
@@ -260,10 +309,13 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
     for (i = 0; i < temp_n; i++) {
         //初始化目标类型
         initvalueNew(&obj_info, angle_value);
-        if (n_road == 1)
+        if (n_road == 1) {
             obj_info.objID3 = data_three[i].objID;
-        else
+            obj_info.cameraID3 = data_three[i].cameraID;
+        } else {
             obj_info.objID4 = data_three[i].objID;
+            obj_info.cameraID4 = data_three[i].cameraID;
+        }
         get_value(&obj_info, &data_three[i], &obj_info_NEW);
         data_out.push_back(obj_info);
     }
@@ -271,9 +323,8 @@ merge_opposite(vector<OBJECT_INFO_T> &data_one, vector<OBJECT_INFO_T> &data_thre
 
 
 //最后一次融合
-static void
-merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_three, double gatex, double gatey,
-           vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
+void merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_three, double gatex, double gatey,
+                vector<OBJECT_INFO_NEW> &data_out, double angle_value) {
     int MaxM = data_one.size();
     int MaxN = data_three.size();
     int i = 0, j = 0, t = 0, index, temp_n, delete_n;
@@ -309,6 +360,10 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
             obj_info.objID3 = data_one[i].objID3;
             obj_info.objID2 = data_three[delete_n].objID2;
             obj_info.objID4 = data_three[delete_n].objID4;
+            obj_info.cameraID1 = data_one[i].cameraID1;
+            obj_info.cameraID3 = data_one[i].cameraID3;
+            obj_info.cameraID2 = data_three[delete_n].cameraID2;
+            obj_info.cameraID4 = data_three[delete_n].cameraID4;
             get_value(&obj_info, &obj_info_T, &data_one[i]);
             data_out.push_back(obj_info);
             //删除匹配成功的成员
@@ -321,6 +376,10 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
             obj_info.objID3 = data_one[i].objID3;
             obj_info.objID2 = data_one[i].objID2;
             obj_info.objID4 = data_one[i].objID4;
+            obj_info.cameraID1 = data_one[i].cameraID1;
+            obj_info.cameraID3 = data_one[i].cameraID3;
+            obj_info.cameraID2 = data_one[i].cameraID2;
+            obj_info.cameraID4 = data_one[i].cameraID4;
             get_value(&obj_info, &obj_info_T, &data_one[i]);
             data_out.push_back(obj_info);
         }
@@ -330,23 +389,26 @@ merge_last(vector<OBJECT_INFO_NEW> &data_one, vector<OBJECT_INFO_NEW> &data_thre
     for (i = 0; i < temp_n; i++) {
         //初始化目标类型
         initvalueNew(&obj_info, angle_value);
-
         obj_info.objID1 = data_three[i].objID1;
         obj_info.objID3 = data_three[i].objID3;
         obj_info.objID2 = data_three[i].objID2;
         obj_info.objID4 = data_three[i].objID4;
+        obj_info.cameraID1 = data_three[i].cameraID1;
+        obj_info.cameraID3 = data_three[i].cameraID3;
+        obj_info.cameraID2 = data_three[i].cameraID2;
+        obj_info.cameraID4 = data_three[i].cameraID4;
         get_value(&obj_info, &obj_info_T, &data_three[i]);
         data_out.push_back(obj_info);
     }
 }
 
 
-static void vec_array(vector<OBJECT_INFO_NEW> &data_one, int N, OBJECT_INFO_NEW *data_out) {
+void vec_array(vector<OBJECT_INFO_NEW> &data_one, int N, OBJECT_INFO_NEW *data_out) {
     for (int i = 0; i < N; i++)
         data_out[i] = data_one[i];
 }
 
-static void array_vec(vector<OBJECT_INFO_T> &data_out, int N, OBJECT_INFO_T *data_one) {
+void array_vec(vector<OBJECT_INFO_T> &data_out, int N, OBJECT_INFO_T *data_one) {
     OBJECT_INFO_T obj_info_T;
     for (int i = 0; i < N; i++) {
         obj_info_T = data_one[i];
@@ -354,7 +416,7 @@ static void array_vec(vector<OBJECT_INFO_T> &data_out, int N, OBJECT_INFO_T *dat
     }
 }
 
-static void array_vec_NEW(vector<OBJECT_INFO_NEW> &data_out, int N, OBJECT_INFO_NEW *data_one) {
+void array_vec_NEW(vector<OBJECT_INFO_NEW> &data_out, int N, OBJECT_INFO_NEW *data_one) {
     OBJECT_INFO_NEW obj_info_T;
     for (int i = 0; i < N; i++) {
         obj_info_T = data_one[i];
@@ -363,7 +425,7 @@ static void array_vec_NEW(vector<OBJECT_INFO_NEW> &data_out, int N, OBJECT_INFO_
 }
 
 //异常值删除
-static void delete_data1(vector<OBJECT_INFO_T> &data_input, double widthX, double widthY, double Xmax, double Ymax) {
+void delete_data1(vector<OBJECT_INFO_T> &data_input, double widthX, double widthY, double Xmax, double Ymax) {
     vector<OBJECT_INFO_T>::iterator iter;
 
     for (iter = data_input.begin(); iter != data_input.end();)
@@ -373,8 +435,8 @@ static void delete_data1(vector<OBJECT_INFO_T> &data_input, double widthX, doubl
             iter++;
 }
 
-static void delete_data2(vector<OBJECT_INFO_T> &data_input, double repateX, double widthX, double widthY, double Xmax,
-                         double Ymax) {
+void delete_data2(vector<OBJECT_INFO_T> &data_input, double repateX, double widthX, double widthY, double Xmax,
+                  double Ymax) {
     vector<OBJECT_INFO_T>::iterator iter;
 
     for (iter = data_input.begin(); iter != data_input.end();)
@@ -386,7 +448,7 @@ static void delete_data2(vector<OBJECT_INFO_T> &data_input, double repateX, doub
             iter++;
 }
 
-static void delete_data3(vector<OBJECT_INFO_T> &data_input, double widthX, double widthY, double Xmax, double Ymax) {
+void delete_data3(vector<OBJECT_INFO_T> &data_input, double widthX, double widthY, double Xmax, double Ymax) {
     vector<OBJECT_INFO_T>::iterator iter;
 
     for (iter = data_input.begin(); iter != data_input.end();)
@@ -396,8 +458,8 @@ static void delete_data3(vector<OBJECT_INFO_T> &data_input, double widthX, doubl
             iter++;
 }
 
-static void delete_data4(vector<OBJECT_INFO_T> &data_input, double repateX, double widthX, double widthY, double Xmax,
-                         double Ymax) {
+void delete_data4(vector<OBJECT_INFO_T> &data_input, double repateX, double widthX, double widthY, double Xmax,
+                  double Ymax) {
     vector<OBJECT_INFO_T>::iterator iter;
 
     for (iter = data_input.begin(); iter != data_input.end();)
@@ -409,7 +471,7 @@ static void delete_data4(vector<OBJECT_INFO_T> &data_input, double repateX, doub
 }
 
 //计算航向角
-static double cal_angle(double deltaX, double deltaY) {
+double cal_angle(double deltaX, double deltaY) {
     double angle;
     angle = atan2(deltaY, deltaX);
     if (angle < 0) {
@@ -420,7 +482,7 @@ static double cal_angle(double deltaX, double deltaY) {
 }
 
 //搜索showID
-static int search_id_single(OBJECT_INFO_NEW data_one, vector<OBJECT_INFO_NEW> &data_before) {
+int search_id_single(OBJECT_INFO_NEW data_one, vector<OBJECT_INFO_NEW> &data_before) {
     int temp_data, temp_databefore, N = data_before.size(), j;
     temp_data = data_one.showID;
     for (j = 0; j < N; j++) {
@@ -433,8 +495,7 @@ static int search_id_single(OBJECT_INFO_NEW data_one, vector<OBJECT_INFO_NEW> &d
 
 
 //数据滤波
-static void
-Filter_data(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, vector<OBJECT_INFO_NEW> &now) {
+void Filter_data(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, vector<OBJECT_INFO_NEW> &now) {
     //before2:前2帧的数据、before1:前1帧的数据、now：当前帧的数据
     int n2 = before2.size(), n1 = before1.size(), n = now.size(), j, temp1, temp2, flag2, flag1;
     for (j = 0; j < n; j++) {
@@ -468,7 +529,7 @@ Filter_data(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, 
 }
 
 //转换接近360的角度
-static void angle_trans(double *angle_input) {
+void angle_trans(double *angle_input) {
     double now, before1, before2, temp;
     before2 = angle_input[0];
     before1 = angle_input[1];
@@ -516,9 +577,8 @@ static void angle_trans(double *angle_input) {
 //第二帧：before2定义、0、before1有值、n1、3个angle全部默认值：angle输出应当有值：！！！！函数结束后，开始保存当前的angle为上一帧数据angle1
 //第三帧：before2有值、n2、before1有值、n1、angle2为默认值、angle1有值、angle为默认值：angle输出应当有值：！！！！函数结束后，将上一帧的数据angle1保存为上上一帧数据angle2，将当前的angle为上一帧数据angle1
 //第四帧：before2有值、n2、before1有值、n1、angle2有值、angle1有值、angle为默认值：angle输出应当有值：！！！！函数结束后，将上一帧的数据angle1保存为上上一帧数据angle2，将当前的angle为上一帧数据angle1
-static void
-Filter_angle(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, vector<OBJECT_INFO_NEW> &now,
-             double angle_value) {
+void Filter_angle(vector<OBJECT_INFO_NEW> &before2, vector<OBJECT_INFO_NEW> &before1, vector<OBJECT_INFO_NEW> &now,
+                  double angle_value) {
     //before2:前2帧的数据、before1:前1帧的数据、now：当前帧的数据
     int n2 = before2.size(), n1 = before1.size(), n = now.size(), j, temp1, temp2, flag2, flag1;
     double angle_input[3] = {angle_value, angle_value, angle_value};
@@ -611,15 +671,30 @@ int merge_total(double repateX, double widthX, double widthY, double Xmax, doubl
     array_vec_NEW(data_before2, n_before2, Data_before2);
 
 
+    Info("异常删除前，第1路的值");
+    for (int k = 0; k < data_one.size(); k++) {
+        auto iter = data_one.at(k);
+        Info("location,x:%f,y:%f", iter.locationX, iter.locationY);
+    }
+
     //异常值删除
     delete_data1(data_one, widthX, widthY, Xmax, Ymax);
     delete_data2(data_two, repateX, widthX, widthY, Xmax, Ymax);
     delete_data3(data_three, widthX, widthY, Xmax, Ymax);
     delete_data4(data_four, repateX, widthX, widthY, Xmax, Ymax);
 
+    Info("异常删除后，第1路的值");
+    for (int k = 0; k < data_one.size(); k++) {
+        auto iter = data_one.at(k);
+        Info("location,x:%f,y:%f", iter.locationX, iter.locationY);
+    }
     //对向路口融合
     merge_opposite(data_one, data_three, gatex, gatey, 1, data_first, angle_value);
+    //add by ln
+    Info("data_one:%d,data_three:%d", data_one.size(), data_three.size());
     merge_opposite(data_two, data_four, gatex, gatey, 2, data_last, angle_value);
+    //add by ln
+    Info("data_two:%d,data_four:%d", data_two.size(), data_four.size());
     //最后一次融合
     merge_last(data_first, data_last, gatex, gatey, data_out, angle_value);
 
