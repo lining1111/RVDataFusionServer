@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(RVDataFusionServer VERSION 0.0.1)
+project(RVDataFusionServer VERSION 0.0.2)
 configure_file("${PROJECT_SOURCE_DIR}/include/version.h.in" "${PROJECT_SOURCE_DIR}/include/version.h")
 
 set(CMAKE_CXX_STANDARD 11)
@@ -54,7 +54,6 @@ endif ()
 add_definitions(-D${ARCH})
 
 
-
 include_directories(include)
 include_directories(include/simpleini)
 
@@ -65,9 +64,11 @@ set(SRC_DIRS src
         src/ringBuffer
         src/common
         src/server
+        src/multiView
         src/client
         src/merge
-        src/simpleini)
+        src/simpleini
+        src/db)
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} src_dir_file)

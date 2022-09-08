@@ -1,0 +1,7 @@
+2022-04-02 13:56:04.210 INFO [24243:src/server/FusionServer.cpp:127] server sock 5 create success
+2022-04-02 13:56:04.212 INFO [24243:src/server/FusionServer.cpp:278] ThreadMonitor run
+2022-04-02 13:56:04.216 INFO [24243:src/server/FusionServer.cpp:332] ThreadCheck run
+2022-04-02 13:56:04.216 INFO [24243:src/server/FusionServer.cpp:402] ThreadFindOneFrame run
+2022-04-02 13:56:04.218 INFO [24243:src/server/FusionServer.cpp:593] ThreadMerge run
+2022-04-02 13:56:04.218 INFO [24243:main.cpp:36] 发送融合后的数据线程 run
+2022-04-02 13:56:04.220 INFO [24243:main.cpp:106] 客户端和服务端状态检测线程 run

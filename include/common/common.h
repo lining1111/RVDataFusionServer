@@ -35,6 +35,7 @@ namespace common {
         DeviceAlarm = 0x04,//设备报警数据
         DeviceStatus = 0x05,//设备状态数据
         DevicePicData = 0x06,//设备视频数据回传
+        DeviceMultiView = 0x07,//多目数据回传
     };//命令字类型
 
 
@@ -101,8 +102,10 @@ namespace common {
         double locationX = 0.0;
         double locationY = 0.0;
         string distance;//距离
-        string directionAngle;//航角度
-        string speed;//速度
+        double directionAngle;//航角度
+//        string speed;//速度
+        double speedX;
+        double speedY;
         double longitude;//经度
         double latitude;//维度
     } ObjTarget;//目标属性
@@ -142,13 +145,13 @@ namespace common {
         int top = 0;//坐标 上
         int right = 0;// 坐标 右
         int bottom = 0;//坐标 下
-    }VideoTargets;
+    } VideoTargets;
 
     typedef struct {
         string rvHardCode;
         vector<VideoTargets> lstVideoTargets;
         string imageData;//图像数据
-    }VideoData;
+    } VideoData;
 
     typedef struct {
         int objID = 0;//目标ID
@@ -169,6 +172,7 @@ namespace common {
         double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
         double latitude = 0.0;//维度
+        int flagNew = 0;//
     } ObjMix;//融合后的目标数据
 
     typedef struct {
@@ -178,7 +182,7 @@ namespace common {
         int isHasImage;//`json "isHasImage"` 是否包含图像
 //        string imageData;// `json "imageData"` 当前的视频图像数据
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类
-        vector<VideoData>lstVideos;//图像数据，包括图像对应的设备编号、图像识别列表、图像base编码
+        vector<VideoData> lstVideos;//图像数据，包括图像对应的设备编号、图像识别列表、图像base编码
     } FusionData;//多路融合数据,对应命令字DeviceData
 
     /**
@@ -286,6 +290,47 @@ namespace common {
      */
     int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
+
+    //多目数据
+    typedef struct {
+        string laneCode;
+        int flowDirection;
+        int inCars;
+        int outCars;
+        int queueLen;
+        int queueCars;
+    } FlowData;
+
+    typedef struct {
+        string oprNum;// `json "oprNum"`
+        string hardCode;
+        double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        string crossCode;
+        vector<FlowData> flowData;
+    } TrafficFlow;
+
+    typedef struct {
+        string hardCode;
+        string crossCode;
+        vector<FlowData> flowData;
+    } OneRoadTrafficFlow;
+
+    typedef struct {
+        string oprNum;// `json "oprNum"`
+        string crossID;
+        double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
+        vector<OneRoadTrafficFlow> trafficFlow;
+    } TrafficFlows;
+
+    int JsonMarshalTrafficFlow(TrafficFlow trafficFlow, string &out);
+
+    int JsonUnmarshalTrafficFlow(string in, TrafficFlow &trafficFlow);
+
+    int JsonMarshalTrafficFlows(TrafficFlows trafficFlows, string &out);
+
+    int JsonUnmarshalTrafficFlows(string in, TrafficFlows &trafficFlows);
+
+    int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 }
 
 

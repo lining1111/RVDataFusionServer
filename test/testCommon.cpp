@@ -116,7 +116,7 @@ void exampleJsonWatchData() {
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
     objTarget1.directionAngle = -45;
-    objTarget1.speed = "很快";
+//    objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
     objTarget2.objID = 2;
@@ -131,7 +131,7 @@ void exampleJsonWatchData() {
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
     objTarget2.directionAngle = -45;
-    objTarget2.speed = "很快";
+//    objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
     watchData.lstObjTarget.push_back(objTarget2);
@@ -177,7 +177,78 @@ void testCRC() {
     cout << "crc:" << to_string(crc) << endl;
 }
 
+
+void exampleJsonTrafficFlow() {
+    TrafficFlow trafficFlow;
+    trafficFlow.hardCode = "123";
+    trafficFlow.oprNum = "123";
+    trafficFlow.crossCode = "123";
+    trafficFlow.timstamp = 12345678;
+    FlowData flowData;
+    flowData.laneCode = "1";
+    flowData.flowDirection = 0;
+    trafficFlow.flowData.push_back(flowData);
+    FlowData flowData1;
+    flowData1.laneCode = "2";
+    flowData1.flowDirection = 1;
+    trafficFlow.flowData.push_back(flowData1);
+    string body;
+    JsonMarshalTrafficFlow(trafficFlow, body);
+    cout << "body:" << body << endl;
+    TrafficFlow trafficFlow1;
+    JsonUnmarshalTrafficFlow(body, trafficFlow1);
+
+}
+
+void exampleJsonTrafficFlows() {
+    TrafficFlows trafficFlows;
+    trafficFlows.oprNum = "123";
+    trafficFlows.crossID = "456";
+    trafficFlows.timestamp = 123456789;
+    OneRoadTrafficFlow oneRoadTrafficFlow;
+    oneRoadTrafficFlow.hardCode = "1";
+    oneRoadTrafficFlow.crossCode = "2";
+    FlowData flowData;
+    flowData.laneCode = "1";
+    flowData.flowDirection = 0;
+    oneRoadTrafficFlow.flowData.push_back(flowData);
+    FlowData flowData1;
+    flowData1.laneCode = "2";
+    flowData1.flowDirection = 1;
+    oneRoadTrafficFlow.flowData.push_back(flowData1);
+    trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+    OneRoadTrafficFlow oneRoadTrafficFlow1;
+    oneRoadTrafficFlow1.hardCode = "2";
+    oneRoadTrafficFlow1.crossCode = "3";
+    FlowData flowData2;
+    flowData2.laneCode = "3";
+    flowData2.flowDirection = 2;
+    oneRoadTrafficFlow1.flowData.push_back(flowData2);
+    FlowData flowData3;
+    flowData3.laneCode = "4";
+    flowData3.flowDirection = 3;
+    oneRoadTrafficFlow1.flowData.push_back(flowData3);
+    trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+    string body;
+    JsonMarshalTrafficFlows(trafficFlows,body);
+    cout<<"body:"<<body<<endl;
+    TrafficFlows trafficFlows1;
+    JsonUnmarshalTrafficFlows(body,trafficFlows1);
+
+}
+
 int main(int argc, char **argv) {
+
+//    exampleJsonTrafficFlow();
+exampleJsonTrafficFlows();
+
+    string a = "nihao";
+    string b;
+    b = a;
+    printf("%s\n", b.c_str());
+    a = "hello";
+    printf("%s\n", b.c_str());
+
 
     testCRC();
     return 0;

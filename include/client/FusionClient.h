@@ -29,6 +29,7 @@ public:
 
     //用于发送
     uint16_t sn = 0;
+    uint16_t multiViewSn = 0;
     uint32_t deviceNo = 0x12345678;
 public:
     thread thread_recv;
@@ -52,7 +53,7 @@ private:
     int index = 0;//分包缓冲的索引
 public:
     Queue<Pkg> queuePkg;//包消息队列
-    const int maxQueuePkg = 600;//最多600个
+    const int maxQueuePkg = 100;//最多100个
 
     queue<Pkg> queue_send;
     pthread_mutex_t lock_send = PTHREAD_MUTEX_INITIALIZER;

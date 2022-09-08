@@ -8,11 +8,14 @@
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <fstream>
+#include <valarray>
 #include "server/FusionServer.h"
 #include "merge/merge.h"
+#include "merge/mergeStruct.h"
 #include "simpleini/SimpleIni.h"
-
 #include "sqlite3.h"
+
 
 using namespace z_log;
 
@@ -44,14 +47,14 @@ void FusionServer::initConfig() {
 
         const char *S_repateX = ini.GetValue("server", "repateX", "");
         repateX = atof(S_repateX);
-        const char *S_widthX = ini.GetValue("server", "widthX", "");
-        widthX = atof(S_widthX);
-        const char *S_widthY = ini.GetValue("server", "widthY", "");
-        widthY = atof(S_widthY);
-        const char *S_Xmax = ini.GetValue("server", "Xmax", "");
-        Xmax = atof(S_Xmax);
-        const char *S_Ymax = ini.GetValue("server", "Ymax", "");
-        Ymax = atof(S_Ymax);
+//        const char *S_widthX = ini.GetValue("server", "widthX", "");
+//        widthX = atof(S_widthX);
+//        const char *S_widthY = ini.GetValue("server", "widthY", "");
+//        widthY = atof(S_widthY);
+//        const char *S_Xmax = ini.GetValue("server", "Xmax", "");
+//        Xmax = atof(S_Xmax);
+//        const char *S_Ymax = ini.GetValue("server", "Ymax", "");
+//        Ymax = atof(S_Ymax);
         const char *S_gatetx = ini.GetValue("server", "gatetx", "");
         gatetx = atof(S_gatetx);
         const char *S_gatety = ini.GetValue("server", "gatety", "");
@@ -112,6 +115,51 @@ void FusionServer::getMatrixNoFromDb() {
 
 }
 
+static int CallbackGetIntersectionEntity(void *data, int argc, char **argv, char **azColName) {
+    string colName;
+    if (data != nullptr) {
+        auto server = (FusionServer *) data;
+        for (int i = 0; i < argc; i++) {
+            colName = string(azColName[i]);
+            if (colName.compare("plateId") == 0) {
+                server->crossID = string(argv[i]);
+                cout << "get crossID from db:" + server->crossID << endl;
+            }
+        }
+    }
+
+    return 0;
+}
+
+void FusionServer::getCrossIdFromDb() {
+    sqlite3 *db;
+    char *errmsg = nullptr;
+
+    string dbName;
+#ifdef arm64
+    dbName = "/home/nvidianx/bin/" + this->eocDB;
+#else
+    dbName = this->eocDB;
+#endif
+
+
+    //open
+    int rc = sqlite3_open(dbName.c_str(), &db);
+    if (rc != SQLITE_OK) {
+        printf("sqlite open fail\n");
+        sqlite3_close(db);
+    }
+
+    //intersectionEntity
+    char *sqlGetIntersectionEntity = "select * from intersectionEntity";
+    rc = sqlite3_exec(db, sqlGetIntersectionEntity, CallbackGetIntersectionEntity, this, &errmsg);
+    if (rc != SQLITE_OK) {
+        printf("sqlite err:%s\n", errmsg);
+        sqlite3_free(errmsg);
+    }
+}
+
+
 int FusionServer::Open() {
     //1.申请sock
     sock = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP);
@@ -136,16 +184,16 @@ int FusionServer::Open() {
     int opt = 1;
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    struct timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
-    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+//    struct timeval timeout;
+//    timeout.tv_sec = 3;
+//    timeout.tv_usec = 0;
+//    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+//    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
-    int recvBufSize = 128 * 1024;
-    int sendBufSize = 128 * 1024;
-    setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
-    setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
+//    int recvBufSize = 4 * 1024 * 1024;
+//    int sendBufSize = 4 * 1024 * 1024;
+//    setsockopt(sock, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
+//    setsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
 
     //4.监听
     if (listen(sock, maxListen) != 0) {
@@ -188,6 +236,8 @@ int FusionServer::Run() {
 
     //获取matrixNo
     getMatrixNoFromDb();
+    //获取路口编号
+//    getCrossIdFromDb();
 
     //开启服务器监视客户端线程
     threadMonitor = thread(ThreadMonitor, this);
@@ -205,9 +255,14 @@ int FusionServer::Run() {
     threadFindOneFrame.detach();
 
     //开启服务器多路数据融合线程
-    threadMerge = thread(ThreadMerge, this);
-    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
-    threadMerge.detach();
+//    threadMerge = thread(ThreadMerge, this);
+//    pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
+//    threadMerge.detach();
+
+    //开启服务器多路数据不融合线程
+    threadNotMerge = thread(ThreadNotMerge, this);
+    pthread_setname_np(threadNotMerge.native_handle(), "FusionServer notMerge");
+    threadNotMerge.detach();
 
     return 0;
 }
@@ -248,11 +303,23 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
 
     //add vector
     pthread_mutex_lock(&this->lock_vector_client);
+    //根据ip，看下是否原来有记录，有的话，清除后在添加
+    string addIp = string(inet_ntoa(clientInfo->clientAddr.sin_addr));
+    for (int i = 0; i < this->vector_client.size(); i++) {
+        auto iter = this->vector_client.at(i);
+        string curIp = string(inet_ntoa(iter->clientAddr.sin_addr));
+        if (curIp == addIp) {
+            this->vector_client.erase(this->vector_client.begin() + i);
+            this->vector_client.shrink_to_fit();
+            Info("remove repeat ip:%s", curIp.c_str());
+        }
+    }
+
     this->vector_client.push_back(clientInfo);
     pthread_cond_broadcast(&this->cond_vector_client);
     pthread_mutex_unlock(&this->lock_vector_client);
 
-    Info("add client %d success", client_sock);
+    Info("add client %d success,ip:%s", client_sock, addIp.c_str());
 
     //开启客户端处理线程
     clientInfo->ProcessRecv();
@@ -329,6 +396,11 @@ void FusionServer::ThreadMonitor(void *pServer) {
 
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
+
+        usleep(10);
+        if (!server->isRun) {
+            continue;
+        }
         // 等待事件发生
         nfds = epoll_wait(server->epoll_fd, server->wait_events, MAX_EVENTS, -1);
 
@@ -384,18 +456,22 @@ void FusionServer::ThreadCheck(void *pServer) {
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
         usleep(10);
+
+        if (!server->isRun) {
+            continue;
+        }
         //检查客户端数组状态，
         // 主要是接收时间receive_time receive_time跟现在大于150秒则断开链接
         // needRelease上抛的释放标志，设置为真后，等待队列全部为空后进行释放
         if (server->vector_client.empty()) {
             continue;
         }
-//        cout << "当前客户端数量：" << to_string(server->vector_client.size()) << endl;
+//        cout << "当前客户端数量：" << to_string(server->vectorClient.size()) << endl;
 
         //切记，这里删除客户端的时候有加锁解锁操作，所以最外围不要加锁！！！
-//        pthread_mutex_lock(&server->lock_vector_client);
-//        if (server->vector_client.empty()) {
-//            pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
+//        pthread_mutex_lock(&server->lockVectorClient);
+//        if (server->vectorClient.empty()) {
+//            pthread_cond_wait(&server->condVectorClient, &server->lockVectorClient);
 //        }
 
         for (auto iter: server->vector_client) {
@@ -420,7 +496,7 @@ void FusionServer::ThreadCheck(void *pServer) {
                         }
                     }
                     bool pkgEmpty = false;//分包缓冲区为空
-                    if (iter->queuePkg.Size() == 0) {
+                    if (iter->queuePkg.size() == 0) {
                         pkgEmpty = true;
                     }
                     bool watchDataEmpty = false;//WatchData队列为空
@@ -436,8 +512,8 @@ void FusionServer::ThreadCheck(void *pServer) {
             }
         }
 
-//        pthread_cond_broadcast(&server->cond_vector_client);
-//        pthread_mutex_unlock(&server->lock_vector_client);
+//        pthread_cond_broadcast(&server->condVectorClient);
+//        pthread_mutex_unlock(&server->lockVectorClient);
 
     }
 
@@ -451,175 +527,112 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
     }
     auto server = (FusionServer *) pServer;
 
-    struct timespec begin;
-    struct timespec end;
-    uint64_t timeUsConsume = 0;
-
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
-        Info("耗时:%llu", timeUsConsume);
 
-        if (timeUsConsume > (100 * 1000)) {
-            timeUsConsume = timeUsConsume % (100 * 1000);
-        }
-        usleep(server->thresholdFrame * 1000 - timeUsConsume);
+        usleep(10);
 
-        clock_gettime(CLOCK_REALTIME, &begin);
-        //如果连接上的客户端数量为0
-        if (server->vector_client.size() == 0) {
-            Info("未连入客户端");
-            clock_gettime(CLOCK_REALTIME, &end);
-            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
-                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+        if (!server->isRun) {
             continue;
         }
 
+        //如果连接上的客户端数量为0
+        if (server->vector_client.size() == 0) {
+//            Info("未连入客户端");
+            continue;
+        }
         pthread_mutex_lock(&server->lock_vector_client);
         while (server->vector_client.empty()) {
             pthread_cond_wait(&server->cond_vector_client, &server->lock_vector_client);
         }
         //所有的客户端都要缓存3帧数据
         int clientNum = server->vector_client.size();//连入的客户端数量
-        int has3PkgCount = 0;//有3帧缓存数据的路数
+        int maxPkgs = 0;//轮询各个路存有的最大帧数
         bool hasData = false;
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
 
-            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
-            if (iter->queueWatchData.size() >= 3) {
-                has3PkgCount += 1;
+            pthread_mutex_lock(&iter->lockWatchData);
+//            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
+            //得到最大帧数
+            if (iter->queueWatchData.size() > maxPkgs) {
+                maxPkgs = iter->queueWatchData.size();
             }
+
+            pthread_cond_broadcast(&iter->condWatchData);
+            pthread_mutex_unlock(&iter->lockWatchData);
         }
-
-        Info("clientNum %d,has3PkgCount %d", clientNum, has3PkgCount);
-
-        if (has3PkgCount > 0) {
+//        Info("clientNum %d,maxPkgs %d", clientNum, maxPkgs);
+        if (maxPkgs >= 20) {
             hasData = true;
         }
-
         if (!hasData) {
-            Info("全部路数未有3帧数据缓存");
-            clock_gettime(CLOCK_REALTIME, &end);
-            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
-                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
-
+//            Info("全部路数未有3帧数据缓存");
             pthread_cond_broadcast(&server->cond_vector_client);
             pthread_mutex_unlock(&server->lock_vector_client);
-
             continue;
         }
 
-        OBJS objs;//容量为4,依次是南、西、北、东
-        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
+        //如果有三帧数据，一直取到就有3帧
+        do {
+            Info("寻找同一帧数据");
+            OBJS objs;//容量为4,依次是北、东、南、西
+            uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
-        //轮询各个连入的客户端，按指定的路口ip来存入数组
+            //轮询各个连入的客户端，按指定的路口ip来存入数组
 
-        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
-        //1.寻找各个路口的客户端索引，未找到就是默认值-1
-        for (int i = 0; i < server->vector_client.size(); i++) {
-            auto iter = server->vector_client.at(i);
-            for (int j = 0; j < server->roadDirection.size(); j++) {
-                //ip 相同
-                if (iter->direction == server->roadDirection.at(j)) {
-                    id[j] = i;
-                }
-            }
-        }
-
-        //调试输出，查看现在有几路连入
-        bool isConnect = false;
-        int connetClientNum = 0;
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] != -1) {
-                Info("第%d路 client数组索引%d sock：%d", i + 1, id[i], server->vector_client.at(id[i])->sock);
-                connetClientNum++;
-                isConnect = true;
-            }
-        }
-        if (!isConnect) {
-            clock_gettime(CLOCK_REALTIME, &end);
-            timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
-                             (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
-
-            pthread_cond_broadcast(&server->cond_vector_client);
-            pthread_mutex_unlock(&server->lock_vector_client);
-
-            continue;
-        }
-
-
-        //2.确定时间戳
-        if (server->curTimestamp == 0) {
-            //第一次取先遍历的帧时间
-            for (int i = 0; i < ARRAY_SIZE(id); i++) {
-                if (id[i] == -1) {
-                    continue;
-                }
-                if (!server->vector_client.at(id[i])->queueWatchData.empty()) {
-                    //这里取各个客户端第一帧的最大值
-                    if (server->curTimestamp < server->vector_client.at(id[i])->queueWatchData.front().timstamp) {
-                        //如果还没有赋值则赋值
-                        server->curTimestamp = server->vector_client.at(id[i])->queueWatchData.front().timstamp;
+            int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
+            int connetClientNum = 0;
+            //1.寻找各个路口的客户端索引，未找到就是默认值-1
+            for (int i = 0; i < server->vector_client.size(); i++) {
+                auto iter = server->vector_client.at(i);
+                for (int j = 0; j < server->roadDirection.size(); j++) {
+                    //ip 相同
+                    if (iter->direction == server->roadDirection.at(j)) {
+                        id[j] = i;
+//                        Info("第%d路 client数组索引%d sock：%d", j + 1, id[j], server->vector_client.at(i)->sock);
+                        connetClientNum++;
                     }
                 }
             }
-        } else {
-            //从第二次开始，暂时定是上一帧的时间加上预设的时间间隔
-            server->curTimestamp += server->thresholdFrame;
-        }
 
-        //2.根据时间戳和门限来赋值
-        RoadData obj[4];
+            //2.确定时间戳
+            server->curTimestamp = server->vector_client.at(0)->queueWatchData.front().timstamp;//一直取第一路的时间戳为基准
 
-//        vector<OBJECT_INFO_T> obj[4];
-        for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-            obj[i].imageData = "";
-            obj[i].hardCode = "";
-            obj[i].listObjs.clear();
-        }
-        //清理第N路的取帧时间戳记录
-        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
-            server->xRoadTimestamp[i] = 0;
-        }
+            Info("这次选取的时间戳标准为%lu", server->curTimestamp);
 
-        //取数据
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] == -1) {
-                //客户端未连入，不填充数据
-            } else {
-                //客户端连入，填充数据
-                //watchData数据
-                if (server->vector_client.at(id[i])->queueWatchData.empty()) {
-                    //客户端未有数据传入，不填充数据
-                    Info("客户端%d未有数据传入，不填充数据", server->vector_client.at(id[i])->sock);
+            //2.根据时间戳和门限来赋值
+            RoadData obj[4];
+
+            for (int i = 0; i < ARRAY_SIZE(obj); i++) {
+                obj[i].imageData = "";
+                obj[i].hardCode = "";
+                obj[i].listObjs.clear();
+            }
+            //清理第N路的取帧时间戳记录
+            for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+                server->xRoadTimestamp[i] = 0;
+            }
+
+            //取数据
+            for (int i = 0; i < ARRAY_SIZE(id); i++) {
+                if (id[i] == -1) {
+                    //客户端未连入，不填充数据
                 } else {
-                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
-                    bool isFind = false;
-                    do {
-                        if (server->vector_client.at(id[i])->queueWatchData.size() == 1) {
-                            auto iter = server->vector_client.at(id[i])->queueWatchData.front();
-                            //按路记录时间戳
-                            server->xRoadTimestamp[i] = iter.timstamp;
-                            Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                            //TODO 赋值路口编号
-                            if (server->crossID.empty()) {
-                                server->crossID = iter.matrixNo;
-                            }
-
-                            obj[i].hardCode = iter.hardCode;
-                            obj[i].imageData = iter.imageData;
-                            for (auto item: iter.lstObjTarget) {
-                                OBJECT_INFO_T objectInfoT;
-                                //转换
-                                ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                obj[i].listObjs.push_back(objectInfoT);
-                            }
-                            //出队列
-                            server->vector_client.at(id[i])->queueWatchData.pop();
-                            isFind = true;
-                        } else {
-                            auto iter = server->vector_client.at(id[i])->queueWatchData.front();
-                            if (iter.timstamp > server->curTimestamp) {
+                    //客户端连入，填充数据
+                    auto curClient = server->vector_client.at(id[i]);
+                    //watchData数据
+                    if (curClient->queueWatchData.empty()) {
+                        //客户端未有数据传入，不填充数据
+                        Info("第%d路未有数据传入，不填充数据", i + 1);
+                    } else {
+                        //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
+                        bool isFind = false;
+                        do {
+                            pthread_mutex_lock(&curClient->lockWatchData);
+                            auto iter = curClient->queueWatchData.front();
+                            if ((iter.timstamp >= (double) (server->curTimestamp - server->thresholdFrame)) &&
+                                (iter.timstamp <= (double) (server->curTimestamp + server->thresholdFrame))) {
                                 //按路记录时间戳
                                 server->xRoadTimestamp[i] = iter.timstamp;
                                 Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
@@ -631,6 +644,8 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 
                                 obj[i].hardCode = iter.hardCode;
                                 obj[i].imageData = iter.imageData;
+//                                    Info("寻找同一帧，找到第%d路的数据后，hardCode:%s 图像大小%d", i, obj[i].hardCode.c_str(),
+//                                         obj[i].imageData.size());
                                 for (auto item: iter.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
                                     //转换
@@ -638,106 +653,116 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                                     obj[i].listObjs.push_back(objectInfoT);
                                 }
                                 //出队列
-                                server->vector_client.at(id[i])->queueWatchData.pop();
+                                curClient->queueWatchData.pop();
+                                pthread_cond_broadcast(&curClient->condWatchData);
+                                pthread_mutex_unlock(&curClient->lockWatchData);
+
                                 isFind = true;
-                            } else if (iter.timstamp >= (server->curTimestamp - (server->thresholdFrame * 1000))) {
-                                //按路记录时间戳
-                                server->xRoadTimestamp[i] = iter.timstamp;
-                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                                //TODO 赋值路口编号
-                                if (server->crossID.empty()) {
-                                    server->crossID = iter.matrixNo;
-                                }
-                                //时间戳在门限范围内,赋值
-                                obj[i].hardCode = iter.hardCode;
-                                obj[i].imageData = iter.imageData;
-                                for (auto item: iter.lstObjTarget) {
-                                    OBJECT_INFO_T objectInfoT;
-                                    //转换
-                                    ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                    obj[i].listObjs.push_back(objectInfoT);
-                                }
-                                //出队列
-                                server->vector_client.at(id[i])->queueWatchData.pop();
-                                isFind = true;
-                            } else {
+                            } else if ((iter.timstamp < (double) (server->curTimestamp - server->thresholdFrame))) {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("第%d路时间戳不符合要求，舍弃%f", i + 1,
-                                     server->vector_client.at(id[i])->queueWatchData.front().timstamp);
+                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) curClient->queueWatchData.front().timstamp);
                                 //出队列
-                                server->vector_client.at(id[i])->queueWatchData.pop();
+                                curClient->queueWatchData.pop();
+                                pthread_cond_broadcast(&curClient->condWatchData);
+                                pthread_mutex_unlock(&curClient->lockWatchData);
+
+                            } else if ((iter.timstamp > (double) (server->curTimestamp + server->thresholdFrame))) {
+                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) curClient->queueWatchData.front().timstamp);
+                                pthread_cond_broadcast(&curClient->condWatchData);
+                                pthread_mutex_unlock(&curClient->lockWatchData);
+                                isFind = true;
                             }
-                        }
-                    } while (!isFind);
-                }
-            }
-        }
-        //3.存入待融合队列，即queueObjs
-        if (connetClientNum == 1) {
-            objs.isOneRoad = true;
-        } else {
-            objs.isOneRoad = false;
-        }
 
-        objs.one.hardCode = obj[0].hardCode;
-        objs.one.imageData = obj[0].imageData;
-        for (int i = 0; i < obj[0].listObjs.size(); i++) {
-            objs.one.listObjs.push_back(obj[0].listObjs.at(i));
-        }
-        objs.two.hardCode = obj[1].hardCode;
-        objs.two.imageData = obj[1].imageData;
-        for (int i = 0; i < obj[1].listObjs.size(); i++) {
-            objs.two.listObjs.push_back(obj[1].listObjs.at(i));
-        }
-        objs.three.hardCode = obj[2].hardCode;
-        objs.three.imageData = obj[2].imageData;
-        for (int i = 0; i < obj[2].listObjs.size(); i++) {
-            objs.three.listObjs.push_back(obj[2].listObjs.at(i));
-        }
-        objs.four.hardCode = obj[3].hardCode;
-        objs.four.imageData = obj[3].imageData;
-        for (int i = 0; i < obj[3].listObjs.size(); i++) {
-            objs.four.listObjs.push_back(obj[3].listObjs.at(i));
-        }
-
-
-        //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
-        uint64_t sum = 0;
-        int num = 0;
-        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
-            if (server->xRoadTimestamp[i] != 0) {
-                sum += server->xRoadTimestamp[i];
-                num += 1;
-            }
-        }
-        if (num != 0) {
-            Info("sum:%lu,num:%d\n", sum, num);
-            server->curTimestamp = (sum / num);
-            Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
-        }
-
-        objs.timestamp = server->curTimestamp;
-
-
-        if (objs.one.listObjs.empty() && objs.two.listObjs.empty() && objs.three.listObjs.empty() &&
-            objs.four.listObjs.empty()) {
-            Info("同一帧数据全部为空");
-        } else {
-            if (server->queueObjs.Push(objs) != 0) {
-                Error("队列已满，未存入数据 timestamp:%lu", server->curTimestamp);
-            } else {
-                Info("待融合数据存入:选取的时间戳:%lu", server->curTimestamp);
-                for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
-                    if (server->xRoadTimestamp[i] != 0) {
-                        Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                            if (curClient->queueWatchData.empty()) {
+                                //队列为空，直接退出
+                                isFind = true;
+                            }
+                        } while (!isFind);
                     }
                 }
             }
-        }
+            //3.存入待融合队列，即queueObjs
+            if (connetClientNum == 1) {
+                for (int i = 0; i < ARRAY_SIZE(obj); i++) {
+                    if (!obj[i].listObjs.empty() || !obj[i].imageData.empty()) {
+                        objs.hasDataRoadIndex = i;
+//                        Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
+                        break;
+                    }
+                }
+                objs.isOneRoad = true;
+            } else {
+                objs.isOneRoad = false;
+            }
 
-        clock_gettime(CLOCK_REALTIME, &end);
-        timeUsConsume = ((end.tv_sec * 1000 * 1000 + end.tv_nsec / 1000) -
-                         (begin.tv_sec * 1000 * 1000 + begin.tv_nsec / 1000));
+            for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+                objs.roadData[i].hardCode = obj[i].hardCode;
+                objs.roadData[i].imageData = obj[i].imageData;
+                objs.roadData[i].listObjs.assign(obj[i].listObjs.begin(), obj[i].listObjs.end());
+            }
+
+//            //计算所有能取到帧的路的时间戳的平均值，赋值给当前时间戳(这里想法是做一个时间戳的加权，动态适应)
+//            uint64_t sum = 0;
+//            int num = 0;
+//            for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
+//                if (server->xRoadTimestamp[i] != 0) {
+//                    sum += server->xRoadTimestamp[i];
+//                    num += 1;
+//                }
+//            }
+//            if (num != 0) {
+////                Info("sum:%lu,num:%d\n", sum, num);
+//                server->curTimestamp = (sum / num);
+////                Info("计算的加权平均数(剔除未赋值的):%lu", server->curTimestamp);
+//            }
+//
+////            objs.timestamp = server->curTimestamp;
+
+            //时间戳打找到同一帧的时间
+            objs.timestamp = server->curTimestamp;
+//            timeval now;
+//            gettimeofday(&now, nullptr);
+//            objs.timestamp = (now.tv_sec * 1000 + now.tv_usec / 1000);
+
+//            bool hasNoDatas = true;//所有帧都没有数据
+//
+//            for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+//                if (!objs.roadData[i].listObjs.empty()) {
+//                    hasNoDatas = false;
+//                    break;
+//                }
+//            }
+//
+//            if (hasNoDatas) {
+//                Info("同一帧数据全部为空");
+//            } else {
+//                if (server->queueObjs.size() >= server->maxQueueObjs) {
+//                    Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
+//                } else {
+//                    pthread_mutex_lock(&server->lockObjs);
+//                    //存入队列
+//                    server->queueObjs.push(objs);
+//                    pthread_cond_broadcast(&server->condObjs);
+//                    pthread_mutex_unlock(&server->lockObjs);
+//
+//                    Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
+//                }
+//            }
+
+            if (server->queueObjs.size() >= server->maxQueueObjs) {
+                Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
+            } else {
+                pthread_mutex_lock(&server->lockObjs);
+                //存入队列
+                server->queueObjs.push(objs);
+                pthread_cond_broadcast(&server->condObjs);
+                pthread_mutex_unlock(&server->lockObjs);
+
+                Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
+            }
+
+            maxPkgs--;
+        } while (maxPkgs >= 20);
 
         pthread_cond_broadcast(&server->cond_vector_client);
         pthread_mutex_unlock(&server->lock_vector_client);
@@ -755,159 +780,277 @@ void FusionServer::ThreadMerge(void *pServer) {
 
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
-        usleep(10);
+//        usleep(10);
 
-        if (server->queueObjs.Size() == 0) {
+        if (!server->isRun) {
             continue;
         }
 
         //开始融合数据
-        OBJS objs = server->queueObjs.PopFront();
+        pthread_mutex_lock(&server->lockObjs);
+        while (server->queueObjs.empty()) {
+            pthread_cond_wait(&server->condObjs, &server->lockObjs);
+        }
+        OBJS objs = server->queueObjs.front();
+        server->queueObjs.pop();
+        pthread_cond_broadcast(&server->condObjs);
+        pthread_mutex_unlock(&server->lockObjs);
+        Info("开始融合");
+//        Info("待融合数据选取的时间戳:%lu", (uint64_t) objs.timestamp);
 
         //如果只有一路数据，不做多路融合，直接给出
         if (objs.isOneRoad) {
+            Info("只有一路数据，不走融合");
             MergeData mergeData;
             mergeData.timestamp = objs.timestamp;
             mergeData.obj.clear();
 
-            if (!objs.one.listObjs.empty()) {
-                mergeData.objInput.one.hardCode = objs.one.hardCode;
-                mergeData.objInput.one.imageData = objs.one.imageData;
-                for (auto iter:objs.one.listObjs) {
-                    OBJECT_INFO_NEW item;
-                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
-                    mergeData.obj.push_back(item);
-                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
-                }
+            Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
+            auto copyFrom = objs.roadData[objs.hasDataRoadIndex];
 
-            } else if (!objs.two.listObjs.empty()) {
-                mergeData.objInput.two.hardCode = objs.two.hardCode;
-                mergeData.objInput.two.imageData = objs.two.imageData;
-                for (auto iter:objs.two.listObjs) {
-                    OBJECT_INFO_NEW item;
-                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
-                    mergeData.obj.push_back(item);
-                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
-                }
-
-            } else if (!objs.three.listObjs.empty()) {
-                mergeData.objInput.three.hardCode = objs.three.hardCode;
-                mergeData.objInput.three.imageData = objs.three.imageData;
-                for (auto iter:objs.three.listObjs) {
-                    OBJECT_INFO_NEW item;
-                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
-                    mergeData.obj.push_back(item);
-                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
-                }
-
-            } else if (!objs.four.listObjs.empty()) {
-                mergeData.objInput.four.hardCode = objs.four.hardCode;
-                mergeData.objInput.four.imageData = objs.four.imageData;
-                for (auto iter:objs.four.listObjs) {
-                    OBJECT_INFO_NEW item;
-                    OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
-                    mergeData.obj.push_back(item);
-                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
-                }
+            //结果直接存输入
+            for (auto iter:copyFrom.listObjs) {
+                OBJECT_INFO_NEW item;
+                OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
+                mergeData.obj.push_back(item);
             }
 
-            if (server->queueMergeData.Push(mergeData) != 0) {
+            mergeData.objInput.roadData[objs.hasDataRoadIndex].hardCode = copyFrom.hardCode;
+            mergeData.objInput.roadData[objs.hasDataRoadIndex].imageData = copyFrom.imageData;
+            mergeData.objInput.roadData[objs.hasDataRoadIndex].listObjs.assign(copyFrom.listObjs.begin(),
+                                                                               copyFrom.listObjs.end());
+
+            if (server->queueMergeData.size() >= server->maxQueueMergeData) {
                 Error("队列已满，抛弃融合数据 ");
             } else {
+                pthread_mutex_lock(&server->lockMergeData);
+                //存入队列
+                server->queueMergeData.push(mergeData);
+                pthread_cond_broadcast(&server->condMergeData);
+                pthread_mutex_unlock(&server->lockMergeData);
                 Info("存入融合数据，size:%d", mergeData.obj.size());
             }
-            Info("只有一路数据，不走融合");
 
             continue;
         }
-
 
         vector<OBJECT_INFO_NEW> vectorOBJNEW;
         OBJECT_INFO_NEW dataOut[1000];
         memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
 
         int inOBJS = 0;
-        inOBJS = objs.one.listObjs.size() + objs.two.listObjs.size() + objs.three.listObjs.size() +
-                 objs.four.listObjs.size();
-        Info("传入目标数:%d", inOBJS);
 
+        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+            inOBJS += objs.roadData[i].listObjs.size();
+        }
+
+//        Info("传入目标数:%d", inOBJS);
+
+        //存输入数据
+        if (0) {
+            string fileName = to_string(server->frameCount) + "_in.txt";
+            ofstream inDataFile;
+            string inDataFileName = "mergeData/" + fileName;
+            inDataFile.open(inDataFileName);
+            string content;
+            for (int j = 0; j < ARRAY_SIZE(objs.roadData); j++) {
+                string split = ",";
+
+                for (int m = 0; m < objs.roadData[j].listObjs.size(); m++) {
+                    auto iter = objs.roadData[j].listObjs.at(m);
+                    content += (to_string(j) + split +
+                                to_string(iter.locationX) + split +
+                                to_string(iter.locationY) + split +
+                                to_string(iter.speedX) + split +
+                                to_string(iter.speedY) + split +
+                                to_string(iter.objID) + split +
+                                to_string(iter.objType));
+                    content += "\n";
+                }
+            }
+            if (inDataFile.is_open()) {
+                inDataFile.write((const char *) content.c_str(), content.size());
+                Info("融合数据写入");
+                inDataFile.flush();
+                inDataFile.close();
+            } else {
+                Error("打开文件失败:%s", inDataFileName.c_str());
+            }
+        }
+
+        int num = 0;
         switch (server->frame) {
             case 1: {
                 //第一帧
                 server->l1_obj.clear();
                 server->l2_obj.clear();
 
-                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.one.listObjs.size(), objs.two.listObjs.size(),
-                     objs.three.listObjs.size(), objs.four.listObjs.size());
+//                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.roadData[0].listObjs.size(), objs.roadData[1].listObjs.size(),
+//                     objs.roadData[2].listObjs.size(), objs.roadData[3].listObjs.size());
 
-                int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
-                                      server->gatetx, server->gatety, server->gatex, server->gatey, true,
-                                      objs.one.listObjs.data(), objs.one.listObjs.size(),
-                                      objs.two.listObjs.data(), objs.two.listObjs.size(),
-                                      objs.three.listObjs.data(), objs.three.listObjs.size(),
-                                      objs.four.listObjs.data(), objs.four.listObjs.size(),
-                                      server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                      server->l2_obj.size(), dataOut, server->angle_value);
+                timeval begin;
+                timeval end;
+
+                gettimeofday(&begin, nullptr);
+
+                num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
+                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
+                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
+                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
+                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
+                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
+                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                  server->l2_obj.size(), dataOut, server->angle_value);
+
+                //斜路口
+           /*     num = merge_total(server->flag_view, server->left_down_x, server->left_down_y,
+                                  server->left_up_x, server->left_up_y,
+                                  server->right_up_x, server->right_up_y,
+                                  server->right_down_x, server->right_down_y,
+                                  server->repateX, server->repateY,
+                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
+                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
+                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
+                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
+                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
+                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                  server->l2_obj.size(), dataOut, server->angle_value);
+*/
+
+                server->time_flag = false;
+
+
+                gettimeofday(&end, nullptr);
+
+                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+//                Info("多路融合耗时%lu us\n", cost);
+
                 //传递历史数据
                 server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
 
+                server->l1_obj.clear();
                 for (int i = 0; i < num; i++) {
                     server->l1_obj.push_back(dataOut[i]);
                 }
                 server->frame++;
+                server->frameCount++;
 
-                for (int i = 0; i < num; i++) {
-                    vectorOBJNEW.push_back(dataOut[i]);
-                }
                 MergeData mergeData;
+                mergeData.obj.clear();
+                for (int i = 0; i < num; i++) {
+                    mergeData.obj.push_back(dataOut[i]);
+//                    vectorOBJNEW.push_back(dataOut[i]);
+                }
+
                 mergeData.timestamp = objs.timestamp;
                 //存输入量
-                if (!objs.one.listObjs.empty()) {
-                    mergeData.objInput.one.hardCode = objs.one.hardCode;
-                    mergeData.objInput.one.imageData = objs.one.imageData;
-                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
+                for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+                    auto copyFrom = objs.roadData[i];
+                    mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
+                    mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
+                    if (!copyFrom.listObjs.empty()) {
+                        mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
+                                                                       copyFrom.listObjs.end());
+                    }
+//                    Info("融合数据，存入输入量，hardCode:%s imageSize:%d lstObjs容量:%d",
+//                         mergeData.objInput.roadData[i].hardCode.c_str(),
+//                         mergeData.objInput.roadData[i].imageData.size(),
+//                         mergeData.objInput.roadData[i].listObjs.size());
                 }
-                if (!objs.two.listObjs.empty()) {
-                    mergeData.objInput.two.hardCode = objs.two.hardCode;
-                    mergeData.objInput.two.imageData = objs.two.imageData;
-                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
-                }
-                if (!objs.three.listObjs.empty()) {
-                    mergeData.objInput.three.hardCode = objs.three.hardCode;
-                    mergeData.objInput.three.imageData = objs.three.imageData;
-                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
-                }
-                if (!objs.four.listObjs.empty()) {
-                    mergeData.objInput.four.hardCode = objs.four.hardCode;
-                    mergeData.objInput.four.imageData = objs.four.imageData;
-                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
-                }
-                //存输出量
-                mergeData.obj.clear();
-                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
 
-                if (server->queueMergeData.Push(mergeData) != 0) {
+                //存输出量
+//                mergeData.obj.clear();
+//                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
+
+                if (server->queueMergeData.size() >= server->maxQueueMergeData) {
                     Error("队列已满，抛弃融合数据 ");
                 } else {
-                    Info("存入融合数据，size:%d", mergeData.obj.size());
+                    pthread_mutex_lock(&server->lockMergeData);
+                    //存入队列
+                    server->queueMergeData.push(mergeData);
+                    pthread_cond_broadcast(&server->condMergeData);
+                    pthread_mutex_unlock(&server->lockMergeData);
+//                    Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
-                Info("融合后，传出目标数:%d", mergeData.obj.size());
+//                Info("融合后，传出目标数:%d", mergeData.obj.size());
+
+//                //存输出数据
+                if (0) {
+                    string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
+                    ofstream inDataFileO;
+                    string inDataFileNameO = "mergeData/" + fileNameO;
+                    inDataFileO.open(inDataFileNameO);
+                    string contentO;
+                    for (int j = 0; j < mergeData.obj.size(); j++) {
+                        string split = ",";
+
+                        auto iter = mergeData.obj.at(j);
+                        contentO += (to_string(iter.objID1) + split +
+                                     to_string(iter.objID2) + split +
+                                     to_string(iter.objID3) + split +
+                                     to_string(iter.objID4) + split +
+                                     to_string(iter.showID) + split +
+                                     to_string(iter.cameraID1) + split +
+                                     to_string(iter.cameraID2) + split +
+                                     to_string(iter.cameraID3) + split +
+                                     to_string(iter.cameraID4) + split +
+                                     to_string(iter.locationX) + split +
+                                     to_string(iter.locationY) + split +
+                                     to_string(iter.speed) + split +
+                                     to_string(iter.flag_new));
+                        contentO += "\n";
+                    }
+                    if (inDataFileO.is_open()) {
+                        inDataFileO.write((const char *) contentO.c_str(), contentO.size());
+                        Info("融合数据写入");
+                        inDataFileO.flush();
+                        inDataFileO.close();
+                    } else {
+                        Error("打开文件失败:%s", inDataFileNameO.c_str());
+                    }
+                }
             }
                 break;
             default: {
+//                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.roadData[0].listObjs.size(), objs.roadData[1].listObjs.size(),
+//                     objs.roadData[2].listObjs.size(), objs.roadData[3].listObjs.size());
 
-                Info("n1:%d,n2:%d,n3:%d,n4:%d", objs.one.listObjs.size(), objs.two.listObjs.size(),
-                     objs.three.listObjs.size(), objs.four.listObjs.size());
-                int num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
-                                      server->gatetx, server->gatety, server->gatex, server->gatey, true,
-                                      objs.one.listObjs.data(), objs.one.listObjs.size(),
-                                      objs.two.listObjs.data(), objs.two.listObjs.size(),
-                                      objs.three.listObjs.data(), objs.three.listObjs.size(),
-                                      objs.four.listObjs.data(), objs.four.listObjs.size(),
-                                      server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                      server->l2_obj.size(), dataOut, server->angle_value);
+                timeval begin;
+                timeval end;
+
+                gettimeofday(&begin, nullptr);
+
+                num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
+                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
+                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
+                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
+                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
+                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
+                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                  server->l2_obj.size(), dataOut, server->angle_value);
+
+                //斜路口
+            /*    num = merge_total(server->flag_view, server->left_down_x, server->left_down_y,
+                                  server->left_up_x, server->left_up_y,
+                                  server->right_up_x, server->right_up_y,
+                                  server->right_down_x, server->right_down_y,
+                                  server->repateX, server->repateY,
+                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
+                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
+                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
+                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
+                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
+                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+                                  server->l2_obj.size(), dataOut, server->angle_value);
+*/
+                gettimeofday(&end, nullptr);
+
+                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+//                Info("多路融合耗时%lu us\n", cost);
+
                 //传递历史数据
                 server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
+                server->l1_obj.clear();
                 for (int i = 0; i < num; i++) {
                     server->l1_obj.push_back(dataOut[i]);
                 }
@@ -918,47 +1061,238 @@ void FusionServer::ThreadMerge(void *pServer) {
                     server->frame = 2;
                 }
 
-                for (int i = 0; i < num; i++) {
-                    vectorOBJNEW.push_back(dataOut[i]);
+                server->frameCount++;
+                if (server->frameCount >= 0xffffffff) {
+                    Info("帧计数满，从0开始");
+                    server->frameCount = 0;
                 }
+
                 MergeData mergeData;
+                mergeData.obj.clear();
+                for (int i = 0; i < num; i++) {
+                    mergeData.obj.push_back(dataOut[i]);
+                    //vectorOBJNEW.push_back(dataOut[i]);
+                }
+
                 mergeData.timestamp = objs.timestamp;
                 //存输入量
-                //存输入量
-                if (!objs.one.listObjs.empty()) {
-                    mergeData.objInput.one.hardCode = objs.one.hardCode;
-                    mergeData.objInput.one.imageData = objs.one.imageData;
-                    mergeData.objInput.one.listObjs.assign(objs.one.listObjs.begin(), objs.one.listObjs.end());
-                }
-                if (!objs.two.listObjs.empty()) {
-                    mergeData.objInput.two.hardCode = objs.two.hardCode;
-                    mergeData.objInput.two.imageData = objs.two.imageData;
-                    mergeData.objInput.two.listObjs.assign(objs.two.listObjs.begin(), objs.two.listObjs.end());
-                }
-                if (!objs.three.listObjs.empty()) {
-                    mergeData.objInput.three.hardCode = objs.three.hardCode;
-                    mergeData.objInput.three.imageData = objs.three.imageData;
-                    mergeData.objInput.three.listObjs.assign(objs.three.listObjs.begin(), objs.three.listObjs.end());
-                }
-                if (!objs.four.listObjs.empty()) {
-                    mergeData.objInput.four.hardCode = objs.four.hardCode;
-                    mergeData.objInput.four.imageData = objs.four.imageData;
-                    mergeData.objInput.four.listObjs.assign(objs.four.listObjs.begin(), objs.four.listObjs.end());
+                for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+                    auto copyFrom = objs.roadData[i];
+                    mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
+                    mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
+                    if (!copyFrom.listObjs.empty()) {
+                        mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
+                                                                       copyFrom.listObjs.end());
+                    }
+//                    Info("融合数据，存入输入量，hardCode:%s imageSize:%d lstObjs容量:%d",
+//                         mergeData.objInput.roadData[i].hardCode.c_str(),
+//                         mergeData.objInput.roadData[i].imageData.size(),
+//                         mergeData.objInput.roadData[i].listObjs.size());
                 }
                 //存输出量
-                mergeData.obj.clear();
-                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
+//                mergeData.obj.clear();
+//                mergeData.obj.assign(vectorOBJNEW.begin(), vectorOBJNEW.end());
 
-                if (server->queueMergeData.Push(mergeData) != 0) {
+                if (server->queueMergeData.size() >= server->maxQueueMergeData) {
                     Error("队列已满，抛弃融合数据 ");
                 } else {
-                    Info("存入融合数据，size:%d", mergeData.obj.size());
+                    pthread_mutex_lock(&server->lockMergeData);
+                    //存入队列
+                    server->queueMergeData.push(mergeData);
+                    pthread_cond_broadcast(&server->condMergeData);
+                    pthread_mutex_unlock(&server->lockMergeData);
+//                    Info("存入融合数据，size:%d", mergeData.obj.size());
                 }
-                Info("融合后，传出目标数:%d", mergeData.obj.size());
+//                Info("融合后，传出目标数:%d", mergeData.obj.size());
+
+
+                //存输出数据
+                if (0) {
+                    string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
+                    ofstream inDataFileO;
+                    string inDataFileNameO = "mergeData/" + fileNameO;
+                    inDataFileO.open(inDataFileNameO);
+                    string contentO;
+                    for (int j = 0; j < mergeData.obj.size(); j++) {
+                        string split = ",";
+
+                        auto iter = mergeData.obj.at(j);
+                        contentO += (to_string(iter.objID1) + split +
+                                     to_string(iter.objID2) + split +
+                                     to_string(iter.objID3) + split +
+                                     to_string(iter.objID4) + split +
+                                     to_string(iter.showID) + split +
+                                     to_string(iter.cameraID1) + split +
+                                     to_string(iter.cameraID2) + split +
+                                     to_string(iter.cameraID3) + split +
+                                     to_string(iter.cameraID4) + split +
+                                     to_string(iter.locationX) + split +
+                                     to_string(iter.locationY) + split +
+                                     to_string(iter.speed) + split +
+                                     to_string(iter.flag_new));
+                        contentO += "\n";
+                    }
+                    if (inDataFileO.is_open()) {
+                        inDataFileO.write((const char *) contentO.c_str(), contentO.size());
+                        Info("融合数据写入");
+                        inDataFileO.flush();
+                        inDataFileO.close();
+                    } else {
+                        Error("打开文件失败:%s", inDataFileNameO.c_str());
+                    }
+                }
             }
 
                 break;
         }
+
     }
     Info("%s exit", __FUNCTION__);
 }
+
+void FusionServer::ThreadNotMerge(void *pServer) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+
+    Info("%s run", __FUNCTION__);
+    while (server->isRun.load()) {
+//        usleep(10);
+
+        if (!server->isRun) {
+            continue;
+        }
+
+
+        Info("不走融合直接发送数据");
+        //开始融合数据
+        pthread_mutex_lock(&server->lockObjs);
+        while (server->queueObjs.empty()) {
+            pthread_cond_wait(&server->condObjs, &server->lockObjs);
+        }
+
+        OBJS objs = server->queueObjs.front();
+        server->queueObjs.pop();
+        pthread_cond_broadcast(&server->condObjs);
+        pthread_mutex_unlock(&server->lockObjs);
+
+        Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
+
+        MergeData mergeData;
+        mergeData.obj.clear();
+
+        const int INF = 0x7FFFFFFF;
+        //北、东、南、西
+        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+
+            auto iter = objs.roadData[i];
+
+            for (int j = 0; j < iter.listObjs.size(); j++) {
+                auto iter1 = iter.listObjs.at(j);
+                OBJECT_INFO_NEW item;
+                switch (i) {
+                    case 0://North
+                        item.objID1 = iter1.objID;
+                        item.cameraID1 = iter1.cameraID;
+
+                        item.objID2 = -INF;
+                        item.cameraID2 = -INF;
+                        item.objID3 = -INF;
+                        item.cameraID3 = -INF;
+                        item.objID4 = -INF;
+                        item.cameraID4 = -INF;
+
+                        item.showID = iter1.objID + 10000;
+                        break;
+                    case 1://East
+                        item.objID2 = iter1.objID;
+                        item.cameraID2 = iter1.cameraID;
+
+                        item.objID1 = -INF;
+                        item.cameraID1 = -INF;
+                        item.objID3 = -INF;
+                        item.cameraID3 = -INF;
+                        item.objID4 = -INF;
+                        item.cameraID4 = -INF;
+
+                        item.showID = iter1.objID + 20000;
+                        break;
+                    case 2://South
+                        item.objID3 = iter1.objID;
+                        item.cameraID3 = iter1.cameraID;
+
+                        item.objID2 = -INF;
+                        item.cameraID2 = -INF;
+                        item.objID1 = -INF;
+                        item.cameraID1 = -INF;
+                        item.objID4 = -INF;
+                        item.cameraID4 = -INF;
+
+                        item.showID = iter1.objID + 30000;
+                        break;
+                    case 3:
+                        item.objID4 = iter1.objID;
+                        item.cameraID4 = iter1.cameraID;
+
+                        item.objID2 = -INF;
+                        item.cameraID2 = -INF;
+                        item.objID3 = -INF;
+                        item.cameraID3 = -INF;
+                        item.objID1 = -INF;
+                        item.cameraID1 = -INF;
+
+                        item.showID = iter1.objID + 40000;
+                        break;
+                }
+
+                item.objType = iter1.objType;
+                memcpy(item.plate_number, iter1.plate_number, sizeof(iter1.plate_number));
+                memcpy(item.plate_color, iter1.plate_color, sizeof(iter1.plate_color));
+                item.left = iter1.left;
+                item.top = iter1.top;
+                item.right = iter1.right;
+                item.bottom = iter1.bottom;
+                item.locationX = iter1.locationX;
+                item.locationY = iter1.locationY;
+                memcpy(item.distance, iter1.distance, sizeof(iter1.distance));
+                item.directionAngle = iter1.directionAngle;
+                item.speed = sqrt(iter1.speedX * iter1.speedX + iter1.speedY * iter1.speedY);
+                item.latitude = iter1.latitude;
+                item.longitude = iter1.longitude;
+                item.flag_new = 0;
+
+                mergeData.obj.push_back(item);
+            }
+        }
+
+
+        mergeData.timestamp = objs.timestamp;
+        //存输入量
+        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
+            auto copyFrom = objs.roadData[i];
+            mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
+            mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
+            if (!copyFrom.listObjs.empty()) {
+                mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
+                                                               copyFrom.listObjs.end());
+            }
+        }
+
+
+        if (server->queueMergeData.size() >= server->maxQueueMergeData) {
+            Error("队列已满，抛弃融合数据 ");
+        } else {
+            pthread_mutex_lock(&server->lockMergeData);
+            //存入队列
+            server->queueMergeData.push(mergeData);
+            pthread_cond_broadcast(&server->condMergeData);
+            pthread_mutex_unlock(&server->lockMergeData);
+//                    Info("存入融合数据，size:%d", mergeData.obj.size());
+        }
+
+    }
+    Info("%s exit", __FUNCTION__);
+}
+
+

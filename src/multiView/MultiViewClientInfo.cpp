@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
-#include "server/ClientInfo.h"
+#include "multiView/MultiViewClientInfo.h"
 #include "log/Log.h"
 #include "common/CRC.h"
 #include <sys/stat.h>
@@ -19,7 +19,7 @@ using namespace common;
 
 //string dirName;
 
-ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
+MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
     this->msgid = 0;
     this->clientAddr = clientAddr;
     this->sock = client_sock;
@@ -45,7 +45,7 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
 //        Info("create path failed! error code : %s \n", isCreate, dirName.data());
 }
 
-ClientInfo::~ClientInfo() {
+MultiViewClientInfo::~MultiViewClientInfo() {
 
     if (isLive.load() == true) {
         isLive.store(false);
@@ -71,7 +71,7 @@ ClientInfo::~ClientInfo() {
     this->rb = nullptr;
 }
 
-int ClientInfo::ProcessRecv() {
+int MultiViewClientInfo::ProcessRecv() {
     isLive.store(true);
 
     //dump
@@ -93,12 +93,12 @@ int ClientInfo::ProcessRecv() {
     return 0;
 }
 
-void ClientInfo::ThreadDump(void *pClientInfo) {
+void MultiViewClientInfo::ThreadDump(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (ClientInfo *) pClientInfo;
+    auto client = (MultiViewClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     client->isThreadDumpRun.store(true);
@@ -143,12 +143,12 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
 
 }
 
-void ClientInfo::ThreadGetPkg(void *pClientInfo) {
+void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (ClientInfo *) pClientInfo;
+    auto client = (MultiViewClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     client->isThreadGetPkgRun.store(true);
@@ -277,12 +277,12 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
 }
 
-void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
+void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (ClientInfo *) pClientInfo;
+    auto client = (MultiViewClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     client->isThreadGetPkgContentRun.store(true);
@@ -317,30 +317,30 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Info("client-%d,心跳指令", client->sock);
             }
                 break;
-            case CmdType::DeviceData : {
-                Info("监控数据指令");
+            case CmdType::DeviceMultiView : {
+                Info("多目数据指令");
                 //"WatchData"
-                WatchData watchData;
+                TrafficFlow trafficFlow;
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
-                if (JsonUnmarshalWatchData(pkg.body, watchData) != 0) {
-                    Error("watchData json 解析失败");
+                if (JsonUnmarshalTrafficFlow(pkg.body, trafficFlow) != 0) {
+                    Error("trafficFlow json 解析失败");
                     continue;
                 }
-                Info("client-%d,timestamp:%f,imag:%d,obj size:%d", client->sock, watchData.timstamp,
-                     watchData.isHasImage, watchData.lstObjTarget.size());
+                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+                     trafficFlow.flowData.size());
 
                 //根据结构体内的方向变量设置客户端的方向
-                client->direction.store(watchData.direction);
+//                client->direction.store(watchData.direction);
                 //存下接收的json
                 if (0) {
-                    string saveDir = "recvJsonRoad" + to_string(watchData.direction);
+                    string saveDir = "recvJsonRoad" + trafficFlow.crossCode;
                     if (access(saveDir.c_str(), 0) == -1) {
                         cout << "dir:" << saveDir << " not exist,create" << endl;
                         mkdir(saveDir.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
                     }
                     //save file
-                    string saveFile = saveDir + "/" + to_string(int(watchData.timstamp)) + ".json";
+                    string saveFile = saveDir + "/" + to_string(int(trafficFlow.timstamp)) + ".json";
                     ofstream outfile(saveFile, ios::trunc);
                     outfile << pkg.body;
                     outfile.flush();
@@ -348,34 +348,16 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
 
                 //存入队列
-                if (client->queueWatchData.size() >= client->maxQueueWatchData) {
-//                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
-                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
+                if (client->queueTrafficFlow.size() >= client->maxQueueTrafficFlow) {
+//                    Info("client:%d TrafficFlow队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
+                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
                 } else {
-                    pthread_mutex_lock(&client->lockWatchData);
+                    pthread_mutex_lock(&client->lockTrafficFlow);
                     //存入队列
-                    client->queueWatchData.push(watchData);
-                    pthread_cond_broadcast(&client->condWatchData);
-                    pthread_mutex_unlock(&client->lockWatchData);
-//                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
-                    //将图片存入文件夹内
-//                    ofstream inFile;
-//                    string inFileName = dirName +"/"+ to_string(watchData.timstamp) + ".jpeg";
-//                    inFile.open(inFileName);
-//                    if (inFile.is_open()) {
-//                        //base64解码
-//                        unsigned char result[1024 * 1024];
-//                        unsigned int result_len = 0;
-//                        bzero(result, ARRAY_SIZE(result));
-//                        base64_decode((unsigned char *) watchData.imageData.data(), watchData.imageData.size(), result,
-//                                      &result_len);
-//                        inFile.write((const char *) result, result_len);
-//                        Info("写入%d", result_len);
-//                        inFile.close();
-//
-//                    } else {
-//                        Error("打开文件失败:%s", inFileName.c_str());
-//                    }
+                    client->queueTrafficFlow.push(trafficFlow);
+                    pthread_cond_broadcast(&client->condTrafficFlow);
+                    pthread_mutex_unlock(&client->lockTrafficFlow);
+//                    Info("client:%d TrafficFlow队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                 }
 
             }

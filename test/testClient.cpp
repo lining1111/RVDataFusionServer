@@ -75,8 +75,8 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = "-45";
-    objTarget1.speed = "很快";
+    objTarget1.directionAngle = 0.56;
+//    objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
     objTarget2.objID = 2;
@@ -90,8 +90,8 @@ int Msg1(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = "-45";
-    objTarget2.speed = "很快";
+    objTarget2.directionAngle = 0.56;
+//    objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
     watchData.lstObjTarget.push_back(objTarget2);
@@ -181,8 +181,8 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget1.locationX = 5;
     objTarget1.locationY = 6;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = "-45";
-    objTarget1.speed = "很快";
+    objTarget1.directionAngle = 0.56;
+//    objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
     objTarget2.objID = 2;
@@ -196,8 +196,8 @@ int Msg2(uint8_t *out, uint32_t *len) {
     objTarget2.locationX = 5;
     objTarget2.locationY = 6;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = "-45";
-    objTarget2.speed = "很快";
+    objTarget2.directionAngle = 0.23;
+//    objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
     watchData.lstObjTarget.push_back(objTarget2);
@@ -248,13 +248,31 @@ int main(int argc, char **argv) {
     setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
     setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
-    int recvBufSize = 32 * 1024;
-    int sendBufSize = 32 * 1024;
+    int recvSize = 0;
+    int sendSize = 0;
+    socklen_t optlen = sizeof(int);
+
+    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
+    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
+
+    printf("原始缓存大小，接收%d 发送%d\n", recvSize, sendSize);
+
+
+    int recvBufSize = 256 * 1024;
+    int sendBufSize = 256 * 1024;
     setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
     setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
 
-    string server_ip = "127.0.0.1";
-    uint16_t server_port = 9000;
+    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
+    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
+
+    printf("设置后缓存大小，接收%d 发送%d\n", recvSize, sendSize);
+//
+//    string server_ip = "127.0.0.1";
+//    uint16_t server_port = 9000;
+
+    string server_ip = "10.110.25.149";
+    uint16_t server_port = 7890;
 
     struct sockaddr_in server_addr;
     int ret = 0;
@@ -273,17 +291,17 @@ int main(int argc, char **argv) {
     Info("connect server:%s-%d success", server_ip.c_str(), server_port);
 
 
-    //获取指定目录下的文件列表
-    int roadNum = 0;
-    string path;
-    GetData *getData = nullptr;
-    if (argc > 3) {
-        roadNum = atoi(argv[1]);
-        path = string(argv[2]);
-        Info("road:%d,path:%s", roadNum, path.c_str());
-        getData = new GetData(path);
-        getData->GetOrderListFileName(path);
-    }
+//    //获取指定目录下的文件列表
+//    int roadNum = 0;
+//    string path;
+//    GetData *getData = nullptr;
+//    if (argc > 3) {
+//        roadNum = atoi(argv[1]);
+//        path = string(argv[2]);
+//        Info("road:%d,path:%s", roadNum, path.c_str());
+//        getData = new GetData(path);
+//        getData->GetOrderListFileName(path);
+//    }
 
     bool isExit = false;
 
@@ -298,26 +316,67 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        uint8_t msg[1024 * 1024];
-        uint32_t msg_len = 0;
+        uint8_t msg[1024 * 256];
+        uint32_t msg_len = 1024 * 256;
+
+        for (int i = 0; i < ARRAY_SIZE(msg); i++) {
+            msg[i] = i;
+        }
 
         bzero(msg, ARRAY_SIZE(msg));
         if (user == "1") {
             //send WatchData 1
-            Msg1(msg, &msg_len);
-            int len = send(sockfd, msg, msg_len, 0);
+
+
+//            Msg1(msg, &msg_len);
+//            int len = send(sockfd, msg, msg_len, 0);
             //打印下buffer
 //            PrintHex(msg, msg_len);
 
-            uint16_t crc = 0;
-            memcpy(&crc, msg + msg_len - 2, 2);
-            Info("crc send:%d", crc);
+//            uint16_t crc = 0;
+//            memcpy(&crc, msg + msg_len - 2, 2);
+//            Info("crc send:%d", crc);
 
-            if (len != msg_len) {
-                Error("send fail");
-            } else {
-                Info("send success len:%d", len);
+            timeval begin;
+            timeval end;
+
+            uint64_t max = 0;
+            uint64_t min = 0;
+            uint64_t sum = 0;
+            uint64_t avg = 0;
+
+            for (int i = 0; i < 1000; i++) {
+                usleep(100 * 1000);
+                gettimeofday(&begin, nullptr);
+
+                int len = send(sockfd, msg, msg_len, 0);
+                if (len != msg_len) {
+                    Error("send fail");
+                } else {
+                    Info("send success len:%d", len);
+                }
+                gettimeofday(&end, nullptr);
+                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+                Info("pkg sn:%d 发送耗时%lu us\n", i, cost);
+
+                if (i == 1) {
+                    max = cost;
+                    min = cost;
+                    avg = cost;
+                } else {
+                    if (cost > max) {
+                        max = cost;
+                    }
+
+                    if (cost < min) {
+                        min = cost;
+                    }
+                    sum += cost;
+                    avg = sum / (i + 1);
+                }
             }
+
+            printf("max/min/avg:%d/%d/%d\n", max, min, avg);
 
         } else if (user == "2") {
             //send WatchData 2
@@ -332,108 +391,108 @@ int main(int argc, char **argv) {
                 Info("send success len:%d", len);
             }
         }
-        int index = 0;
-        if (user == "send") {
-            //依次发送
-            string file;
-            if ((index + 1) < getData->files.size()) {
-                file = getData->files.at(index);
-            } else {
-                index = 0;
-                file = getData->files.at(index);
-            }
-            getData->GetDataFromOneFile(getData->path + "/" + file);
-            getData->GetObjFromData(getData->data);
-            WatchData watchData;
-            timeval tv;
-            gettimeofday(&tv, nullptr);
-
-            watchData.oprNum = random_uuid().data();
-            watchData.hardCode = "hardCode";
-            watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-            watchData.matrixNo = "matrixNo";
-            watchData.cameraIp = "192.168.1.100";
-            watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-            watchData.isHasImage = 1;
-            uint8_t img[4] = {1, 2, 3, 4};
-
-            char imgBase64[16];
-            unsigned int imgBase64Len = 0;
-
-            base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
-
-            watchData.imageData = string(imgBase64).data();
-            watchData.direction = roadNum;
-            //lstObjTarget
-            for (int i = 0; i < getData->obj.size(); i++) {
-                auto iter = getData->obj.at(i);
-                watchData.lstObjTarget.push_back(iter);
-            }
-            //组包
-            Pkg pkg;
-            PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
-            index++;
-            Pack(pkg, msg, &msg_len);
-            int len = send(sockfd, msg, msg_len, 0);
-            //打印下buffer
-//            PrintHex(msg, msg_len);
-
-            if (len != msg_len) {
-                Error("send fail");
-            } else {
-                Info("send success len:%d", len);
-            }
-
-        } else if (user == "sendall") {
-            //发送全部
-            //1.读取路径下所有文件
-            //依次发送
-            for (int i = 0; i < getData->files.size(); i++) {
-                string file = getData->files.at(i);
-                getData->GetDataFromOneFile(getData->path + "/" + file);
-                getData->GetObjFromData(getData->data);
-                WatchData watchData;
-                timeval tv;
-                gettimeofday(&tv, nullptr);
-
-                watchData.oprNum = random_uuid().data();
-                watchData.hardCode = "hardCode";
-                watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-                watchData.matrixNo = "matrixNo";
-                watchData.cameraIp = "192.168.1.100";
-                watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-                watchData.isHasImage = 1;
-                uint8_t img[4] = {1, 2, 3, 4};
-
-                char imgBase64[16];
-                unsigned int imgBase64Len = 0;
-
-                base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
-
-                watchData.imageData = string(imgBase64).data();
-                watchData.direction = roadNum;
-                //lstObjTarget
-                for (int j = 0; j < getData->obj.size(); j++) {
-                    auto iter = getData->obj.at(j);
-                    watchData.lstObjTarget.push_back(iter);
-                }
-                //组包
-                Pkg pkg;
-                PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
-                index++;
-                Pack(pkg, msg, &msg_len);
-                int len = send(sockfd, msg, msg_len, 0);
-                //打印下buffer
-//            PrintHex(msg, msg_len);
-
-                if (len != msg_len) {
-                    Error("send fail");
-                } else {
-                    Info("send success len:%d", len);
-                }
-                usleep(50 * 1000);
-            }
-        }
+//        int index = 0;
+//        if (user == "send") {
+//            //依次发送
+//            string file;
+//            if ((index + 1) < getData->files.size()) {
+//                file = getData->files.at(index);
+//            } else {
+//                index = 0;
+//                file = getData->files.at(index);
+//            }
+//            getData->GetDataFromOneFile(getData->path + "/" + file);
+//            getData->GetObjFromData(getData->data);
+//            WatchData watchData;
+//            timeval tv;
+//            gettimeofday(&tv, nullptr);
+//
+//            watchData.oprNum = random_uuid().data();
+//            watchData.hardCode = "hardCode";
+//            watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+//            watchData.matrixNo = "matrixNo";
+//            watchData.cameraIp = "192.168.1.100";
+//            watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+//            watchData.isHasImage = 1;
+//            uint8_t img[4] = {1, 2, 3, 4};
+//
+//            char imgBase64[16];
+//            unsigned int imgBase64Len = 0;
+//
+//            base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
+//
+//            watchData.imageData = string(imgBase64).data();
+//            watchData.direction = roadNum;
+//            //lstObjTarget
+//            for (int i = 0; i < getData->obj.size(); i++) {
+//                auto iter = getData->obj.at(i);
+//                watchData.lstObjTarget.push_back(iter);
+//            }
+//            //组包
+//            Pkg pkg;
+//            PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
+//            index++;
+//            Pack(pkg, msg, &msg_len);
+//            int len = send(sockfd, msg, msg_len, 0);
+//            //打印下buffer
+////            PrintHex(msg, msg_len);
+//
+//            if (len != msg_len) {
+//                Error("send fail");
+//            } else {
+//                Info("send success len:%d", len);
+//            }
+//
+//        } else if (user == "sendall") {
+//            //发送全部
+//            //1.读取路径下所有文件
+//            //依次发送
+//            for (int i = 0; i < getData->files.size(); i++) {
+//                string file = getData->files.at(i);
+//                getData->GetDataFromOneFile(getData->path + "/" + file);
+//                getData->GetObjFromData(getData->data);
+//                WatchData watchData;
+//                timeval tv;
+//                gettimeofday(&tv, nullptr);
+//
+//                watchData.oprNum = random_uuid().data();
+//                watchData.hardCode = "hardCode";
+//                watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+//                watchData.matrixNo = "matrixNo";
+//                watchData.cameraIp = "192.168.1.100";
+//                watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+//                watchData.isHasImage = 1;
+//                uint8_t img[4] = {1, 2, 3, 4};
+//
+//                char imgBase64[16];
+//                unsigned int imgBase64Len = 0;
+//
+//                base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
+//
+//                watchData.imageData = string(imgBase64).data();
+//                watchData.direction = roadNum;
+//                //lstObjTarget
+//                for (int j = 0; j < getData->obj.size(); j++) {
+//                    auto iter = getData->obj.at(j);
+//                    watchData.lstObjTarget.push_back(iter);
+//                }
+//                //组包
+//                Pkg pkg;
+//                PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
+//                index++;
+//                Pack(pkg, msg, &msg_len);
+//                int len = send(sockfd, msg, msg_len, 0);
+//                //打印下buffer
+////            PrintHex(msg, msg_len);
+//
+//                if (len != msg_len) {
+//                    Error("send fail");
+//                } else {
+//                    Info("send success len:%d", len);
+//                }
+//                usleep(50 * 1000);
+//            }
+//        }
 
     }
 

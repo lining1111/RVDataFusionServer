@@ -317,9 +317,13 @@ namespace common {
                 //distance
                 item["distance"] = iter.distance;
                 //angle
-                item["angle"] = iter.directionAngle;
-                //speed
-                item["speed"] = iter.speed;
+                item["directionAngle"] = iter.directionAngle;
+//                //speed
+//                item["speed"] = iter.speed;
+                //speedX
+                item["speedX"] = iter.speedX;
+                //speedY
+                item["speedY"] = iter.speedY;
                 //longitude
                 item["longitude"] = iter.longitude;
                 //latitude
@@ -365,7 +369,7 @@ namespace common {
 
         //AnnuciatorInfo
         if (!root["AnnuciatorInfo"].isArray()) {
-            cout << "json no AnnuciatorInfo" << endl;
+//            cout << "json no AnnuciatorInfo" << endl;
         } else {
             // AnnuciatorInfo list
             for (auto iter: root["AnnuciatorInfo"]) {
@@ -380,7 +384,7 @@ namespace common {
 
         //lstObjTarget
         if (!root["lstObjTarget"].isArray()) {
-            cout << "json no lstObjTarget" << endl;
+//            cout << "json no lstObjTarget" << endl;
         } else {
             // lstObjTarget list
             for (auto iter: root["lstObjTarget"]) {
@@ -397,8 +401,10 @@ namespace common {
                 item.locationX = iter["locationX"].asDouble();
                 item.locationY = iter["locationY"].asDouble();
                 item.distance = iter["distance"].asString();
-                item.directionAngle = iter["angle"].asString();
-                item.speed = iter["speed"].asString();
+                item.directionAngle = iter["directionAngle"].asDouble();
+//                item.speed = iter["speed"].asString();
+                item.speedX = iter["speedX"].asDouble();
+                item.speedY = iter["speedY"].asDouble();
                 item.longitude = iter["longitude"].asDouble();
                 item.latitude = iter["latitude"].asDouble();
 
@@ -543,6 +549,7 @@ namespace common {
                 item["longitude"] = iter.longitude;
                 //latitude
                 item["latitude"] = iter.latitude;
+                item["flagNew"] = iter.flagNew;
 
                 arrayObjTarget.append(item);
             }
@@ -635,6 +642,7 @@ namespace common {
                 item.locationY = iter["locationY"].asDouble();
                 item.longitude = iter["longitude"].asDouble();
                 item.latitude = iter["latitude"].asDouble();
+                item.flagNew = iter["flagNew"].asInt();
 
 
                 fusionData.lstObjTarget.push_back(item);
@@ -657,6 +665,196 @@ namespace common {
         //正文
         string jsonStr;
         JsonMarshalFusionData(fusionData, jsonStr);
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
+
+        pkg.head.len = len;
+
+        return 0;
+    }
+
+    int JsonMarshalTrafficFlow(TrafficFlow trafficFlow, string &out) {
+        Json::FastWriter fastWriter;
+        Json::Value root;
+
+        //root oprNum
+        root["oprNum"] = trafficFlow.oprNum;
+        //root hardCode
+        root["hardCode"] = trafficFlow.hardCode;
+        //root timstamp
+        root["timstamp"] = trafficFlow.timstamp;
+        //root crossCode
+        root["crossCode"] = trafficFlow.crossCode;
+
+        //root flowData
+        if (!trafficFlow.flowData.empty()) {
+            Json::Value arrayFlowData;
+            for (auto iter:trafficFlow.flowData) {
+                Json::Value item;
+                item["laneCode"] = iter.laneCode;
+                item["flowDirection"] = iter.flowDirection;
+                item["inCars"] = iter.inCars;
+                item["outCars"] = iter.outCars;
+                item["queueLen"] = iter.queueLen;
+                item["queueCars"] = iter.queueCars;
+
+                arrayFlowData.append(item);
+            }
+            root["flowData"] = arrayFlowData;
+        } else {
+            root["flowData"].resize(0);
+        }
+
+        out = fastWriter.write(root);
+        return 0;
+    }
+
+    int JsonUnmarshalTrafficFlow(string in, TrafficFlow &trafficFlow) {
+        Json::Reader reader;
+        Json::Value root;
+
+        if (!reader.parse(in, root, false)) {
+            cout << "not json drop" << endl;
+            return -1;
+        }
+
+        //oprNum
+        trafficFlow.oprNum = root["oprNum"].asString();
+        //hardCode
+        trafficFlow.hardCode = root["hardCode"].asString();
+        //timstamp
+        trafficFlow.timstamp = root["timstamp"].asDouble();
+        //crossCode
+        trafficFlow.crossCode = root["crossCode"].asString();
+
+        if (!root["flowData"].isArray()) {
+
+        } else {
+            for (auto iter:root["flowData"]) {
+                FlowData flowData;
+                flowData.laneCode = iter["laneCode"].asString();
+                flowData.flowDirection = iter["flowDirection"].asInt();
+                flowData.inCars = iter["inCars"].asInt();
+                flowData.outCars = iter["outCars"].asInt();
+                flowData.queueLen = iter["queueLen"].asInt();
+                flowData.queueCars = iter["queueCars"].asInt();
+
+                trafficFlow.flowData.push_back(flowData);
+            }
+        }
+
+        return 0;
+    }
+
+    int JsonMarshalTrafficFlows(TrafficFlows trafficFlows, string &out) {
+        Json::FastWriter fastWriter;
+        Json::Value root;
+
+        //root oprNum
+        root["oprNum"] = trafficFlows.oprNum;
+        //root crossID
+        root["crossID"] = trafficFlows.crossID;
+        //root timestamp
+        root["timestamp"] = trafficFlows.timestamp;
+
+        if (!trafficFlows.trafficFlow.empty()) {
+            Json::Value arrayTrafficFlow;
+            for (auto iter:trafficFlows.trafficFlow) {
+                Json::Value item;
+                item["hardCode"] = iter.hardCode;
+                item["crossCode"] = iter.crossCode;
+                if (!iter.flowData.empty()) {
+                    Json::Value arrayFlowData;
+                    for (auto iter1:iter.flowData) {
+                        Json::Value item1;
+                        item1["laneCode"] = iter1.laneCode;
+                        item1["flowDirection"] = iter1.flowDirection;
+                        item1["inCars"] = iter1.inCars;
+                        item1["outCars"] = iter1.outCars;
+                        item1["queueLen"] = iter1.queueLen;
+                        item1["queueCars"] = iter1.queueCars;
+
+                        arrayFlowData.append(item1);
+                    }
+                    item["flowData"] = arrayFlowData;
+                } else {
+                    item["flowData"].resize(0);
+                }
+
+                arrayTrafficFlow.append(item);;
+            }
+
+            root["trafficFlow"] = arrayTrafficFlow;
+        } else {
+            root["trafficFlow"].resize(0);
+        }
+
+        out = fastWriter.write(root);
+
+        return 0;
+    }
+
+    int JsonUnmarshalTrafficFlows(string in, TrafficFlows &trafficFlows) {
+        Json::Reader reader;
+        Json::Value root;
+
+        if (!reader.parse(in, root, false)) {
+            cout << "not json drop" << endl;
+            return -1;
+        }
+
+        //oprNum
+        trafficFlows.oprNum = root["oprNum"].asString();
+        //crossID
+        trafficFlows.crossID = root["crossID"].asString();
+        //timstamp
+        trafficFlows.timestamp = root["timestamp"].asDouble();
+
+        if (!root["trafficFlow"].isArray()) {
+
+        } else {
+            for (auto iter:root["trafficFlow"]) {
+
+                OneRoadTrafficFlow oneRoadTrafficFlow;
+                oneRoadTrafficFlow.hardCode = iter["hardCode"].asString();
+                oneRoadTrafficFlow.crossCode = iter["corssCode"].asString();
+                if (iter["flowData"].isArray()) {
+                    for (auto iter1:iter["flowData"]) {
+                        FlowData flowData;
+                        flowData.laneCode = iter1["laneCode"].asString();
+                        flowData.flowDirection = iter1["flowDirection"].asInt();
+                        flowData.inCars = iter1["inCars"].asInt();
+                        flowData.outCars = iter1["outCars"].asInt();
+                        flowData.queueLen = iter1["queueLen"].asInt();
+                        flowData.queueCars = iter1["queueCars"].asInt();
+
+                        oneRoadTrafficFlow.flowData.push_back(flowData);
+                    }
+                }
+
+                trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+            }
+        }
+
+        return 0;
+    }
+
+    int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceMultiView;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        JsonMarshalTrafficFlows(trafficFlows, jsonStr);
         pkg.body = jsonStr;
         len += jsonStr.length();
         //校验,可以先不设置，等待组包的时候更新

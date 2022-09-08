@@ -12,13 +12,17 @@ using namespace std;
 
 template<typename T>
 class Queue {
-
 private:
     queue<T> q;
+    bool isSetMaxSize = false;
+    int max_size;
     pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 public:
+
+    void SetMaxSize(int sizeNum);
+
     /**
      * 存入队列
      * @param t
@@ -48,8 +52,19 @@ public:
 
 
 template<typename T>
+void Queue<T>::SetMaxSize(int sizeNum) {
+    this->max_size = sizeNum;
+    this->isSetMaxSize = true;
+}
+
+template<typename T>
 int Queue<T>::Push(T &t) {
 
+    if (isSetMaxSize){
+        if (q.size() >= max_size) {
+            return -1;
+        }
+    }
     pthread_mutex_lock(&lock);
     //存入队列
     q.push(t);

@@ -41,16 +41,16 @@ int FusionClient::Open() {
     } else {
         int opt = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        timeval timeout;
-        timeout.tv_sec = 3;
-        timeout.tv_usec = 0;
-        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+//        timeval timeout;
+//        timeout.tv_sec = 3;
+//        timeout.tv_usec = 0;
+//        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+//        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
-        int recvBufSize = 32 * 1024;
-        int sendBufSize = 32 * 1024;
-        setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
-        setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
+//        int recvBufSize = 1024 * 1024 * 4;
+//        int sendBufSize = 1024 * 1024 * 4;
+//        setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
+//        setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
     }
 
     struct sockaddr_in server_addr;
@@ -110,6 +110,11 @@ int FusionClient::Close() {
     }
     RingBuffer_Delete(rb);
     rb = nullptr;
+
+    if (pkgBuffer){
+        free(pkgBuffer);
+    }
+
     return 0;
 }
 
@@ -125,6 +130,11 @@ void FusionClient::ThreadRecv(void *p) {
     cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
         usleep(10);
+
+        if (!client->isRun) {
+            continue;
+        }
+
         memset(buf, 0, ARRAY_SIZE(buf));
         nread = recv(client->sockfd, buf, sizeof(buf), MSG_NOSIGNAL);
         if (nread < 0) {
@@ -138,7 +148,7 @@ void FusionClient::ThreadRecv(void *p) {
             cout << "close sock:" << to_string(client->sockfd) << ",at " << ctime((time_t *) &tv_now.tv_sec) << endl;
             client->isRun = false;
         } else if (nread > 0) {
-            cout << "recv info" << endl;
+//            cout << "recv info" << endl;
             //update receive_time
             gettimeofday(&client->receive_time, nullptr);
             //把接受数据放到rb_cameraRecv
@@ -155,10 +165,14 @@ void FusionClient::ThreadProcessRecv(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    cout << "Client_Interface " << __FUNCTION__ << " run" << endl;
+    cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
 
         usleep(10);
+
+        if (!client->isRun) {
+            continue;
+        }
 
         if (client->rb == nullptr) {
             //数据缓存区不存在
@@ -271,7 +285,7 @@ void FusionClient::ThreadProcessRecv(void *p) {
                 break;
         }
     }
-    cout << "Client_Interface " << __FUNCTION__ << " exit" << endl;
+    cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
 
 }
 
@@ -286,6 +300,14 @@ void FusionClient::ThreadProcessSend(void *p) {
 
     cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
+        usleep(10);
+        if (!client->isRun) {
+            continue;
+        }
+        if (!client->queue_send.empty()) {
+            continue;
+        }
+
         //try lock_recv
         pthread_mutex_lock(&client->lock_send);
         while (client->queue_send.empty()) {
@@ -294,9 +316,13 @@ void FusionClient::ThreadProcessSend(void *p) {
         //task pop all msg
         while (!client->queue_send.empty()) {
             Pkg pkg = client->queue_send.front();
-            client->queue_send.pop();
             bzero(buf_send, ARRAY_SIZE(buf_send));
             len_send = 0;
+
+            timeval begin;
+            timeval end;
+
+            gettimeofday(&begin, nullptr);
 
             //pack
             common::Pack(pkg, buf_send, &len_send);
@@ -307,7 +333,7 @@ void FusionClient::ThreadProcessSend(void *p) {
                     cout << "send fail errno:" << to_string(errno) << endl;
                     continue;
                 }
-                cout << "msg:" << pkg.body << "send fail,errno:" << to_string((errno)) << endl;
+//                cout << "msg:" << pkg.body << "send fail,errno:" << to_string((errno)) << endl;
                 close(client->sockfd);
                 timeval tv_now;
                 gettimeofday(&tv_now, nullptr);
@@ -315,9 +341,16 @@ void FusionClient::ThreadProcessSend(void *p) {
                      << endl;
                 client->isRun = false;
             } else {
-                cout << "msg:" << pkg.body << "send ok" << endl;
+//                cout << "msg:" << pkg.body << "send ok" << endl;
+                Info("pkg sn %d send ok", pkg.head.sn);
+                client->queue_send.pop();
+
+                gettimeofday(&end, nullptr);
+                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+                Info("pkg sn:%d 发送耗时%lu us\n", pkg.head.sn, cost);
             }
         }
+        pthread_cond_broadcast(&client->cond_send);
         pthread_mutex_unlock(&client->lock_send);
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
@@ -333,6 +366,9 @@ void FusionClient::ThreadCheckStatus(void *p) {
     cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
         sleep(client->checkStatus_timeval);
+        if (!client->isRun) {
+            continue;
+        }
 
         timeval tv_now;
 
@@ -360,6 +396,13 @@ int FusionClient::Send(Pkg pkg) {
 }
 
 int FusionClient::SendToBase(Pkg pkg) {
+    int ret1 = 0;
+
+    timeval begin;
+    timeval end;
+
+
+    gettimeofday(&begin, nullptr);
     uint8_t buf_send[1024 * 512] = {0};
     uint32_t len_send = 0;
     bzero(buf_send, ARRAY_SIZE(buf_send));
@@ -368,12 +411,24 @@ int FusionClient::SendToBase(Pkg pkg) {
     //pack
     common::Pack(pkg, buf_send, &len_send);
 
-    int ret = send(sockfd, buf_send, len_send, 0);
-    if (ret != len_send) {
-        printf("发送失败");
-        return -1;
-    }
+    int nleft = len_send;
+    uint8_t *ptr = buf_send;
+    do {
+        int ret = send(sockfd, ptr, nleft, 0);
+        if (ret == -1) {
+            printf("发送失败");
+            ret1 = -1;
+            break;
+        }
+        nleft -= ret;
+        ptr += ret;
+    } while (nleft > 0);
 
-    return 0;
+    gettimeofday(&end, nullptr);
+
+    uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+    Info("pkg sn:%d len:%d 发送耗时%lu us\n", pkg.head.sn, pkg.head.len, cost);
+
+    return ret1;
 }
 

@@ -194,10 +194,10 @@ int GetData::GetObjFromData(vector<vector<string>> data) {
             index++;
         }
         //speed
-        if ((index + 1) <= iter.size()) {
-            item.speed = iter.at(index);
-            index++;
-        }
+//        if ((index + 1) <= iter.size()) {
+//            item.speed = iter.at(index);
+//            index++;
+//        }
 
         this->obj.push_back(item);
         count++;

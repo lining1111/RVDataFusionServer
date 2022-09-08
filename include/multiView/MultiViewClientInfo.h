@@ -2,8 +2,8 @@
 // Created by lining on 2/15/22.
 //
 
-#ifndef _CLIENTINFO_H
-#define _CLIENTINFO_H
+#ifndef _MULTIVIEWCLIENTINFO_H
+#define _MULTIVIEWCLIENTINFO_H
 
 #include "ringBuffer/RingBuffer.h"
 #include "common/common.h"
@@ -21,7 +21,7 @@ extern "C"
 using namespace std;
 using namespace common;
 
-class ClientInfo {
+class MultiViewClientInfo {
 public:
 
     //接收buffer状态机 Start开始---从接收的数据中寻找帧头开始(开始为特殊字符$)GetHeadStart---找到帧头开始，获取全部帧头信息(一共9字节)GetHead---
@@ -65,11 +65,11 @@ public:
 
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
 
-    //WatchData队列
-    queue<WatchData> queueWatchData;
-    pthread_mutex_t lockWatchData = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t condWatchData = PTHREAD_COND_INITIALIZER;
-    const int maxQueueWatchData = 30;//最多10个
+    //TrafficFlow队列
+    queue<TrafficFlow> queueTrafficFlow;
+    pthread_mutex_t lockTrafficFlow = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t condTrafficFlow = PTHREAD_COND_INITIALIZER;
+    const int maxQueueTrafficFlow = 30;//最多10个
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
     atomic_bool isThreadGetPkgRun;
@@ -83,12 +83,12 @@ public:
      * @param client_sock 客户端socket
      * @param rbCapacity 客户端循环buffer的最大容量
      */
-    ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
+    MultiViewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
 
     /**
      * 删除一个客户端
      */
-    ~ClientInfo();
+    ~MultiViewClientInfo();
 
 public:
 
@@ -125,4 +125,4 @@ private:
 }
 #endif
 
-#endif //_CLIENTINFO_H
+#endif //_MULTIVIEWCLIENTINFO_H
