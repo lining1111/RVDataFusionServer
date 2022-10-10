@@ -174,7 +174,7 @@ int MultiViewServer::Open() {
     server_addr.sin_port = htons(this->port);
     //将套接字绑定到服务器的网络地址上
     if (bind(sock, (struct sockaddr *) &server_addr, (socklen_t) sizeof(server_addr)) < 0) {
-        Fatal("server sock bind error:%s", strerror(errno));
+        Fatal("multiView server sock bind error:%s", strerror(errno));
         close(sock);
         sock = 0;
         return -1;
@@ -197,7 +197,7 @@ int MultiViewServer::Open() {
 
     //4.监听
     if (listen(sock, maxListen) != 0) {
-        Error("server sock listen fail,error:%s", strerror(errno));
+        Error("multiView server sock listen fail,error:%s", strerror(errno));
         close(sock);
         sock = 0;
         return -1;
@@ -221,8 +221,9 @@ int MultiViewServer::Open() {
         return -1;
     }
 
-    Info("server sock %d create success", sock);
+    Info("multiView server sock %d create success", sock);
 
+    isRun.store(true);
     return 0;
 }
 
@@ -232,8 +233,10 @@ int MultiViewServer::Run() {
         Error("server sock:%d", sock);
         return -1;
     }
-    isRun.store(true);
 
+    if (!isRun) {
+        return -1;
+    }
     //获取matrixNo
     getMatrixNoFromDb();
     //获取路口编号
@@ -316,7 +319,6 @@ int MultiViewServer::AddClient(int client_sock, struct sockaddr_in remote_addr) 
     }
 
     this->vectorClient.push_back(clientInfo);
-    pthread_cond_broadcast(&this->condVectorClient);
     pthread_mutex_unlock(&this->lockVectorClient);
 
     Info("add client %d success,ip:%s", client_sock, addIp.c_str());
@@ -351,7 +353,6 @@ int MultiViewServer::RemoveClient(int client_sock) {
             break;
         }
     }
-    pthread_cond_broadcast(&this->condVectorClient);
     pthread_mutex_unlock(&this->lockVectorClient);
 
     return 0;
@@ -363,11 +364,6 @@ int MultiViewServer::DeleteAllClient() {
     if (!vectorClient.empty()) {
 
         pthread_mutex_lock(&lockVectorClient);
-
-        while (vectorClient.empty()) {
-            pthread_cond_wait(&condVectorClient, &lockVectorClient);
-        }
-
         for (auto iter:vectorClient) {
             if (iter->sock > 0) {
                 close(iter->sock);
@@ -376,7 +372,6 @@ int MultiViewServer::DeleteAllClient() {
             delete iter;
         }
         vectorClient.clear();
-        pthread_cond_broadcast(&condVectorClient);
         pthread_mutex_unlock(&lockVectorClient);
     }
 
@@ -542,9 +537,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
             continue;
         }
         pthread_mutex_lock(&server->lockVectorClient);
-        while (server->vectorClient.empty()) {
-            pthread_cond_wait(&server->condVectorClient, &server->lockVectorClient);
-        }
+
         int maxPkgs = 0;//轮询各个路存有的最大帧数
         bool hasData = false;
         for (int i = 0; i < server->vectorClient.size(); i++) {
@@ -556,16 +549,13 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                 maxPkgs = iter->queueTrafficFlow.size();
             }
 
-            pthread_cond_broadcast(&iter->condTrafficFlow);
             pthread_mutex_unlock(&iter->lockTrafficFlow);
         }
-//        Info("clientNum %d,maxPkgs %d", clientNum, maxPkgs);
-        if (maxPkgs >= 20) {
+        if (maxPkgs >= 3) {
             hasData = true;
         }
         if (!hasData) {
 //            Info("全部路数未有3帧数据缓存");
-            pthread_cond_broadcast(&server->condVectorClient);
             pthread_mutex_unlock(&server->lockVectorClient);
             continue;
         }
@@ -573,38 +563,24 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
         //如果有三帧数据，一直取到就有3帧
         do {
             Info("multiView寻找同一帧数据");
-//            OBJS objs;//容量为4,依次是北、东、南、西
+
             uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
             //轮询各个连入的客户端，按指定的路口ip来存入数组
 
             int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
             int connetClientNum = 0;
-//            //1.寻找各个路口的客户端索引，未找到就是默认值-1
-//            for (int i = 0; i < server->vectorClient.size(); i++) {
-//                auto iter = server->vectorClient.at(i);
-//                for (int j = 0; j < server->roadDirection.size(); j++) {
-//                    //ip 相同
-//                    if (iter->direction == server->roadDirection.at(j)) {
-//                        id[j] = i;
-//                        Info("第%d路 client数组索引%d sock：%d", j + 1, id[j], server->vectorClient.at(i)->sock);
-//                        connetClientNum++;
-//                    }
-//                }
-//            }
 
             for (int i = 0; i < server->vectorClient.size(); i++) {
-                auto iter = server->vectorClient.at(i);
                 id[i] = i;
             }
 
             //2.确定时间戳
             server->curTimestamp = server->vectorClient.at(0)->queueTrafficFlow.front().timstamp;//一直取第一路的时间戳为基准
 
-            Info("multiView次选取的时间戳标准为%lu", server->curTimestamp);
+            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
 
-            OneRoadTrafficFlow obj[4];
-
+            vector<FlowData> flowDatas;
             //取数据
             for (int i = 0; i < ARRAY_SIZE(id); i++) {
                 if (id[i] == -1) {
@@ -633,30 +609,26 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                                 }
                                 //时间戳大于当前时间戳，直接取
 
-                                obj[i].hardCode = iter.hardCode;
-                                obj[i].crossCode = iter.crossCode;
-//                                    Info("寻找同一帧，找到第%d路的数据后，hardCode:%s 图像大小%d", i, obj[i].hardCode.c_str(),
-//                                         obj[i].imageData.size());
                                 for (auto item: iter.flowData) {
-                                    obj[i].flowData.push_back(item);
+                                    flowDatas.push_back(item);
                                 }
+
                                 //出队列
                                 curClient->queueTrafficFlow.pop();
-                                pthread_cond_broadcast(&curClient->condTrafficFlow);
                                 pthread_mutex_unlock(&curClient->lockTrafficFlow);
 
                                 isFind = true;
                             } else if ((iter.timstamp < (double) (server->curTimestamp - server->thresholdFrame))) {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
+                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 //出队列
                                 curClient->queueTrafficFlow.pop();
-                                pthread_cond_broadcast(&curClient->condTrafficFlow);
                                 pthread_mutex_unlock(&curClient->lockTrafficFlow);
 
                             } else if ((iter.timstamp > (double) (server->curTimestamp + server->thresholdFrame))) {
-                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) curClient->queueTrafficFlow.front().timstamp);
-                                pthread_cond_broadcast(&curClient->condTrafficFlow);
+                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
+                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 pthread_mutex_unlock(&curClient->lockTrafficFlow);
                                 isFind = true;
                             }
@@ -675,10 +647,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
             trafficFlows.timestamp = server->curTimestamp;
             trafficFlows.crossID = server->crossID;
 
-            for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-                trafficFlows.trafficFlow.push_back(obj[i]);
-
-            }
+            trafficFlows.trafficFlow.assign(flowDatas.begin(), flowDatas.end());
 
             if (server->queueObjs.size() >= server->maxQueueObjs) {
                 Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
@@ -686,16 +655,14 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                 pthread_mutex_lock(&server->lockObjs);
                 //存入队列
                 server->queueObjs.push(trafficFlows);
-                pthread_cond_broadcast(&server->condObjs);
+                pthread_cond_signal(&server->condObjs);
                 pthread_mutex_unlock(&server->lockObjs);
 
                 Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
             }
 
             maxPkgs--;
-        } while (maxPkgs >= 20);
-
-        pthread_cond_broadcast(&server->condVectorClient);
+        } while (maxPkgs >= 3);
         pthread_mutex_unlock(&server->lockVectorClient);
 
     }

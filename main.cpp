@@ -8,6 +8,8 @@
 #include "client/FusionClient.h"
 #include "server/FusionServer.h"
 #include "multiView/MultiViewServer.h"
+#include "global.h"
+#include "httpServer.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -15,13 +17,6 @@
 #include "db/DB.h"
 
 using namespace z_log;
-
-typedef struct {
-    FusionServer *server;
-    MultiViewServer *multiViewServer;
-    FusionClient *client;
-    bool isRun;
-} Local;
 
 const int INF = 0x7FFFFFFF;
 
@@ -46,60 +41,12 @@ static void ThreadProcess(void *p) {
 
     Info("发送融合后的数据线程 run");
     while (local->isRun) {
-        usleep(10/**1000*/);
-        if (local->server->queueMergeData.size() == 0) {
-            continue;
-        }
         pthread_mutex_lock(&local->server->lockMergeData);
+        while (local->server->queueMergeData.empty()) {
+            pthread_cond_wait(&local->server->condMergeData, &local->server->lockMergeData);
+        }
         auto mergeData = local->server->queueMergeData.front();
         local->server->queueMergeData.pop();
-
-//        //遍历目标打印
-//        for (int i = 0; i < mergeData.obj.size(); i++) {
-//            auto iter = mergeData.obj.at(i);
-//            Info("融合后目标 id:%d,speed:%f", iter.showID, iter.speed);
-//        }
-//
-//        //测试用
-//        if (!local->server->isFindSpeed0Id) {
-//            for (int i = 0; i < mergeData.obj.size(); i++) {
-//                auto iter = mergeData.obj.at(i);
-//                if ((abs(iter.speed) < 0.5) && (iter.showID > 2)) {
-//                    local->server->idSpeed0 = iter.showID;
-//                    local->server->isFindSpeed0Id = true;
-//                    Info("在第%d帧找到速度为0的id:%d,x:%f,y:%f,", local->server->frameCount,
-//                         local->server->idSpeed0,
-//                         iter.locationX, iter.locationY);
-//                    break;
-//                }
-//            }
-//        } else {
-//            bool idLive = false;//找到的id是否还存活
-//            for (int i = 0; i < mergeData.obj.size(); i++) {
-//                auto iter = mergeData.obj.at(i);
-//                if (abs(iter.speed) < 0.5) {
-//                    if (iter.showID == local->server->idSpeed0) {
-//                        Info("在第%d帧找到速度为0且id相同的,id:%d,x:%f,y:%f,", local->server->frameCount,
-//                             iter.showID,
-//                             iter.locationX, iter.locationY);
-//                    }
-//                }
-//
-//                //判断id是否还存活
-//                if ((iter.showID == local->server->idSpeed0) && (abs(iter.speed) < 0.5)) {
-//                    idLive = true;
-//                }
-//            }
-//
-//            //如果id不存活，程序崩溃退出
-//            if (!idLive) {
-//                Info("id不存活了，程序退出");
-//                exit(0);
-//            }
-//        }
-
-
-        pthread_cond_broadcast(&local->server->condMergeData);
         pthread_mutex_unlock(&local->server->lockMergeData);
 
         FusionData fusionData;
@@ -189,14 +136,9 @@ static void ThreadProcess(void *p) {
 //            }
 
         if (isSendPicData) {
-//                printf("发送输入量\n");
             fusionData.isHasImage = 1;
             //lstVideos
             for (int i = 0; i < ARRAY_SIZE(mergeData.objInput.roadData); i++) {
-                //只传第一路视频
-//                    if (i != 3) {
-//                        continue;
-//                    }
                 auto iter = mergeData.objInput.roadData[i];
                 VideoData videoData;
                 videoData.rvHardCode = iter.hardCode;
@@ -210,33 +152,7 @@ static void ThreadProcess(void *p) {
                     videoTargets.bottom = iter1.bottom;
                     videoData.lstVideoTargets.push_back(videoTargets);
                 }
-//                    Info("第%d路 hardCode:%s imageDataSize:%d lstVideoTargetSize:%d", i, videoData.rvHardCode.c_str(),
-//                         videoData.imageData.size(), videoData.lstVideoTargets.size());
                 fusionData.lstVideos.push_back(videoData);
-
-//                //只记录第一路视频
-//                if (i == 3) {
-//
-//                    //将图片存入文件夹内
-//                    ofstream inFile;
-//                    string inFileName = "merge" + to_string(i) + "/" + to_string(mergeData.timestamp) + ".jpeg";
-//                    inFile.open(inFileName);
-//                    if (inFile.is_open()) {
-//                        //base64解码
-//                        unsigned char result[1024 * 1024];
-//                        unsigned int result_len = 0;
-//                        bzero(result, ARRAY_SIZE(result));
-//                        base64_decode((unsigned char *) videoData.imageData.data(), videoData.imageData.size(), result,
-//                                      &result_len);
-//                        inFile.write((const char *) result, result_len);
-//                        Info("写入%d", result_len);
-//                        inFile.flush();
-//                        inFile.close();
-//
-//                    } else {
-//                        Error("打开文件失败:%s", inFileName.c_str());
-//                    }
-//                }
 
             }
         } else {
@@ -249,7 +165,6 @@ static void ThreadProcess(void *p) {
         PkgFusionDataWithoutCRC(fusionData, local->client->sn, deviceNo, pkg);
 
         Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
-//        Info("crossId:%s", fusionData.crossID.c_str());
         local->client->sn++;
 
         if (local->client->isRun) {
@@ -257,12 +172,10 @@ static void ThreadProcess(void *p) {
                 local->client->isRun = false;
                 Info("连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
             } else {
-//                    Info("连接到上层，发送消息,matrixNo:%d", pkg.head.deviceNO);
-//                    Info("连接到上层，发送消息:%s", pkg.body.c_str());
+                Info("融合程序连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
             }
         } else {
             Error("未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
-//                Error("未连接到上层，丢弃消息:%s", pkg.body.c_str());
         }
     }
 
@@ -283,15 +196,13 @@ static void ThreadProcessMultiView(void *p) {
 
     Info("发送multiView数据线程 run");
     while (local->isRun) {
-        usleep(10/**1000*/);
-        if (local->multiViewServer->queueObjs.size() == 0) {
-            continue;
-        }
+
         pthread_mutex_lock(&local->multiViewServer->lockObjs);
+        while (local->multiViewServer->queueObjs.empty()) {
+            pthread_cond_wait(&local->multiViewServer->condObjs, &local->multiViewServer->lockObjs);
+        }
         auto objs = local->multiViewServer->queueObjs.front();
         local->multiViewServer->queueObjs.pop();
-
-        pthread_cond_broadcast(&local->multiViewServer->condObjs);
         pthread_mutex_unlock(&local->multiViewServer->lockObjs);
 
         uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
@@ -299,7 +210,6 @@ static void ThreadProcessMultiView(void *p) {
         PkgTrafficFlowsWithoutCRC(objs, local->client->multiViewSn, deviceNo, pkg);
 
         Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
-//        Info("crossId:%s", objs.crossID.c_str());
         local->client->multiViewSn++;
 
         if (local->client->isRun) {
@@ -307,12 +217,10 @@ static void ThreadProcessMultiView(void *p) {
                 local->client->isRun = false;
                 Info("multiView连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
             } else {
-//                    Info("连接到上层，发送消息,matrixNo:%d", pkg.head.deviceNO);
-//                    Info("连接到上层，发送消息:%s", pkg.body.c_str());
+                Info("multiView连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
             }
         } else {
             Error("multiView未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
-//                Error("未连接到上层，丢弃消息:%s", pkg.body.c_str());
         }
     }
 
@@ -339,24 +247,27 @@ static void ThreadKeep(void *p) {
     while (local->isRun) {
         sleep(10);
         if (!local->server->isRun) {
-            Info("服务端重启");
             local->server->Close();
-            local->server->Open();
-            local->server->Run();
+            if (local->server->Open() == 0) {
+                Info("服务端重启");
+                local->server->Run();
+            }
         }
 
         if (!local->multiViewServer->isRun) {
-            Info("多目服务端重启");
             local->multiViewServer->Close();
-            local->multiViewServer->Open();
-            local->multiViewServer->Run();
+            if (local->multiViewServer->Open() == 0) {
+                Info("多目服务端重启");
+                local->multiViewServer->Run();
+            }
         }
 
         if (!local->client->isRun) {
-            Info("客户端重启");
             local->client->Close();
-            local->client->Open();
-            local->client->Run();
+            if (local->client->Open() == 0) {
+                Info("客户端重启");
+                local->client->Run();
+            }
         }
     }
     Info("客户端和服务端状态检测线程 exit");
@@ -381,6 +292,7 @@ DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
 DEFINE_int32(cloudPort, 7890, "云端端口号，默认7890");
 DEFINE_bool(isSendPicData, true, "是否发送图像数据，默认发送true");
+DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
 
@@ -410,10 +322,11 @@ int main(int argc, char **argv) {
     string cloudIp = FLAGS_cloudIp;
     uint16_t cloudPort = FLAGS_cloudPort;
     isSendPicData = FLAGS_isSendPicData;
+    bool isMerge = FLAGS_isMerge;
 
     signalIgnpipe();
     //启动融合服务端接受多个单路RV数据;启动融合客户端连接上层，将融合后的数据发送到上层;启动状态监测线程，检查服务端和客户端状态，断开后重连
-    FusionServer *server = new FusionServer();
+    FusionServer *server = new FusionServer(isMerge);
     server->port = port;
 
     //多目服务端
@@ -445,6 +358,9 @@ int main(int argc, char **argv) {
 
     thread threadKeep = thread(ThreadKeep, &local);
     threadKeep.detach();
+
+
+    HttpServerInit(10000, &local);
 
     while (true) {
         sleep(10);

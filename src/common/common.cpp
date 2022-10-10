@@ -695,9 +695,12 @@ namespace common {
             for (auto iter:trafficFlow.flowData) {
                 Json::Value item;
                 item["laneCode"] = iter.laneCode;
+                item["laneDirection"] = iter.laneDirection;
                 item["flowDirection"] = iter.flowDirection;
                 item["inCars"] = iter.inCars;
+                item["inAverageSpeed"] = iter.inAverageSpeed;
                 item["outCars"] = iter.outCars;
+                item["outAverageSpeed"] = iter.outAverageSpeed;
                 item["queueLen"] = iter.queueLen;
                 item["queueCars"] = iter.queueCars;
 
@@ -736,9 +739,12 @@ namespace common {
             for (auto iter:root["flowData"]) {
                 FlowData flowData;
                 flowData.laneCode = iter["laneCode"].asString();
+                flowData.laneDirection = iter["laneDirection"].asInt();
                 flowData.flowDirection = iter["flowDirection"].asInt();
                 flowData.inCars = iter["inCars"].asInt();
+                flowData.inAverageSpeed = iter["inAverageSpeed"].asDouble();
                 flowData.outCars = iter["outCars"].asInt();
+                flowData.outAverageSpeed = iter["outAverageSpeed"].asDouble();
                 flowData.queueLen = iter["queueLen"].asInt();
                 flowData.queueCars = iter["queueCars"].asInt();
 
@@ -759,34 +765,49 @@ namespace common {
         root["crossID"] = trafficFlows.crossID;
         //root timestamp
         root["timestamp"] = trafficFlows.timestamp;
+        root["recordDateTime"] = "";
 
         if (!trafficFlows.trafficFlow.empty()) {
             Json::Value arrayTrafficFlow;
+//            for (auto iter:trafficFlows.trafficFlow) {
+//                Json::Value item;
+//                item["hardCode"] = iter.hardCode;
+//                item["crossCode"] = iter.crossCode;
+//                if (!iter.flowData.empty()) {
+//                    Json::Value arrayFlowData;
+//                    for (auto iter1:iter.flowData) {
+//                        Json::Value item1;
+//                        item1["laneCode"] = iter1.laneCode;
+//                        item1["laneDirection"] = iter1.laneDirection;
+//                        item1["flowDirection"] = iter1.flowDirection;
+//                        item1["inCars"] = iter1.inCars;
+//                        item1["inAverageSpeed"] = iter1.inAverageSpeed;
+//                        item1["outCars"] = iter1.outCars;
+//                        item1["outAverageSpeed"] = iter1.outAverageSpeed;
+//                        item1["queueLen"] = iter1.queueLen;
+//                        item1["queueCars"] = iter1.queueCars;
+//
+//                        arrayFlowData.append(item1);
+//                    }
+//                    item["flowData"] = arrayFlowData;
+//                } else {
+//                    item["flowData"].resize(0);
+//                }
+
             for (auto iter:trafficFlows.trafficFlow) {
                 Json::Value item;
-                item["hardCode"] = iter.hardCode;
-                item["crossCode"] = iter.crossCode;
-                if (!iter.flowData.empty()) {
-                    Json::Value arrayFlowData;
-                    for (auto iter1:iter.flowData) {
-                        Json::Value item1;
-                        item1["laneCode"] = iter1.laneCode;
-                        item1["flowDirection"] = iter1.flowDirection;
-                        item1["inCars"] = iter1.inCars;
-                        item1["outCars"] = iter1.outCars;
-                        item1["queueLen"] = iter1.queueLen;
-                        item1["queueCars"] = iter1.queueCars;
-
-                        arrayFlowData.append(item1);
-                    }
-                    item["flowData"] = arrayFlowData;
-                } else {
-                    item["flowData"].resize(0);
-                }
+                item["laneCode"] = iter.laneCode;
+                item["laneDirection"] = iter.laneDirection;
+                item["flowDirection"] = iter.flowDirection;
+                item["inCars"] = iter.inCars;
+                item["inAverageSpeed"] = iter.inAverageSpeed;
+                item["outCars"] = iter.outCars;
+                item["outAverageSpeed"] = iter.outAverageSpeed;
+                item["queueLen"] = iter.queueLen;
+                item["queueCars"] = iter.queueCars;
 
                 arrayTrafficFlow.append(item);;
             }
-
             root["trafficFlow"] = arrayTrafficFlow;
         } else {
             root["trafficFlow"].resize(0);
@@ -812,31 +833,50 @@ namespace common {
         trafficFlows.crossID = root["crossID"].asString();
         //timstamp
         trafficFlows.timestamp = root["timestamp"].asDouble();
+        trafficFlows.recordDateTime = root["recordDateTime"].asString();
 
         if (!root["trafficFlow"].isArray()) {
 
         } else {
+//            for (auto iter:root["trafficFlow"]) {
+//
+//                OneRoadTrafficFlow oneRoadTrafficFlow;
+//                oneRoadTrafficFlow.hardCode = iter["hardCode"].asString();
+//                oneRoadTrafficFlow.crossCode = iter["corssCode"].asString();
+//                if (iter["flowData"].isArray()) {
+//                    for (auto iter1:iter["flowData"]) {
+//                        FlowData flowData;
+//                        flowData.laneCode = iter1["laneCode"].asString();
+//                        flowData.laneDirection = iter1["laneDirection"].asInt();
+//                        flowData.flowDirection = iter1["flowDirection"].asInt();
+//                        flowData.inCars = iter1["inCars"].asInt();
+//                        flowData.inAverageSpeed = iter1["inAverageSpeed"].asDouble();
+//                        flowData.outCars = iter1["outCars"].asInt();
+//                        flowData.outAverageSpeed = iter1["outAverageSpeed"].asDouble();
+//                        flowData.queueLen = iter1["queueLen"].asInt();
+//                        flowData.queueCars = iter1["queueCars"].asInt();
+//
+//                        oneRoadTrafficFlow.flowData.push_back(flowData);
+//                    }
+//                }
+//
+//                trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+//            }
             for (auto iter:root["trafficFlow"]) {
+                FlowData flowData;
+                flowData.laneCode = iter["laneCode"].asString();
+                flowData.laneDirection = iter["laneDirection"].asInt();
+                flowData.flowDirection = iter["flowDirection"].asInt();
+                flowData.inCars = iter["inCars"].asInt();
+                flowData.inAverageSpeed = iter["inAverageSpeed"].asDouble();
+                flowData.outCars = iter["outCars"].asInt();
+                flowData.outAverageSpeed = iter["outAverageSpeed"].asDouble();
+                flowData.queueLen = iter["queueLen"].asInt();
+                flowData.queueCars = iter["queueCars"].asInt();
 
-                OneRoadTrafficFlow oneRoadTrafficFlow;
-                oneRoadTrafficFlow.hardCode = iter["hardCode"].asString();
-                oneRoadTrafficFlow.crossCode = iter["corssCode"].asString();
-                if (iter["flowData"].isArray()) {
-                    for (auto iter1:iter["flowData"]) {
-                        FlowData flowData;
-                        flowData.laneCode = iter1["laneCode"].asString();
-                        flowData.flowDirection = iter1["flowDirection"].asInt();
-                        flowData.inCars = iter1["inCars"].asInt();
-                        flowData.outCars = iter1["outCars"].asInt();
-                        flowData.queueLen = iter1["queueLen"].asInt();
-                        flowData.queueCars = iter1["queueCars"].asInt();
-
-                        oneRoadTrafficFlow.flowData.push_back(flowData);
-                    }
-                }
-
-                trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+                trafficFlows.trafficFlow.push_back(flowData);
             }
+
         }
 
         return 0;

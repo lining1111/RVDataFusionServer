@@ -294,9 +294,12 @@ namespace common {
     //多目数据
     typedef struct {
         string laneCode;
+        int laneDirection;//车道方向
         int flowDirection;
         int inCars;
+        double inAverageSpeed;//入口平均速度
         int outCars;
+        double outAverageSpeed;//出口平均速度
         int queueLen;
         int queueCars;
     } FlowData;
@@ -319,7 +322,9 @@ namespace common {
         string oprNum;// `json "oprNum"`
         string crossID;
         double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
-        vector<OneRoadTrafficFlow> trafficFlow;
+        string recordDateTime;
+//        vector<OneRoadTrafficFlow> trafficFlow;
+        vector<FlowData> trafficFlow;
     } TrafficFlows;
 
     int JsonMarshalTrafficFlow(TrafficFlow trafficFlow, string &out);

@@ -38,6 +38,8 @@ public:
     int type = 0;
     unsigned char extraData[1024];//特性数据
     timeval receive_time;
+    bool isReceive_timeSet = false;
+    pthread_mutex_t lock_receive_time = PTHREAD_MUTEX_INITIALIZER;
     atomic_int direction;//方向,在解包的时候更新
 private:
     RecvStatus status = Start;
@@ -55,7 +57,6 @@ public:
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
     //客户端处理线程
     thread threadDump;//接收数据并存入环形buffer
-    atomic_bool isThreadDumpRun;
 
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
     queue<Pkg> queuePkg;//包消息队列
@@ -72,9 +73,8 @@ public:
     const int maxQueueWatchData = 30;//最多10个
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
-    atomic_bool isThreadGetPkgRun;
     thread threadGetPkgContent;//获取一包内的数据正文
-    atomic_bool isThreadGetPkgContentRun;
+
 
 public:
     /**

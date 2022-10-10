@@ -37,9 +37,10 @@ public:
 
 public:
     uint16_t port = 9000;//暂定9000
-    int maxListen = 5;//最大监听数
+    int maxListen = 10;//最大监听数
+    bool isMerge = true;
 
-    const timeval checkStatusTimeval = {150, 0};//连续150s没有收到客户端请求后，断开客户端
+    const timeval checkStatusTimeval = {3, 0};//连续3s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
     const uint8_t thresholdFrame = 100;//不同路时间戳相差门限，单位ms
 
@@ -47,7 +48,6 @@ public:
     //已连入的客户端列表
     vector<ClientInfo *> vector_client;
     pthread_mutex_t lock_vector_client = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond_vector_client = PTHREAD_COND_INITIALIZER;
 
     //epoll
     int epoll_fd;
@@ -149,9 +149,9 @@ public:
 
 
 public:
-    FusionServer();
+    FusionServer(bool isMerge);
 
-    FusionServer(uint16_t port, string config, int maxListen = 5);
+    FusionServer(uint16_t port, string config, int maxListen, bool isMerge);
 
     ~FusionServer();
 

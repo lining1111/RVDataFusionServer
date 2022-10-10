@@ -21,6 +21,7 @@ public:
     string server_ip;
     unsigned int server_port;
     int sockfd = 0;
+    pthread_mutex_t lock_sock = PTHREAD_MUTEX_INITIALIZER;
     RingBuffer *rb = nullptr;
 #define RecvSize (1024*512)
     bool isRun = false;//运行标志

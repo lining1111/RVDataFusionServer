@@ -30,9 +30,6 @@ MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int clie
     this->status = Start;
 
     this->isLive.store(false);
-    this->isThreadDumpRun.store(false);
-    this->isThreadGetPkgRun.store(false);
-    this->isThreadGetPkgContentRun.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
 
@@ -50,12 +47,6 @@ MultiViewClientInfo::~MultiViewClientInfo() {
     if (isLive.load() == true) {
         isLive.store(false);
     }
-
-    //等待所有线程退出
-    do {
-        sleep(1);
-        cout << "等待所有线程退出" << endl;
-    } while (isThreadDumpRun.load() || isThreadGetPkgRun.load() || isThreadGetPkgContentRun.load());
 
     if (sock > 0) {
         cout << "关闭sock：" << to_string(sock) << endl;
@@ -100,8 +91,7 @@ void MultiViewClientInfo::ThreadDump(void *pClientInfo) {
 
     auto client = (MultiViewClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadDumpRun.store(true);
+    Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
         uint8_t buffer[1024 * 32];
         int len = 0;
@@ -138,8 +128,7 @@ void MultiViewClientInfo::ThreadDump(void *pClientInfo) {
             }
         }
     }
-    client->isThreadDumpRun.store(false);
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
 
@@ -150,8 +139,7 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (MultiViewClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadGetPkgRun.store(true);
+    Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
 
         usleep(10);
@@ -245,7 +233,7 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
                         pthread_mutex_lock(&client->lockPkg);
                         //存入队列
                         client->queuePkg.push(pkg);
-                        pthread_cond_broadcast(&client->condPkg);
+                        pthread_cond_signal(&client->condPkg);
                         pthread_mutex_unlock(&client->lockPkg);
                     }
 
@@ -272,8 +260,7 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    client->isThreadGetPkgRun.store(false);
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
 
@@ -284,23 +271,15 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (MultiViewClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadGetPkgContentRun.store(true);
+    Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
-        usleep(10);
-        if (client->queuePkg.size() == 0) {
-            //分别队列为空
-            continue;
-        }
-        Pkg pkg;
-
         pthread_mutex_lock(&client->lockPkg);
         while (client->queuePkg.size() == 0) {
             pthread_cond_wait(&client->condPkg, &client->lockPkg);
         }
+        Pkg pkg;
         pkg = client->queuePkg.front();
         client->queuePkg.pop();
-        pthread_cond_broadcast(&client->condPkg);
         pthread_mutex_unlock(&client->lockPkg);
 
         //解析分包，按照方法名不同，存入不同的队列
@@ -330,34 +309,15 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
                      trafficFlow.flowData.size());
 
-                //根据结构体内的方向变量设置客户端的方向
-//                client->direction.store(watchData.direction);
-                //存下接收的json
-                if (0) {
-                    string saveDir = "recvJsonRoad" + trafficFlow.crossCode;
-                    if (access(saveDir.c_str(), 0) == -1) {
-                        cout << "dir:" << saveDir << " not exist,create" << endl;
-                        mkdir(saveDir.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-                    }
-                    //save file
-                    string saveFile = saveDir + "/" + to_string(int(trafficFlow.timstamp)) + ".json";
-                    ofstream outfile(saveFile, ios::trunc);
-                    outfile << pkg.body;
-                    outfile.flush();
-                    outfile.close();
-                }
-
                 //存入队列
                 if (client->queueTrafficFlow.size() >= client->maxQueueTrafficFlow) {
-//                    Info("client:%d TrafficFlow队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                     Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
                 } else {
                     pthread_mutex_lock(&client->lockTrafficFlow);
                     //存入队列
                     client->queueTrafficFlow.push(trafficFlow);
-                    pthread_cond_broadcast(&client->condTrafficFlow);
+                    pthread_cond_signal(&client->condTrafficFlow);
                     pthread_mutex_unlock(&client->lockTrafficFlow);
-//                    Info("client:%d TrafficFlow队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                 }
 
             }
@@ -383,7 +343,7 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         }
 
     }
-    client->isThreadGetPkgContentRun.store(false);
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+
+    Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }

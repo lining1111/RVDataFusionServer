@@ -216,7 +216,7 @@ void exampleJsonTrafficFlows() {
     flowData1.laneCode = "2";
     flowData1.flowDirection = 1;
     oneRoadTrafficFlow.flowData.push_back(flowData1);
-    trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+    trafficFlows.trafficFlow.push_back(flowData1);
     OneRoadTrafficFlow oneRoadTrafficFlow1;
     oneRoadTrafficFlow1.hardCode = "2";
     oneRoadTrafficFlow1.crossCode = "3";
@@ -228,19 +228,24 @@ void exampleJsonTrafficFlows() {
     flowData3.laneCode = "4";
     flowData3.flowDirection = 3;
     oneRoadTrafficFlow1.flowData.push_back(flowData3);
-    trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
+    trafficFlows.trafficFlow.push_back(flowData3);
     string body;
-    JsonMarshalTrafficFlows(trafficFlows,body);
-    cout<<"body:"<<body<<endl;
+    JsonMarshalTrafficFlows(trafficFlows, body);
+    cout << "body:" << body << endl;
     TrafficFlows trafficFlows1;
-    JsonUnmarshalTrafficFlows(body,trafficFlows1);
+    JsonUnmarshalTrafficFlows(body, trafficFlows1);
+    Pkg pkg;
+    PkgTrafficFlowsWithoutCRC(trafficFlows1, 1, 1, pkg);
+    uint8_t data[1024 * 1024];
+    uint32_t len;
+    common::Pack(pkg, data, &len);
 
 }
 
 int main(int argc, char **argv) {
 
 //    exampleJsonTrafficFlow();
-exampleJsonTrafficFlows();
+    exampleJsonTrafficFlows();
 
     string a = "nihao";
     string b;

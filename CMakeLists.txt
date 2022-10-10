@@ -59,7 +59,8 @@ include_directories(include/simpleini)
 
 set(LIBS m pthread zlog jsoncpp sqlite3)
 
-set(SRC_DIRS src
+set(SRC_DIRS ./
+        src
         src/log
         src/ringBuffer
         src/common

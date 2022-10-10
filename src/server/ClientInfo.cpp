@@ -11,7 +11,6 @@
 #include "log/Log.h"
 #include "common/CRC.h"
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <fstream>
 
 using namespace z_log;
@@ -25,14 +24,13 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->sock = client_sock;
     this->type = 0;
     bzero(this->extraData, sizeof(this->extraData) / sizeof(this->extraData[0]));
+    pthread_mutex_lock(&lock_receive_time);
     gettimeofday(&this->receive_time, nullptr);
+    pthread_mutex_unlock(&lock_receive_time);
     this->rb = RingBuffer_New(rbCapacity);
     this->status = Start;
 
     this->isLive.store(false);
-    this->isThreadDumpRun.store(false);
-    this->isThreadGetPkgRun.store(false);
-    this->isThreadGetPkgContentRun.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
 
@@ -50,12 +48,6 @@ ClientInfo::~ClientInfo() {
     if (isLive.load() == true) {
         isLive.store(false);
     }
-
-    //等待所有线程退出
-    do {
-        sleep(1);
-        cout << "等待所有线程退出" << endl;
-    } while (isThreadDumpRun.load() || isThreadGetPkgRun.load() || isThreadGetPkgContentRun.load());
 
     if (sock > 0) {
         cout << "关闭sock：" << to_string(sock) << endl;
@@ -101,18 +93,13 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadDumpRun.store(true);
     while (client->isLive.load()) {
-        uint8_t buffer[1024 * 32];
+        uint8_t buffer[1024 * 1024];
         int len = 0;
         usleep(10);
         if (client->sock <= 0) {
             continue;
         }
-//        timeval begin;
-//        timeval end;
-//
-//        gettimeofday(&begin, nullptr);
 
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
@@ -122,23 +109,15 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
         } else if (len > 0) {
             //将数据存入缓存
             if (client->rb != nullptr) {
-//                timeval begin1;
-//                gettimeofday(&begin1, nullptr);
-
                 RingBuffer_Write(client->rb, buffer, len);
-//
-//                gettimeofday(&end, nullptr);
-//
-//                uint64_t cost1 = (end.tv_sec - begin1.tv_sec) * 1000 * 1000 + (end.tv_usec - begin1.tv_usec);
-//                Info("client %d write buffer %d 耗时%lu us\n", client->sock, len, cost1);
-//
-//                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-//                Info("client %d recv %d 耗时%lu us\n", client->sock, len, cost);
 
+                pthread_mutex_lock(&client->lock_receive_time);
+                client->isReceive_timeSet = true;
+                gettimeofday(&client->receive_time, nullptr);
+                pthread_mutex_unlock(&client->lock_receive_time);
             }
         }
     }
-    client->isThreadDumpRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -151,7 +130,6 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadGetPkgRun.store(true);
     while (client->isLive.load()) {
 
         usleep(10);
@@ -235,17 +213,18 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 } else {
 
                     //记录接包时间
+                    pthread_mutex_lock(&client->lock_receive_time);
                     gettimeofday(&client->receive_time, nullptr);
+                    pthread_mutex_unlock(&client->lock_receive_time);
 
                     //存入分包队列
                     if (client->queuePkg.size() >= client->maxQueuePkg) {
-//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                         Info("client:%d 分包队列已满，丢弃此包", client->sock);
                     } else {
                         pthread_mutex_lock(&client->lockPkg);
                         //存入队列
                         client->queuePkg.push(pkg);
-                        pthread_cond_broadcast(&client->condPkg);
+                        pthread_cond_signal(&client->condPkg);
                         pthread_mutex_unlock(&client->lockPkg);
                     }
 
@@ -272,7 +251,6 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    client->isThreadGetPkgRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -285,22 +263,14 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    client->isThreadGetPkgContentRun.store(true);
     while (client->isLive.load()) {
-        usleep(10);
-        if (client->queuePkg.size() == 0) {
-            //分别队列为空
-            continue;
-        }
-        Pkg pkg;
-
         pthread_mutex_lock(&client->lockPkg);
-        while (client->queuePkg.size() == 0) {
+        while (client->queuePkg.empty()) {
             pthread_cond_wait(&client->condPkg, &client->lockPkg);
         }
+        Pkg pkg;
         pkg = client->queuePkg.front();
         client->queuePkg.pop();
-        pthread_cond_broadcast(&client->condPkg);
         pthread_mutex_unlock(&client->lockPkg);
 
         //解析分包，按照方法名不同，存入不同的队列
@@ -330,6 +300,12 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Info("client-%d,timestamp:%f,imag:%d,obj size:%d", client->sock, watchData.timstamp,
                      watchData.isHasImage, watchData.lstObjTarget.size());
 
+                //记录接包时间
+                pthread_mutex_lock(&client->lock_receive_time);
+                gettimeofday(&client->receive_time, nullptr);
+                pthread_mutex_unlock(&client->lock_receive_time);
+
+
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
                 //存下接收的json
@@ -355,7 +331,8 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     pthread_mutex_lock(&client->lockWatchData);
                     //存入队列
                     client->queueWatchData.push(watchData);
-                    pthread_cond_broadcast(&client->condWatchData);
+//                    pthread_cond_broadcast(&client->condWatchData);
+                    pthread_cond_signal(&client->condWatchData);
                     pthread_mutex_unlock(&client->lockWatchData);
 //                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
                     //将图片存入文件夹内
@@ -401,7 +378,6 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         }
 
     }
-    client->isThreadGetPkgContentRun.store(false);
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }

@@ -111,7 +111,7 @@ int FusionClient::Close() {
     RingBuffer_Delete(rb);
     rb = nullptr;
 
-    if (pkgBuffer){
+    if (pkgBuffer) {
         free(pkgBuffer);
     }
 
@@ -295,66 +295,49 @@ void FusionClient::ThreadProcessSend(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    uint8_t buf_send[1024 * 512] = {0};
+    uint8_t buf_send[1024 * 1024] = {0};
     uint32_t len_send = 0;
 
     cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
-        usleep(10);
-        if (!client->isRun) {
-            continue;
-        }
-        if (!client->queue_send.empty()) {
-            continue;
-        }
-
         //try lock_recv
         pthread_mutex_lock(&client->lock_send);
         while (client->queue_send.empty()) {
             pthread_cond_wait(&client->cond_send, &client->lock_send);
         }
         //task pop all msg
-        while (!client->queue_send.empty()) {
-            Pkg pkg = client->queue_send.front();
-            bzero(buf_send, ARRAY_SIZE(buf_send));
-            len_send = 0;
+//        while (!client->queue_send.empty()) {
+        Pkg pkg = client->queue_send.front();
+        client->queue_send.pop();
+        bzero(buf_send, ARRAY_SIZE(buf_send));
+        len_send = 0;
 
-            timeval begin;
-            timeval end;
+        timeval begin;
+        timeval end;
 
-            gettimeofday(&begin, nullptr);
+        gettimeofday(&begin, nullptr);
 
-            //pack
-            common::Pack(pkg, buf_send, &len_send);
+        //pack
+        common::Pack(pkg, buf_send, &len_send);
 
-            int ret = send(client->sockfd, buf_send, len_send, 0);
-            if (ret != len_send) {
-                if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
-                    cout << "send fail errno:" << to_string(errno) << endl;
-                    continue;
-                }
-//                cout << "msg:" << pkg.body << "send fail,errno:" << to_string((errno)) << endl;
-                close(client->sockfd);
-                timeval tv_now;
-                gettimeofday(&tv_now, nullptr);
-                cout << "close sock:" << to_string(client->sockfd) << ",at " << ctime((time_t *) &tv_now.tv_sec)
-                     << endl;
+        int nleft = len_send;
+        uint8_t *ptr = buf_send;
+        do {
+            int ret = send(client->sockfd, ptr, nleft, 0);
+            if (ret == -1) {
+                printf("发送失败");
                 client->isRun = false;
-            } else {
-//                cout << "msg:" << pkg.body << "send ok" << endl;
-                Info("pkg sn %d send ok", pkg.head.sn);
-                client->queue_send.pop();
-
-                gettimeofday(&end, nullptr);
-                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-                Info("pkg sn:%d 发送耗时%lu us\n", pkg.head.sn, cost);
+                break;
             }
-        }
-        pthread_cond_broadcast(&client->cond_send);
+            nleft -= ret;
+            ptr += ret;
+        } while (nleft > 0);
+
+
+//        }
         pthread_mutex_unlock(&client->lock_send);
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
-
 }
 
 void FusionClient::ThreadCheckStatus(void *p) {
@@ -389,7 +372,7 @@ int FusionClient::Send(Pkg pkg) {
     //try send lock_queue_recv
     pthread_mutex_lock(&this->lock_send);
     this->queue_send.push(pkg);
-    pthread_cond_broadcast(&this->cond_send);
+    pthread_cond_signal(&this->cond_send);
     pthread_mutex_unlock(&this->lock_send);
 
     return 0;
@@ -398,12 +381,13 @@ int FusionClient::Send(Pkg pkg) {
 int FusionClient::SendToBase(Pkg pkg) {
     int ret1 = 0;
 
-    timeval begin;
-    timeval end;
+    pthread_mutex_lock(&lock_sock);
 
-
-    gettimeofday(&begin, nullptr);
-    uint8_t buf_send[1024 * 512] = {0};
+//    timeval begin;
+//    timeval end;
+//
+//    gettimeofday(&begin, nullptr);
+    uint8_t buf_send[1024 * 1024] = {0};
     uint32_t len_send = 0;
     bzero(buf_send, ARRAY_SIZE(buf_send));
     len_send = 0;
@@ -424,11 +408,11 @@ int FusionClient::SendToBase(Pkg pkg) {
         ptr += ret;
     } while (nleft > 0);
 
-    gettimeofday(&end, nullptr);
+//    gettimeofday(&end, nullptr);
 
-    uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-    Info("pkg sn:%d len:%d 发送耗时%lu us\n", pkg.head.sn, pkg.head.len, cost);
-
+//    uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
+//    Info("pkg sn:%d len:%d 发送耗时%lu us\n", pkg.head.sn, pkg.head.len, cost);
+    pthread_mutex_unlock(&lock_sock);
     return ret1;
 }
 

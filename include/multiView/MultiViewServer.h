@@ -35,7 +35,6 @@ public:
     //已连入的客户端列表
     vector<MultiViewClientInfo *> vectorClient;
     pthread_mutex_t lockVectorClient = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t condVectorClient = PTHREAD_COND_INITIALIZER;
 
     //epoll
     int epoll_fd;

@@ -12,7 +12,8 @@ namespace z_log {
     zlog_category_t *m_zlog_category = nullptr;
     const string configPath = "./log.conf";//zlog 配置存储地方 可用 zlog-chk-conf 命令验证文件的语法
     const string configName = "log_conf";//配置文件中[rules]conf名称
-    const string logPath = "z_log";//日志输入目录
+    const string logPath = "/mnt/mnt_hd/log";//日志输入目录
+//    const string logPath = "./log/";//日志输入目录
     bool isInit = false;//是否已初始化
 
     int init() {
