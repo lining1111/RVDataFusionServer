@@ -90,6 +90,8 @@ public:
      */
     ~ClientInfo();
 
+    int Close();
+
 public:
 
     /**

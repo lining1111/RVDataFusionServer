@@ -47,7 +47,7 @@ MultiViewClientInfo::~MultiViewClientInfo() {
     if (isLive.load() == true) {
         isLive.store(false);
     }
-
+    sleep(1);
     if (sock > 0) {
         cout << "关闭sock：" << to_string(sock) << endl;
         close(sock);
@@ -260,6 +260,7 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
+    pthread_cond_signal(&client->condPkg);
     Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -273,10 +274,21 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
+        usleep(10);
+        if (client->queuePkg.empty()) {
+            continue;
+        }
+
         pthread_mutex_lock(&client->lockPkg);
-        while (client->queuePkg.size() == 0) {
+        while (client->queuePkg.empty()) {
+//            struct timespec ts;
+//            clock_gettime(CLOCK_REALTIME, &ts);
+//            ts.tv_sec = ts.tv_sec + 1;
+//            pthread_cond_timedwait(&client->condPkg, &client->lockPkg,&ts);
+//            break;
             pthread_cond_wait(&client->condPkg, &client->lockPkg);
         }
+
         Pkg pkg;
         pkg = client->queuePkg.front();
         client->queuePkg.pop();
@@ -297,7 +309,7 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
                 break;
             case CmdType::DeviceMultiView : {
-                Info("多目数据指令");
+//                Info("多目数据指令");
                 //"WatchData"
                 TrafficFlow trafficFlow;
                 //打印下接收的内容
@@ -306,12 +318,12 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     Error("trafficFlow json 解析失败");
                     continue;
                 }
-                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
-                     trafficFlow.flowData.size());
+//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+//                     trafficFlow.flowData.size());
 
                 //存入队列
                 if (client->queueTrafficFlow.size() >= client->maxQueueTrafficFlow) {
-                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
+//                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
                 } else {
                     pthread_mutex_lock(&client->lockTrafficFlow);
                     //存入队列

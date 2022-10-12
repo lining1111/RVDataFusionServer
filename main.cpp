@@ -41,6 +41,10 @@ static void ThreadProcess(void *p) {
 
     Info("发送融合后的数据线程 run");
     while (local->isRun) {
+        usleep(10);
+        if (local->server->queueMergeData.empty()){
+            continue;
+        }
         pthread_mutex_lock(&local->server->lockMergeData);
         while (local->server->queueMergeData.empty()) {
             pthread_cond_wait(&local->server->condMergeData, &local->server->lockMergeData);
@@ -164,7 +168,7 @@ static void ThreadProcess(void *p) {
         Pkg pkg;
         PkgFusionDataWithoutCRC(fusionData, local->client->sn, deviceNo, pkg);
 
-        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
+//        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
         local->client->sn++;
 
         if (local->client->isRun) {
@@ -172,7 +176,7 @@ static void ThreadProcess(void *p) {
                 local->client->isRun = false;
                 Info("连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
             } else {
-                Info("融合程序连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+//                Info("融合程序连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
             }
         } else {
             Error("未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
@@ -196,6 +200,10 @@ static void ThreadProcessMultiView(void *p) {
 
     Info("发送multiView数据线程 run");
     while (local->isRun) {
+        usleep(10);
+        if (local->multiViewServer->queueObjs.empty()){
+            continue;
+        }
 
         pthread_mutex_lock(&local->multiViewServer->lockObjs);
         while (local->multiViewServer->queueObjs.empty()) {
@@ -209,7 +217,7 @@ static void ThreadProcessMultiView(void *p) {
         Pkg pkg;
         PkgTrafficFlowsWithoutCRC(objs, local->client->multiViewSn, deviceNo, pkg);
 
-        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
+//        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
         local->client->multiViewSn++;
 
         if (local->client->isRun) {
@@ -217,7 +225,7 @@ static void ThreadProcessMultiView(void *p) {
                 local->client->isRun = false;
                 Info("multiView连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
             } else {
-                Info("multiView连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+//                Info("multiView连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
             }
         } else {
             Error("multiView未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
@@ -292,7 +300,7 @@ DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
 DEFINE_int32(cloudPort, 7890, "云端端口号，默认7890");
 DEFINE_bool(isSendPicData, true, "是否发送图像数据，默认发送true");
-DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
+DEFINE_bool(isMerge, false, "是否融合多路数据，默认false");
 
 int main(int argc, char **argv) {
 

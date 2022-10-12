@@ -162,7 +162,7 @@ void MultiViewServer::getCrossIdFromDb() {
 
 int MultiViewServer::Open() {
     //1.申请sock
-    sock = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP);
+    sock = socket(AF_INET, SOCK_STREAM/* | SOCK_NONBLOCK*/, IPPROTO_TCP);
     if (sock == -1) {
         Fatal("server sock fail:%s", strerror(errno));
         return -1;
@@ -562,7 +562,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
 
         //如果有三帧数据，一直取到就有3帧
         do {
-            Info("multiView寻找同一帧数据");
+//            Info("multiView寻找同一帧数据");
 
             uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
@@ -578,7 +578,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
             //2.确定时间戳
             server->curTimestamp = server->vectorClient.at(0)->queueTrafficFlow.front().timstamp;//一直取第一路的时间戳为基准
 
-            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
+//            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
 
             vector<FlowData> flowDatas;
             //取数据
@@ -602,7 +602,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                                 (iter.timstamp <= (double) (server->curTimestamp + server->thresholdFrame))) {
                                 //按路记录时间戳
                                 server->xRoadTimestamp[i] = iter.timstamp;
-                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
                                 //TODO 赋值路口编号
                                 if (server->crossID.empty()) {
                                     server->crossID = iter.crossCode;
@@ -620,15 +620,15 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                                 isFind = true;
                             } else if ((iter.timstamp < (double) (server->curTimestamp - server->thresholdFrame))) {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
-                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 //出队列
                                 curClient->queueTrafficFlow.pop();
                                 pthread_mutex_unlock(&curClient->lockTrafficFlow);
 
                             } else if ((iter.timstamp > (double) (server->curTimestamp + server->thresholdFrame))) {
-                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
-                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 pthread_mutex_unlock(&curClient->lockTrafficFlow);
                                 isFind = true;
                             }
@@ -650,7 +650,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
             trafficFlows.trafficFlow.assign(flowDatas.begin(), flowDatas.end());
 
             if (server->queueObjs.size() >= server->maxQueueObjs) {
-                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
+//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
             } else {
                 pthread_mutex_lock(&server->lockObjs);
                 //存入队列
@@ -658,7 +658,7 @@ void MultiViewServer::ThreadFindOneFrame(void *pServer) {
                 pthread_cond_signal(&server->condObjs);
                 pthread_mutex_unlock(&server->lockObjs);
 
-                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
+//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
             }
 
             maxPkgs--;

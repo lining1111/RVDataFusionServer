@@ -44,13 +44,16 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
 }
 
 ClientInfo::~ClientInfo() {
+    Close();
+}
 
+int ClientInfo::Close() {
     if (isLive.load() == true) {
         isLive.store(false);
     }
-
+//    sleep(1);
     if (sock > 0) {
-        cout << "关闭sock：" << to_string(sock) << endl;
+        Info("关闭sock：%d", sock);
         close(sock);
     }
 
@@ -61,6 +64,7 @@ ClientInfo::~ClientInfo() {
 
     RingBuffer_Delete(this->rb);
     this->rb = nullptr;
+    return 0;
 }
 
 int ClientInfo::ProcessRecv() {
@@ -96,16 +100,17 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
     while (client->isLive.load()) {
         uint8_t buffer[1024 * 1024];
         int len = 0;
-        usleep(10);
-        if (client->sock <= 0) {
-            continue;
-        }
-
+//        usleep(10);
+//        if (client->sock <= 0) {
+//            continue;
+//        }
+//        Info("sock %d recv begin========", client->sock);
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
+//        Info("sock %d recv end========", client->sock);
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
-//            client->needRelease.store(true);
+            client->needRelease.store(true);
         } else if (len > 0) {
             //将数据存入缓存
             if (client->rb != nullptr) {
@@ -264,10 +269,24 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
+        usleep(10);
+        if (client->queuePkg.empty()) {
+            continue;
+        }
+
         pthread_mutex_lock(&client->lockPkg);
         while (client->queuePkg.empty()) {
-            pthread_cond_wait(&client->condPkg, &client->lockPkg);
+//            struct timespec ts;
+//            clock_gettime(CLOCK_REALTIME, &ts);
+//            ts.tv_sec = ts.tv_sec + 1;
+//            pthread_cond_timedwait(&client->condPkg, &client->lockPkg, &ts);
+//            break;
+            pthread_cond_wait(&client->condPkg,&client->lockPkg);
         }
+
+//        if (client->queuePkg.empty()) {
+//            continue;
+//        }
         Pkg pkg;
         pkg = client->queuePkg.front();
         client->queuePkg.pop();
@@ -288,7 +307,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
                 break;
             case CmdType::DeviceData : {
-                Info("监控数据指令");
+//                Info("监控数据指令");
                 //"WatchData"
                 WatchData watchData;
                 //打印下接收的内容
@@ -297,8 +316,8 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     Error("watchData json 解析失败");
                     continue;
                 }
-                Info("client-%d,timestamp:%f,imag:%d,obj size:%d", client->sock, watchData.timstamp,
-                     watchData.isHasImage, watchData.lstObjTarget.size());
+//                Info("client-%d,timestamp:%f,imag:%d,obj size:%d", client->sock, watchData.timstamp,
+//                     watchData.isHasImage, watchData.lstObjTarget.size());
 
                 //记录接包时间
                 pthread_mutex_lock(&client->lock_receive_time);
@@ -326,7 +345,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 if (client->queueWatchData.size() >= client->maxQueueWatchData) {
 //                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
-                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
+//                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
                 } else {
                     pthread_mutex_lock(&client->lockWatchData);
                     //存入队列
