@@ -41,18 +41,10 @@ static void ThreadProcess(void *p) {
 
     Info("发送融合后的数据线程 run");
     while (local->isRun) {
-        usleep(10);
-        if (local->server->queueMergeData.empty()){
+        FusionServer::MergeData mergeData;
+        if (!local->server->queueMergeData.pop(mergeData)) {
             continue;
         }
-        pthread_mutex_lock(&local->server->lockMergeData);
-        while (local->server->queueMergeData.empty()) {
-            pthread_cond_wait(&local->server->condMergeData, &local->server->lockMergeData);
-        }
-        auto mergeData = local->server->queueMergeData.front();
-        local->server->queueMergeData.pop();
-        pthread_mutex_unlock(&local->server->lockMergeData);
-
         FusionData fusionData;
         fusionData.oprNum = random_uuid();
         fusionData.timstamp = mergeData.timestamp;
@@ -107,38 +99,6 @@ static void ThreadProcess(void *p) {
 
             fusionData.lstObjTarget.push_back(objMix);
         }
-
-//        //存目标数据
-//            string fileName = to_string((long) fusionData.timstamp) + ".txt";
-//            ofstream inDataFile;
-//            string inDataFileName = "mergeData/" + fileName;
-//            inDataFile.open(inDataFileName);
-//            string content;
-//            for (int j = 0; j < fusionData.lstObjTarget.size(); j++) {
-//                string split = " ";
-//                auto iter = fusionData.lstObjTarget.at(j);
-//                content += (to_string(iter.objID) + split +
-//                            to_string(iter.objType) + split +
-//                            to_string(iter.objColor) + split +
-//                            iter.plates + split +
-//                            iter.plateColor + split +
-//                            to_string(iter.distance) + split +
-//                            to_string(iter.angle) + split +
-//                            to_string(iter.speed) + split +
-//                            to_string(iter.locationX) + split +
-//                            to_string(iter.locationY) + split +
-//                            to_string(iter.longitude) + split +
-//                            to_string(iter.latitude));
-//                content += "\n";
-//            }
-//            if (inDataFile.is_open()) {
-//                inDataFile.write((const char *) content.c_str(), content.size());
-//                Info("融合数据写入%d", fusionData.lstObjTarget.size());
-//                inDataFile.close();
-//            } else {
-//                Error("打开文件失败:%s", inDataFileName.c_str());
-//            }
-
         if (isSendPicData) {
             fusionData.isHasImage = 1;
             //lstVideos
@@ -171,15 +131,21 @@ static void ThreadProcess(void *p) {
 //        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
         local->client->sn++;
 
+        timeval start;
+        timeval end;
+        gettimeofday(&start, nullptr);
         if (local->client->isRun) {
             if (local->client->SendToBase(pkg) == -1) {
                 local->client->isRun = false;
-                Info("连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
+                Info("连接到上层，发送消息失败");
             } else {
-//                Info("融合程序连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+                gettimeofday(&end, nullptr);
+
+                int cost = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
+//                Info("融合程序连接到上层，发送数据成功,耗时：%d ms", cost);
             }
         } else {
-            Error("未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
+            Error("未连接到上层，丢弃消息");
         }
     }
 
@@ -201,17 +167,13 @@ static void ThreadProcessMultiView(void *p) {
     Info("发送multiView数据线程 run");
     while (local->isRun) {
         usleep(10);
-        if (local->multiViewServer->queueObjs.empty()){
+        if (local->multiViewServer->queueObjs.empty()) {
             continue;
         }
-
-        pthread_mutex_lock(&local->multiViewServer->lockObjs);
-        while (local->multiViewServer->queueObjs.empty()) {
-            pthread_cond_wait(&local->multiViewServer->condObjs, &local->multiViewServer->lockObjs);
+        TrafficFlows objs;
+        if (!local->multiViewServer->queueObjs.pop(objs)) {
+            continue;
         }
-        auto objs = local->multiViewServer->queueObjs.front();
-        local->multiViewServer->queueObjs.pop();
-        pthread_mutex_unlock(&local->multiViewServer->lockObjs);
 
         uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
         Pkg pkg;

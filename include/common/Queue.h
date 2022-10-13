@@ -1,117 +1,119 @@
 //
-// Created by lining on 2/18/22.
-//自定义带锁队列 可以定义队列的最大容量，超出容量后，不能再存入
+// Created by lining on 10/1/22.
 //
 
 #ifndef _QUEUE_H
 #define _QUEUE_H
 
+
 #include <queue>
+#include <pthread.h>
 
 using namespace std;
 
+
 template<typename T>
 class Queue {
-private:
-    queue<T> q;
-    bool isSetMaxSize = false;
-    int max_size;
-    pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+public:
+    Queue() {
+        // 锁的初始化
+        pthread_mutex_init(&mutex, 0);
+        // 线程条件变量的初始化
+        pthread_cond_init(&cond, 0);
+
+    }
+
+    ~Queue() {
+        // 锁的释放
+        pthread_mutex_destroy(&mutex);
+        pthread_cond_destroy(&cond);
+    }
+
+    bool push(T t) {
+        if (isSetMax) {
+            if (q.size() >= max) {
+                return false;
+            }
+        }
+
+        pthread_mutex_lock(&mutex);  //加锁
+        q.push(t);
+        // 通知变化 notify
+        // 由系统唤醒一个线程
+        pthread_cond_signal(&cond);
+        // 通知所有的线程
+//        pthread_cond_broadcast(&cond);
+        pthread_mutex_unlock(&mutex);  //操作完成后解锁
+        return true;
+    }
+
+    bool pop(T &t) {
+        pthread_mutex_lock(&mutex);  //加锁
+        // queue为空是一直等待，直到下一次push进新的数据  java中是wait和notify
+        if (q.empty()) {
+            // 挂起状态，释放锁
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_sec = ts.tv_sec + 1;
+            pthread_cond_timedwait(&cond, &mutex, &ts);
+        }
+        if (q.empty()) {
+            pthread_mutex_unlock(&mutex);
+            return false;
+        }
+        // 被唤醒以后
+        t = q.front();
+        q.pop();
+
+        pthread_mutex_unlock(&mutex);  //操作完成后解锁
+        return true;
+    }
+
+    bool front(T &t) {
+        pthread_mutex_lock(&mutex);  //加锁
+        // queue为空是一直等待，直到下一次push进新的数据  java中是wait和notify
+        if (q.empty()) {
+            // 挂起状态，释放锁
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_sec = ts.tv_nsec + 1000 * 100;
+            pthread_cond_timedwait(&cond, &mutex, &ts);
+        }
+        if (q.empty()) {
+            pthread_mutex_unlock(&mutex);
+            return false;
+        }
+        // 被唤醒以后
+        t = q.front();
+        pthread_mutex_unlock(&mutex);  //操作完成后解锁
+        return true;
+    }
+
+    void setMax(int value) {
+        max = value;
+        isSetMax = true;
+    }
+
+    int size() {
+        return q.size();
+    }
+
+    bool empty() {
+        return q.empty();
+    }
 
 public:
+    // 如何保证对这个队列的操作是线程安全的？引入互斥锁
 
-    void SetMaxSize(int sizeNum);
+    queue<T> q;
 
-    /**
-     * 存入队列
-     * @param t
-     * @return 0:success -1:fail
-     */
-    int Push(T &t);
+    int max;
+    bool isSetMax = false;
+    pthread_mutex_t mutex;
 
-    /**
-     * 获取队列的头部
-     * @return 队列元素
-     */
-    T PopFront();
-
-    /**
-     * 获取队列的尾部
-     * @return 尾部元素
-     */
-    T PopBack();
-
-    /**
-     * 获取队列的元素个数
-     * @return
-     */
-    int Size();
+    // 创建条件变量
+    pthread_cond_t cond;
 
 };
-
-
-template<typename T>
-void Queue<T>::SetMaxSize(int sizeNum) {
-    this->max_size = sizeNum;
-    this->isSetMaxSize = true;
-}
-
-template<typename T>
-int Queue<T>::Push(T &t) {
-
-    if (isSetMaxSize){
-        if (q.size() >= max_size) {
-            return -1;
-        }
-    }
-    pthread_mutex_lock(&lock);
-    //存入队列
-    q.push(t);
-    pthread_cond_broadcast(&cond);
-    pthread_mutex_unlock(&lock);
-
-    return 0;
-}
-
-template<typename T>
-T Queue<T>::PopFront() {
-    T t;
-
-    pthread_mutex_lock(&lock);
-    while (q.empty()) {
-        pthread_cond_wait(&cond, &lock);
-    }
-    //取出队列头
-    t = this->q.front();
-    this->q.pop();
-    pthread_cond_broadcast(&cond);
-    pthread_mutex_unlock(&lock);
-
-    return t;
-}
-
-template<typename T>
-T Queue<T>::PopBack() {
-    T t;
-
-    pthread_mutex_lock(&lock);
-    while (q.empty()) {
-        pthread_cond_wait(&cond, &lock);
-    }
-    //取出队列头
-    t = this->q.back();
-    this->q.pop();
-    pthread_cond_broadcast(&cond);
-    pthread_mutex_unlock(&lock);
-
-    return t;
-}
-
-template<typename T>
-int Queue<T>::Size() {
-    return q.size();
-}
-
 
 #endif //_QUEUE_H

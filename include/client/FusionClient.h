@@ -54,11 +54,7 @@ private:
     int index = 0;//分包缓冲的索引
 public:
     Queue<Pkg> queuePkg;//包消息队列
-    const int maxQueuePkg = 100;//最多100个
-
-    queue<Pkg> queue_send;
-    pthread_mutex_t lock_send = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond_send = PTHREAD_COND_INITIALIZER;
+    Queue<Pkg> queue_send;
 
 public:
 

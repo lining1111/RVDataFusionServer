@@ -33,6 +33,8 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->isLive.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
+    queuePkg.setMax(maxQueuePkg);
+    queueWatchData.setMax(maxQueueWatchData);
 
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
@@ -101,16 +103,16 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
         uint8_t buffer[1024 * 1024];
         int len = 0;
 //        usleep(10);
-//        if (client->sock <= 0) {
-//            continue;
-//        }
+        if (client->sock <= 0) {
+            continue;
+        }
 //        Info("sock %d recv begin========", client->sock);
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
 //        Info("sock %d recv end========", client->sock);
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
-            client->needRelease.store(true);
+//            client->needRelease.store(true);
         } else if (len > 0) {
             //将数据存入缓存
             if (client->rb != nullptr) {
@@ -123,6 +125,7 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
             }
         }
     }
+    //这里退出的打印可能不正常，可以sock都关闭了
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -223,14 +226,10 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
                     pthread_mutex_unlock(&client->lock_receive_time);
 
                     //存入分包队列
-                    if (client->queuePkg.size() >= client->maxQueuePkg) {
-                        Info("client:%d 分包队列已满，丢弃此包", client->sock);
+                    if (!client->queuePkg.push(pkg)) {
+//                        Info("client:%d 分包队列已满，丢弃此包", client->sock);
                     } else {
-                        pthread_mutex_lock(&client->lockPkg);
-                        //存入队列
-                        client->queuePkg.push(pkg);
-                        pthread_cond_signal(&client->condPkg);
-                        pthread_mutex_unlock(&client->lockPkg);
+//                        Info("client:%d 分包队列存入", client->sock);
                     }
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
@@ -269,28 +268,10 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
-        usleep(10);
-        if (client->queuePkg.empty()) {
+        Pkg pkg;
+        if (!client->queuePkg.pop(pkg)) {
             continue;
         }
-
-        pthread_mutex_lock(&client->lockPkg);
-        while (client->queuePkg.empty()) {
-//            struct timespec ts;
-//            clock_gettime(CLOCK_REALTIME, &ts);
-//            ts.tv_sec = ts.tv_sec + 1;
-//            pthread_cond_timedwait(&client->condPkg, &client->lockPkg, &ts);
-//            break;
-            pthread_cond_wait(&client->condPkg,&client->lockPkg);
-        }
-
-//        if (client->queuePkg.empty()) {
-//            continue;
-//        }
-        Pkg pkg;
-        pkg = client->queuePkg.front();
-        client->queuePkg.pop();
-        pthread_mutex_unlock(&client->lockPkg);
 
         //解析分包，按照方法名不同，存入不同的队列
         switch (pkg.head.cmd) {
@@ -327,53 +308,14 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
-                //存下接收的json
-                if (0) {
-                    string saveDir = "recvJsonRoad" + to_string(watchData.direction);
-                    if (access(saveDir.c_str(), 0) == -1) {
-                        cout << "dir:" << saveDir << " not exist,create" << endl;
-                        mkdir(saveDir.c_str(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-                    }
-                    //save file
-                    string saveFile = saveDir + "/" + to_string(int(watchData.timstamp)) + ".json";
-                    ofstream outfile(saveFile, ios::trunc);
-                    outfile << pkg.body;
-                    outfile.flush();
-                    outfile.close();
-                }
 
                 //存入队列
-                if (client->queueWatchData.size() >= client->maxQueueWatchData) {
+                if (!client->queueWatchData.push(watchData)) {
 //                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
 //                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
                 } else {
-                    pthread_mutex_lock(&client->lockWatchData);
-                    //存入队列
-                    client->queueWatchData.push(watchData);
-//                    pthread_cond_broadcast(&client->condWatchData);
-                    pthread_cond_signal(&client->condWatchData);
-                    pthread_mutex_unlock(&client->lockWatchData);
-//                    Info("client:%d WatchData队列存入消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
-                    //将图片存入文件夹内
-//                    ofstream inFile;
-//                    string inFileName = dirName +"/"+ to_string(watchData.timstamp) + ".jpeg";
-//                    inFile.open(inFileName);
-//                    if (inFile.is_open()) {
-//                        //base64解码
-//                        unsigned char result[1024 * 1024];
-//                        unsigned int result_len = 0;
-//                        bzero(result, ARRAY_SIZE(result));
-//                        base64_decode((unsigned char *) watchData.imageData.data(), watchData.imageData.size(), result,
-//                                      &result_len);
-//                        inFile.write((const char *) result, result_len);
-//                        Info("写入%d", result_len);
-//                        inFile.close();
-//
-//                    } else {
-//                        Error("打开文件失败:%s", inFileName.c_str());
-//                    }
+//                    Info("client:%d,timestamp %f WatchData存入", client->sock, watchData.timstamp);
                 }
-
             }
                 break;
             case CmdType::DeviceAlarm : {

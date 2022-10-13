@@ -57,18 +57,14 @@ public:
     thread threadDump;//接收数据并存入环形buffer
 
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
-    queue<Pkg> queuePkg;//包消息队列
-    pthread_mutex_t lockPkg = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t condPkg = PTHREAD_COND_INITIALIZER;
     const int maxQueuePkg = 30;//最多10个
+    Queue<Pkg> queuePkg;//包消息队列
 
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
 
     //TrafficFlow队列
-    queue<TrafficFlow> queueTrafficFlow;
-    pthread_mutex_t lockTrafficFlow = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t condTrafficFlow = PTHREAD_COND_INITIALIZER;
     const int maxQueueTrafficFlow = 30;//最多10个
+    Queue<TrafficFlow> queueTrafficFlow;
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
     thread threadGetPkgContent;//获取一包内的数据正文

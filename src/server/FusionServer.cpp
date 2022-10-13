@@ -22,6 +22,8 @@ using namespace z_log;
 FusionServer::FusionServer(bool isMerge) {
     this->isRun.store(false);
     this->isMerge = isMerge;
+    queueObjs.setMax(maxQueueObjs);
+    queueMergeData.setMax(maxQueueMergeData);
 }
 
 FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isMerge) {
@@ -250,9 +252,9 @@ int FusionServer::Run() {
     threadMonitor.detach();
 
     //开启服务器检查客户端线程
-    threadCheck = thread(ThreadCheck, this);
-    pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
-    threadCheck.detach();
+//    threadCheck = thread(ThreadCheck, this);
+//    pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
+//    threadCheck.detach();
 
     //开启服务器获取一帧大数据线程
     threadFindOneFrame = thread(ThreadFindOneFrame, this);
@@ -304,14 +306,10 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
         Error("epoll add:%d fail,%s", client_sock, strerror(errno));
         return -1;
     }
-
-    //clientInfo
-    ClientInfo *clientInfo = new ClientInfo(remote_addr, client_sock);
-
     //add vector
     pthread_mutex_lock(&this->lock_vector_client);
     //根据ip，看下是否原来有记录，有的话，清除后在添加
-    string addIp = string(inet_ntoa(clientInfo->clientAddr.sin_addr));
+    string addIp = string(inet_ntoa(remote_addr.sin_addr));
     for (int i = 0; i < this->vector_client.size(); i++) {
         auto iter = this->vector_client.at(i);
         string curIp = string(inet_ntoa(iter->clientAddr.sin_addr));
@@ -322,6 +320,8 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
             Info("remove repeat ip:%s", curIp.c_str());
         }
     }
+    //clientInfo
+    ClientInfo *clientInfo = new ClientInfo(remote_addr, client_sock);
 
     this->vector_client.push_back(clientInfo);
     pthread_mutex_unlock(&this->lock_vector_client);
@@ -355,7 +355,6 @@ int FusionServer::RemoveClient(int client_sock) {
             vector_client.shrink_to_fit();
 
             Info("remove client:%d", client_sock);
-            break;
         }
     }
     pthread_mutex_unlock(&this->lock_vector_client);
@@ -373,7 +372,6 @@ int FusionServer::DeleteAllClient() {
         for (auto iter:vector_client) {
             if (iter->sock > 0) {
                 close(iter->sock);
-                iter->sock = 0;
             }
             delete iter;
         }
@@ -397,11 +395,6 @@ void FusionServer::ThreadMonitor(void *pServer) {
 
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
-
-        usleep(10);
-        if (!server->isRun) {
-            continue;
-        }
         // 等待事件发生
         nfds = epoll_wait(server->epoll_fd, server->wait_events, MAX_EVENTS, -1);
 
@@ -433,7 +426,7 @@ void FusionServer::ThreadMonitor(void *pServer) {
                     auto iter = server->vector_client.at(j);
                     if (iter->sock == server->wait_events[i].data.fd) {
                         //抛出一个对方已关闭的异常，等待检测线程进行处理
-                        iter->needRelease.store(true);
+                        server->RemoveClient(iter->sock);
                         break;
                     }
                 }
@@ -475,43 +468,23 @@ void FusionServer::ThreadCheck(void *pServer) {
         for (auto iter: server->vector_client) {
 
 //            //检查超时
-            if (iter->isReceive_timeSet) {
-                timeval tv;
-                pthread_mutex_lock(&iter->lock_receive_time);
-
-                gettimeofday(&tv, nullptr);
-                if ((tv.tv_sec > iter->receive_time.tv_sec) &&
-                    (tv.tv_sec - iter->receive_time.tv_sec) >= server->checkStatusTimeval.tv_sec) {
-                    Info("client-%d检测超时", iter->sock);
-                    iter->needRelease.store(true);
-                }
-
-                pthread_mutex_unlock(&iter->lock_receive_time);
-
-            }
+//            if (iter->isReceive_timeSet) {
+//                timeval tv;
+//                pthread_mutex_lock(&iter->lock_receive_time);
+//
+//                gettimeofday(&tv, nullptr);
+//                if ((tv.tv_sec > iter->receive_time.tv_sec) &&
+//                    (tv.tv_sec - iter->receive_time.tv_sec) >= server->checkStatusTimeval.tv_sec) {
+//                    Info("client-%d检测超时", iter->sock);
+//                    iter->needRelease.store(true);
+//                }
+//
+//                pthread_mutex_unlock(&iter->lock_receive_time);
+//
+//            }
             //检查needRelease
             {
                 if (iter->needRelease.load()) {
-//                    bool rbEmpty = false;//字节缓冲区为空
-//                    //如果队列全部为空，从数组中删除
-//                    if (iter->rb != nullptr) {
-//                        if (iter->rb->available_for_read == 0) {
-//                            rbEmpty = true;
-//                        }
-//                    }
-//                    bool pkgEmpty = false;//分包缓冲区为空
-//                    if (iter->queuePkg.size() == 0) {
-//                        pkgEmpty = true;
-//                    }
-//                    bool watchDataEmpty = false;//WatchData队列为空
-//                    if (iter->queueWatchData.size() == 0) {
-//                        watchDataEmpty = true;
-//                    }
-//
-//                    //都为空则从数组删除
-//                    if (rbEmpty && pkgEmpty && watchDataEmpty) {
-//                        server->RemoveClient(iter->sock);
-//                    }
                     server->RemoveClient(iter->sock);
                 }
             }
@@ -534,7 +507,7 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
     Info("%s run", __FUNCTION__);
     while (server->isRun.load()) {
 
-        usleep(10);
+        usleep(1000 * 100);
 
         if (!server->isRun) {
             continue;
@@ -545,36 +518,32 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 //            Info("未连入客户端");
             continue;
         }
-        pthread_mutex_lock(&server->lock_vector_client);
         //所有的客户端都要缓存3帧数据
         int clientNum = server->vector_client.size();//连入的客户端数量
         int maxPkgs = 0;//轮询各个路存有的最大帧数
         bool hasData = false;
         for (int i = 0; i < server->vector_client.size(); i++) {
             auto iter = server->vector_client.at(i);
-
-            pthread_mutex_lock(&iter->lockWatchData);
 //            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
             //得到最大帧数
             if (iter->queueWatchData.size() > maxPkgs) {
                 maxPkgs = iter->queueWatchData.size();
             }
-
-            pthread_mutex_unlock(&iter->lockWatchData);
         }
 //        Info("clientNum %d,maxPkgs %d", clientNum, maxPkgs);
-        if (maxPkgs >= 3) {
+        if (maxPkgs >= 10) {
             hasData = true;
         }
         if (!hasData) {
 //            Info("全部路数未有3帧数据缓存");
-            pthread_mutex_unlock(&server->lock_vector_client);
             continue;
         }
 
+        pthread_mutex_lock(&server->lock_vector_client);
         //如果有三帧数据，一直取到就有3帧
-//        do {
-//            Info("寻找同一帧数据");
+
+//        Info("maxPkgs:%d", maxPkgs);
+        Info("寻找同一帧数据");
         OBJS objs;//容量为4,依次是北、东、南、西
         uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
@@ -596,9 +565,13 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         }
 
         //2.确定时间戳
-        server->curTimestamp = server->vector_client.at(0)->queueWatchData.front().timstamp;//一直取第一路的时间戳为基准
-
-//            Info("这次选取的时间戳标准为%lu", server->curTimestamp);
+        WatchData watchData;
+        if (server->vector_client.at(0)->queueWatchData.front(watchData)) {
+            server->curTimestamp = watchData.timstamp;//一直取第一路的时间戳为基准
+        } else {
+            server->curTimestamp += 100;
+        }
+        Info("这次选取的时间戳标准为%lu", server->curTimestamp);
 
         //2.根据时间戳和门限来赋值
         RoadData obj[4];
@@ -613,6 +586,10 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
             server->xRoadTimestamp[i] = 0;
         }
 
+        //测量本次内时间差用的临时变量
+        uint64_t max = 0;
+        uint64_t min = 0;
+
         //取数据
         for (int i = 0; i < ARRAY_SIZE(id); i++) {
             if (id[i] == -1) {
@@ -623,60 +600,88 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
                 //watchData数据
                 if (curClient->queueWatchData.empty()) {
                     //客户端未有数据传入，不填充数据
-//                        Info("第%d路未有数据传入，不填充数据", i + 1);
+                    Info("第%d路未有数据传入，不填充数据", i + 1);
                 } else {
                     //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
                     bool isFind = false;
                     do {
-                        pthread_mutex_lock(&curClient->lockWatchData);
-                        auto iter = curClient->queueWatchData.front();
-                        if ((iter.timstamp >= (double) (server->curTimestamp - server->thresholdFrame)) &&
-                            (iter.timstamp <= (double) (server->curTimestamp + server->thresholdFrame))) {
-                            //按路记录时间戳
-                            server->xRoadTimestamp[i] = iter.timstamp;
-//                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                            //TODO 赋值路口编号
-                            if (server->crossID.empty()) {
-                                server->crossID = iter.matrixNo;
-                            }
-                            //时间戳大于当前时间戳，直接取
+                        WatchData watchData;
+                        if (curClient->queueWatchData.front(watchData)) {
+                            if ((watchData.timstamp >= (double) (server->curTimestamp - server->thresholdFrame)) &&
+                                (watchData.timstamp <= (double) (server->curTimestamp + server->thresholdFrame))) {
+                                //出队列
+                                curClient->queueWatchData.pop(watchData);
+                                //按路记录时间戳
+                                server->xRoadTimestamp[i] = watchData.timstamp;
+                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
 
-                            obj[i].hardCode = iter.hardCode;
-                            obj[i].imageData = iter.imageData;
+                                //get max min
+                                if (max == 0) {
+                                    max = (uint64_t) watchData.timstamp;
+                                } else {
+                                    max = (uint64_t) watchData.timstamp > max ? (uint64_t) watchData.timstamp : max;
+                                }
+
+                                if (min == 0) {
+                                    min = (uint64_t) watchData.timstamp;
+                                } else {
+                                    min = (uint64_t) watchData.timstamp < min ? (uint64_t) watchData.timstamp : min;
+                                }
+
+
+                                //TODO 赋值路口编号
+                                if (server->crossID.empty()) {
+                                    server->crossID = watchData.matrixNo;
+                                }
+                                //时间戳大于当前时间戳，直接取
+
+                                obj[i].hardCode = watchData.hardCode;
+                                obj[i].imageData = watchData.imageData;
 //                                    Info("寻找同一帧，找到第%d路的数据后，hardCode:%s 图像大小%d", i, obj[i].hardCode.c_str(),
 //                                         obj[i].imageData.size());
-                            for (auto item: iter.lstObjTarget) {
-                                OBJECT_INFO_T objectInfoT;
-                                //转换
-                                ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                obj[i].listObjs.push_back(objectInfoT);
+                                for (auto item: watchData.lstObjTarget) {
+                                    OBJECT_INFO_T objectInfoT;
+                                    //转换
+                                    ObjTarget2OBJECT_INFO_T(item, objectInfoT);
+                                    obj[i].listObjs.push_back(objectInfoT);
+                                }
+                                isFind = true;
+                            } else if ((watchData.timstamp <
+                                        (double) (server->curTimestamp - server->thresholdFrame))) {
+                                //小于当前时间戳或者不在门限内，出队列抛弃
+                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) watchData.timstamp);
+                                //出队列抛弃
+                                curClient->queueWatchData.pop(watchData);
+
+                            } else if ((watchData.timstamp >
+                                        (double) (server->curTimestamp + server->thresholdFrame))) {
+                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) watchData.timstamp);
+                                isFind = true;
                             }
-                            //出队列
-                            curClient->queueWatchData.pop();
-                            pthread_mutex_unlock(&curClient->lockWatchData);
 
-                            isFind = true;
-                        } else if ((iter.timstamp < (double) (server->curTimestamp - server->thresholdFrame))) {
-                            //小于当前时间戳或者不在门限内，出队列抛弃
-//                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) curClient->queueWatchData.front().timstamp);
-                            //出队列
-                            curClient->queueWatchData.pop();
-                            pthread_mutex_unlock(&curClient->lockWatchData);
+                            //如果全部抛完
+                            if (curClient->queueWatchData.empty()) {
+                                //队列为空，直接退出
+                                Info("第%d路队列为空直接退出", i + 1);
+                                isFind = true;
+                            }
 
-                        } else if ((iter.timstamp > (double) (server->curTimestamp + server->thresholdFrame))) {
-//                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) curClient->queueWatchData.front().timstamp);
-                            pthread_mutex_unlock(&curClient->lockWatchData);
-                            isFind = true;
-                        }
-
-                        if (curClient->queueWatchData.empty()) {
-                            //队列为空，直接退出
-                            isFind = true;
                         }
                     } while (!isFind);
                 }
             }
         }
+//        Info("max %lu,min %lu", max, min);
+        server->curTimeDistance = (max - min);
+        if (server->timeDistance == 0) {
+            server->timeDistance = server->curTimeDistance;
+        } else {
+            server->timeDistance = server->curTimeDistance > server->timeDistance ?
+                                   server->curTimeDistance : server->timeDistance;
+        }
+
+        Info("当前帧时间差为%lu,统计最大时间差为%lu", server->curTimeDistance, server->timeDistance);
+
         //3.存入待融合队列，即queueObjs
         if (connetClientNum == 1) {
             for (int i = 0; i < ARRAY_SIZE(obj); i++) {
@@ -700,20 +705,13 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         //时间戳打找到同一帧的时间
         objs.timestamp = server->curTimestamp;
 
-        if (server->queueObjs.size() >= server->maxQueueObjs) {
-//                Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
+        if (server->queueObjs.push(objs)) {
+            Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
         } else {
-            pthread_mutex_lock(&server->lockObjs);
-            //存入队列
-            server->queueObjs.push(objs);
-            pthread_cond_signal(&server->condObjs);
-            pthread_mutex_unlock(&server->lockObjs);
-
-//                Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
+            Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
         }
 
         maxPkgs--;
-//        } while (maxPkgs >= 3);
 
         pthread_mutex_unlock(&server->lock_vector_client);
 
@@ -732,13 +730,10 @@ void FusionServer::ThreadMerge(void *pServer) {
     while (server->isRun.load()) {
 
         //开始融合数据
-        pthread_mutex_lock(&server->lockObjs);
-        while (server->queueObjs.empty()) {
-            pthread_cond_wait(&server->condObjs, &server->lockObjs);
+        OBJS objs;
+        if (!server->queueObjs.pop(objs)) {
+            continue;
         }
-        OBJS objs = server->queueObjs.front();
-        server->queueObjs.pop();
-        pthread_mutex_unlock(&server->lockObjs);
 //        Info("开始融合");
 //        Info("待融合数据选取的时间戳:%lu", (uint64_t) objs.timestamp);
 
@@ -764,15 +759,10 @@ void FusionServer::ThreadMerge(void *pServer) {
             mergeData.objInput.roadData[objs.hasDataRoadIndex].listObjs.assign(copyFrom.listObjs.begin(),
                                                                                copyFrom.listObjs.end());
 
-            if (server->queueMergeData.size() >= server->maxQueueMergeData) {
-//                Error("队列已满，抛弃融合数据 ");
-            } else {
-                pthread_mutex_lock(&server->lockMergeData);
-                //存入队列
-                server->queueMergeData.push(mergeData);
-                pthread_cond_broadcast(&server->condMergeData);
-                pthread_mutex_unlock(&server->lockMergeData);
+            if (server->queueMergeData.push(mergeData)) {
 //                Info("存入融合数据，size:%d", mergeData.obj.size());
+            } else {
+//                Error("队列已满，抛弃融合数据 ");
             }
 
             continue;
@@ -883,15 +873,10 @@ void FusionServer::ThreadMerge(void *pServer) {
                     }
                 }
 
-                if (server->queueMergeData.size() >= server->maxQueueMergeData) {
-//                    Error("队列已满，抛弃融合数据 ");
+                if (server->queueMergeData.push(mergeData)) {
+//                Info("存入融合数据，size:%d", mergeData.obj.size());
                 } else {
-                    pthread_mutex_lock(&server->lockMergeData);
-                    //存入队列
-                    server->queueMergeData.push(mergeData);
-                    pthread_cond_signal(&server->condMergeData);
-                    pthread_mutex_unlock(&server->lockMergeData);
-//                    Info("存入融合数据，size:%d", mergeData.obj.size());
+//                Error("队列已满，抛弃融合数据 ");
                 }
 
                 //存输出数据
@@ -993,15 +978,10 @@ void FusionServer::ThreadMerge(void *pServer) {
                     }
                 }
 
-                if (server->queueMergeData.size() >= server->maxQueueMergeData) {
-//                    Error("队列已满，抛弃融合数据 ");
+                if (server->queueMergeData.push(mergeData)) {
+//                Info("存入融合数据，size:%d", mergeData.obj.size());
                 } else {
-                    pthread_mutex_lock(&server->lockMergeData);
-                    //存入队列
-                    server->queueMergeData.push(mergeData);
-                    pthread_cond_signal(&server->condMergeData);
-                    pthread_mutex_unlock(&server->lockMergeData);
-//                    Info("存入融合数据，size:%d", mergeData.obj.size());
+//                Error("队列已满，抛弃融合数据 ");
                 }
 
                 //存输出数据
@@ -1057,15 +1037,10 @@ void FusionServer::ThreadNotMerge(void *pServer) {
     while (server->isRun.load()) {
 
 //        Info("不走融合直接发送数据");
-        //开始融合数据
-        pthread_mutex_lock(&server->lockObjs);
-        while (server->queueObjs.empty()) {
-            pthread_cond_wait(&server->condObjs, &server->lockObjs);
+        OBJS objs;
+        if (!server->queueObjs.pop(objs)) {
+            continue;
         }
-
-        OBJS objs = server->queueObjs.front();
-        server->queueObjs.pop();
-        pthread_mutex_unlock(&server->lockObjs);
 
 //        Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
 
@@ -1170,14 +1145,10 @@ void FusionServer::ThreadNotMerge(void *pServer) {
         }
 
 
-        if (server->queueMergeData.size() >= server->maxQueueMergeData) {
-//            Error("队列已满，抛弃融合数据 ");
+        if (server->queueMergeData.push(mergeData)) {
+//                Info("存入融合数据，size:%d", mergeData.obj.size());
         } else {
-            pthread_mutex_lock(&server->lockMergeData);
-            //存入队列
-            server->queueMergeData.push(mergeData);
-            pthread_cond_signal(&server->condMergeData);
-            pthread_mutex_unlock(&server->lockMergeData);
+//                Error("队列已满，抛弃融合数据 ");
         }
 
     }

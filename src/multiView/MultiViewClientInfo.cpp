@@ -32,6 +32,8 @@ MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int clie
     this->isLive.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
+    queuePkg.setMax(maxQueuePkg);
+    queueTrafficFlow.setMax(maxQueueTrafficFlow);
 
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
@@ -226,15 +228,8 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
                     gettimeofday(&client->receive_time, nullptr);
 
                     //存入分包队列
-                    if (client->queuePkg.size() >= client->maxQueuePkg) {
-//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
-                        Info("client:%d 分包队列已满，丢弃此包", client->sock);
-                    } else {
-                        pthread_mutex_lock(&client->lockPkg);
-                        //存入队列
-                        client->queuePkg.push(pkg);
-                        pthread_cond_signal(&client->condPkg);
-                        pthread_mutex_unlock(&client->lockPkg);
+                    if (!client->queuePkg.push(pkg)){
+                        Info("multiView client:%d 分包队列已满，丢弃此包", client->sock);
                     }
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
@@ -260,7 +255,6 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    pthread_cond_signal(&client->condPkg);
     Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }
@@ -274,25 +268,10 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
-        usleep(10);
-        if (client->queuePkg.empty()) {
+        Pkg pkg;
+        if (!client->queuePkg.pop(pkg)){
             continue;
         }
-
-        pthread_mutex_lock(&client->lockPkg);
-        while (client->queuePkg.empty()) {
-//            struct timespec ts;
-//            clock_gettime(CLOCK_REALTIME, &ts);
-//            ts.tv_sec = ts.tv_sec + 1;
-//            pthread_cond_timedwait(&client->condPkg, &client->lockPkg,&ts);
-//            break;
-            pthread_cond_wait(&client->condPkg, &client->lockPkg);
-        }
-
-        Pkg pkg;
-        pkg = client->queuePkg.front();
-        client->queuePkg.pop();
-        pthread_mutex_unlock(&client->lockPkg);
 
         //解析分包，按照方法名不同，存入不同的队列
         switch (pkg.head.cmd) {
@@ -322,14 +301,8 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 //                     trafficFlow.flowData.size());
 
                 //存入队列
-                if (client->queueTrafficFlow.size() >= client->maxQueueTrafficFlow) {
-//                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
-                } else {
-                    pthread_mutex_lock(&client->lockTrafficFlow);
-                    //存入队列
-                    client->queueTrafficFlow.push(trafficFlow);
-                    pthread_cond_signal(&client->condTrafficFlow);
-                    pthread_mutex_unlock(&client->lockTrafficFlow);
+                if (!client->queueTrafficFlow.push(trafficFlow)){
+                    Info("multiView client:%d TrafficFlow队列已满,丢弃消息", client->sock);
                 }
 
             }
@@ -355,7 +328,6 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         }
 
     }
-
     Info("multiView client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
 
 }

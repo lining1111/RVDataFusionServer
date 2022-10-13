@@ -43,52 +43,18 @@ public:
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
 #define MaxRoadNum 4 //最多有多少路
-    queue<TrafficFlows> queueObjs;//在同一帧的多路数据
-    pthread_mutex_t lockObjs = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t condObjs = PTHREAD_COND_INITIALIZER;
     int maxQueueObjs = 30;//最大缓存融合数据量
+    Queue<TrafficFlows> queueObjs;//在同一帧的多路数据
 
     uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
     uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
-//    typedef struct {
-//        double timestamp;
-//        vector<OBJECT_INFO_NEW> obj;//融合输出量
-//        OBJS objInput;//融合输入量
-//    } MergeData;
-//    queue<MergeData> queueMergeData;//融合后的数据
-//    pthread_mutex_t lockMergeData = PTHREAD_MUTEX_INITIALIZER;
-//    pthread_cond_t condMergeData = PTHREAD_COND_INITIALIZER;
-//    int maxQueueMergeData = 30;//最大缓存融合数据量
-
-
-    //临时变量，用于融合 输出的物体检测从第1帧开始，上上帧拿上帧的，上帧拿这次输出结果。航向角则是从第2帧开始，上上帧拿上帧的，上帧拿这次输出结果
-//    int frame = 1;//帧计数
-//    uint32_t frameCount = 0;//测试用帧计数
-//    vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
-//    vector<OBJECT_INFO_NEW> l2_obj;//上上帧输出的
-//    double l1_angle;//上帧输出的
-//    double l2_angle;//上上帧输出的
-//    double angle;//角
-//
-//
-//    //用于融合时的固定变量
-//
-//    vector<int> roadDirection = {
-//            North,//北
-//            East,//东
-//            South,//南
-//            West,//西
-//    };
     string config = "./config.ini";
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
     thread threadCheck;//服务器客户端数组状态线程
     thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
-//    thread threadMerge;//多路数据融合线程
-
-//    thread threadNotMerge;//数据不走多路融合，直接给出，id按照东侧的id加10000，西侧的id加20000，北侧的id加30000，南侧的id加40000
 
     string crossID;//路口编号
     string db = "CLParking.db";
@@ -180,15 +146,6 @@ private:
 
 
     static void ThreadFindOneFrame(void *pServer);
-
-    /**
-     * 多路数据融合线程
-     * @param pServer
-     */
-//    static void ThreadMerge(void *pServer);
-//
-//
-//    static void ThreadNotMerge(void *pServer);
 };
 
 #ifdef __cplusplus

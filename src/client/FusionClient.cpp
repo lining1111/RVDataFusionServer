@@ -20,6 +20,8 @@ using namespace z_log;
 FusionClient::FusionClient(string server_ip, unsigned int server_port) {
     this->server_ip = server_ip;
     this->server_port = server_port;
+    queuePkg.setMax(1000);
+    queue_send.setMax(1000);
 }
 
 FusionClient::~FusionClient() {
@@ -47,10 +49,6 @@ int FusionClient::Open() {
 //        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
 //        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
-//        int recvBufSize = 1024 * 1024 * 4;
-//        int sendBufSize = 1024 * 1024 * 4;
-//        setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
-//        setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
     }
 
     struct sockaddr_in server_addr;
@@ -81,7 +79,7 @@ int FusionClient::Open() {
 }
 
 int FusionClient::Run() {
-    if (this->isRun == false) {
+    if (!this->isRun) {
         cout << "server not connect" << endl;
         return -1;
     }
@@ -256,10 +254,13 @@ void FusionClient::ThreadProcessRecv(void *p) {
                     gettimeofday(&client->receive_time, nullptr);
 
                     //存入分包队列
-                    if (client->queuePkg.Size() >= client->maxQueuePkg) {
-                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
-                    } else {
-                        client->queuePkg.Push(pkg);
+//                    if (client->queuePkg.Size() >= client->maxQueuePkg) {
+//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
+//                    } else {
+//                        client->queuePkg.Push(pkg);
+//                    }
+                    if (!client->queuePkg.push(pkg)) {
+//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
                     }
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
@@ -300,15 +301,10 @@ void FusionClient::ThreadProcessSend(void *p) {
 
     cout << "FusionClient " << __FUNCTION__ << " run" << endl;
     while (client->isRun) {
-        //try lock_recv
-        pthread_mutex_lock(&client->lock_send);
-        while (client->queue_send.empty()) {
-            pthread_cond_wait(&client->cond_send, &client->lock_send);
+        Pkg pkg;
+        if (!client->queue_send.pop(pkg)) {
+            continue;
         }
-        //task pop all msg
-//        while (!client->queue_send.empty()) {
-        Pkg pkg = client->queue_send.front();
-        client->queue_send.pop();
         bzero(buf_send, ARRAY_SIZE(buf_send));
         len_send = 0;
 
@@ -333,9 +329,6 @@ void FusionClient::ThreadProcessSend(void *p) {
             ptr += ret;
         } while (nleft > 0);
 
-
-//        }
-        pthread_mutex_unlock(&client->lock_send);
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
 }
@@ -370,11 +363,9 @@ void FusionClient::ThreadCheckStatus(void *p) {
 
 int FusionClient::Send(Pkg pkg) {
     //try send lock_queue_recv
-    pthread_mutex_lock(&this->lock_send);
-    this->queue_send.push(pkg);
-    pthread_cond_signal(&this->cond_send);
-    pthread_mutex_unlock(&this->lock_send);
-
+    if (!queue_send.push(pkg)) {
+        return -1;
+    }
     return 0;
 }
 
@@ -382,11 +373,6 @@ int FusionClient::SendToBase(Pkg pkg) {
     int ret1 = 0;
 
     pthread_mutex_lock(&lock_sock);
-
-//    timeval begin;
-//    timeval end;
-//
-//    gettimeofday(&begin, nullptr);
     uint8_t buf_send[1024 * 1024] = {0};
     uint32_t len_send = 0;
     bzero(buf_send, ARRAY_SIZE(buf_send));
@@ -408,10 +394,6 @@ int FusionClient::SendToBase(Pkg pkg) {
         ptr += ret;
     } while (nleft > 0);
 
-//    gettimeofday(&end, nullptr);
-
-//    uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-//    Info("pkg sn:%d len:%d 发送耗时%lu us\n", pkg.head.sn, pkg.head.len, cost);
     pthread_mutex_unlock(&lock_sock);
     return ret1;
 }
