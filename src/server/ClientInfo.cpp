@@ -297,8 +297,10 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     Error("watchData json 解析失败");
                     continue;
                 }
-//                Info("client-%d,timestamp:%f,imag:%d,obj size:%d", client->sock, watchData.timstamp,
-//                     watchData.isHasImage, watchData.lstObjTarget.size());
+                Info("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%d", client->sock,
+                     inet_ntoa(client->clientAddr.sin_addr),
+                     watchData.timstamp,
+                     watchData.isHasImage, watchData.lstObjTarget.size());
 
                 //记录接包时间
                 pthread_mutex_lock(&client->lock_receive_time);

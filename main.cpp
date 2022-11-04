@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include "db/DB.h"
+#include "Eoc.h"
 
 using namespace z_log;
 
@@ -23,7 +24,7 @@ const int INF = 0x7FFFFFFF;
 bool isSendPicData;
 
 string dirName;
-
+int saveCount = 0;
 /**
  * 将服务端得到的融合数据，发送给上层
  * @param p
@@ -127,6 +128,21 @@ static void ThreadProcess(void *p) {
         uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
         Pkg pkg;
         PkgFusionDataWithoutCRC(fusionData, local->client->sn, deviceNo, pkg);
+
+        //存10帧数据到txt
+        if (0) {
+            if (saveCount < 10) {
+                string filePath = "./send" + to_string(saveCount) + ".txt";
+                fstream fin;
+                fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
+                if (fin.is_open()) {
+                    fin.write(pkg.body.c_str(), pkg.body.size());
+                    fin.flush();
+                    fin.close();
+                }
+                saveCount++;
+            }
+        }
 
 //        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
         local->client->sn++;
@@ -258,11 +274,12 @@ int signalIgnpipe() {
 }
 
 
+
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
 DEFINE_int32(cloudPort, 7890, "云端端口号，默认7890");
 DEFINE_bool(isSendPicData, true, "是否发送图像数据，默认发送true");
-DEFINE_bool(isMerge, false, "是否融合多路数据，默认false");
+DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
 
@@ -332,6 +349,7 @@ int main(int argc, char **argv) {
 
     HttpServerInit(10000, &local);
 
+    StartEocCommon();
     while (true) {
         sleep(10);
     }

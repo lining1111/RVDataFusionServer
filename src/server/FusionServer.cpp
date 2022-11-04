@@ -545,7 +545,6 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
 //        Info("maxPkgs:%d", maxPkgs);
         Info("寻找同一帧数据");
         OBJS objs;//容量为4,依次是北、东、南、西
-        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
 
         //轮询各个连入的客户端，按指定的路口ip来存入数组
 
@@ -568,10 +567,24 @@ void FusionServer::ThreadFindOneFrame(void *pServer) {
         WatchData watchData;
         if (server->vector_client.at(0)->queueWatchData.front(watchData)) {
             server->curTimestamp = watchData.timstamp;//一直取第一路的时间戳为基准
+            Info("选取的第一路时间戳，方向:%d", int(server->vector_client.at(0)->direction));
         } else {
             server->curTimestamp += 100;
+            Info("时间戳自动加100");
         }
+
+        //如果现在的时间戳比本地的系统时间差2分钟，则用本地时间-1分钟的标准
+        struct timeval now;
+        gettimeofday(&now, nullptr);
+        uint64_t timestamp = (now.tv_sec * 1000 + now.tv_usec / 1000) - 1 * 60 * 1000;
+        if (server->curTimestamp < timestamp) {
+            Info("选取的系统时间-1分钟");
+            server->curTimestamp = timestamp;
+        }
+
+
         Info("这次选取的时间戳标准为%lu", server->curTimestamp);
+
 
         //2.根据时间戳和门限来赋值
         RoadData obj[4];
@@ -780,7 +793,7 @@ void FusionServer::ThreadMerge(void *pServer) {
 
 //        Info("传入目标数:%d", inOBJS);
 
-        //存输入数据
+        //存输入数据到文件
         if (0) {
             string fileName = to_string(server->frameCount) + "_in.txt";
             ofstream inDataFile;
@@ -800,6 +813,17 @@ void FusionServer::ThreadMerge(void *pServer) {
                                 to_string(iter.objID) + split +
                                 to_string(iter.objType));
                     content += "\n";
+                }
+                //存入图片
+                string inDataPicFileName =
+                        "mergeData/" + to_string(server->frameCount) + "_in_" + to_string(j) + ".jpeg";
+                ofstream inDataPicFile;
+                inDataPicFile.open(inDataPicFileName);
+                if (inDataPicFile.is_open()) {
+                    inDataPicFile.write(objs.roadData[j].imageData.data(), objs.roadData[j].imageData.size());
+                    Info("融合数据图片写入");
+                    inDataPicFile.flush();
+                    inDataPicFile.close();
                 }
             }
             if (inDataFile.is_open()) {
@@ -879,7 +903,7 @@ void FusionServer::ThreadMerge(void *pServer) {
 //                Error("队列已满，抛弃融合数据 ");
                 }
 
-                //存输出数据
+                //存输出数据到文件
                 if (0) {
                     string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
                     ofstream inDataFileO;
@@ -984,7 +1008,7 @@ void FusionServer::ThreadMerge(void *pServer) {
 //                Error("队列已满，抛弃融合数据 ");
                 }
 
-                //存输出数据
+                //存输出数据到文件
                 if (0) {
                     string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
                     ofstream inDataFileO;

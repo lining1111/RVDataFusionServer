@@ -13,6 +13,7 @@
 #include "common/common.h"
 #include "common/CRC.h"
 #include "log/Log.h"
+#include <fstream>
 
 using namespace common;
 using namespace z_log;

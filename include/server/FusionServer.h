@@ -104,7 +104,7 @@ public:
     double Ymax = 300;//固定不变
     double gatetx = 30;//跟路口有关
     double gatety = 30;//跟路口有关
-    double gatex = 3;//跟路口有关
+    double gatex = 10;//跟路口有关
     double gatey = 10;//跟路口有关
     bool time_flag = true;
     int angle_value = -1000;

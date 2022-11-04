@@ -1,0 +1,703 @@
+
+
+
+#ifndef _SQLITE_DB_H_
+#define _SQLITE_DB_H_
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sqlite3.h>
+
+#include <string>
+#include <vector>
+using namespace std;
+
+#define     SQL_BUFFERSIZE 2048
+
+enum
+{
+    AREATYPE_VEHICLE = 1,
+    AREATYPE_DIFF,
+    AREATYPE_SCANIN,
+    AREATYPE_RECALL,
+    AREATYPE_SCANOUT,
+};
+
+
+/******string类型表结构******/
+typedef struct TB_CL_ParkingArea_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaID;
+    string UName;
+    string UPswd;
+
+    string DBDataVersion;
+}DB_CL_ParkingArea_Data;
+
+typedef struct TB_ParkingLot_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingLotID;
+    string ParkingLotName;
+    string CloudServerPath;
+
+    string TransferServicePath;
+    string FilterList;
+    string ReplaceList;
+    int IsUploadCloud;
+    string RecUplodPath;
+
+    string MonImageUplodPath;
+    string EquStateUplodPath;
+    string EquAlertUplodPath;
+    int CloudServerPort;
+    int FileServicePort;
+
+	string 	BlueBrainInterfacePath;    //流水差分蓝脑接口服务地址
+	int 	BlueBrainInterfacePort;    //流水差分蓝脑接口端口
+	string 	BlueBrainPicPath;    //蓝脑图片服务地址
+	int 	BlueBrainPicPort;    //蓝脑图片服务端口
+	string 	SpaceExcpUploadPath;    //泊位状态告警接口地址
+	string 	CarFilterServicesPath;
+	int 	CarFilterServicesPort;
+	/*V1.3.18新增*/
+	string MainDNS; //DNS主服务器
+	string AlternateDNS; //DNS备用服务器
+	string IllegalParkingPlatformPath; //违停平台地址
+	string FlowStateQueryPath; //流水状态查询地址
+}DB_ParkingLot_Data;
+
+typedef struct TB_ParkingArea_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaName;
+    string ParkingAreaIP;
+    int ParkingAreaType;
+
+    string ParkingLotGuid;
+    int InParkingCount;
+    int OutParkingCount;
+    int InParkingMatchCount;
+    int OutParkingMatchCount;
+
+    int NightStartTime;
+    int NightEndTime;
+    int NightSuperimposeCount;
+    int PanoramicPicStart;
+    int PanoramicPicEnd;
+
+    string ParkingAreaID;
+    string Message;
+	/*科研云通信协议V1.3.5新增*/
+	int Is4GModel;						//是否为4G模式
+	int NoEventImageUploadInterval;		//无事件定时上传图片间隔
+	int MonitorImageUploadInterval;		//事件上传图片时间间隔
+	string PlateDefault;					//无牌车默认字段
+	int IsBlueDifference;				//蓝脑流水差分开关
+	int DayPixelDifferenceTreshold;		//白天差分阈值
+	int DayFrequencyDomainTreshold;		//白天频域阈值
+	int NightPixelDifferenceTreshold;	//夜间差分阈值
+	int NightFrequencyDomainTreshold;	//夜间频域阈值
+	//补全科研云下发
+	int FrameInterval; 				//两次取图时间间隔（ms）
+	int PlateRectOffset; 			//车牌坐标位置偏移量------垂停用于晨检时间（小时）
+	int PlateWidthMultiples;		//车牌图片宽度放大倍数
+	int PlateHeightMultiples;		//车牌图片长度放大倍数
+	int GaussianBlurRadius;			//高斯模糊半径-----------垂停用于好坏车场开关
+	int PixelDifferenceRange;		//差分像素误差范围值
+	int PixelDifferenceTreshold;	//差分阈值
+	/*V1.3.18新增*/
+	string DelayedReportingParameter; //延时上报参数
+	int  IsIllegalParkingCheck;    //是否开启违停
+
+	int ReceivePicControl;    //是否打开收图开关
+
+	/*V1.3.24增*/
+	int IsPrintPklName;		//是否下发停车场名称(是否往图片上打车场名称)
+	int InspectionWay;		//巡检方式，1、按事件巡检；2、定时巡检；3、关闭巡检
+	int InParkingScanCount;	//入场扫描次数，默认6
+	string City;			//城市
+
+	/*V1.3.27增*/
+	int IllegalParkingBallManufacturer;  //违停球厂商：1.海康威视、2.大华 3.华为，默认值1
+	int Resolution; 		//分辨率：1.1920*1080P、2.2560*1440，默认值1
+	int BitRateType; 		//码率类型：1. 定码率、2.变码率，默认值1
+	int BitRateUpperLimit; 	//码率上限：1.2048、2.3072、3.4096、4.6144、5.8192，默认值3
+	int VideoFrameRate; 	//视频帧率：1.15、2.20、3.25、4.50，默认值3
+	int SnapshotAreaCloseUpPictureCount; //抓拍区域特写图片数，默认值2，单位张
+	int SnapshotPanoramaPictureCount; 	//抓拍全景图片数，默认值1，单位张
+	int SnapshotVehicleCloseUpPictureCount; //抓拍车辆特写图片数，默认值1，单位张
+	int FirstSecondIntervalTime; 		//第一张特写与第二张特写之间间隔时间，默认值4，单位分钟
+	int SecondPanoramaIntervalTime; 	//第二张特写与全景间隔时间，默认值1，单位分钟
+	int NightFrontBackSwitch; 			//夜晚前有后有开关: 0关（默认），1开
+	int UploadNoPlateSwitch; 			//上传无牌车开关: 0关（默认），1开
+	int UploadFilterDataSwitch; 		//上传过滤数据开关: 0关（默认），1开
+	int UploadAlarmSwitch; 				//上传告警开关: 0关（默认），1开
+	int ParkingSpaceOutsideIllegalParking;  //泊位外违停：0关（默认），1开
+	int ParkingSpaceInsideIllegalParking;   //泊位内违停：0关（默认），1开
+	int MicroCheckPoint;	//微卡口：0关（默认），1开
+	int TimeLimitParking;	//限时停车：0关（默认），1开
+
+	/*V1.3.28增*/
+	int ShortVideoSwitch;	//小视频开关：0关（默认），1开
+	int AlarmLevel;			//告警级别：0~100
+}DB_ParkingArea_Data;
+//相机矩阵
+typedef struct TB_CameraArray_t
+{
+    int ID;
+    string Guid;
+    string Name;
+    int Type;			//类型
+    int ModelNumber;	//型号
+}DB_CameraArray_Data;
+//矩阵控制器
+typedef struct TB_CameraController_t
+{
+	int ID;
+    string Guid;
+    string Name;
+    string IP;			//矩阵控制器ip
+    int Type;			//类型
+	string CameraArrayGuid;	//所属相机矩阵guid
+}DB_CameraController_Data;
+
+typedef struct TB_Camera_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaGuid;
+    string CameraName;
+    string CameraIP;
+
+    int CameraType;
+    int CameraDirection;
+    string Username;
+    string Password;
+    int Port;
+    int DecodeType;         //解码方式，SDK解码为1，RTSP解码为2，JPG解码为3
+    int IsEnable;
+    string CameraArrayName;		//矩阵编码
+	string MatrixSubCode;     	//矩阵子编码
+    string Message;
+
+	string CameraArrayGuid;		//所属矩阵Guid
+	int EquipmentType;			//相机类型，5属相机矩阵相机，16视频桩相机
+	int TriggerMode;			//触发模式枚举：1.默认模式，2.差分，3.光流，4.跟踪，5.运动矢量，6.车辆检测，
+								//7.差分-回溯，8.光流-回溯，9.跟踪-回溯，10.运动矢量-回溯，11.车辆检测-回溯，12.回溯
+}DB_Camera_Data;
+
+typedef struct TB_ParkingSpace_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingSpaceID;
+    string ParkingSpaceName;
+    string ParkingAreaGuid;
+
+    string CameraGuid;
+	string PanoramaCameraGuid;
+	
+    string BigAreaGuid;
+    string SmallAreaGuid;
+    string DiffAreaGuid;	//DiffArea差分触发识别区——识别区2（差分触发）
+    string RecallAreaGuid;  //RecallArea车牌回溯识别区——识别区3（入场扫描）
+    string PlateArea1Guid;	//InScanArea入场扫描识别区——识别区4（车牌回溯）
+    string PlateArea2Guid;  //OutScanArea出场扫描识别区——识别区5（出场扫描）
+    string VehicleAreaGuid; //VehicleDetectArea车辆检测识别区——识别区1（车辆检测）
+
+	int PlateVisible;
+	int SpaceTiltDirection;
+	int LightInfluence;
+	int SpaceInCameras;		//1;2;3;4;5断口
+	int DynamicDecision;
+
+	int Type;    //泊位类型 1=停车泊位，2=违停泊位，3=特殊车位1，4=特殊车位2，5=特殊车位3，6=复合违停车位,7=侦测车位
+	int IsEnable;			//是否关停 0关停 1开启
+}DB_ParkingSpace;
+
+typedef struct TB_RecognitionArea_Data_t
+{
+    int ID;
+    string Guid;
+    int StartX;
+    int StartY;
+    int AreaWidth;
+
+    int AreaHeight;
+    int StretchWidth;
+    int StretchHeight;
+    int TiltWidth;
+    int TiltHeight;
+
+    int RotateAngle;
+    int RotateRange;
+    int RotateStep;
+}DB_RecognitionArea_Data;
+
+typedef struct TB_RecognitionLine_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaGuid;
+	string ParkingSpaceGuid;
+	int RecognitionLineType;
+	int StartX;
+	int StartY;
+	int EndX;
+	int EndY;
+}DB_RecognitionLine_Data;
+
+typedef struct TB_RecognitionPoint_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaGuid;
+	string ParkingSpaceGuid;
+	int RecognitionPointType;
+	int PointX;
+	int PointY;
+}DB_RecognitionPoint_Data;
+
+//多边形识别区
+typedef struct TB_RecognitionPolygon_Data_t
+{
+    int ID;
+    string Guid;
+    string ParkingAreaGuid;
+	string ParkingSpaceGuid;
+	int    RecognitionPolygonType;    //多边形识别区类型：从1开始，现在只有1
+	string Points;    //点与点之间以英文竖线”|”隔开，X坐标与Y坐标之间以英文逗号”,”隔开
+	                  //例子：P1X,P1Y|P2X,P2Y|P3X,P3Y|……|PnX,PnY
+}DB_RecognitionPolygon_Data;
+
+typedef struct TB_Nvr_Data_t
+{
+    int ID;
+    string Guid;
+    string NvrIP;
+    string NvrName;
+    string Username;
+    string Password;
+    string MapAddress;	//映射地址
+    int MapPort;		//映射端口
+}DB_Nvr_Data;
+typedef struct TB_NvrCamera_Data_t
+{
+    int ID;
+    string CameraGuid;
+    string CameraIP;
+	string NvrGuid;
+}DB_NvrCamera_Data;
+
+
+typedef struct TB_Conf_Version_Data_t
+{
+    int id;
+    string version;
+    string time;
+}DB_Conf_Version_Data;
+
+typedef struct{
+	string Guid;		//规则GUID
+	string PkRuleVersion;		//停车规则数据版本
+	string Name;		//规则名称
+
+	string StartDate;	//生效开始时间yyyyMMddHHmmss
+	string EndDate;	//生效结束时间yyyyMMddHHmmss
+	int LeadTimes;		//提前结束上报时长
+	int CycleType;		//周期类型1:每天,2:周一至周五,3:周末,4:自定义;
+	string CycleDetail;	//周期详情 2,3,4,5,6,7,1 分别对应周一到周日和java日期类枚举对应。多个用，分割; 示例:"CycleDetail": "2,6,4"
+	string PkRuleDurations;	//停车规则管理时段（json数组）[{"StartDuration":"090000","EndDuration":"120000"},{"StartDuration":"150000","EndDuration":"183000"}]
+
+	int SpecialDurationOperate;	//非管理时段操作 1. 抓拍、2. 不抓拍
+	int BlueBrainConfidence;	//蓝脑置信度
+	string PkRuleSpecialDurations;			//非管理日期yyyyMMdd（json数组）["20200826","20200827"]
+	string PkRuleSpaces;				//涉及的泊位（json数组）["1","3"]
+}tb_parking_rule_t;
+
+typedef struct{
+	string Guid;		//规则GUID
+	string IllegalRuleVersion;		//停车规则数据版本
+	string Name;		//规则名称
+
+	string StartDate;	//生效开始时间yyyyMMddHHmmss
+	string EndDate;	//生效结束时间yyyyMMddHHmmss
+	string IllegalPkRuleCycles;	//停车规则管理时段（json数组）[{"CycleDetail":"1,2,3","IllegalPkRuleDurations":[{"StartDuration":"151000","EndDuration":"162000"},{"StartDuration":"181000","EndDuration":"202000"}]},{"CycleDetail":"1,2,5","IllegalPkRuleDurations":[{"StartDuration":"151005","EndDuration":"162005"},{"StartDuration":"181005","EndDuration":"202005"}]}]
+
+	int IsEnablePriority;
+	string PriorityStartDate;	//优先执行生效开始时间yyyyMMddHHmmss
+	string PriorityEndDate;		//优先执行生效结束时间yyyyMMddHHmmss
+	string IllegalPkRulePriorityDurations;	//优先执行停车规则管理时段（json数组）[{"StartDuration":"173000","EndDuration":"184000"},{"StartDuration":"100000","EndDuration":"111000"},{"StartDuration":"120000","EndDuration":"141000"}]
+
+	int SpecialDurationOperate;	//非管理时段操作 1. 抓拍、2. 不抓拍
+	string IllegalPkRuleSpaces;				//涉及的泊位（json数组）["2","4"]
+}tb_illegal_parking_rule_t;
+
+typedef struct {
+    string SpaceGuid;
+    string SpaceName;
+	int SpaceType;		//车位类型：1=停车泊位,2=违停泊位,3=特殊车位1,4=特殊车位2,5=特殊车位3,6=复合违停车位,7=侦测车位
+	string DestSpaceGuid;	//关联车位Guid
+	string DestSpaceName;	//关联车位名称
+	int DestSpaceType;	//关联车位类型：1=停车泊位,2=违停泊位,3=特殊车位1,4=特殊车位2,5=特殊车位3,6=复合违停车位,7=侦测车位
+	string DestSpacePlatid;	//关联车位平台编号，例如：PS20170801140542023
+	string DestPklPlatId;	//关联车位所属停车场的PlatId，例如：PA20170726162710
+	string DestEquipmentName;	//关联车位所属的设备名称，例如：1010016403
+}DB_DetectionRelevancy_t;
+
+//视频桩
+typedef struct {
+    string Guid;	//guid
+    string PlatID;	//平台编号
+	string Name;	//名称
+}DB_VideoPole_t;
+
+//违停基础配置
+typedef struct {
+	int WtIs4GTransmission;    //违停-4G网络传输：0=否，1=是
+	int WtOutIsTestDate;	//泊位外违法停车-是否测试数据：0=否，1=是
+	int WtOutDelayUploadTime;	 //泊位外违法停车-延时上报时间：单位秒
+	string WtOutCloseUpPic; 	//泊位外违法停车-特写图
+								//特写图枚举：1=入场特写图，2=场中特写图，3=全景图，4=车辆特写图，5=出场特写图，6=车牌图
+								//存储格式：x,y|x,y|x,y|x,y
+								//其中：x表示特写图枚举，y表示时间间隔 单位秒，当时间间隔为0时表示无时间间隔
+	int WtInIsParking;		//泊位内停车-泊位内停车：0=不启用，1=启用
+	int WtInIsBlueBrain;	//泊位内停车-蓝脑开关：0=关，1=开
+	int WtInIsParkingInSmallVideo;	//泊位内停车-停车入场小视频：0=关，1=开
+	int WtInIsParkingInGif; //泊位内停车-停车入场gif图：0=关，1=开
+	int WtInIsParkingOutSmallVideo; //泊位内停车-停车出场小视频：0
+	int WtInIsParkingOutGif;	//泊位内停车-停车出场gif图：0=关，1=开
+	int WtInIsSpaceInspectionPic;	//泊位内停车-车位巡检图：0=否，1=是
+	int WtInInspectionWay;	//泊位内停车-巡检方式：1.按事件巡检 2.定时巡检
+	int WtInEventInterval;	//泊位内停车-事件间隔：单位秒
+	int WtInNoEventInterval;	//泊位内停车-无事件事件间隔
+	int WtInIsInPanoramaspectionPic;	//泊位内停车-全景巡检图：0=否，1=是
+	int WtInPanoramaspectionPicInterval;	//泊位内停车-全景巡检图 间隔：单位秒
+	int WtInNonStandardBehaviorReverse; //泊位内停车-不规范行为-逆向:0=否，1=是
+	int WtInNonStandardBehaviorCrossSpace;	//泊位内停车-不规范行为-跨位:0=否，1=是
+	int WtInNonStandardBehaviorLinePressing;	//泊位内停车-不规范行为-压线:0=否，1=是
+	string WtInNoLicensePlateDefault;	//泊位内停车-无车牌默认
+	int WtInIsPrintParkinglotName;	//泊位内停车-是否打印车场名称：0=否，1=是
+	int WtInAllowParkingTime;	//泊位内停车-允许停放时长：单位分钟，0表示不限时
+	int WtInSoonOverTimeEarlyWarning;	//泊位内停车-即将预警超时：单位秒 //注：停车时长等于n分钟超时提醒
+	int WtInOverTimeRemind; //泊位内停车-超时提醒：单位秒 //注：超过允许停车时长n分钟提醒
+	int WtInIsWtEvidence;	//泊位内停车-违停证据：0=否，1=是
+	string WtInCloseUpPic;	//泊位内停车-特写图
+							//特写图枚举：1=入场特写图，2=场中特写图，3=全景图，4=车辆特写图，5=出场特写图，6=车牌图
+							//存储格式：x,y|x,y|x,y|x,y
+							//其中：x表示特写图枚举，y表示时间间隔 单位秒
+	int WtInIsLicensePlateShieldedUploadVideo;	//泊位内停车-车牌遮挡时上传视频：0=否，1=是
+	int WtInIsIllegalParkingInSmallVideo;	//泊位内停车-违停入场小视频：0=关，1=开
+	int WtInIsIllegalParkingOutSmallVideo;	//泊位内停车-违停出场小视频：0=关，1=开
+}DB_illegal_parking_set_t;
+
+
+/******string类型表结构****end******/
+
+
+/*
+ * 如果表不存在则创建表
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_table_init_if_not_exists();
+/*
+ * 如果表内科研云登陆地址不存在则添加默认地址
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_conf_init_if_not_exists();
+/***取id最大一条数据的用户名***/
+int db_factory_get_uname(string &uname);
+/***取id最大一条数据的ParkingAreaID***/
+int db_factory_get_ParkingAreaID(string &parkareaid);
+
+int db_camera_delete_all();
+int db_camera_add(DB_Camera_Data &data);
+int db_camera_get_guid(const char* ip, string &camera_guid);
+int db_camera_get_enable_common_cameras(vector<DB_Camera_Data> &v_data);
+int db_camera_get_set_info(char *ip, DB_Camera_Data &data);
+int db_camera_get_ip(string &ip, string &camera_guid);
+int db_parking_space_delete_all();
+int db_parking_space_insert_part1(DB_ParkingSpace &data);
+int db_parking_space_update_recognition_area(string parking_space_guid, string recognition_area_guid, int recognition_area_type);
+int db_parking_space_update_recognition_area_zw(string parking_space_guid, string recognition_area_guid, int recognition_area_type);
+
+/*
+ * 设置泊位光线影响的属性（103里面：1：有效；2：无效；3：树叶遮挡；）
+ *
+ * 参数：
+ * name：车位名称(ParkingSpaceName)
+ * light_influence：1：有效；2：无效；3：树叶遮挡；
+ *
+ * 返回值：
+ * 0：成功
+ * -1：出错
+ * */
+int db_parking_space_set_light_influence(const char *name, int light_influence);
+int db_parking_space_get_by_camera(string camera_guid, vector<DB_ParkingSpace> &v_data);
+int db_recognition_area_delete_all();
+int db_recognition_area_insert(DB_RecognitionArea_Data &data);
+int db_recognition_area_get(string recognition_area_guid, DB_RecognitionArea_Data &data);
+int db_version_delete();
+int db_version_insert(DB_Conf_Version_Data &data);
+int db_version_get(string &conf_version);
+int db_parking_area_delete();
+int db_parking_area_insert(DB_ParkingArea_Data &data);
+int db_parking_area_get_guid(string &parking_area_guid);
+int db_camera_get_enable_full_camera(const std::string &matrix_number, std::string &full_camera_ip);
+/*
+ * 获取TB_ParkingArea的数据（取最小id一条数据）
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_area_get_data(DB_ParkingArea_Data& data);
+/*
+ * 获取TB_ParkngLot的数据（取最小id一条记录）
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_lot_get_data(DB_ParkingLot_Data& data);
+/*
+ * 获取是否上传标志
+ * flag：
+ *  0：不上传
+ *  1：上传
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_get_upload_flag(int &flag);
+
+/*
+ * 获取违停流水是否上传标志
+ * flag：
+ *  0：不上传
+ *  1：上传
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_get_illegal_upload_flag(int &flag);
+
+/*
+ * 更新TB_ParkngLot部分数据（直接更新id最小一条数据）
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_lot_set_part1(DB_ParkingLot_Data& data);
+/*
+ * 更新TB_ParkngLot某一字段值
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_lot_set_int(string column_name, int column_value);
+/*
+ * 更新TB_ParkngLot某一服务地址
+ *
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_lot_set_string(string column_name, string column_value);
+
+int db_parking_lot_update_part2(DB_ParkingLot_Data &data);
+int db_parking_lot_get_cloud_addr(string &server_path, int* server_port, string &file_server_path, int* file_server_port);
+int db_parking_lot_get_cloud_addr_from_factory(string &server_path, int* server_port, string &file_server_path, int* file_server_port);
+//识别线
+int db_recognition_line_delete_all();
+int db_recognition_line_insert(DB_RecognitionLine_Data &data);
+int db_recognition_line_get_by_space(string space_guid, vector<DB_RecognitionLine_Data> &v_data);
+//识别点
+int db_recognition_point_delete_all();
+int db_recognition_point_insert(DB_RecognitionPoint_Data &data);
+int db_recognition_point_get_by_space(string space_guid, vector<DB_RecognitionPoint_Data> &v_data);
+//多边形识别区
+int db_recognition_polygon_delete_all();
+int db_recognition_polygon_insert(DB_RecognitionPolygon_Data &data);
+int db_recognition_polygon_get_by_space(string space_guid, vector<DB_RecognitionPolygon_Data> &v_data);
+//相机矩阵
+int db_camera_array_delete_all();
+int db_camera_array_insert(DB_CameraArray_Data &data);
+int db_camera_array_get_all(vector<DB_CameraArray_Data> &v_data);
+int db_camera_array_get_by_guid(string array_guid, DB_CameraArray_Data &data);
+//矩阵控制器
+int db_camera_controller_delete_all();
+int db_camera_controller_insert(DB_CameraController_Data &data);
+int db_camera_controller_get_all(vector<DB_CameraController_Data> &v_data);
+int db_camera_controller_get_by_array(string array_guid, vector<DB_CameraController_Data> &v_data);
+//NVR
+int db_nvr_delete_all();
+int db_nvr_insert(DB_Nvr_Data &data);
+int db_nvr_get_all(vector<DB_Nvr_Data> &v_data);
+//NVR Camera
+int db_nvr_camera_delete_all();
+int db_nvr_camera_insert(DB_NvrCamera_Data &data);
+int db_nvr_camera_get_by_nvrguid(vector<DB_NvrCamera_Data> &v_data, string nvr_guid);
+
+
+int db_configure_set(string name, string value);
+int db_configure_get(string name, string &value);
+int db_configure_del(string name);
+
+/*
+ * 设置一项系统配置参数（不存在则增加此名称的配置项，存在则修改）
+ *
+ * 参数
+ * group：配置所属组
+ * key：配置项名称
+ * value：配置项值
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_etc_config_set(const string &group, const string &key, const string &value);
+/*
+ * 读取一项系统配置参数
+ *
+ * 参数
+ * group：配置所属组
+ * key：配置项名称
+ * value：配置项值存储位置
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_etc_config_get(const string &group, const string &key, string &value);
+int db_etc_config_get(const string &group, const string &key, char *value);
+/*
+ * 删除一项系统配置参数
+ *
+ * 参数
+ * group：配置所属组
+ * name：配置项名称
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_etc_config_del(const string &group, const string &key);
+/*
+ ** 通过泊位号获取泊位停车状态
+ ** berthNumber:泊位号  plateNumber:车牌号
+ ** 返回值: 错误 -1，
+ **         正确 驶入驶出类型 0出场，1入场
+ **              2未找到该泊位记录
+ */
+int sq_select_park_state_by_berth(char *berthNumber, char *plateNumber);
+/*
+ * 获取流水延时（合并过滤）上报时间（min）
+ *
+ * 返回值：
+ * 配置的流水延时上报时间（min），如果获取失败，默认3分钟
+ * */
+int db_get_business_delay_merge_time();
+/*
+ * 获取蓝脑配置信息
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_get_blurbrain_conf(char *tcp_addr, char *tcp_port, char *image_addr, char *image_port);
+
+/*
+ * 向数据库增加一条停车规则
+ *
+ * 参数：
+ * tb_parking_rule：停车规则结构体
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_rule_add(tb_parking_rule_t tb_parking_rule);
+/*
+ * 获取所以的停车管理规则
+ *
+ * 参数：
+ * tb_parking_rule_array：获取结果存放位置（函数内部将会首先清楚此变量）
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_parking_rule_get(vector<tb_parking_rule_t> &tb_parking_rule_array);
+int db_parking_rule_version_get(string &version);
+int db_parking_rule_delete_all();
+
+/*
+ * 向数据库增加一条违停停车规则
+ *
+ * 参数：
+ * tb_illegal_parking_rule：违停停车规则结构体
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_illegal_parking_rule_add(tb_illegal_parking_rule_t tb_illegal_parking_rule);
+/*
+ * 违停规则获取
+ *
+ * 参数：
+ * tb_illegal_parking_rule_array：获取结果存放位置（函数内部将会首先清楚此变量）
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_illegal_parking_rule_get(vector<tb_illegal_parking_rule_t> &tb_illegal_parking_rule_array);
+int db_illegal_parking_rule_version_get(string &version);
+int db_illegal_parking_rule_delete_all();
+
+//侦测关联信息
+int db_detection_relevancy_del();
+int db_detection_relevancy_add(DB_DetectionRelevancy_t &data);
+int db_detection_relevancy_get_all(vector<DB_DetectionRelevancy_t> &v_data);
+int db_get_relevancy_by_space_guid(char *space_guid, vector<DB_DetectionRelevancy_t> &v_data);
+
+//违停配置信息
+int db_illegal_parking_set_delete();
+int db_illegal_parking_set_insert(DB_illegal_parking_set_t &data);
+int db_illegal_parking_set_get(DB_illegal_parking_set_t& data);
+
+//视频桩
+int db_video_pole_delete_all();
+int db_video_pole_insert(DB_VideoPole_t &data);
+int db_video_pole_get_by_guid(vector<DB_VideoPole_t> &v_data, string guid);
+
+
+void db_test();
+/*
+ * 数据库配置最终的初始化
+ *
+ * 返回值：
+ * 0：成功
+ * -1：失败
+ * */
+int db_last_init();
+
+
+/*通过相机guid获取相机名*/
+int db_camera_get_name(const char *camera_guid,string &camera_name,string &cametype);
+
+//更新~/bin/RoadsideParking.db下eoc服务器地址和文件服务器地址
+int bin_parking_lot_update_eocpath(DB_ParkingLot_Data &data);
+
+int eoc_db_init();
+
+#endif
+

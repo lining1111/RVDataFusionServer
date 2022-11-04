@@ -57,7 +57,7 @@ add_definitions(-D${ARCH})
 include_directories(include)
 include_directories(include/simpleini)
 
-set(LIBS m pthread zlog jsoncpp sqlite3)
+set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
 
 set(SRC_DIRS ./
         src
@@ -69,7 +69,12 @@ set(SRC_DIRS ./
         src/client
         src/merge
         src/simpleini
-        src/db)
+        src/db
+
+        eoc_comm/
+        )
+include_directories(eoc_comm)
+
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} src_dir_file)
