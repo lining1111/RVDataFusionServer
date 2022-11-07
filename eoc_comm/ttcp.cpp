@@ -188,7 +188,7 @@ int ssl_creat_info(int sock, SSL_CTX *&ctx, SSL *&ssl)
         ERR("sock=%d", sock);
         return -1;
     }
-//    DBG("111");
+
     //ssl初始化
     SSL_library_init();
     SSL_load_error_strings();
@@ -203,7 +203,6 @@ int ssl_creat_info(int sock, SSL_CTX *&ctx, SSL *&ssl)
     //    ERR_print_errors_fp(stderr);
         return -1;
     }
-//    DBG("222");
     //设置ssl及证书
     /* https://www.openssl.org/docs/ssl/ctx_set_verify.html */
     SSL_CTX_set_verify_depth(ctx, 5);
@@ -222,7 +221,6 @@ int ssl_creat_info(int sock, SSL_CTX *&ctx, SSL *&ssl)
         print_error_string(ssl_err, "SSL_CTX_load_verify_locations");
         return -1;
     }
-//    DBG("333");
 #if 0
     //建立安全连接双向认证，如需验证客户端添加
     /* Set the key and cert 加载客户端证书和私钥*/
@@ -249,13 +247,11 @@ int ssl_creat_info(int sock, SSL_CTX *&ctx, SSL *&ssl)
     /* https://www.openssl.org/docs/ssl/ctx_set_verify.html */
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     /* Cannot fail ??? */
-//    DBG("444");
+
     //建立ssl连接
     ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sock);
-//    DBG("set ok");
     ret = SSL_connect(ssl);
-//    DBG("555");
     if(ret <= 0)
     {
         unsigned long err_num = ERR_get_error();
@@ -268,7 +264,7 @@ int ssl_creat_info(int sock, SSL_CTX *&ctx, SSL *&ssl)
         DBG("ssl connect success, return %d", ret);
         ShowCerts(ssl);
     }
-//    DBG("666");
+
     return 0;
 }
 #define MAXBUF 1024
@@ -607,7 +603,7 @@ int tcp_client_write(tcp_client_t* client, const char* data, size_t data_size)
         int nleft = 0;
         int nsend = 0;
         const char *ptr = NULL;
-        //DBG("send:%s", data);
+        DBG("send:%s", data);
         ptr = data;
         nleft = data_size;
         while(nleft > 0){

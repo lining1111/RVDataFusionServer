@@ -71,8 +71,9 @@ set(SRC_DIRS ./
         src/simpleini
         src/db
 
-        eoc_comm/
-        )
+        eoc_comm/utility
+        eoc_comm/)
+include_directories(eoc_comm/utility)
 include_directories(eoc_comm)
 
 

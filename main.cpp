@@ -168,7 +168,7 @@ static void ThreadProcess(void *p) {
     Info("发送融合后的数据线程 exit");
 }
 
-
+int saveCountx = 0;
 static void ThreadProcessMultiView(void *p) {
     if (p == nullptr) {
         return;
@@ -197,6 +197,21 @@ static void ThreadProcessMultiView(void *p) {
 
 //        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
         local->client->multiViewSn++;
+
+        //存10帧数据到txt
+        if (0) {
+            if (saveCountx < 10) {
+                string filePath = "./sendx" + to_string(saveCount) + ".txt";
+                fstream fin;
+                fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
+                if (fin.is_open()) {
+                    fin.write(pkg.body.c_str(), pkg.body.size());
+                    fin.flush();
+                    fin.close();
+                }
+                saveCountx++;
+            }
+        }
 
         if (local->client->isRun) {
             if (local->client->SendToBase(pkg) == -1) {

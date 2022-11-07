@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
-//#include <uuid/uuid.h>
+#include <uuid/uuid.h>
 
 #include "sqlite_api.h"
 #include "logger.h"

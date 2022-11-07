@@ -17,18 +17,14 @@
 #include <sys/time.h>
 
 
-#include "yyls_eoc_comm.hpp"
+#include "eoc_comm.hpp"
 #include "sqlite_eoc_db.h"
 #include "configure_eoc_init.h"
 #include "dns_server.h"
-
 #include "logger.h"
 
 using namespace std;
 
-//ceshi
-extern vector<EOC_Camera_Info> g_eoc_camera_info;
-extern EOC_Radar_Info g_eoc_radar_info;
 
 int main(int argc, char *argv[])
 {
@@ -41,35 +37,15 @@ int main(int argc, char *argv[])
         ERR("g_eoc_config_init err");
         return -1;
     }
-    eoc_communication_start("10.100.32.128", 6524);
-//    eoc_communication_start("10.100.32.147", 6524);
+//    eoc_communication_start("10.100.32.128", 6526);
+    eoc_communication_start("111.62.28.98", 6526);
 
     int test_i = 0;
     time_t now_t = time(NULL);
     while(1)
     {
-        now_t = time(NULL);
-    //    if(test_i%2 == 0)
-        {
-            UP_EOC_CameraState camera_data;
-            for(unsigned int camera_i=0; camera_i<g_eoc_camera_info.size(); camera_i++)
-            {
-                    camera_data.Guid = g_eoc_camera_info[camera_i].Guid;
-                    camera_data.State = 0;
-                    camera_data.Model = "X110";
-                    camera_data.SoftVersion = "abcabcabc";
-                    camera_data.DataVersion = "";
-                    camera_data.GetPicTotalCount = 60;
-                    camera_data.GetPicSuccessCount = 60;
-                    update_camera_state(camera_data);
-                    DBG("----------update_camera_state");
-                    test_i ++;
-            }
-            
-            update_radar_state(g_eoc_radar_info.Guid, now_t%2, "radartest00001v");
-        }
         
-        sleep(119);
+        sleep(100);
     }
     return 0;
 }
