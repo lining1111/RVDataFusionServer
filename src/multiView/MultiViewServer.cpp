@@ -94,9 +94,9 @@ void MultiViewServer::getMatrixNoFromDb() {
 
     string dbName;
 #ifdef arm64
-    dbName = "/home/nvidianx/bin/" + this->db;
+    dbName = "/home/nvidianx/bin/CLParking.db";
 #else
-    dbName = this->db;
+    dbName = "./CLParking.db";
 #endif
 
 
@@ -108,8 +108,8 @@ void MultiViewServer::getMatrixNoFromDb() {
     }
 
     //base
-    char *sqlGetCL_ParkingArea = "select * from CL_ParkingArea";
-    rc = sqlite3_exec(db, sqlGetCL_ParkingArea, CallbackGetCL_ParkingArea, this, &errmsg);
+    char *sqlCmd = "select * from CL_ParkingArea";
+    rc = sqlite3_exec(db, sqlCmd, CallbackGetCL_ParkingArea, this, &errmsg);
     if (rc != SQLITE_OK) {
         printf("sqlite err:%s\n", errmsg);
         sqlite3_free(errmsg);
@@ -117,13 +117,13 @@ void MultiViewServer::getMatrixNoFromDb() {
 
 }
 
-static int CallbackGetIntersectionEntity(void *data, int argc, char **argv, char **azColName) {
+static int CallbackGetbelong_intersection(void *data, int argc, char **argv, char **azColName) {
     string colName;
     if (data != nullptr) {
         auto server = (MultiViewServer *) data;
         for (int i = 0; i < argc; i++) {
             colName = string(azColName[i]);
-            if (colName.compare("plateId") == 0) {
+            if (colName.compare("PlatId") == 0) {
                 server->crossID = string(argv[i]);
                 cout << "get crossID from db:" + server->crossID << endl;
             }
@@ -139,9 +139,9 @@ void MultiViewServer::getCrossIdFromDb() {
 
     string dbName;
 #ifdef arm64
-    dbName = "/home/nvidianx/bin/" + this->eocDB;
+    dbName = "/home/nvidianx/eoc_configure.db";
 #else
-    dbName = this->eocDB;
+    dbName = "./eoc_configure.db";
 #endif
 
 
@@ -153,8 +153,8 @@ void MultiViewServer::getCrossIdFromDb() {
     }
 
     //intersectionEntity
-    char *sqlGetIntersectionEntity = "select * from intersectionEntity";
-    rc = sqlite3_exec(db, sqlGetIntersectionEntity, CallbackGetIntersectionEntity, this, &errmsg);
+    char *sqlCmd = "select * from belong_intersection";
+    rc = sqlite3_exec(db, sqlCmd, CallbackGetbelong_intersection, this, &errmsg);
     if (rc != SQLITE_OK) {
         printf("sqlite err:%s\n", errmsg);
         sqlite3_free(errmsg);
@@ -255,9 +255,9 @@ int MultiViewServer::Run() {
 //    threadCheck.detach();
 
     //开启服务器获取一帧大数据线程
-    threadFindOneFrame = thread(ThreadFindOneFrame, this);
-    pthread_setname_np(threadFindOneFrame.native_handle(), "FusionServer findOneFrame");
-    threadFindOneFrame.detach();
+    threadFindOneFrame_TrafficFlow = thread(ThreadFindOneFrame_TrafficFlow, this);
+    pthread_setname_np(threadFindOneFrame_TrafficFlow.native_handle(), "FusionServer findOneFrame_TrafficFlow");
+    threadFindOneFrame_TrafficFlow.detach();
 
     //开启服务器多路数据融合线程
 //    threadMerge = thread(ThreadMerge, this);
@@ -485,7 +485,7 @@ void MultiViewServer::ThreadCheck(void *pServer) {
 
 }
 
-void MultiViewServer::ThreadFindOneFrame(void *pServer) {
+void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
     if (pServer == nullptr) {
         return;
     }

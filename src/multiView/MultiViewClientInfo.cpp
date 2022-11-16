@@ -34,7 +34,7 @@ MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int clie
     this->direction.store(Unknown);
     queuePkg.setMax(maxQueuePkg);
     queueTrafficFlow.setMax(maxQueueTrafficFlow);
-
+    queueMultiViewCarTrack.setMax(maxQueueMultiviewCarTrack);
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
 //    int isCreate = mkdir(dirName.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
@@ -287,7 +287,7 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Info("client-%d,心跳指令", client->sock);
             }
                 break;
-            case CmdType::DeviceMultiView : {
+            case CmdType::DeviceMultiview : {
 //                Info("多目数据指令");
                 //"WatchData"
                 TrafficFlow trafficFlow;
@@ -303,6 +303,26 @@ void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 if (!client->queueTrafficFlow.push(trafficFlow)){
                     Info("multiView client:%d TrafficFlow队列已满,丢弃消息", client->sock);
+                }
+
+            }
+                break;
+            case CmdType::DeviceMultiviewCarTrack : {
+//                Info("多目数据指令");
+                //"WatchData"
+                MultiViewCarTrack multiViewCarTrack;
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                if (JsonUnmarshalMultiViewCarTrack(pkg.body, multiViewCarTrack) != 0) {
+                    Error("multiViewCarTrack json 解析失败");
+                    continue;
+                }
+//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+//                     trafficFlow.flowData.size());
+
+                //存入队列
+                if (!client->queueMultiViewCarTrack.push(multiViewCarTrack)){
+                    Info("multiView client:%d multiViewCarTrack队列已满,丢弃消息", client->sock);
                 }
 
             }

@@ -887,7 +887,7 @@ namespace common {
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceMultiView;
+        pkg.head.cmd = CmdType::DeviceMultiview;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -902,6 +902,91 @@ namespace common {
         len += sizeof(pkg.crc);
 
         pkg.head.len = len;
+
+        return 0;
+    }
+
+    int JsonMarshalMultiViewCarTrack(MultiViewCarTrack multiViewCarTrack, string &out) {
+        Json::FastWriter fastWriter;
+        Json::Value root;
+
+        //root oprNum
+        root["oprNum"] = multiViewCarTrack.oprNum;
+        //root hardCode
+        root["hardCode"] = multiViewCarTrack.hardCode;
+        //root timestamp
+        root["timstamp"] = multiViewCarTrack.timstamp;
+        //root crossCode
+        root["crossCode"] = multiViewCarTrack.crossCode;
+        //root ip
+        root["ip"] = multiViewCarTrack.ip;
+        //root type
+        root["type"] = multiViewCarTrack.type;
+
+        //root lstObj
+        Json::Value lstObj = Json::arrayValue;
+
+        for (auto iter:multiViewCarTrack.lstObj) {
+            Json::Value item;
+            item["id"] = iter.id;
+            item["type"] = iter.type;
+            item["cameraDirection"] = iter.cameraDirection;
+            item["x1"] = iter.x1;
+            item["y1"] = iter.y1;
+            item["x2"] = iter.x2;
+            item["y2"] = iter.y2;
+            item["latitude"] = iter.latitude;
+            item["longitude"] = iter.longitude;
+            item["laneCode"] = iter.laneCode;
+            item["speed"] = iter.speed;
+            item["timeHeadway"] = iter.timeHeadway;
+            item["plateNumber"] = iter.plateNumber;
+            item["plateColor"] = iter.plateColor;
+
+            lstObj.append(item);
+        }
+
+        root["lstObj"] = lstObj;
+
+        out = fastWriter.write(root);
+        return 0;
+    }
+
+    int JsonUnmarshalMultiViewCarTrack(string in, MultiViewCarTrack &multiViewCarTrack) {
+        Json::Reader reader;
+        Json::Value root;
+        if (!reader.parse(in, root, false)) {
+            return -1;
+        }
+        multiViewCarTrack.oprNum = root["oprNum"].asString();
+        multiViewCarTrack.hardCode = root["hardCode"].asString();
+        multiViewCarTrack.timstamp = root["timstamp"].asDouble();
+        multiViewCarTrack.crossCode = root["crossCode"].asString();
+        multiViewCarTrack.ip = root["ip"].asString();
+        multiViewCarTrack.type = root["type"].asInt();
+
+        if (root["lstObj"].isArray()) {
+            Json::Value lstObj = root["lstObj"];
+            for (auto iter:lstObj) {
+                CarTrack item;
+                item.id = iter["id"].asInt();
+                item.type = iter["type"].asInt();
+                item.cameraDirection = iter["cameraDirection"].asInt();
+                item.x1 = iter["x1"].asInt();
+                item.y1 = iter["y1"].asInt();
+                item.x2 = iter["x2"].asInt();
+                item.y2 = iter["y2"].asInt();
+                item.latitude = iter["latitude"].asInt();
+                item.longitude = iter["longitude"].asInt();
+                item.laneCode = iter["laneCode"].asString();
+                item.speed = iter["speed"].asInt();
+                item.timeHeadway = iter["timeHeadway"].asInt();
+                item.plateNumber = iter["plateNumber"].asString();
+                item.plateColor = iter["plateColor"].asString();
+
+                multiViewCarTrack.lstObj.push_back(item);
+            }
+        }
 
         return 0;
     }

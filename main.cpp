@@ -25,6 +25,7 @@ bool isSendPicData;
 
 string dirName;
 int saveCount = 0;
+
 /**
  * 将服务端得到的融合数据，发送给上层
  * @param p
@@ -131,17 +132,17 @@ static void ThreadProcess(void *p) {
 
         //存10帧数据到txt
         if (0) {
-            if (saveCount < 10) {
-                string filePath = "./send" + to_string(saveCount) + ".txt";
-                fstream fin;
-                fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
-                if (fin.is_open()) {
-                    fin.write(pkg.body.c_str(), pkg.body.size());
-                    fin.flush();
-                    fin.close();
-                }
-                saveCount++;
+//            if (saveCount < 10) {
+            string filePath = "/mnt/mnt_hd/send/" + to_string(fusionData.timstamp) + ".txt";
+            fstream fin;
+            fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
+            if (fin.is_open()) {
+                fin.write(pkg.body.c_str(), pkg.body.size());
+                fin.flush();
+                fin.close();
             }
+//            saveCount++;
+//            }
         }
 
 //        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
@@ -169,6 +170,7 @@ static void ThreadProcess(void *p) {
 }
 
 int saveCountx = 0;
+
 static void ThreadProcessMultiView(void *p) {
     if (p == nullptr) {
         return;
@@ -287,7 +289,6 @@ int signalIgnpipe() {
 
     return 0;
 }
-
 
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");

@@ -54,7 +54,7 @@ public:
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
     thread threadCheck;//服务器客户端数组状态线程
-    thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
+    thread threadFindOneFrame_TrafficFlow;//多路数据寻找时间戳相差不超过指定限度的
 
     string crossID;//路口编号
     string db = "CLParking.db";
@@ -145,7 +145,7 @@ private:
     static void ThreadCheck(void *pServer);
 
 
-    static void ThreadFindOneFrame(void *pServer);
+    static void ThreadFindOneFrame_TrafficFlow(void *pServer);
 };
 
 #ifdef __cplusplus

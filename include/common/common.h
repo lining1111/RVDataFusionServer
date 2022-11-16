@@ -35,7 +35,8 @@ namespace common {
         DeviceAlarm = 0x04,//设备报警数据
         DeviceStatus = 0x05,//设备状态数据
         DevicePicData = 0x06,//设备视频数据回传
-        DeviceMultiView = 0x07,//多目数据回传
+        DeviceMultiview = 0x07,//多目数据回传
+        DeviceMultiviewCarTrack = 0x08,//多目车辆轨迹
     };//命令字类型
 
 
@@ -336,6 +337,37 @@ namespace common {
     int JsonUnmarshalTrafficFlows(string in, TrafficFlows &trafficFlows);
 
     int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+
+    typedef struct {
+        int id;
+        int type;
+        int cameraDirection;
+        int x1;
+        int y1;
+        int x2;
+        int y2;
+        int latitude;
+        int longitude;
+        string laneCode;
+        int speed;
+        int timeHeadway;
+        string plateNumber;
+        string plateColor;
+    } CarTrack;
+
+    typedef struct {
+        string oprNum;// `json "oprNum"` uuid()
+        string hardCode;// `json "hardCode"` 设备唯一标识
+        double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
+        string crossCode;
+        string ip;
+        int type;
+        vector<CarTrack> lstObj;
+    } MultiViewCarTrack;//车辆轨迹
+
+    int JsonMarshalMultiViewCarTrack(MultiViewCarTrack multiViewCarTrack, string &out);
+
+    int JsonUnmarshalMultiViewCarTrack(string in, MultiViewCarTrack &multiViewCarTrack);
 }
 
 

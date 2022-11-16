@@ -66,6 +66,9 @@ public:
     const int maxQueueTrafficFlow = 30;//最多10个
     Queue<TrafficFlow> queueTrafficFlow;
 
+    const int maxQueueMultiviewCarTrack = 30;
+    Queue<MultiViewCarTrack> queueMultiViewCarTrack;
+
     thread threadGetPkg;//将环形buffer内的数据进行分包
     thread threadGetPkgContent;//获取一包内的数据正文
 
