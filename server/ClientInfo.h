@@ -12,7 +12,7 @@
 #include <thread>
 #include <stdbool.h>
 #include <atomic>
-#include "common/Queue.h"
+#include "Queue.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -67,6 +67,15 @@ public:
     //WatchData队列;
     const int maxQueueWatchData = 30;//最多10个
     Queue<WatchData> queueWatchData;
+
+    const int maxQueueTrafficFlow = 30;//最多10个
+    Queue<TrafficFlow> queueTrafficFlow;
+
+    const int maxCrossTrafficJamAlarm = 30;//最多10个
+    Queue<CrossTrafficJamAlarm> queueCrossTrafficJamAlarm;
+
+    const int maxLineupInfo = 30;//最多10个
+    Queue<LineupInfo> queueLineupInfo;
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
     thread threadGetPkgContent;//获取一包内的数据正文

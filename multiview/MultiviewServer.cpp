@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #include <fstream>
 #include <valarray>
-#include "multiView/MultiViewServer.h"
+#include "MultiviewServer.h"
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
 #include "simpleini/SimpleIni.h"
@@ -19,24 +19,24 @@
 
 using namespace z_log;
 
-MultiViewServer::MultiViewServer() {
+MultiviewServer::MultiviewServer() {
     this->isRun.store(false);
-    queueObjs.setMax(maxQueueObjs);
+    queueTrafficFlows.setMax(maxQueueTrafficFlows);
 }
 
-MultiViewServer::MultiViewServer(uint16_t port, string config, int maxListen) {
+MultiviewServer::MultiviewServer(uint16_t port, string config, int maxListen) {
     this->port = port;
     this->config = config;
     this->maxListen = maxListen;
     this->isRun.store(false);
-    queueObjs.setMax(maxQueueObjs);
+    queueTrafficFlows.setMax(maxQueueTrafficFlows);
 }
 
-MultiViewServer::~MultiViewServer() {
+MultiviewServer::~MultiviewServer() {
     Close();
 }
 
-void MultiViewServer::initConfig() {
+void MultiviewServer::initConfig() {
 
     if (!config.empty()) {
         FILE *fp = fopen(config.c_str(), "r+");
@@ -74,7 +74,7 @@ void MultiViewServer::initConfig() {
 static int CallbackGetCL_ParkingArea(void *data, int argc, char **argv, char **azColName) {
     string colName;
     if (data != nullptr) {
-        auto server = (MultiViewServer *) data;
+        auto server = (MultiviewServer *) data;
         for (int i = 0; i < argc; i++) {
             colName = string(azColName[i]);
             if (colName.compare("UName") == 0) {
@@ -88,7 +88,7 @@ static int CallbackGetCL_ParkingArea(void *data, int argc, char **argv, char **a
 }
 
 
-void MultiViewServer::getMatrixNoFromDb() {
+void MultiviewServer::getMatrixNoFromDb() {
     sqlite3 *db;
     char *errmsg = nullptr;
 
@@ -120,7 +120,7 @@ void MultiViewServer::getMatrixNoFromDb() {
 static int CallbackGetbelong_intersection(void *data, int argc, char **argv, char **azColName) {
     string colName;
     if (data != nullptr) {
-        auto server = (MultiViewServer *) data;
+        auto server = (MultiviewServer *) data;
         for (int i = 0; i < argc; i++) {
             colName = string(azColName[i]);
             if (colName.compare("PlatId") == 0) {
@@ -133,7 +133,7 @@ static int CallbackGetbelong_intersection(void *data, int argc, char **argv, cha
     return 0;
 }
 
-void MultiViewServer::getCrossIdFromDb() {
+void MultiviewServer::getCrossIdFromDb() {
     sqlite3 *db;
     char *errmsg = nullptr;
 
@@ -162,7 +162,7 @@ void MultiViewServer::getCrossIdFromDb() {
 }
 
 
-int MultiViewServer::Open() {
+int MultiviewServer::Open() {
     //1.申请sock
     sock = socket(AF_INET, SOCK_STREAM/* | SOCK_NONBLOCK*/, IPPROTO_TCP);
     if (sock == -1) {
@@ -229,7 +229,7 @@ int MultiViewServer::Open() {
     return 0;
 }
 
-int MultiViewServer::Run() {
+int MultiviewServer::Run() {
 
     if (sock <= 0) {
         Error("server sock:%d", sock);
@@ -246,7 +246,7 @@ int MultiViewServer::Run() {
 
     //开启服务器监视客户端线程
     threadMonitor = thread(ThreadMonitor, this);
-    pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
+    pthread_setname_np(threadMonitor.native_handle(), "MultiviewServer monitor");
     threadMonitor.detach();
 
     //开启服务器检查客户端线程
@@ -256,7 +256,7 @@ int MultiViewServer::Run() {
 
     //开启服务器获取一帧大数据线程
     threadFindOneFrame_TrafficFlow = thread(ThreadFindOneFrame_TrafficFlow, this);
-    pthread_setname_np(threadFindOneFrame_TrafficFlow.native_handle(), "FusionServer findOneFrame_TrafficFlow");
+    pthread_setname_np(threadFindOneFrame_TrafficFlow.native_handle(), "MultiviewServer findOneFrame_TrafficFlow");
     threadFindOneFrame_TrafficFlow.detach();
 
     //开启服务器多路数据融合线程
@@ -272,7 +272,7 @@ int MultiViewServer::Run() {
     return 0;
 }
 
-int MultiViewServer::Close() {
+int MultiviewServer::Close() {
     if (sock > 0) {
         close(sock);
         sock = 0;
@@ -284,14 +284,14 @@ int MultiViewServer::Close() {
     return 0;
 }
 
-int MultiViewServer::setNonblock(int fd) {
+int MultiviewServer::setNonblock(int fd) {
     if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) {
         return -1;
     }
     return 0;
 }
 
-int MultiViewServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
+int MultiviewServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
 
     //多线程处理，不应该设置非阻塞模式
 //    setNonblock(client_sock);
@@ -304,7 +304,7 @@ int MultiViewServer::AddClient(int client_sock, struct sockaddr_in remote_addr) 
     }
 
     //clientInfo
-    MultiViewClientInfo *clientInfo = new MultiViewClientInfo(remote_addr, client_sock);
+    MultiviewClientInfo *clientInfo = new MultiviewClientInfo(remote_addr, client_sock);
 
     //add vector
     pthread_mutex_lock(&this->lockVectorClient);
@@ -331,7 +331,7 @@ int MultiViewServer::AddClient(int client_sock, struct sockaddr_in remote_addr) 
     return 0;
 }
 
-int MultiViewServer::RemoveClient(int client_sock) {
+int MultiviewServer::RemoveClient(int client_sock) {
 
     //epoll del
     if (epoll_ctl(this->epoll_fd, EPOLL_CTL_DEL, client_sock, &this->ev) == -1) {
@@ -360,7 +360,7 @@ int MultiViewServer::RemoveClient(int client_sock) {
     return 0;
 }
 
-int MultiViewServer::DeleteAllClient() {
+int MultiviewServer::DeleteAllClient() {
 
     //删除客户端数组
     if (!vectorClient.empty()) {
@@ -380,11 +380,11 @@ int MultiViewServer::DeleteAllClient() {
     return 0;
 }
 
-void MultiViewServer::ThreadMonitor(void *pServer) {
+void MultiviewServer::ThreadMonitor(void *pServer) {
     if (pServer == nullptr) {
         return;
     }
-    auto server = (MultiViewServer *) pServer;
+    auto server = (MultiviewServer *) pServer;
 
     int nfds = 0;// epoll监听事件发生的个数
     struct sockaddr_in remote_addr; // 客户端网络地址结构体
@@ -439,11 +439,11 @@ void MultiViewServer::ThreadMonitor(void *pServer) {
     Info("multiView %s exit", __FUNCTION__);
 }
 
-void MultiViewServer::ThreadCheck(void *pServer) {
+void MultiviewServer::ThreadCheck(void *pServer) {
     if (pServer == nullptr) {
         return;
     }
-    auto server = (MultiViewServer *) pServer;
+    auto server = (MultiviewServer *) pServer;
 
     Info("multiView %s run", __FUNCTION__);
     while (server->isRun.load()) {
@@ -485,11 +485,11 @@ void MultiViewServer::ThreadCheck(void *pServer) {
 
 }
 
-void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
+void MultiviewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
     if (pServer == nullptr) {
         return;
     }
-    auto server = (MultiViewServer *) pServer;
+    auto server = (MultiviewServer *) pServer;
 
     Info("multiView %s run", __FUNCTION__);
     while (server->isRun.load()) {
@@ -542,7 +542,7 @@ void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
             //2.确定时间戳
             TrafficFlow trafficFlow;
             if (server->vectorClient.at(0)->queueTrafficFlow.front(trafficFlow)) {
-                server->curTimestamp = trafficFlow.timstamp;//一直取第一路的时间戳为基准
+                server->curTimestamp_TrafficFlows = trafficFlow.timstamp;//一直取第一路的时间戳为基准
             }
 
 //            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
@@ -566,13 +566,13 @@ void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
                             TrafficFlow trafficFlow;
                             if (curClient->queueTrafficFlow.front(trafficFlow)) {
                                 if ((trafficFlow.timstamp >=
-                                     (double) (server->curTimestamp - server->thresholdFrame)) &&
+                                     (double) (server->curTimestamp_TrafficFlows - server->thresholdFrame)) &&
                                     (trafficFlow.timstamp <=
-                                     (double) (server->curTimestamp + server->thresholdFrame))) {
+                                     (double) (server->curTimestamp_TrafficFlows + server->thresholdFrame))) {
                                     //出队列
                                     curClient->queueTrafficFlow.pop(trafficFlow);
                                     //按路记录时间戳
-                                    server->xRoadTimestamp[i] = trafficFlow.timstamp;
+                                    server->xRoadTimestamp_TrafficFlows[i] = trafficFlow.timstamp;
 //                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
                                     //TODO 赋值路口编号
                                     if (server->crossID.empty()) {
@@ -585,7 +585,7 @@ void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
                                     }
                                     isFind = true;
                                 } else if ((trafficFlow.timstamp <
-                                            (double) (server->curTimestamp - server->thresholdFrame))) {
+                                            (double) (server->curTimestamp_TrafficFlows - server->thresholdFrame))) {
                                     //小于当前时间戳或者不在门限内，出队列抛弃
 //                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
 //                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
@@ -593,7 +593,7 @@ void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
                                     curClient->queueTrafficFlow.pop(trafficFlow);
 
                                 } else if ((trafficFlow.timstamp >
-                                            (double) (server->curTimestamp + server->thresholdFrame))) {
+                                            (double) (server->curTimestamp_TrafficFlows + server->thresholdFrame))) {
 //                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
 //                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                     isFind = true;
@@ -611,12 +611,12 @@ void MultiViewServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
 
             TrafficFlows trafficFlows;
             trafficFlows.oprNum = random_uuid();
-            trafficFlows.timestamp = server->curTimestamp;
+            trafficFlows.timestamp = server->curTimestamp_TrafficFlows;
             trafficFlows.crossID = server->crossID;
 
             trafficFlows.trafficFlow.assign(flowDatas.begin(), flowDatas.end());
 
-            if (!server->queueObjs.push(trafficFlows)) {
+            if (!server->queueTrafficFlows.push(trafficFlows)) {
 //                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
             } else {
 //                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);

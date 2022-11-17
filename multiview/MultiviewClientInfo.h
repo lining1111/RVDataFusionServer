@@ -12,7 +12,7 @@
 #include <thread>
 #include <stdbool.h>
 #include <atomic>
-#include "common/Queue.h"
+#include "Queue.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -21,7 +21,7 @@ extern "C"
 using namespace std;
 using namespace common;
 
-class MultiViewClientInfo {
+class MultiviewClientInfo {
 public:
 
     //接收buffer状态机 Start开始---从接收的数据中寻找帧头开始(开始为特殊字符$)GetHeadStart---找到帧头开始，获取全部帧头信息(一共9字节)GetHead---
@@ -79,12 +79,12 @@ public:
      * @param client_sock 客户端socket
      * @param rbCapacity 客户端循环buffer的最大容量
      */
-    MultiViewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
+    MultiviewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
 
     /**
      * 删除一个客户端
      */
-    ~MultiViewClientInfo();
+    ~MultiviewClientInfo();
 
 public:
 

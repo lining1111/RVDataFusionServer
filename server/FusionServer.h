@@ -13,6 +13,7 @@
 #include <thread>
 #include "server/ClientInfo.h"
 #include "merge/merge.h"
+#include "DataUnit.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -42,12 +43,12 @@ public:
 
     const timeval checkStatusTimeval = {3, 0};//连续3s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
-    const uint8_t thresholdFrame = 100;//不同路时间戳相差门限，单位ms
+
 
     int sock = 0;//服务器socket
     //已连入的客户端列表
-    vector<ClientInfo *> vector_client;
-    pthread_mutex_t lock_vector_client = PTHREAD_MUTEX_INITIALIZER;
+    vector<ClientInfo *> vectorClient;
+    pthread_mutex_t lockVectorClient = PTHREAD_MUTEX_INITIALIZER;
 
     //epoll
     int epoll_fd;
@@ -56,12 +57,12 @@ public:
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
 #define MaxRoadNum 4 //最多有多少路
-//    queue<OBJS> queueObjs;//在同一帧的多路数据
-//    pthread_mutex_t lockObjs = PTHREAD_MUTEX_INITIALIZER;
-//    pthread_cond_t condObjs = PTHREAD_COND_INITIALIZER;
+
+//---------------监控数据相关---------//
     int maxQueueObjs = 30;//最大缓存融合数据量
     Queue<OBJS> queueObjs;//在同一帧的多路数据
 
+    const uint8_t thresholdFrame = 100;//不同路时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
     uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
@@ -110,33 +111,45 @@ public:
     int angle_value = -1000;
 
 
-   /* //斜路口
-    int flag_view = 2;
-    double left_down_x = -21.3;
-    double left_down_y = -20;
-    double left_up_x = -21.3;
-    double left_up_y = 20;
-    double right_up_x = 21.3;
-    double right_up_y = 20;
-    double right_down_x = 21.3;
-    double right_down_y = -20;
-    double repateX = 10;//fix 不变
-    double repateY = 10;
-    double gatetx = 30;//跟路口有关
-    double gatety = 30;//跟路口有关
-    double gatex = 10;//跟路口有关
-    double gatey = 5;//跟路口有关
-    bool time_flag = true;
-    int angle_value = -1000;
-*/
-
-    //处理线程
-    thread threadMonitor;//服务器监听客户端状态线程
-    thread threadCheck;//服务器客户端数组状态线程
+    /* //斜路口
+     int flag_view = 2;
+     double left_down_x = -21.3;
+     double left_down_y = -20;
+     double left_up_x = -21.3;
+     double left_up_y = 20;
+     double right_up_x = 21.3;
+     double right_up_y = 20;
+     double right_down_x = 21.3;
+     double right_down_y = -20;
+     double repateX = 10;//fix 不变
+     double repateY = 10;
+     double gatetx = 30;//跟路口有关
+     double gatety = 30;//跟路口有关
+     double gatex = 10;//跟路口有关
+     double gatey = 5;//跟路口有关
+     bool time_flag = true;
+     int angle_value = -1000;
+ */
     thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
     thread threadMerge;//多路数据融合线程
 
     thread threadNotMerge;//数据不走多路融合，直接给出，id按照东侧的id加10000，西侧的id加20000，北侧的id加30000，南侧的id加40000
+
+    //---------------路口交通流向相关--------//
+    DataUnit<TrafficFlows, 30, 1000> dataUnit_TrafficFlows;
+    thread threadFindOneFrame_TrafficFlow;//多路数据寻找时间戳相差不超过指定限度的
+
+    //------交叉口堵塞报警------//
+    DataUnit<CrossTrafficJamAlarm, 30, 1000> dataUnit_CrossTrafficJamAlarm;
+    thread threadFindOneFrame_CrossTrafficJamAlarm;//多路数据寻找时间戳相差不超过指定限度的
+    //--------排队长度等信息------//
+    DataUnit<LineupInfoGather, 30, 1000> dataUnit_LineupInfoGather;
+    thread threadFindOneFrame_LineupInfo;//多路数据寻找时间戳相差不超过指定限度的
+
+    //处理线程
+    thread threadMonitor;//服务器监听客户端状态线程
+    thread threadCheck;//服务器客户端数组状态线程
+
 
     string crossID;//路口编号
     string db = "CLParking.db";
@@ -237,6 +250,20 @@ private:
 
 
     static void ThreadNotMerge(void *pServer);
+
+    static void TaskFindOneFrame_TrafficFlow(void *pServer);
+
+    static void ThreadFindOneFrame_TrafficFlow(void *pServer);
+
+
+    static void TaskFindOneFrame_LineupInfo(void *pServer);
+
+    static void ThreadFindOneFrame_LineupInfo(void *pServer);
+
+
+    static void TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer);
+
+    static void ThreadFindOneFrame_CrossTrafficJamAlarm(void *pServer);
 };
 
 #ifdef __cplusplus

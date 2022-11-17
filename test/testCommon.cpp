@@ -8,7 +8,7 @@
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
-#include "common/Queue.h"
+#include "Queue.h"
 #include "log/Log.h"
 #include "ringBuffer/RingBuffer.h"
 
@@ -242,11 +242,38 @@ void exampleJsonTrafficFlows() {
 
 }
 
+void exampleLineupInfo() {
+    LineupInfo lineupInfo;
+    lineupInfo.OprNum = "123";
+    lineupInfo.HardCode = "abc";
+    TrafficFlowLineup trafficFlowLineup;
+    trafficFlowLineup.HeadWay = 1;
+    trafficFlowLineup.AverageSpeed = 2;
+    lineupInfo.TrafficFlowList.push_back(trafficFlowLineup);
+    TrafficFlowLineup trafficFlowLineup1;
+    trafficFlowLineup1.HeadWay = 3;
+    trafficFlowLineup1.AverageSpeed = 4;
+    lineupInfo.TrafficFlowList.push_back(trafficFlowLineup1);
+    Json::FastWriter fastWriter;
+    Json::Reader reader;
+
+    Json::Value out;
+    lineupInfo.JsonMarshal(out);
+    string jsonStr;
+    jsonStr = fastWriter.write(out);
+    cout << jsonStr << endl;
+    LineupInfo lineupInfo1;
+    Json::Value in;
+    reader.parse(jsonStr, in, false);
+    lineupInfo1.JsonUnmarshal(in);
+    cout << "ok" << endl;
+};
+
 int main(int argc, char **argv) {
 
 //    exampleJsonTrafficFlow();
-    exampleJsonTrafficFlows();
-
+//    exampleJsonTrafficFlows();
+    exampleLineupInfo();
     string a = "nihao";
     string b;
     b = a;

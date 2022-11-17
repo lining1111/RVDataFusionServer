@@ -53,3 +53,7 @@ add_executable(testFusionClient testFusionClient.cpp
         ../ringBuffer/RingBuffer.cpp)
 target_link_libraries(testFusionClient ${LIBS})
 redefine_file_macro(testFusionClient)
+add_executable(testTimeTask testTimeTask.cpp
+        ../timeTask.hpp)
+target_link_libraries(testTimeTask ${LIBS})
+redefine_file_macro(testTimeTask)

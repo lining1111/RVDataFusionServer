@@ -5,16 +5,6 @@
 #include <cstring>
 #include <sys/time.h>
 
-#ifdef x86
-
-#include <jsoncpp/json/json.h>
-
-#else
-
-#include <json/json.h>
-
-#endif
-
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
@@ -991,5 +981,206 @@ namespace common {
         return 0;
     }
 
+    bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
+        out["OprNum"] = this->OprNum;
+        out["Timstamp"] = this->Timstamp;
+        out["CrossCode"] = this->CrossCode;
+        out["HardCode"] = this->HardCode;
+        out["AlarmType"] = this->AlarmType;
+        out["AlarmStatus"] = this->AlarmStatus;
+        out["AlarmTime"] = this->AlarmTime;
 
+        return true;
+    }
+
+    bool CrossTrafficJamAlarm::JsonUnmarshal(Json::Value in) {
+
+        this->OprNum = in["OprNum"].asString();
+        this->Timstamp = in["Timstamp"].asDouble();
+        this->CrossCode = in["CrossCode"].asString();
+        this->HardCode = in["HardCode"].asString();
+        this->AlarmType = in["AlarmType"].asInt();
+        this->AlarmStatus = in["AlarmStatus"].asInt();
+        this->AlarmTime = in["AlarmTime"].asInt();
+
+        return true;
+    }
+
+    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
+                                          Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceAlarm;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        crossTrafficJamAlarm.JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
+
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
+
+        pkg.head.len = len;
+
+        return 0;
+    }
+
+    bool TrafficFlowLineup::JsonMarshal(Json::Value &out) {
+
+        out["LaneID"] = this->LaneID;
+        out["AverageSpeed"] = this->AverageSpeed;
+        out["Flow"] = this->Flow;
+        out["QueueLength"] = this->QueueLength;
+        out["SumMini"] = this->SumMini;
+        out["SumMid"] = this->SumMid;
+        out["SumMax"] = this->SumMax;
+        out["HeadWay"] = this->HeadWay;
+        out["HeadWayTime"] = this->HeadWayTime;
+        out["Occupancy"] = this->Occupancy;
+        out["OccupancySpace"] = this->OccupancySpace;
+
+        return true;
+    }
+
+
+
+
+    bool TrafficFlowLineup::JsonUnmarshal(Json::Value in) {
+        this->LaneID = in["LaneID"].asInt();
+        this->AverageSpeed = in["AverageSpeed"].asInt();
+        this->Flow = in["Flow"].asInt();
+        this->QueueLength = in["QueueLength"].asInt();
+        this->SumMini = in["SumMini"].asInt();
+        this->SumMid = in["SumMid"].asInt();
+        this->SumMax = in["SumMax"].asInt();
+        this->HeadWay = in["HeadWay"].asInt();
+        this->HeadWayTime = in["HeadWayTime"].asInt();
+        this->Occupancy = in["Occupancy"].asInt();
+        this->OccupancySpace = in["OccupancySpace"].asInt();
+
+        return true;
+    }
+
+    bool LineupInfo::JsonMarshal(Json::Value &out) {
+        out["OprNum"] = this->OprNum;
+        out["Timstamp"] = this->Timstamp;
+        out["CrossCode"] = this->CrossCode;
+        out["HardCode"] = this->HardCode;
+        out["RecordDateTime"] = this->RecordDateTime;
+
+        Json::Value TrafficFlowList = Json::arrayValue;
+        if (!this->TrafficFlowList.empty()) {
+            for (auto iter:this->TrafficFlowList) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    TrafficFlowList.append(item);
+                }
+            }
+        } else {
+            TrafficFlowList.resize(0);
+        }
+
+        out["TrafficFlowList"] = TrafficFlowList;
+
+        return true;
+    }
+
+    bool LineupInfo::JsonUnmarshal(Json::Value in) {
+        this->OprNum = in["OprNum"].asString();
+        this->Timstamp = in["Timstamp"].asDouble();
+        this->CrossCode = in["CrossCode"].asString();
+        this->HardCode = in["HardCode"].asString();
+        this->RecordDateTime = in["RecordDateTime"].asString();
+
+        if (in["TrafficFlowList"].isArray()) {
+            Json::Value TrafficFlowList = in["TrafficFlowList"];
+            for (auto iter:TrafficFlowList) {
+                TrafficFlowLineup item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->TrafficFlowList.push_back(item);
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool LineupInfoGather::JsonMarshal(Json::Value &out) {
+        out["OprNum"] = this->OprNum;
+        out["Timstamp"] = this->Timstamp;
+        out["CrossCode"] = this->CrossCode;
+        out["HardCode"] = this->HardCode;
+
+        Json::Value TrafficFlowList = Json::arrayValue;
+        if (!this->TrafficFlowList.empty()) {
+            for (auto iter:this->TrafficFlowList) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    TrafficFlowList.append(item);
+                }
+            }
+        } else {
+            TrafficFlowList.resize(0);
+        }
+
+        out["TrafficFlowList"] = TrafficFlowList;
+
+        return true;
+    }
+
+    bool LineupInfoGather::JsonUnmarshal(Json::Value in) {
+        this->OprNum = in["OprNum"].asString();
+        this->Timstamp = in["Timstamp"].asDouble();
+        this->CrossCode = in["CrossCode"].asString();
+        this->HardCode = in["HardCode"].asString();
+
+        if (in["TrafficFlowList"].isArray()) {
+            Json::Value TrafficFlowList = in["TrafficFlowList"];
+            for (auto iter:TrafficFlowList) {
+                TrafficFlowLineup item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->TrafficFlowList.push_back(item);
+                }
+            }
+        }
+
+        return true;
+    }
+    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceStatus;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        lineupInfoGather.JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
+
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
+
+        pkg.head.len = len;
+
+        return 0;
+    }
 }

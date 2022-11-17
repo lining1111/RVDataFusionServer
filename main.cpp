@@ -7,7 +7,7 @@
 
 #include "client/FusionClient.h"
 #include "server/FusionServer.h"
-#include "multiView/MultiViewServer.h"
+#include "multiview/MultiviewServer.h"
 #include "global.h"
 #include "httpServer/httpServer.h"
 
@@ -30,7 +30,7 @@ int saveCount = 0;
  * 将服务端得到的融合数据，发送给上层
  * @param p
  */
-static void ThreadProcess(void *p) {
+static void ThreadProcessFusionServer_FusionData(void *p) {
     if (p == nullptr) {
         return;
     }
@@ -128,7 +128,7 @@ static void ThreadProcess(void *p) {
 
         uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
         Pkg pkg;
-        PkgFusionDataWithoutCRC(fusionData, local->client->sn, deviceNo, pkg);
+        PkgFusionDataWithoutCRC(fusionData, local->client->sn_fusionServer_FusionData, deviceNo, pkg);
 
         //存10帧数据到txt
         if (0) {
@@ -146,7 +146,7 @@ static void ThreadProcess(void *p) {
         }
 
 //        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
-        local->client->sn++;
+        local->client->sn_fusionServer_FusionData++;
 
         timeval start;
         timeval end;
@@ -169,36 +169,169 @@ static void ThreadProcess(void *p) {
     Info("发送融合后的数据线程 exit");
 }
 
-int saveCountx = 0;
-
-static void ThreadProcessMultiView(void *p) {
+static void ThreadProcessFusionServer_TrafficFlows(void *p) {
     if (p == nullptr) {
         return;
     }
 
     auto local = (Local *) p;
 
-    if (local->multiViewServer == nullptr || local->client == nullptr) {
+    if (local->server == nullptr || local->client == nullptr) {
         return;
     }
 
-    Info("发送multiView数据线程 run");
+    Info("发送FusionServer_TrafficFlows数据线程 run");
     while (local->isRun) {
         usleep(10);
-        if (local->multiViewServer->queueObjs.empty()) {
+        if (local->server->dataUnit_TrafficFlows.m_queue.empty()) {
             continue;
         }
-        TrafficFlows objs;
-        if (!local->multiViewServer->queueObjs.pop(objs)) {
+        TrafficFlows trafficFlows;
+        if (!local->server->dataUnit_TrafficFlows.m_queue.pop(trafficFlows)) {
             continue;
         }
 
         uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
         Pkg pkg;
-        PkgTrafficFlowsWithoutCRC(objs, local->client->multiViewSn, deviceNo, pkg);
+        PkgTrafficFlowsWithoutCRC(trafficFlows, local->server->dataUnit_TrafficFlows.sn, deviceNo, pkg);
 
 //        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
-        local->client->multiViewSn++;
+        local->server->dataUnit_TrafficFlows.sn++;
+
+        if (local->client->isRun) {
+            if (local->client->SendToBase(pkg) == -1) {
+                local->client->isRun = false;
+                Info("FusionServer_TrafficFlows连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
+            } else {
+//                Info("FusionServer_TrafficFlows连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+            }
+        } else {
+            Error("FusionServer_TrafficFlows未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
+        }
+    }
+
+    Info("发送FusionServer_TrafficFlows数据线程 exit");
+}
+
+static void ThreadProcessFusionServer_LineupInfoGather(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+
+    auto local = (Local *) p;
+
+    if (local->server == nullptr || local->client == nullptr) {
+        return;
+    }
+
+    Info("发送FusionServer_LineupInfoGather数据线程 run");
+    while (local->isRun) {
+        usleep(10);
+        if (local->server->dataUnit_LineupInfoGather.m_queue.empty()) {
+            continue;
+        }
+        LineupInfoGather lineupInfoGather;
+        if (!local->server->dataUnit_LineupInfoGather.m_queue.pop(lineupInfoGather)) {
+            continue;
+        }
+
+        uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
+        Pkg pkg;
+        PkgLineupInfoGatherWithoutCRC(lineupInfoGather, local->server->dataUnit_LineupInfoGather.sn, deviceNo, pkg);
+
+//        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
+        local->server->dataUnit_LineupInfoGather.sn++;
+
+        if (local->client->isRun) {
+            if (local->client->SendToBase(pkg) == -1) {
+                local->client->isRun = false;
+                Info("FusionServer_LineupInfoGather连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
+            } else {
+//                Info("FusionServer_LineupInfoGather连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+            }
+        } else {
+            Error("FusionServer_LineupInfoGather未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
+        }
+    }
+
+    Info("发送FusionServer_LineupInfoGather数据线程 exit");
+}
+
+static void ThreadProcessFusionServer_CrossTrafficJamAlarm(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+
+    auto local = (Local *) p;
+
+    if (local->server == nullptr || local->client == nullptr) {
+        return;
+    }
+
+    Info("发送FusionServer_TrafficFlows数据线程 run");
+    while (local->isRun) {
+        usleep(10);
+        if (local->server->dataUnit_CrossTrafficJamAlarm.m_queue.empty()) {
+            continue;
+        }
+        CrossTrafficJamAlarm crossTrafficJamAlarm;
+        if (!local->server->dataUnit_CrossTrafficJamAlarm.m_queue.pop(crossTrafficJamAlarm)) {
+            continue;
+        }
+
+        uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
+        Pkg pkg;
+        PkgCrossTrafficJamAlarmWithoutCRC(crossTrafficJamAlarm, local->server->dataUnit_CrossTrafficJamAlarm.sn, deviceNo, pkg);
+
+//        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
+        local->server->dataUnit_CrossTrafficJamAlarm.sn++;
+
+        if (local->client->isRun) {
+            if (local->client->SendToBase(pkg) == -1) {
+                local->client->isRun = false;
+                Info("FusionServer_CrossTrafficJamAlarm连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
+            } else {
+//                Info("FusionServer_CrossTrafficJamAlarm连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+            }
+        } else {
+            Error("FusionServer_CrossTrafficJamAlarm未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
+        }
+    }
+
+    Info("发送FusionServer_TrafficFlows数据线程 exit");
+}
+
+
+int saveCountx = 0;
+
+static void ThreadProcessMultiviewServer_TrafficFlows(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+
+    auto local = (Local *) p;
+
+    if (local->multiviewServer == nullptr || local->client == nullptr) {
+        return;
+    }
+
+    Info("发送MultiviewServer_TrafficFlows数据线程 run");
+    while (local->isRun) {
+        usleep(10);
+        if (local->multiviewServer->queueTrafficFlows.empty()) {
+            continue;
+        }
+        TrafficFlows trafficFlows;
+        if (!local->multiviewServer->queueTrafficFlows.pop(trafficFlows)) {
+            continue;
+        }
+
+        uint32_t deviceNo = stoi(local->server->matrixNo.substr(0, 10));
+        Pkg pkg;
+        PkgTrafficFlowsWithoutCRC(trafficFlows, local->client->sn_multiviewServer_TrafficFlows, deviceNo, pkg);
+
+//        Info("multiView sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, objs.timestamp);
+        local->client->sn_multiviewServer_TrafficFlows++;
 
         //存10帧数据到txt
         if (0) {
@@ -218,16 +351,16 @@ static void ThreadProcessMultiView(void *p) {
         if (local->client->isRun) {
             if (local->client->SendToBase(pkg) == -1) {
                 local->client->isRun = false;
-                Info("multiView连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
+                Info("MultiviewServer_TrafficFlows连接到上层，发送消息失败,matrixNo:%d", pkg.head.deviceNO);
             } else {
-//                Info("multiView连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
+//                Info("MultiviewServer_TrafficFlows连接到上层，发送数据成功,matrixNo:%d", pkg.head.deviceNO);
             }
         } else {
-            Error("multiView未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
+            Error("MultiviewServer_TrafficFlows未连接到上层，丢弃消息,matrixNo:%d", pkg.head.deviceNO);
         }
     }
 
-    Info("发送multiView数据线程 exit");
+    Info("发送MultiviewServer_TrafficFlows数据线程 exit");
 }
 
 
@@ -257,11 +390,11 @@ static void ThreadKeep(void *p) {
             }
         }
 
-        if (!local->multiViewServer->isRun) {
-            local->multiViewServer->Close();
-            if (local->multiViewServer->Open() == 0) {
+        if (!local->multiviewServer->isRun) {
+            local->multiviewServer->Close();
+            if (local->multiviewServer->Open() == 0) {
                 Info("多目服务端重启");
-                local->multiViewServer->Run();
+                local->multiviewServer->Run();
             }
         }
 
@@ -333,31 +466,39 @@ int main(int argc, char **argv) {
     server->port = port;
 
     //多目服务端
-    MultiViewServer *multiViewServer = new MultiViewServer();
-    multiViewServer->port = port + 1;
+    MultiviewServer *multiviewServer = new MultiviewServer();
+    multiviewServer->port = port + 1;
 
     FusionClient *client = new FusionClient(cloudIp, cloudPort);//端口号和ip依实际情况而变
 
     Local local;
     local.server = server;
-    local.multiViewServer = multiViewServer;
+    local.multiviewServer = multiviewServer;
     local.client = client;
     local.isRun = true;
 
     server->Open();
     server->Run();
 
-    multiViewServer->Open();
-    multiViewServer->Run();
+    multiviewServer->Open();
+    multiviewServer->Run();
 
     client->Open();
     client->Run();
 
-    thread threadProcess = thread(ThreadProcess, &local);
-    threadProcess.detach();
+    //FusionServer 发送线程
+    thread threadProcessFusionServer_FusionData = thread(ThreadProcessFusionServer_FusionData, &local);
+    threadProcessFusionServer_FusionData.detach();
 
-    thread threadProcessMultiView = thread(ThreadProcessMultiView, &local);
-    threadProcessMultiView.detach();
+    thread threadProcessFusionServer_TrafficFlows = thread(ThreadProcessFusionServer_TrafficFlows, &local);
+    threadProcessFusionServer_TrafficFlows.detach();
+
+    thread threadProcessFusionServer_LineupInfoGather = thread(ThreadProcessFusionServer_LineupInfoGather, &local);
+    threadProcessFusionServer_LineupInfoGather.detach();
+
+    //MultiviewServer 发送线程
+    thread threadProcessMultiviewServer_TrafficFlows = thread(ThreadProcessMultiviewServer_TrafficFlows, &local);
+    threadProcessMultiviewServer_TrafficFlows.detach();
 
     thread threadKeep = thread(ThreadKeep, &local);
     threadKeep.detach();

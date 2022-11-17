@@ -5,6 +5,14 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
+#ifdef x86
+#include <jsoncpp/json/json.h>
+#else
+
+#include <json/json.h>
+
+#endif
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -368,6 +376,77 @@ namespace common {
     int JsonMarshalMultiViewCarTrack(MultiViewCarTrack multiViewCarTrack, string &out);
 
     int JsonUnmarshalMultiViewCarTrack(string in, MultiViewCarTrack &multiViewCarTrack);
+
+
+    //---------交叉路口堵塞报警---------//
+    class CrossTrafficJamAlarm {
+    public:
+        string OprNum;
+        double Timstamp;
+        string CrossCode;
+        string HardCode;
+        int AlarmType;//1：交叉口堵塞
+        int AlarmStatus;//1 有报警 0 报警恢复
+        string AlarmTime;//日期2022-10-31 10:00:21
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
+                                          Pkg &pkg);
+
+    //-------排队长度等信息--------//
+
+    class TrafficFlowLineup {
+    public:
+        int LaneID;
+        int AverageSpeed;
+        int Flow;
+        int QueueLength;
+        int SumMini;
+        int SumMid;
+        int SumMax;
+        int HeadWay;
+        int HeadWayTime;
+        int Occupancy;
+        int OccupancySpace;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class LineupInfo {
+    public:
+        string OprNum;
+        double Timstamp;
+        string CrossCode;
+        string HardCode;
+        string RecordDateTime;
+        vector<TrafficFlowLineup> TrafficFlowList;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class LineupInfoGather{
+    public:
+        string OprNum;
+        double Timstamp;
+        string CrossCode;
+        string HardCode;
+        vector<TrafficFlowLineup> TrafficFlowList;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO,
+                                          Pkg &pkg);
 }
 
 

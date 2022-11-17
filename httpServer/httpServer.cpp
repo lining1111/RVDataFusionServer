@@ -24,12 +24,12 @@ void GetServerInfoCB(const httplib::Request &req, httplib::Response &resp) {
     resp.status = 200;
 
     FusionServerInfo fusionServerInfo;
-    if (mLocal->server->vector_client.empty()) {
+    if (mLocal->server->vectorClient.empty()) {
         fusionServerInfo.clientNum = 0;
     } else {
-        fusionServerInfo.clientNum = mLocal->server->vector_client.size();
-        for (int i = 0; i < mLocal->server->vector_client.size(); i++) {
-            auto iter = mLocal->server->vector_client.at(i);
+        fusionServerInfo.clientNum = mLocal->server->vectorClient.size();
+        for (int i = 0; i < mLocal->server->vectorClient.size(); i++) {
+            auto iter = mLocal->server->vectorClient.at(i);
             FusionClientInfo item;
             item.ip = string(inet_ntoa(iter->clientAddr.sin_addr));
             item.direction = iter->direction;
@@ -53,7 +53,7 @@ void GetLocalConnectInfoCB(const httplib::Request &req, httplib::Response &resp)
     localConnectInfo.isRun = mLocal->isRun;
     localConnectInfo.isFusionServerRun = mLocal->server->isRun;
     localConnectInfo.isMerge = mLocal->server->isMerge;
-    localConnectInfo.isMultiViewServerRun = mLocal->multiViewServer->isRun;
+    localConnectInfo.isMultiviewServerRun = mLocal->multiviewServer->isRun;
     localConnectInfo.isClientRun = mLocal->client->isRun;
 
 
@@ -111,7 +111,7 @@ int JsonMarshalLocalConnectInfo(LocalConnectInfo localConnectInfo, string &out) 
     root["isRun"] = localConnectInfo.isRun;
     root["isFusionServerRun"] = localConnectInfo.isFusionServerRun;
     root["isMerge"] = localConnectInfo.isMerge;
-    root["isMultiViewServerRun"] = localConnectInfo.isMultiViewServerRun;
+    root["isMultiviewServerRun"] = localConnectInfo.isMultiviewServerRun;
     root["isClientRun"] = localConnectInfo.isClientRun;
 
     out = fastWriter.write(root);

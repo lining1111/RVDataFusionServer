@@ -35,7 +35,9 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->direction.store(Unknown);
     queuePkg.setMax(maxQueuePkg);
     queueWatchData.setMax(maxQueueWatchData);
-
+    queueTrafficFlow.setMax(maxQueueTrafficFlow);
+    queueCrossTrafficJamAlarm.setMax(maxCrossTrafficJamAlarm);
+    queueLineupInfo.setMax(maxLineupInfo);
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
 //    int isCreate = mkdir(dirName.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
@@ -320,12 +322,62 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
             }
                 break;
+            case CmdType::DeviceMultiview : {
+//                Info("多目数据指令");
+                //"WatchData"
+                TrafficFlow trafficFlow;
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                if (JsonUnmarshalTrafficFlow(pkg.body, trafficFlow) != 0) {
+                    Error("trafficFlow json 解析失败");
+                    continue;
+                }
+//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+//                     trafficFlow.flowData.size());
+
+                //存入队列
+                if (!client->queueTrafficFlow.push(trafficFlow)) {
+                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
+                }
+
+            }
+                break;
             case CmdType::DeviceAlarm : {
-                Info("client-%d,设备报警指令", client->sock);
+//                Info("client-%d,设备报警指令", client->sock);
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                Json::Reader reader;
+                Json::Value in;
+                if (!reader.parse(pkg.body, in, false)) {
+                    Error("trafficFlow json 解析失败");
+                    continue;
+                }
+                CrossTrafficJamAlarm crossTrafficJamAlarm;
+                crossTrafficJamAlarm.JsonUnmarshal(in);
+
+                //存入队列
+                if (!client->queueCrossTrafficJamAlarm.push(crossTrafficJamAlarm)) {
+                    Info("client:%d CrossTrafficJamAlarm,丢弃消息", client->sock);
+                }
             }
                 break;
             case CmdType::DeviceStatus : {
                 Info("client-%d,设备状态指令", client->sock);
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                Json::Reader reader;
+                Json::Value in;
+                if (!reader.parse(pkg.body, in, false)) {
+                    Error("LineupInfo json 解析失败");
+                    continue;
+                }
+                LineupInfo lineupInfo;
+                lineupInfo.JsonUnmarshal(in);
+
+                //存入队列
+                if (!client->queueLineupInfo.push(lineupInfo)) {
+                    Info("client:%d LineupInfo,丢弃消息", client->sock);
+                }
             }
                 break;
             case CmdType::DevicePicData : {

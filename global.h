@@ -6,12 +6,12 @@
 #define _GLOBAL_H
 
 #include <server/FusionServer.h>
-#include <multiView/MultiViewServer.h>
+#include <multiview/MultiviewServer.h>
 #include <client/FusionClient.h>
 
 typedef struct {
     FusionServer *server;
-    MultiViewServer *multiViewServer;
+    MultiviewServer *multiviewServer;
     FusionClient *client;
     bool isRun;
 } Local;

@@ -26,7 +26,7 @@ typedef struct {
     bool isRun;
     bool isFusionServerRun;
     bool isMerge;
-    bool isMultiViewServerRun;
+    bool isMultiviewServerRun;
     bool isClientRun;
 }LocalConnectInfo;
 

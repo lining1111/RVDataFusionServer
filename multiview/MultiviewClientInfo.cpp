@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <iostream>
-#include "multiView/MultiViewClientInfo.h"
+#include "MultiviewClientInfo.h"
 #include "log/Log.h"
 #include "common/CRC.h"
 #include <sys/stat.h>
@@ -19,7 +19,7 @@ using namespace common;
 
 //string dirName;
 
-MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
+MultiviewClientInfo::MultiviewClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
     this->msgid = 0;
     this->clientAddr = clientAddr;
     this->sock = client_sock;
@@ -44,7 +44,7 @@ MultiViewClientInfo::MultiViewClientInfo(struct sockaddr_in clientAddr, int clie
 //        Info("create path failed! error code : %s \n", isCreate, dirName.data());
 }
 
-MultiViewClientInfo::~MultiViewClientInfo() {
+MultiviewClientInfo::~MultiviewClientInfo() {
 
     if (isLive.load() == true) {
         isLive.store(false);
@@ -64,7 +64,7 @@ MultiViewClientInfo::~MultiViewClientInfo() {
     this->rb = nullptr;
 }
 
-int MultiViewClientInfo::ProcessRecv() {
+int MultiviewClientInfo::ProcessRecv() {
     isLive.store(true);
 
     //dump
@@ -86,12 +86,12 @@ int MultiViewClientInfo::ProcessRecv() {
     return 0;
 }
 
-void MultiViewClientInfo::ThreadDump(void *pClientInfo) {
+void MultiviewClientInfo::ThreadDump(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (MultiViewClientInfo *) pClientInfo;
+    auto client = (MultiviewClientInfo *) pClientInfo;
 
     Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
@@ -134,12 +134,12 @@ void MultiViewClientInfo::ThreadDump(void *pClientInfo) {
 
 }
 
-void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
+void MultiviewClientInfo::ThreadGetPkg(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (MultiViewClientInfo *) pClientInfo;
+    auto client = (MultiviewClientInfo *) pClientInfo;
 
     Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
@@ -259,12 +259,12 @@ void MultiViewClientInfo::ThreadGetPkg(void *pClientInfo) {
 
 }
 
-void MultiViewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
+void MultiviewClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return;
     }
 
-    auto client = (MultiViewClientInfo *) pClientInfo;
+    auto client = (MultiviewClientInfo *) pClientInfo;
 
     Info("multiView client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {

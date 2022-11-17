@@ -11,7 +11,7 @@
 
 #include "common/common.h"
 #include "ringBuffer/RingBuffer.h"
-#include "common/Queue.h"
+#include "Queue.h"
 
 using namespace std;
 using namespace common;
@@ -29,8 +29,8 @@ public:
 
 
     //用于发送
-    uint16_t sn = 0;
-    uint16_t multiViewSn = 0;
+    uint16_t sn_fusionServer_FusionData = 0;
+    uint16_t sn_multiviewServer_TrafficFlows = 0;
     uint32_t deviceNo = 0x12345678;
 public:
     thread thread_recv;

@@ -11,7 +11,8 @@
 #include <vector>
 #include <sys/epoll.h>
 #include <thread>
-#include "multiView/MultiViewClientInfo.h"
+#include <atomic>
+#include "MultiviewClientInfo.h"
 #include "merge/merge.h"
 
 #ifdef __cplusplus
@@ -20,7 +21,7 @@ extern "C"
 #endif
 using namespace std;
 
-class MultiViewServer {
+class MultiviewServer {
 public:
 
 public:
@@ -33,7 +34,7 @@ public:
 
     int sock = 0;//服务器socket
     //已连入的客户端列表
-    vector<MultiViewClientInfo *> vectorClient;
+    vector<MultiviewClientInfo *> vectorClient;
     pthread_mutex_t lockVectorClient = PTHREAD_MUTEX_INITIALIZER;
 
     //epoll
@@ -43,11 +44,11 @@ public:
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
 #define MaxRoadNum 4 //最多有多少路
-    int maxQueueObjs = 30;//最大缓存融合数据量
-    Queue<TrafficFlows> queueObjs;//在同一帧的多路数据
+    int maxQueueTrafficFlows = 30;//最大缓存融合数据量
+    Queue<TrafficFlows> queueTrafficFlows;//在同一帧的多路数据
 
-    uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
-    uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
+    uint64_t curTimestamp_TrafficFlows = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
+    uint64_t xRoadTimestamp_TrafficFlows[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
 
     string config = "./config.ini";
 
@@ -68,11 +69,11 @@ public:
 
 
 public:
-    MultiViewServer();
+    MultiviewServer();
 
-    MultiViewServer(uint16_t port, string config, int maxListen = 5);
+    MultiviewServer(uint16_t port, string config, int maxListen = 5);
 
-    ~MultiViewServer();
+    ~MultiviewServer();
 
 private:
     /**

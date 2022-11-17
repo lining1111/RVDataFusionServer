@@ -5,6 +5,14 @@
 #ifndef _TIMETASK_H
 #define _TIMETASK_H
 
+#include <functional>
+#include <chrono>
+#include <thread>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <condition_variable>
+
 class Timer {
 public:
     Timer() : _expired(true), _try_to_expire(false) {
@@ -30,7 +38,7 @@ public:
         std::thread([this, interval, task]() {
             while (!_try_to_expire) {
                 // sleep every interval and do the task again and again until times up
-                std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+                std::this_thread::sleep_for(std::chrono::microseconds(interval*1000));
                 task();
             }
 
@@ -45,7 +53,7 @@ public:
 
     void startOnce(int delay, std::function<void()> task) {
         std::thread([delay, task]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+            std::this_thread::sleep_for(std::chrono::microseconds(delay*1000));
             task();
         }).detach();
     }
