@@ -7,8 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
-#include <common/CRC.h>
-#include <GetData.h>
+#include "common/CRC.h"
 #include "log/Log.h"
 #include "common/common.h"
 

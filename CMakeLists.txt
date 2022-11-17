@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.19)
 project(RVDataFusionServer VERSION 0.0.2)
-configure_file("${PROJECT_SOURCE_DIR}/include/version.h.in" "${PROJECT_SOURCE_DIR}/include/version.h")
+configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -53,26 +53,25 @@ endif ()
 
 add_definitions(-D${ARCH})
 
-
-include_directories(include)
-include_directories(include/simpleini)
-
 set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
 
 set(SRC_DIRS ./
-        src
-        src/log
-        src/ringBuffer
-        src/common
-        src/server
-        src/multiView
-        src/client
-        src/merge
-        src/simpleini
-        src/db
-
+        log
+        ringBuffer
+        common
+        server
+        multiView
+        client
+        merge
+        simpleini
+        db
+        getData
+        httpServer
+        eoc
         eoc_comm/utility
-        eoc_comm/)
+        eoc_comm)
+
+include_directories(.)
 include_directories(eoc_comm/utility)
 include_directories(eoc_comm)
 

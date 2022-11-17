@@ -1,55 +1,55 @@
 ##testIni
 add_executable(testIni testIni.cpp
-        ../src/simpleini/ConvertUTF.c
+        ../simpleini/ConvertUTF.c
         )
 target_link_libraries(testIni ${LIBS})
 redefine_file_macro(testIni)
 
 ##测试通讯
 add_executable(testCommon testCommon.cpp
-        ../src/common/common.cpp
-        ../src/common/CRC.cpp
-        ../src/ringBuffer/RingBuffer.cpp
-        ../src/log/Log.cpp)
+        ../common/common.cpp
+        ../common/CRC.cpp
+        ../ringBuffer/RingBuffer.cpp
+        ../log/Log.cpp)
 target_link_libraries(testCommon ${LIBS})
 redefine_file_macro(testCommon)
 
 ##测试服务端
 add_executable(testServer testServer.cpp
-        ../src/common/common.cpp
-        ../src/common/CRC.cpp
-        ../src/ringBuffer/RingBuffer.cpp
-        ../src/log/Log.cpp
-        ../src/server/ClientInfo.cpp
-        ../src/server/FusionServer.cpp
-        ../src/client/FusionClient.cpp
-        ../src/merge/merge.cpp
-        ../src/merge/mergeStruct.cpp)
+        ../common/common.cpp
+        ../common/CRC.cpp
+        ../ringBuffer/RingBuffer.cpp
+        ../log/Log.cpp
+        ../server/ClientInfo.cpp
+        ../server/FusionServer.cpp
+        ../client/FusionClient.cpp
+        ../merge/merge.cpp
+        ../merge/mergeStruct.cpp)
 target_link_libraries(testServer ${LIBS})
 redefine_file_macro(testServer)
 
 ##测试客户端
 add_executable(testClient testClient.cpp
-        ../src/common/common.cpp
-        ../src/common/CRC.cpp
-        ../src/ringBuffer/RingBuffer.cpp
-        ../src/log/Log.cpp
-        ../src/GetData.cpp)
+        ../common/common.cpp
+        ../common/CRC.cpp
+        ../ringBuffer/RingBuffer.cpp
+        ../log/Log.cpp
+        ../getData/GetData.cpp)
 target_link_libraries(testClient ${LIBS})
 redefine_file_macro(testClient)
 
 ##testGetData
 add_executable(testGetData testGetData.cpp
-        ../src/GetData.cpp)
+        ../getData/GetData.cpp)
 target_link_libraries(testGetData ${LIBS})
 redefine_file_macro(testGetData)
 
 ##testGetData
 add_executable(testFusionClient testFusionClient.cpp
-        ../src/client/FusionClient.cpp
-        ../src/common/common.cpp
-        ../src/common/CRC.cpp
-        ../src/log/Log.cpp
-        ../src/ringBuffer/RingBuffer.cpp)
+        ../client/FusionClient.cpp
+        ../common/common.cpp
+        ../common/CRC.cpp
+        ../log/Log.cpp
+        ../ringBuffer/RingBuffer.cpp)
 target_link_libraries(testFusionClient ${LIBS})
 redefine_file_macro(testFusionClient)

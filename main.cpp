@@ -9,13 +9,13 @@
 #include "server/FusionServer.h"
 #include "multiView/MultiViewServer.h"
 #include "global.h"
-#include "httpServer.h"
+#include "httpServer/httpServer.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fstream>
 #include "db/DB.h"
-#include "Eoc.h"
+#include "eoc/Eoc.h"
 
 using namespace z_log;
 

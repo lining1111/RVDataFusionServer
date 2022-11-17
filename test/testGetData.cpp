@@ -1,7 +1,7 @@
 //
 // Created by lining on 3/3/22.
 //
-#include "GetData.h"
+#include "getData/GetData.h"
 
 using namespace std;
 
