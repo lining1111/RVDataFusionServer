@@ -74,13 +74,6 @@ void exampleJsonWatchData() {
     watchData.isHasImage = 1;
     uint8_t img[4] = {1, 2, 3, 4};
 
-    char imgBase64[16];
-    unsigned int imgBase64Len = 0;
-
-    base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
-
-    watchData.imageData = string(imgBase64).data();
-
     //AnnuciatorInfo
 
     AnnuciatorInfo annuciatorInfo1;
@@ -137,12 +130,16 @@ void exampleJsonWatchData() {
     watchData.lstObjTarget.push_back(objTarget2);
 
     string jsonMarshal;
-
-    JsonMarshalWatchData(watchData, jsonMarshal);
+    Json::FastWriter fastWriter;
+    Json::Value root;
+    watchData.JsonMarshal(root);
+    jsonMarshal = fastWriter.write(root);
 
     WatchData watchData1;
-
-    JsonUnmarshalWatchData(jsonMarshal, watchData1);
+    string jsonMarshal1;
+    Json::Value root1;
+    watchData1.JsonMarshal(root1);
+    jsonMarshal1 = fastWriter.write(root);
 
 
 }
@@ -175,71 +172,6 @@ void testCRC() {
 //    uint16_t crc = CRC16_CCITT(data, 4);
     uint16_t crc = Crc16TabCCITT(data, sizeof(data) / sizeof(data[0]));
     cout << "crc:" << to_string(crc) << endl;
-}
-
-
-void exampleJsonTrafficFlow() {
-    TrafficFlow trafficFlow;
-    trafficFlow.hardCode = "123";
-    trafficFlow.oprNum = "123";
-    trafficFlow.crossCode = "123";
-    trafficFlow.timstamp = 12345678;
-    FlowData flowData;
-    flowData.laneCode = "1";
-    flowData.flowDirection = 0;
-    trafficFlow.flowData.push_back(flowData);
-    FlowData flowData1;
-    flowData1.laneCode = "2";
-    flowData1.flowDirection = 1;
-    trafficFlow.flowData.push_back(flowData1);
-    string body;
-    JsonMarshalTrafficFlow(trafficFlow, body);
-    cout << "body:" << body << endl;
-    TrafficFlow trafficFlow1;
-    JsonUnmarshalTrafficFlow(body, trafficFlow1);
-
-}
-
-void exampleJsonTrafficFlows() {
-    TrafficFlows trafficFlows;
-    trafficFlows.oprNum = "123";
-    trafficFlows.crossID = "456";
-    trafficFlows.timestamp = 123456789;
-    OneRoadTrafficFlow oneRoadTrafficFlow;
-    oneRoadTrafficFlow.hardCode = "1";
-    oneRoadTrafficFlow.crossCode = "2";
-    FlowData flowData;
-    flowData.laneCode = "1";
-    flowData.flowDirection = 0;
-    oneRoadTrafficFlow.flowData.push_back(flowData);
-    FlowData flowData1;
-    flowData1.laneCode = "2";
-    flowData1.flowDirection = 1;
-    oneRoadTrafficFlow.flowData.push_back(flowData1);
-    trafficFlows.trafficFlow.push_back(flowData1);
-    OneRoadTrafficFlow oneRoadTrafficFlow1;
-    oneRoadTrafficFlow1.hardCode = "2";
-    oneRoadTrafficFlow1.crossCode = "3";
-    FlowData flowData2;
-    flowData2.laneCode = "3";
-    flowData2.flowDirection = 2;
-    oneRoadTrafficFlow1.flowData.push_back(flowData2);
-    FlowData flowData3;
-    flowData3.laneCode = "4";
-    flowData3.flowDirection = 3;
-    oneRoadTrafficFlow1.flowData.push_back(flowData3);
-    trafficFlows.trafficFlow.push_back(flowData3);
-    string body;
-    JsonMarshalTrafficFlows(trafficFlows, body);
-    cout << "body:" << body << endl;
-    TrafficFlows trafficFlows1;
-    JsonUnmarshalTrafficFlows(body, trafficFlows1);
-    Pkg pkg;
-    PkgTrafficFlowsWithoutCRC(trafficFlows1, 1, 1, pkg);
-    uint8_t data[1024 * 1024];
-    uint32_t len;
-    common::Pack(pkg, data, &len);
-
 }
 
 void exampleLineupInfo() {

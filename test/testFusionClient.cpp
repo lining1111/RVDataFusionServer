@@ -7,7 +7,7 @@
 #include <iostream>
 
 int main(int argc, char **argv) {
-    FusionClient *client = new FusionClient("127.0.0.1", 10000);
+    FusionClient *client = new FusionClient("127.0.0.1", 10000, nullptr);
     client->Open();
     client->Run();
 

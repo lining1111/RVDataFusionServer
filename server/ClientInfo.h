@@ -32,7 +32,8 @@ public:
 #define MAX_RB (1024*1024*64)
 public:
     //都是客户端的属性信息
-    int msgid = 0;//帧号
+    void *super;
+    int indexSuper;
     struct sockaddr_in clientAddr;
     int sock;//客户端socket
     int type = 0;
@@ -59,23 +60,9 @@ public:
     thread threadDump;//接收数据并存入环形buffer
 
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
-    const int maxQueuePkg = 30;//最多10个
-    Queue<Pkg> queuePkg;
+    Queue<Pkg, 300> queuePkg;
 
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
-
-    //WatchData队列;
-    const int maxQueueWatchData = 30;//最多10个
-    Queue<WatchData> queueWatchData;
-
-    const int maxQueueTrafficFlow = 30;//最多10个
-    Queue<TrafficFlow> queueTrafficFlow;
-
-    const int maxCrossTrafficJamAlarm = 30;//最多10个
-    Queue<CrossTrafficJamAlarm> queueCrossTrafficJamAlarm;
-
-    const int maxLineupInfo = 30;//最多10个
-    Queue<LineupInfo> queueLineupInfo;
 
     thread threadGetPkg;//将环形buffer内的数据进行分包
     thread threadGetPkgContent;//获取一包内的数据正文
@@ -86,9 +73,12 @@ public:
      * 初始化一个客户端对象
      * @param clientAddr 客户端的地址信息
      * @param client_sock 客户端socket
+     * @param super
+     * @
      * @param rbCapacity 客户端循环buffer的最大容量
      */
-    ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity = MAX_RB);
+    ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *super, int index,
+               long long int rbCapacity = MAX_RB);
 
     /**
      * 删除一个客户端

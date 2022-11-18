@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <iostream>
 #include "server/ClientInfo.h"
+#include "server/FusionServer.h"
 #include "log/Log.h"
 #include "common/CRC.h"
 #include <sys/stat.h>
@@ -18,8 +19,10 @@ using namespace common;
 
 //string dirName;
 
-ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long int rbCapacity) {
-    this->msgid = 0;
+ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *super, int index,
+                       long long int rbCapacity) {
+    this->super = super;
+    this->indexSuper = index;
     this->clientAddr = clientAddr;
     this->sock = client_sock;
     this->type = 0;
@@ -33,11 +36,7 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, long long
     this->isLive.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
-    queuePkg.setMax(maxQueuePkg);
-    queueWatchData.setMax(maxQueueWatchData);
-    queueTrafficFlow.setMax(maxQueueTrafficFlow);
-    queueCrossTrafficJamAlarm.setMax(maxCrossTrafficJamAlarm);
-    queueLineupInfo.setMax(maxLineupInfo);
+
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
 //    int isCreate = mkdir(dirName.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
@@ -290,15 +289,18 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
                 break;
             case CmdType::DeviceData : {
-//                Info("监控数据指令");
-                //"WatchData"
-                WatchData watchData;
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
-                if (JsonUnmarshalWatchData(pkg.body, watchData) != 0) {
+                Json::Reader reader;
+                Json::Value in;
+                if (!reader.parse(pkg.body, in, false)) {
                     Error("watchData json 解析失败");
                     continue;
                 }
+
+                WatchData watchData;
+                watchData.JsonUnmarshal(pkg.body);
+
                 Info("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%d", client->sock,
                      inet_ntoa(client->clientAddr.sin_addr),
                      watchData.timstamp,
@@ -313,56 +315,72 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
 
-                //存入队列
-                if (!client->queueWatchData.push(watchData)) {
+                //按照方向顺序放入
+                auto server = (FusionServer *) client->super;
+                for (int i = 0; i < ARRAY_SIZE(server->roadDirection); i++) {
+                    if (server->roadDirection[i] == client->direction) {
+                        //方向相同，放入对应索引下数组
+                        auto array = server->watchDatas[i];
+
+                        //存入队列
+                        if (!array.push(watchData)) {
 //                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
 //                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
-                } else {
+                        } else {
 //                    Info("client:%d,timestamp %f WatchData存入", client->sock, watchData.timstamp);
+                        }
+                    }
                 }
+
             }
                 break;
             case CmdType::DeviceMultiview : {
-//                Info("多目数据指令");
-                //"WatchData"
-                TrafficFlow trafficFlow;
-                //打印下接收的内容
-//                Info("%s\n", pkg.body.c_str());
-                if (JsonUnmarshalTrafficFlow(pkg.body, trafficFlow) != 0) {
-                    Error("trafficFlow json 解析失败");
-                    continue;
-                }
-//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
-//                     trafficFlow.flowData.size());
-
-                //存入队列
-                if (!client->queueTrafficFlow.push(trafficFlow)) {
-                    Info("client:%d TrafficFlow队列已满,丢弃消息", client->sock);
-                }
-
-            }
-                break;
-            case CmdType::DeviceAlarm : {
-//                Info("client-%d,设备报警指令", client->sock);
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("trafficFlow json 解析失败");
+                    Error("TrafficFlow json 解析失败");
+                    continue;
+                }
+                TrafficFlow trafficFlow;
+                trafficFlow.JsonUnmarshal(in);
+
+//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+//                     trafficFlow.flowData.size());
+
+                //存入队列
+                auto server = (FusionServer *) client->super;
+
+                if (!server->dataUnit_TrafficFlows.i_queue_vector.at(client->indexSuper).push(trafficFlow)) {
+                    Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                }
+
+            }
+                break;
+            case CmdType::DeviceAlarm : {
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                Json::Reader reader;
+                Json::Value in;
+                if (!reader.parse(pkg.body, in, false)) {
+                    Error("CrossTrafficJamAlarm json 解析失败");
                     continue;
                 }
                 CrossTrafficJamAlarm crossTrafficJamAlarm;
                 crossTrafficJamAlarm.JsonUnmarshal(in);
 
                 //存入队列
-                if (!client->queueCrossTrafficJamAlarm.push(crossTrafficJamAlarm)) {
-                    Info("client:%d CrossTrafficJamAlarm,丢弃消息", client->sock);
+                auto server = (FusionServer *) client->super;
+
+                if (!server->dataUnit_CrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).push(
+                        crossTrafficJamAlarm)) {
+                    Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
+                         inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
             case CmdType::DeviceStatus : {
-                Info("client-%d,设备状态指令", client->sock);
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
                 Json::Reader reader;
@@ -375,8 +393,10 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 lineupInfo.JsonUnmarshal(in);
 
                 //存入队列
-                if (!client->queueLineupInfo.push(lineupInfo)) {
-                    Info("client:%d LineupInfo,丢弃消息", client->sock);
+                auto server = (FusionServer *) client->super;
+
+                if (!server->dataUnit_LineupInfoGather.i_queue_vector.at(client->indexSuper).push(lineupInfo)) {
+                    Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
@@ -384,10 +404,31 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Info("client-%d,设备视频数据回传", client->sock);
             }
                 break;
+            case CmdType::DeviceMultiviewCarTrack : {
+                //打印下接收的内容
+//                Info("%s\n", pkg.body.c_str());
+                Json::Reader reader;
+                Json::Value in;
+                if (!reader.parse(pkg.body, in, false)) {
+                    Error("MultiviewCarTrack json 解析失败");
+                    continue;
+                }
+                MultiViewCarTrack multiViewCarTrack;
+                multiViewCarTrack.JsonUnmarshal(in);
+
+                //存入队列
+                auto server = (FusionServer *) client->super;
+
+                if (!server->dataUnit_MultiViewCarTracks.i_queue_vector.at(client->indexSuper).push(
+                        multiViewCarTrack)) {
+                    Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                }
+            }
+                break;
             default: {
                 //最后没有对应的方法名
-                Info("client:%d 最后没有对应的方法名:%d,内容:%s", client->sock, pkg.head.cmd,
-                     pkg.body.c_str());
+                Info("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
+                     pkg.head.cmd, pkg.body.c_str());
             }
                 break;;
         }

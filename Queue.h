@@ -12,7 +12,7 @@
 using namespace std;
 
 
-template<typename T>
+template<typename T, int cap>
 class Queue {
 public:
     Queue() {
@@ -20,7 +20,9 @@ public:
         pthread_mutex_init(&mutex, 0);
         // 线程条件变量的初始化
         pthread_cond_init(&cond, 0);
-
+        if (cap > 0) {
+            setMax(cap);
+        }
     }
 
     ~Queue() {
@@ -88,6 +90,27 @@ public:
         pthread_mutex_unlock(&mutex);  //操作完成后解锁
         return true;
     }
+
+    bool back(T &t) {
+        pthread_mutex_lock(&mutex);  //加锁
+        // queue为空是一直等待，直到下一次push进新的数据  java中是wait和notify
+        if (q.empty()) {
+            // 挂起状态，释放锁
+            struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_sec = ts.tv_nsec + 1000 * 100;
+            pthread_cond_timedwait(&cond, &mutex, &ts);
+        }
+        if (q.empty()) {
+            pthread_mutex_unlock(&mutex);
+            return false;
+        }
+        // 被唤醒以后
+        t = q.back();
+        pthread_mutex_unlock(&mutex);  //操作完成后解锁
+        return true;
+    }
+
 
     void setMax(int value) {
         max = value;

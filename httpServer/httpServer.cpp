@@ -5,63 +5,44 @@
 #include "httpServer.h"
 #include <httplib.h>
 
-
-#ifdef x86
-
-#include <jsoncpp/json/json.h>
-
-#else
-
-#include <json/json.h>
-
-#endif
-
 httplib::Server svr;
 static Local *mLocal = nullptr;
 
-void GetServerInfoCB(const httplib::Request &req, httplib::Response &resp) {
+void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
     resp.set_header("Content-Type", "plain/text");
     resp.status = 200;
 
-    FusionServerInfo fusionServerInfo;
-    if (mLocal->server->vectorClient.empty()) {
-        fusionServerInfo.clientNum = 0;
-    } else {
-        fusionServerInfo.clientNum = mLocal->server->vectorClient.size();
-        for (int i = 0; i < mLocal->server->vectorClient.size(); i++) {
-            auto iter = mLocal->server->vectorClient.at(i);
-            FusionClientInfo item;
-            item.ip = string(inet_ntoa(iter->clientAddr.sin_addr));
-            item.direction = iter->direction;
-            fusionServerInfo.fusionClientInfos.push_back(item);
+    LocalInfo localInfo;
+
+    for (auto iter:mLocal->serverList) {
+        ServerInfo item;
+        item.ip = "localhost";
+        item.port = iter->port;
+        for (auto iter1:iter->vectorClient) {
+            ServerClientInfo item1;
+            item1.ip = string(inet_ntoa(iter1->clientAddr.sin_addr));
+            item1.direction = iter1->direction;
+            item.clients.push_back(item1);
         }
+        localInfo.serverInfos.push_back(item);
     }
 
-    string content;
-    JsonMarshalFusionServerInfo(fusionServerInfo, content);
+    for (auto iter:mLocal->clientList) {
+        CliInfo item;
+        item.serverIp = iter->server_ip;
+        item.serverPort = iter->server_port;
+        localInfo.cliInfos.push_back(item);
+    }
 
-    resp.set_content(content, "plain/text");
+    string jsonStr;
+    Json::FastWriter fastWriter;
+    Json::Value root;
+    localInfo.JsonMarshal(root);
+    jsonStr = fastWriter.write(root);
+
+    resp.set_content(jsonStr, "plain/text");
 }
 
-
-void GetLocalConnectInfoCB(const httplib::Request &req, httplib::Response &resp) {
-    resp.set_header("Content-Type", "plain/text");
-    resp.status = 200;
-
-    LocalConnectInfo localConnectInfo;
-
-    localConnectInfo.isRun = mLocal->isRun;
-    localConnectInfo.isFusionServerRun = mLocal->server->isRun;
-    localConnectInfo.isMerge = mLocal->server->isMerge;
-    localConnectInfo.isMultiviewServerRun = mLocal->multiviewServer->isRun;
-    localConnectInfo.isClientRun = mLocal->client->isRun;
-
-
-    string content;
-    JsonMarshalLocalConnectInfo(localConnectInfo, content);
-
-    resp.set_content(content, "plain/text");
-}
 
 void MThread(void *p, int port) {
     httplib::Server *svr = (httplib::Server *) p;
@@ -72,8 +53,7 @@ void MThread(void *p, int port) {
 int HttpServerInit(int port, Local *local) {
     mLocal = local;
 
-    svr.Get("/getServerInfo", GetServerInfoCB);
-    svr.Get("/getLocalConnectInfo", GetLocalConnectInfoCB);
+    svr.Get("/getLocalInfo", GetLocalInfoCB);
 
 //    svr.listen("0.0.0.0", port);
     thread mThread = thread(MThread, &svr, port);
@@ -81,39 +61,122 @@ int HttpServerInit(int port, Local *local) {
 
 }
 
-int JsonMarshalFusionServerInfo(FusionServerInfo fusionServerInfo, string &out) {
-    Json::FastWriter fastWriter;
-    Json::Value root;
+bool ServerClientInfo::JsonMarshal(Json::Value &out) {
+    out["ip"] = this->ip;
+    out["direction"] = this->direction;
 
-    root["clientNum"] = fusionServerInfo.clientNum;
-    if (fusionServerInfo.clientNum <= 0) {
-        root["fusionClientInfos"].resize(0);
-    } else {
-        Json::Value arrayFusionClientInfos = Json::arrayValue;
-        for (int i = 0; i < fusionServerInfo.fusionClientInfos.size(); i++) {
-            auto iter = fusionServerInfo.fusionClientInfos.at(i);
-            Json::Value item;
-            item["ip"] = iter.ip;
-            item["direction"] = iter.direction;
-            arrayFusionClientInfos.append(item);
-        }
-        root["fusionClientInfos"] = arrayFusionClientInfos;
-    }
-
-    out = fastWriter.write(root);
-    return 0;
+    return true;
 }
 
-int JsonMarshalLocalConnectInfo(LocalConnectInfo localConnectInfo, string &out) {
-    Json::FastWriter fastWriter;
-    Json::Value root;
+bool ServerClientInfo::JsonUnmarshal(Json::Value in) {
+    this->ip = in["ip"].asString();
+    this->direction = in["direction"].asInt();
 
-    root["isRun"] = localConnectInfo.isRun;
-    root["isFusionServerRun"] = localConnectInfo.isFusionServerRun;
-    root["isMerge"] = localConnectInfo.isMerge;
-    root["isMultiviewServerRun"] = localConnectInfo.isMultiviewServerRun;
-    root["isClientRun"] = localConnectInfo.isClientRun;
+    return true;
+}
 
-    out = fastWriter.write(root);
-    return 0;
+bool ServerInfo::JsonMarshal(Json::Value &out) {
+    out["ip"] = this->ip;
+    out["port"] = this->port;
+
+    Json::Value clients = Json::arrayValue;
+    if (!this->clients.empty()) {
+        for (auto iter:this->clients) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                clients.append(item);
+            }
+        }
+    } else {
+        clients.resize(0);
+    }
+    out["clients"] = clients;
+
+    return true;
+}
+
+bool ServerInfo::JsonUnmarshal(Json::Value in) {
+    this->ip = in["ip"].asString();
+    this->port = in["port"].asInt();
+
+    if (in["clients"].isArray()) {
+        Json::Value clients = in["clients"];
+        for (auto iter:clients) {
+            ServerClientInfo item;
+            if (item.JsonUnmarshal(iter)) {
+                this->clients.push_back(item);
+            }
+        }
+    }
+
+    return true;
+}
+
+bool CliInfo::JsonMarshal(Json::Value &out) {
+    out["serverIp"] = this->serverIp;
+    out["serverPort"] = this->serverPort;
+    out["isConnect"] = this->isConnect;
+    return true;
+}
+
+bool CliInfo::JsonUnmarshal(Json::Value in) {
+    this->serverIp = in["serverIp"].asString();
+    this->serverPort = in["serverPort"].asInt();
+    this->isConnect = in["isConnect"].asBool();
+
+    return true;
+}
+
+bool LocalInfo::JsonMarshal(Json::Value &out) {
+    Json::Value serverInfos = Json::arrayValue;
+    if (!this->serverInfos.empty()) {
+        for (auto iter:this->serverInfos) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                serverInfos.append(item);
+            }
+        }
+    } else {
+        serverInfos.resize(0);
+    }
+    out["serverInfos"] = serverInfos;
+
+    Json::Value cliInfos = Json::arrayValue;
+    if (!this->cliInfos.empty()) {
+        for (auto iter:this->cliInfos) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                cliInfos.append(item);
+            }
+        }
+    } else {
+        cliInfos.resize(0);
+    }
+    out["cliInfos"] = cliInfos;
+
+    return true;
+}
+
+bool LocalInfo::JsonUnmarshal(Json::Value in) {
+    if (in["serverInfos"].isArray()) {
+        Json::Value serverInfos = in["serverInfos"];
+        for (auto iter:serverInfos) {
+            ServerInfo item;
+            if (item.JsonUnmarshal(iter)) {
+                this->serverInfos.push_back(item);
+            }
+        }
+    }
+
+    if (in["cliInfos"].isArray()) {
+        Json::Value cliInfos = in["cliInfos"];
+        for (auto iter:cliInfos) {
+            CliInfo item;
+            if (item.JsonUnmarshal(iter)) {
+                this->cliInfos.push_back(item);
+            }
+        }
+    }
+
+    return true;
 }

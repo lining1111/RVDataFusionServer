@@ -60,7 +60,6 @@ set(SRC_DIRS ./
         ringBuffer
         common
         server
-        multiview
         client
         merge
         simpleini

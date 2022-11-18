@@ -12,12 +12,12 @@
 #include "common/common.h"
 #include "ringBuffer/RingBuffer.h"
 #include "Queue.h"
-
 using namespace std;
 using namespace common;
 
 class FusionClient {
 public:
+    void *super;
     string server_ip;
     unsigned int server_port;
     int sockfd = 0;
@@ -27,11 +27,6 @@ public:
     bool isRun = false;//运行标志
     timeval receive_time = {0, 0};
 
-
-    //用于发送
-    uint16_t sn_fusionServer_FusionData = 0;
-    uint16_t sn_multiviewServer_TrafficFlows = 0;
-    uint32_t deviceNo = 0x12345678;
 public:
     thread thread_recv;
     thread thread_processRecv;
@@ -53,12 +48,12 @@ private:
     uint8_t *pkgBuffer = nullptr;//分包缓冲
     int index = 0;//分包缓冲的索引
 public:
-    Queue<Pkg> queuePkg;//包消息队列
-    Queue<Pkg> queue_send;
+    Queue<Pkg, 1000> queuePkg;//包消息队列
+    Queue<Pkg, 1000> queue_send;
 
 public:
 
-    FusionClient(string server_ip, unsigned int server_port);
+    FusionClient(string server_ip, unsigned int server_port, void *super);
 
     ~FusionClient();
 

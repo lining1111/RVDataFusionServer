@@ -18,11 +18,10 @@
 using namespace common;
 using namespace z_log;
 
-FusionClient::FusionClient(string server_ip, unsigned int server_port) {
+FusionClient::FusionClient(string server_ip, unsigned int server_port, void *super) {
     this->server_ip = server_ip;
     this->server_port = server_port;
-    queuePkg.setMax(1000);
-    queue_send.setMax(1000);
+    this->super = super;
 }
 
 FusionClient::~FusionClient() {

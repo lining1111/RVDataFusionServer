@@ -24,118 +24,6 @@ namespace common {
         printf("\n");
     }
 
-    void
-    base64_encode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
-
-        if (input == nullptr || input_length == 0 || output == nullptr || output_length == nullptr) {
-            return;
-        }
-
-        const char encodeCharacterTable[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-        char buff1[3];
-        char buff2[4];
-        unsigned char i = 0, j;
-        unsigned int input_cnt = 0;
-        unsigned int output_cnt = 0;
-
-        while (input_cnt < input_length) {
-            buff1[i++] = input[input_cnt++];
-            if (i == 3) {
-                output[output_cnt++] = encodeCharacterTable[(buff1[0] & 0xfc) >> 2];
-                output[output_cnt++] = encodeCharacterTable[((buff1[0] & 0x03) << 4) + ((buff1[1] & 0xf0) >> 4)];
-                output[output_cnt++] = encodeCharacterTable[((buff1[1] & 0x0f) << 2) + ((buff1[2] & 0xc0) >> 6)];
-                output[output_cnt++] = encodeCharacterTable[buff1[2] & 0x3f];
-                i = 0;
-            }
-        }
-        if (i) {
-            for (j = i; j < 3; j++) {
-                buff1[j] = '\0';
-            }
-            buff2[0] = (buff1[0] & 0xfc) >> 2;
-            buff2[1] = ((buff1[0] & 0x03) << 4) + ((buff1[1] & 0xf0) >> 4);
-            buff2[2] = ((buff1[1] & 0x0f) << 2) + ((buff1[2] & 0xc0) >> 6);
-            buff2[3] = buff1[2] & 0x3f;
-            for (j = 0; j < (i + 1); j++) {
-                output[output_cnt++] = encodeCharacterTable[buff2[j]];
-            }
-            while (i++ < 3) {
-                output[output_cnt++] = '=';
-            }
-        }
-        output[output_cnt] = '\0';
-
-        *output_length = output_cnt;
-    }
-
-
-    void
-    base64_decode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length) {
-
-        if (input == nullptr || input_length == 0 || output == nullptr || output_length == nullptr) {
-            return;
-        }
-
-        const signed char decodeCharacterTable[256] = {
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
-                52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
-                -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
-                15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
-                -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-                41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-        };
-
-        char buff1[4];
-        char buff2[4];
-        unsigned char i = 0, j;
-        unsigned int input_cnt = 0;
-        unsigned int output_cnt = 0;
-
-        while (input_cnt < input_length) {
-            buff2[i] = input[input_cnt++];
-            if (buff2[i] == '=') {
-                break;
-            }
-            if (++i == 4) {
-                for (i = 0; i != 4; i++) {
-                    buff2[i] = decodeCharacterTable[buff2[i]];
-                }
-                output[output_cnt++] = (char) ((buff2[0] << 2) + ((buff2[1] & 0x30) >> 4));
-                output[output_cnt++] = (char) (((buff2[1] & 0xf) << 4) + ((buff2[2] & 0x3c) >> 2));
-                output[output_cnt++] = (char) (((buff2[2] & 0x3) << 6) + buff2[3]);
-                i = 0;
-            }
-        }
-        if (i) {
-            for (j = i; j < 4; j++) {
-                buff2[j] = '\0';
-            }
-            for (j = 0; j < 4; j++) {
-                buff2[j] = decodeCharacterTable[buff2[j]];
-            }
-            buff1[0] = (buff2[0] << 2) + ((buff2[1] & 0x30) >> 4);
-            buff1[1] = ((buff2[1] & 0xf) << 4) + ((buff2[2] & 0x3c) >> 2);
-            buff1[2] = ((buff2[2] & 0x3) << 6) + buff2[3];
-            for (j = 0; j < (i - 1); j++) {
-                output[output_cnt++] = (char) buff1[j];
-            }
-        }
-        *output_length = output_cnt;
-
-    }
-
-
     /*
  * 函数功能：产生uuid
  * 参数：无
@@ -235,411 +123,338 @@ namespace common {
         } else {
             return 0;
         }
-
     }
 
-    int JsonMarshalWatchData(WatchData watchData, string &out) {
-        Json::FastWriter fastWriter;
-        Json::Value root;
 
-        //root oprNum
-        root["oprNum"] = watchData.oprNum;
-        //root hardCode
-        root["hardCode"] = watchData.hardCode;
-        //root timstamp
-        root["timstamp"] = watchData.timstamp;
-        //root matrixNo
-        root["matrixNo"] = watchData.matrixNo;
-        //root cameraIp
-        root["cameraIp"] = watchData.cameraIp;
-        //root RecordDateTime
-        root["RecordDateTime"] = watchData.RecordDateTime;
-        //root isHasImage
-        root["isHasImage"] = watchData.isHasImage;
-        //root imageData
-        root["imageData"] = watchData.imageData;
-        //root direction
-        root["direction"] = watchData.direction;
+    bool AnnuciatorInfo::JsonMarshal(Json::Value &out) {
 
-        //root AnnuciatorInfo
-        if (!watchData.listAnnuciatorInfo.empty()) {
-            Json::Value arrayAnnuciatorInfo;
-            for (auto iter: watchData.listAnnuciatorInfo) {
-                Json::Value item;
-                // LightID
-                item["LightID"] = iter.LightID;
-                //Light
-                item["Light"] = iter.Light;
-                //RT
-                item["RT"] = iter.RT;
-                arrayAnnuciatorInfo.append(item);
-            }
-            root["AnnuciatorInfo"] = arrayAnnuciatorInfo;
-        }
+        out["LightID"] = this->LightID;
+        out["Light"] = this->Light;
+        out["RT"] = this->RT;
 
-        // root lstObjTarget
-        if (!watchData.lstObjTarget.empty()) {
-            Json::Value arrayObjTarget;
-            for (auto iter:watchData.lstObjTarget) {
-                Json::Value item;
-                //objID
-                item["objID"] = iter.objID;
-                //objCameraID
-                item["objCameraID"] = iter.objCameraID;
-                //objType
-                item["objType"] = iter.objType;
-                //plates
-                item["plates"] = iter.plates;
-                //plateColor
-                item["plateColor"] = iter.plateColor;
-                //left
-                item["left"] = iter.left;
-                //top
-                item["top"] = iter.top;
-                //right
-                item["right"] = iter.right;
-                //bottom
-                item["bottom"] = iter.bottom;
-                //locationX
-                item["locationX"] = iter.locationX;
-                //locationY
-                item["locationY"] = iter.locationY;
-                //distance
-                item["distance"] = iter.distance;
-                //angle
-                item["directionAngle"] = iter.directionAngle;
-//                //speed
-//                item["speed"] = iter.speed;
-                //speedX
-                item["speedX"] = iter.speedX;
-                //speedY
-                item["speedY"] = iter.speedY;
-                //longitude
-                item["longitude"] = iter.longitude;
-                //latitude
-                item["latitude"] = iter.latitude;
-
-                arrayObjTarget.append(item);
-            }
-            root["lstObjTarget"] = arrayObjTarget;
-        }
-
-        out = fastWriter.write(root);
-
-        return 0;
+        return true;
     }
 
-    int JsonUnmarshalWatchData(string in, WatchData &watchData) {
-        Json::Reader reader;
-        Json::Value root;
+    bool AnnuciatorInfo::JsonUnmarshal(Json::Value in) {
+        this->LightID = in["LightID"].asInt();
+        this->Light = in["Light"].asString();
+        this->RT = in["RT"].asInt();
 
-        if (!reader.parse(in, root, false)) {
-            cout << "not json drop" << endl;
-            return -1;
-        }
+        return true;
+    }
 
-        //oprNum
-        watchData.oprNum = root["oprNum"].asString();
-        //hardCode
-        watchData.hardCode = root["hardCode"].asString();
-        //timstamp
-        watchData.timstamp = root["timstamp"].asDouble();
-        //matrixNo
-        watchData.matrixNo = root["matrixNo"].asString();
-        //cameraIp
-        watchData.cameraIp = root["cameraIp"].asString();
-        //RecordDateTime
-        watchData.RecordDateTime = root["RecordDateTime"].asDouble();
-        //isHasImage
-        watchData.isHasImage = root["isHasImage"].asInt();
-        //imageData
-        watchData.imageData = root["imageData"].asString();
-        //direction
-        watchData.direction = root["direction"].asInt();
+    bool ObjTarget::JsonMarshal(Json::Value &out) {
+        out["objID"] = this->objID;
+        out["objCameraID"] = this->objCameraID;
+        out["objType"] = this->objType;
+        out["plates"] = this->plates;
+        out["plateColor"] = this->plateColor;
+        out["left"] = this->left;
+        out["top"] = this->top;
+        out["right"] = this->right;
+        out["bottom"] = this->bottom;
+        out["locationX"] = this->locationX;
+        out["locationY"] = this->locationY;
+        out["distance"] = this->distance;
+        out["directionAngle"] = this->directionAngle;
+        out["speedX"] = this->speedX;
+        out["speedY"] = this->speedY;
+        out["longitude"] = this->longitude;
+        out["latitude"] = this->latitude;
 
-        //AnnuciatorInfo
-        if (!root["AnnuciatorInfo"].isArray()) {
-//            cout << "json no AnnuciatorInfo" << endl;
+        return true;
+    }
+
+    bool ObjTarget::JsonUnmarshal(Json::Value in) {
+        this->objID = in["objID"].asInt();
+        this->objCameraID = in["objCameraID"].asInt();
+        this->objType = in["objType"].asInt();
+        this->plates = in["plates"].asString();
+        this->plateColor = in["plateColor"].asString();
+        this->left = in["left"].asInt();
+        this->top = in["top"].asInt();
+        this->right = in["right"].asInt();
+        this->bottom = in["bottom"].asInt();
+        this->locationX = in["locationX"].asDouble();
+        this->locationY = in["locationY"].asDouble();
+        this->distance = in["distance"].asString();
+        this->directionAngle = in["directionAngle"].asDouble();
+        this->speedX = in["speedX"].asDouble();
+        this->speedY = in["speedY"].asDouble();
+        this->longitude = in["longitude"].asDouble();
+        this->latitude = in["latitude"].asDouble();
+
+        return true;
+    }
+
+    bool WatchData::JsonMarshal(Json::Value &out) {
+
+        out["oprNum"] = this->oprNum;
+        out["hardCode"] = this->hardCode;
+        out["timstamp"] = this->timstamp;
+        out["matrixNo"] = this->matrixNo;
+        out["cameraIp"] = this->cameraIp;
+        out["RecordDateTime"] = this->RecordDateTime;
+        out["isHasImage"] = this->isHasImage;
+        out["imageData"] = this->imageData;
+        out["direction"] = this->direction;
+
+        Json::Value listAnnuciatorInfo = Json::arrayValue;
+        if (!this->listAnnuciatorInfo.empty()) {
+            for (auto iter:this->listAnnuciatorInfo) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    listAnnuciatorInfo.append(item);
+                }
+            }
         } else {
-            // AnnuciatorInfo list
-            for (auto iter: root["AnnuciatorInfo"]) {
+            listAnnuciatorInfo.resize(0);
+        }
+        out["listAnnuciatorInfo"] = listAnnuciatorInfo;
+
+        Json::Value lstObjTarget = Json::arrayValue;
+        if (!this->lstObjTarget.empty()) {
+            for (auto iter:this->lstObjTarget) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    lstObjTarget.append(item);
+                }
+            }
+        } else {
+            lstObjTarget.resize(0);
+        }
+        out["lstObjTarget"] = lstObjTarget;
+
+        return true;
+    }
+
+    bool WatchData::JsonUnmarshal(Json::Value in) {
+
+        this->oprNum = in["oprNum"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->matrixNo = in["matrixNo"].asString();
+        this->cameraIp = in["cameraIp"].asString();
+        this->RecordDateTime = in["RecordDateTime"].asDouble();
+        this->isHasImage = in["isHasImage"].asInt();
+        this->imageData = in["imageData"].asString();
+        this->direction = in["direction"].asInt();
+
+        if (in["listAnnuciatorInfo"].isArray()) {
+            Json::Value listAnnuciatorInfo = in["listAnnuciatorInfo"];
+            for (auto iter:listAnnuciatorInfo) {
                 AnnuciatorInfo item;
-                item.LightID = iter["LightID"].asInt();
-                item.Light = iter["Light"].asString();
-                item.RT = iter["RT"].asInt();
-
-                watchData.listAnnuciatorInfo.push_back(item);
+                if (item.JsonUnmarshal(iter)) {
+                    this->listAnnuciatorInfo.push_back(item);
+                }
             }
         }
 
-        //lstObjTarget
-        if (!root["lstObjTarget"].isArray()) {
-//            cout << "json no lstObjTarget" << endl;
-        } else {
-            // lstObjTarget list
-            for (auto iter: root["lstObjTarget"]) {
+        if (in["lstObjTarget"].isArray()) {
+            Json::Value lstObjTarget = in["lstObjTarget"];
+            for (auto iter:lstObjTarget) {
                 ObjTarget item;
-                item.objID = iter["objID"].asInt();
-                item.objCameraID = iter["objCameraID"].asInt();
-                item.objType = iter["objType"].asInt();
-                item.plates = iter["plates"].asString();
-                item.plateColor = iter["plateColor"].asString();
-                item.left = iter["left"].asInt();
-                item.top = iter["top"].asInt();
-                item.right = iter["right"].asInt();
-                item.bottom = iter["bottom"].asInt();
-                item.locationX = iter["locationX"].asDouble();
-                item.locationY = iter["locationY"].asDouble();
-                item.distance = iter["distance"].asString();
-                item.directionAngle = iter["directionAngle"].asDouble();
-//                item.speed = iter["speed"].asString();
-                item.speedX = iter["speedX"].asDouble();
-                item.speedY = iter["speedY"].asDouble();
-                item.longitude = iter["longitude"].asDouble();
-                item.latitude = iter["latitude"].asDouble();
-
-                watchData.lstObjTarget.push_back(item);
-            }
-        }
-
-        return 0;
-    }
-
-    int PkgWatchDataWithoutCRC(WatchData watchData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceData;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        JsonMarshalWatchData(watchData, jsonStr);
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
-
-        pkg.head.len = len;
-
-        return 0;
-    }
-
-    int JsonMarshalFusionData(FusionData fusionData, string &out) {
-        Json::FastWriter fastWriter;
-        Json::Value root;
-
-        //root oprNum
-        root["oprNum"] = fusionData.oprNum;
-        //root timstamp
-        root["timstamp"] = fusionData.timstamp;
-        //root crossID
-        root["crossID"] = fusionData.crossID;
-        //root isHasImage
-        root["isHasImage"] = fusionData.isHasImage;
-//        //root imageData
-//        root["imageData"] = fusionData.imageData;
-
-        //root lstVideos
-        if (!fusionData.lstVideos.empty()) {
-            Json::Value arrayVideos;
-            for (auto iter1:fusionData.lstVideos) {
-                Json::Value itemVideos;
-                //rvHardCode
-                itemVideos["rvHardCode"] = iter1.rvHardCode;
-                //imageData
-                itemVideos["imageData"] = iter1.imageData;
-
-                //lstVideoTargets
-                if (!iter1.lstVideoTargets.empty()) {
-                    Json::Value arrayVideoTargets;
-                    for (auto iter2:iter1.lstVideoTargets) {
-                        Json::Value itemVideoTargets;
-                        //cameraObjID
-                        itemVideoTargets["cameraObjID"] = iter2.cameraObjID;
-                        //left
-                        itemVideoTargets["left"] = iter2.left;
-                        //top
-                        itemVideoTargets["top"] = iter2.top;
-                        //right
-                        itemVideoTargets["right"] = iter2.right;
-                        //bottom
-                        itemVideoTargets["bottom"] = iter2.bottom;
-
-                        arrayVideoTargets.append(itemVideoTargets);
-                    }
-                    itemVideos["lstVideoTargets"] = arrayVideoTargets;
-                } else {
-                    itemVideos["lstVideoTargets"].resize(0);
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstObjTarget.push_back(item);
                 }
-                arrayVideos.append(itemVideos);
             }
-            root["lstVideos"] = arrayVideos;
-        } else {
-            root["lstVideos"].resize(0);
         }
 
-        // root lstObjTarget
-        if (!fusionData.lstObjTarget.empty()) {
-            Json::Value arrayObjTarget;
-            for (auto iter:fusionData.lstObjTarget) {
+        return true;
+    }
+
+    bool RvWayObject::JsonMarshal(Json::Value &out) {
+        out["wayNo"] = this->wayNo;
+        out["roID"] = this->roID;
+        out["voID"] = this->voID;
+        return true;
+    }
+
+    bool RvWayObject::JsonUnmarshal(Json::Value in) {
+        this->wayNo = in["wayNo"].asInt();
+        this->roID = in["roID"].asInt();
+        this->voID = in["voID"].asInt();
+        return true;
+    }
+
+    bool VideoTargets::JsonMarshal(Json::Value &out) {
+        out["cameraObjID"] = this->cameraObjID;
+        out["left"] = this->left;
+        out["top"] = this->top;
+        out["right"] = this->right;
+        out["bottom"] = this->bottom;
+        return true;
+    }
+
+    bool VideoTargets::JsonUnmarshal(Json::Value in) {
+        this->cameraObjID = in["cameraObjID"].asInt();
+        this->left = in["left"].asInt();
+        this->top = in["top"].asInt();
+        this->right = in["right"].asInt();
+        this->bottom = in["bottom"].asInt();
+        return true;
+    }
+
+    bool VideoData::JsonMarshal(Json::Value &out) {
+        //rvHardCode
+        out["rvHardCode"] = this->rvHardCode;
+        //imageData
+        out["imageData"] = this->imageData;
+
+        Json::Value lstVideoTargets = Json::arrayValue;
+        if (!this->lstVideoTargets.empty()) {
+            for (auto iter:this->lstVideoTargets) {
                 Json::Value item;
-                //objID
-                item["objID"] = iter.objID;
-                //cameraObjID
-//                item["cameraObjID"] = iter.cameraObjID;
-                if (!iter.listRvWayObject.empty()) {
-                    Json::Value arrayObjTarget1;
-                    for (auto iter1:iter.listRvWayObject) {
-                        Json::Value item1;
-                        //wayNo
-                        item1["wayNo"] = iter1.wayNo;
-                        //roID
-                        item1["roID"] = iter1.roID;
-                        //voID
-                        item1["voID"] = iter1.voID;
-                        arrayObjTarget1.append(item1);
-                    }
-                    item["rvWayObject"] = arrayObjTarget1;
-                } else {
-                    item["rvWayObject"].resize(0);
+                if (iter.JsonMarshal(item)) {
+                    lstVideoTargets.append(item);
                 }
-
-                //objType
-                item["objType"] = iter.objType;
-                //objColor
-                item["objColor"] = iter.objColor;
-                //plates
-                item["plates"] = iter.plates;
-                //plateColor
-                item["plateColor"] = iter.plateColor;
-//                //left
-//                item["left"] = iter.left;
-//                //top
-//                item["top"] = iter.top;
-//                //right
-//                item["right"] = iter.right;
-//                //bottom
-//                item["bottom"] = iter.bottom;
-                //distance
-                item["distance"] = iter.distance;
-                //angle
-                item["angle"] = iter.angle;
-                //speed
-                item["speed"] = iter.speed;
-                //locationX
-                item["locationX"] = iter.locationX;
-                //locationY
-                item["locationY"] = iter.locationY;
-                //longitude
-                item["longitude"] = iter.longitude;
-                //latitude
-                item["latitude"] = iter.latitude;
-                item["flagNew"] = iter.flagNew;
-
-                arrayObjTarget.append(item);
             }
-            root["lstObjTarget"] = arrayObjTarget;
         } else {
-            root["lstObjTarget"].resize(0);
+            lstVideoTargets.resize(0);
         }
+        out["lstVideoTargets"] = lstVideoTargets;
 
-        out = fastWriter.write(root);
-
-        return 0;
+        return true;
     }
 
-    int JsonUnmarshalFusionData(string in, FusionData &fusionData) {
-        Json::Reader reader;
-        Json::Value root;
+    bool VideoData::JsonUnmarshal(Json::Value in) {
+        this->rvHardCode = in["rvHardCode"].asString();
+        this->imageData = in["imageData"].asString();
 
-        if (!reader.parse(in, root, false)) {
-            cout << "not json drop" << endl;
-            return -1;
-        }
-
-        //oprNum
-        fusionData.oprNum = root["oprNum"].asString();
-        //timstamp
-        fusionData.timstamp = root["timstamp"].asDouble();
-        //crossID
-        fusionData.crossID = root["crossID"].asString();
-        //isHasImage
-        fusionData.isHasImage = root["isHasImage"].asInt();
-//        //imageData
-//        fusionData.imageData = root["imageData"].asString();
-
-        //lstVideos
-        if (!root["lstVideos"].isArray()) {
-            cout << "json no lstVideos" << endl;
-        } else {
-            for (auto iter:root["lstVideos"]) {
-                VideoData itemVideoData;
-                itemVideoData.rvHardCode = iter["rvHardCode"].asString();
-                itemVideoData.imageData = iter["imageData"].asString();
-                if (iter["lstVideoTargets"].isArray()) {
-                    for (auto iter2:iter["lstVideoTargets"]) {
-                        VideoTargets itemVideoTargets;
-                        itemVideoTargets.cameraObjID = iter2["cameraObjID"].asInt();
-                        itemVideoTargets.left = iter2["left"].asInt();
-                        itemVideoTargets.top = iter2["top"].asInt();
-                        itemVideoTargets.right = iter2["right"].asInt();
-                        itemVideoTargets.bottom = iter2["bottom"].asInt();
-
-                        itemVideoData.lstVideoTargets.push_back(itemVideoTargets);
-                    }
+        if (in["lstVideoTargets"].isArray()) {
+            Json::Value lstVideoTargets = in["lstVideoTargets"];
+            for (auto iter:lstVideoTargets) {
+                VideoTargets item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstVideoTargets.push_back(item);
                 }
-                fusionData.lstVideos.push_back(itemVideoData);
+            }
+        }
+        return true;
+    }
+
+    bool ObjMix::JsonMarshal(Json::Value &out) {
+        out["objID"] = this->objID;
+        out["objType"] = this->objType;
+        out["objColor"] = this->objColor;
+        out["plates"] = this->plates;
+        out["plateColor"] = this->plateColor;
+        out["distance"] = this->distance;
+        out["angle"] = this->angle;
+        out["speed"] = this->speed;
+        out["locationX"] = this->locationX;
+        out["locationY"] = this->locationY;
+        out["longitude"] = this->longitude;
+        out["latitude"] = this->latitude;
+        out["flagNew"] = this->flagNew;
+
+        Json::Value listRvWayObject = Json::arrayValue;
+        if (!this->listRvWayObject.empty()) {
+            for (auto iter:this->listRvWayObject) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    listRvWayObject.append(item);
+                }
+            }
+        } else {
+            listRvWayObject.resize(0);
+        }
+        out["listRvWayObject"] = listRvWayObject;
+
+        return false;
+    }
+
+    bool ObjMix::JsonUnmarshal(Json::Value in) {
+        this->objID = in["objID"].asInt();
+        this->objType = in["objType"].asInt();
+        this->objColor = in["objColor"].asInt();
+        this->plates = in["plates"].asString();
+        this->plateColor = in["plateColor"].asString();
+        this->distance = in["distance"].asFloat();
+        this->angle = in["angle"].asFloat();
+        this->speed = in["speed"].asFloat();
+        this->locationX = in["locationX"].asDouble();
+        this->locationY = in["locationY"].asDouble();
+        this->longitude = in["longitude"].asDouble();
+        this->latitude = in["latitude"].asDouble();
+        this->flagNew = in["flagNew"].asInt();
+
+        if (in["listRvWayObject"].isArray()) {
+            Json::Value listRvWayObject = in["listRvWayObject"];
+            for (auto iter:listRvWayObject) {
+                RvWayObject item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->listRvWayObject.push_back(item);
+                }
             }
         }
 
+        return false;
+    }
 
-        //lstObjTarget
-        if (!root["lstObjTarget"].isArray()) {
-            cout << "json no lstObjTarget" << endl;
+    bool FusionData::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timstamp"] = this->timstamp;
+        out["crossID"] = this->crossID;
+        out["isHasImage"] = this->isHasImage;
+
+        Json::Value lstObjTarget = Json::arrayValue;
+        if (!this->lstObjTarget.empty()) {
+            for (auto iter:this->lstObjTarget) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    lstObjTarget.append(item);
+                }
+            }
         } else {
-            // lstObjTarget list
-            for (auto iter: root["lstObjTarget"]) {
+            lstObjTarget.resize(0);
+        }
+        out["lstObjTarget"] = lstObjTarget;
+
+        Json::Value lstVideos = Json::arrayValue;
+        if (!this->lstVideos.empty()) {
+            for (auto iter:this->lstVideos) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    lstVideos.append(item);
+                }
+            }
+        } else {
+            lstVideos.resize(0);
+        }
+        out["lstVideos"] = lstVideos;
+
+        return true;
+    }
+
+    bool FusionData::JsonUnmarshal(Json::Value in) {
+
+        this->oprNum = in["oprNum"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->isHasImage = in["isHasImage"].asInt();
+
+        if (in["lstObjTarget"].isArray()) {
+            Json::Value lstObjTarget = in["lstObjTarget"];
+            for (auto iter:lstObjTarget) {
                 ObjMix item;
-                item.objID = iter["objID"].asInt();
-
-                if (iter["rvWayObject"].isArray()) {
-                    for (auto iter1:iter["rvWayObject"]) {
-                        RvWayObject itemRvWayObject;
-                        itemRvWayObject.wayNo = iter1["wayNo"].asInt();
-                        itemRvWayObject.roID = iter1["roID"].asInt();
-                        itemRvWayObject.voID = iter1["voID"].asInt();
-                        item.listRvWayObject.push_back(itemRvWayObject);
-                    }
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstObjTarget.push_back(item);
                 }
-//                item.cameraObjID = iter["cameraObjID"].asInt();
-                item.objType = iter["objType"].asInt();
-                item.objColor = iter["objColor"].asInt();
-                item.plates = iter["plates"].asString();
-                item.plateColor = iter["plateColor"].asString();
-//                item.left = iter["left"].asInt();
-//                item.top = iter["top"].asInt();
-//                item.right = iter["right"].asInt();
-//                item.bottom = iter["bottom"].asInt();
-                item.distance = iter["distance"].asFloat();
-                item.angle = iter["angle"].asFloat();
-                item.speed = iter["speed"].asFloat();
-                item.locationX = iter["locationX"].asDouble();
-                item.locationY = iter["locationY"].asDouble();
-                item.longitude = iter["longitude"].asDouble();
-                item.latitude = iter["latitude"].asDouble();
-                item.flagNew = iter["flagNew"].asInt();
-
-
-                fusionData.lstObjTarget.push_back(item);
             }
         }
 
-        return 0;
+        if (in["lstVideos"].isArray()) {
+            Json::Value lstVideos = in["lstVideos"];
+            for (auto iter:lstVideos) {
+                VideoData item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstVideos.push_back(item);
+                }
+            }
+        }
+
+        return true;
     }
 
     int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
@@ -654,7 +469,10 @@ namespace common {
         len += sizeof(pkg.head);
         //正文
         string jsonStr;
-        JsonMarshalFusionData(fusionData, jsonStr);
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        fusionData.JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
         pkg.body = jsonStr;
         len += jsonStr.length();
         //校验,可以先不设置，等待组包的时候更新
@@ -666,210 +484,115 @@ namespace common {
         return 0;
     }
 
-    int JsonMarshalTrafficFlow(TrafficFlow trafficFlow, string &out) {
-        Json::FastWriter fastWriter;
-        Json::Value root;
+    bool FlowData::JsonMarshal(Json::Value &out) {
+        out["laneCode"] = this->laneCode;
+        out["laneDirection"] = this->laneDirection;
+        out["flowDirection"] = this->flowDirection;
+        out["inCars"] = this->inCars;
+        out["inAverageSpeed"] = this->inAverageSpeed;
+        out["outCars"] = this->outCars;
+        out["outAverageSpeed"] = this->outAverageSpeed;
+        out["queueLen"] = this->queueLen;
+        out["queueCars"] = this->queueCars;
+        return true;
+    }
 
-        //root oprNum
-        root["oprNum"] = trafficFlow.oprNum;
-        //root hardCode
-        root["hardCode"] = trafficFlow.hardCode;
-        //root timstamp
-        root["timstamp"] = trafficFlow.timstamp;
-        //root crossCode
-        root["crossCode"] = trafficFlow.crossCode;
+    bool FlowData::JsonUnmarshal(Json::Value in) {
+        this->laneCode = in["laneCode"].asString();
+        this->laneDirection = in["laneDirection"].asInt();
+        this->flowDirection = in["flowDirection"].asInt();
+        this->inCars = in["inCars"].asInt();
+        this->inAverageSpeed = in["inAverageSpeed"].asDouble();
+        this->outCars = in["outCars"].asInt();
+        this->outAverageSpeed = in["outAverageSpeed"].asDouble();
+        this->queueLen = in["queueLen"].asInt();
+        this->queueCars = in["queueCars"].asInt();
+        return true;
+    }
 
-        //root flowData
-        if (!trafficFlow.flowData.empty()) {
-            Json::Value arrayFlowData;
-            for (auto iter:trafficFlow.flowData) {
+    bool TrafficFlow::JsonMarshal(Json::Value &out) {
+
+        out["oprNum"] = this->oprNum;
+        out["hardCode"] = this->hardCode;
+        out["timstamp"] = this->timstamp;
+        out["crossCode"] = this->crossCode;
+
+        Json::Value flowData = Json::arrayValue;
+        if (!this->flowData.empty()) {
+            for (auto iter:this->flowData) {
                 Json::Value item;
-                item["laneCode"] = iter.laneCode;
-                item["laneDirection"] = iter.laneDirection;
-                item["flowDirection"] = iter.flowDirection;
-                item["inCars"] = iter.inCars;
-                item["inAverageSpeed"] = iter.inAverageSpeed;
-                item["outCars"] = iter.outCars;
-                item["outAverageSpeed"] = iter.outAverageSpeed;
-                item["queueLen"] = iter.queueLen;
-                item["queueCars"] = iter.queueCars;
-
-                arrayFlowData.append(item);
+                if (iter.JsonMarshal(item)) {
+                    flowData.append(item);
+                }
             }
-            root["flowData"] = arrayFlowData;
         } else {
-            root["flowData"].resize(0);
+            flowData.resize(0);
         }
+        out["flowData"] = flowData;
 
-        out = fastWriter.write(root);
-        return 0;
+        return true;
     }
 
-    int JsonUnmarshalTrafficFlow(string in, TrafficFlow &trafficFlow) {
-        Json::Reader reader;
-        Json::Value root;
+    bool TrafficFlow::JsonUnmarshal(Json::Value in) {
 
-        if (!reader.parse(in, root, false)) {
-            cout << "not json drop" << endl;
-            return -1;
-        }
+        this->oprNum = in["oprNum"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossCode = in["crossCode"].asString();
 
-        //oprNum
-        trafficFlow.oprNum = root["oprNum"].asString();
-        //hardCode
-        trafficFlow.hardCode = root["hardCode"].asString();
-        //timstamp
-        trafficFlow.timstamp = root["timstamp"].asDouble();
-        //crossCode
-        trafficFlow.crossCode = root["crossCode"].asString();
-
-        if (!root["flowData"].isArray()) {
-
-        } else {
-            for (auto iter:root["flowData"]) {
-                FlowData flowData;
-                flowData.laneCode = iter["laneCode"].asString();
-                flowData.laneDirection = iter["laneDirection"].asInt();
-                flowData.flowDirection = iter["flowDirection"].asInt();
-                flowData.inCars = iter["inCars"].asInt();
-                flowData.inAverageSpeed = iter["inAverageSpeed"].asDouble();
-                flowData.outCars = iter["outCars"].asInt();
-                flowData.outAverageSpeed = iter["outAverageSpeed"].asDouble();
-                flowData.queueLen = iter["queueLen"].asInt();
-                flowData.queueCars = iter["queueCars"].asInt();
-
-                trafficFlow.flowData.push_back(flowData);
+        if (in["flowData"].isArray()) {
+            Json::Value flowData = in["flowData"];
+            for (auto iter:flowData) {
+                FlowData item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->flowData.push_back(item);
+                }
             }
         }
 
-        return 0;
+        return true;
     }
 
-    int JsonMarshalTrafficFlows(TrafficFlows trafficFlows, string &out) {
-        Json::FastWriter fastWriter;
-        Json::Value root;
+    bool TrafficFlows::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timstamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["recordDateTime"] = this->recordDateTime;
 
-        //root oprNum
-        root["oprNum"] = trafficFlows.oprNum;
-        //root crossID
-        root["crossID"] = trafficFlows.crossID;
-        //root timestamp
-        root["timestamp"] = trafficFlows.timestamp;
-        root["recordDateTime"] = "";
-
-        if (!trafficFlows.trafficFlow.empty()) {
-            Json::Value arrayTrafficFlow;
-//            for (auto iter:trafficFlows.trafficFlow) {
-//                Json::Value item;
-//                item["hardCode"] = iter.hardCode;
-//                item["crossCode"] = iter.crossCode;
-//                if (!iter.flowData.empty()) {
-//                    Json::Value arrayFlowData;
-//                    for (auto iter1:iter.flowData) {
-//                        Json::Value item1;
-//                        item1["laneCode"] = iter1.laneCode;
-//                        item1["laneDirection"] = iter1.laneDirection;
-//                        item1["flowDirection"] = iter1.flowDirection;
-//                        item1["inCars"] = iter1.inCars;
-//                        item1["inAverageSpeed"] = iter1.inAverageSpeed;
-//                        item1["outCars"] = iter1.outCars;
-//                        item1["outAverageSpeed"] = iter1.outAverageSpeed;
-//                        item1["queueLen"] = iter1.queueLen;
-//                        item1["queueCars"] = iter1.queueCars;
-//
-//                        arrayFlowData.append(item1);
-//                    }
-//                    item["flowData"] = arrayFlowData;
-//                } else {
-//                    item["flowData"].resize(0);
-//                }
-
-            for (auto iter:trafficFlows.trafficFlow) {
+        Json::Value trafficFlow = Json::arrayValue;
+        if (!this->trafficFlow.empty()) {
+            for (auto iter:this->trafficFlow) {
                 Json::Value item;
-                item["laneCode"] = iter.laneCode;
-                item["laneDirection"] = iter.laneDirection;
-                item["flowDirection"] = iter.flowDirection;
-                item["inCars"] = iter.inCars;
-                item["inAverageSpeed"] = iter.inAverageSpeed;
-                item["outCars"] = iter.outCars;
-                item["outAverageSpeed"] = iter.outAverageSpeed;
-                item["queueLen"] = iter.queueLen;
-                item["queueCars"] = iter.queueCars;
-
-                arrayTrafficFlow.append(item);;
+                if (iter.JsonMarshal(item)) {
+                    trafficFlow.append(item);
+                }
             }
-            root["trafficFlow"] = arrayTrafficFlow;
         } else {
-            root["trafficFlow"].resize(0);
+            trafficFlow.resize(0);
         }
+        out["trafficFlow"] = trafficFlow;
 
-        out = fastWriter.write(root);
-
-        return 0;
+        return true;
     }
 
-    int JsonUnmarshalTrafficFlows(string in, TrafficFlows &trafficFlows) {
-        Json::Reader reader;
-        Json::Value root;
+    bool TrafficFlows::JsonUnmarshal(Json::Value in) {
 
-        if (!reader.parse(in, root, false)) {
-            cout << "not json drop" << endl;
-            return -1;
-        }
+        this->oprNum = in["oprNum"].asString();
+        this->crossID = in["crossID"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->recordDateTime = in["recordDateTime"].asString();
 
-        //oprNum
-        trafficFlows.oprNum = root["oprNum"].asString();
-        //crossID
-        trafficFlows.crossID = root["crossID"].asString();
-        //timstamp
-        trafficFlows.timestamp = root["timestamp"].asDouble();
-        trafficFlows.recordDateTime = root["recordDateTime"].asString();
-
-        if (!root["trafficFlow"].isArray()) {
-
-        } else {
-//            for (auto iter:root["trafficFlow"]) {
-//
-//                OneRoadTrafficFlow oneRoadTrafficFlow;
-//                oneRoadTrafficFlow.hardCode = iter["hardCode"].asString();
-//                oneRoadTrafficFlow.crossCode = iter["corssCode"].asString();
-//                if (iter["flowData"].isArray()) {
-//                    for (auto iter1:iter["flowData"]) {
-//                        FlowData flowData;
-//                        flowData.laneCode = iter1["laneCode"].asString();
-//                        flowData.laneDirection = iter1["laneDirection"].asInt();
-//                        flowData.flowDirection = iter1["flowDirection"].asInt();
-//                        flowData.inCars = iter1["inCars"].asInt();
-//                        flowData.inAverageSpeed = iter1["inAverageSpeed"].asDouble();
-//                        flowData.outCars = iter1["outCars"].asInt();
-//                        flowData.outAverageSpeed = iter1["outAverageSpeed"].asDouble();
-//                        flowData.queueLen = iter1["queueLen"].asInt();
-//                        flowData.queueCars = iter1["queueCars"].asInt();
-//
-//                        oneRoadTrafficFlow.flowData.push_back(flowData);
-//                    }
-//                }
-//
-//                trafficFlows.trafficFlow.push_back(oneRoadTrafficFlow);
-//            }
-            for (auto iter:root["trafficFlow"]) {
-                FlowData flowData;
-                flowData.laneCode = iter["laneCode"].asString();
-                flowData.laneDirection = iter["laneDirection"].asInt();
-                flowData.flowDirection = iter["flowDirection"].asInt();
-                flowData.inCars = iter["inCars"].asInt();
-                flowData.inAverageSpeed = iter["inAverageSpeed"].asDouble();
-                flowData.outCars = iter["outCars"].asInt();
-                flowData.outAverageSpeed = iter["outAverageSpeed"].asDouble();
-                flowData.queueLen = iter["queueLen"].asInt();
-                flowData.queueCars = iter["queueCars"].asInt();
-
-                trafficFlows.trafficFlow.push_back(flowData);
+        if (in["trafficFlow"].isArray()) {
+            Json::Value trafficFlow = in["trafficFlow"];
+            for (auto iter:trafficFlow) {
+                FlowData item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->trafficFlow.push_back(item);
+                }
             }
-
         }
 
-        return 0;
+        return true;
     }
 
     int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
@@ -884,7 +607,10 @@ namespace common {
         len += sizeof(pkg.head);
         //正文
         string jsonStr;
-        JsonMarshalTrafficFlows(trafficFlows, jsonStr);
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        trafficFlows.JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
         pkg.body = jsonStr;
         len += jsonStr.length();
         //校验,可以先不设置，等待组包的时候更新
@@ -896,89 +622,87 @@ namespace common {
         return 0;
     }
 
-    int JsonMarshalMultiViewCarTrack(MultiViewCarTrack multiViewCarTrack, string &out) {
-        Json::FastWriter fastWriter;
-        Json::Value root;
-
-        //root oprNum
-        root["oprNum"] = multiViewCarTrack.oprNum;
-        //root hardCode
-        root["hardCode"] = multiViewCarTrack.hardCode;
-        //root timestamp
-        root["timstamp"] = multiViewCarTrack.timstamp;
-        //root crossCode
-        root["crossCode"] = multiViewCarTrack.crossCode;
-        //root ip
-        root["ip"] = multiViewCarTrack.ip;
-        //root type
-        root["type"] = multiViewCarTrack.type;
-
-        //root lstObj
-        Json::Value lstObj = Json::arrayValue;
-
-        for (auto iter:multiViewCarTrack.lstObj) {
-            Json::Value item;
-            item["id"] = iter.id;
-            item["type"] = iter.type;
-            item["cameraDirection"] = iter.cameraDirection;
-            item["x1"] = iter.x1;
-            item["y1"] = iter.y1;
-            item["x2"] = iter.x2;
-            item["y2"] = iter.y2;
-            item["latitude"] = iter.latitude;
-            item["longitude"] = iter.longitude;
-            item["laneCode"] = iter.laneCode;
-            item["speed"] = iter.speed;
-            item["timeHeadway"] = iter.timeHeadway;
-            item["plateNumber"] = iter.plateNumber;
-            item["plateColor"] = iter.plateColor;
-
-            lstObj.append(item);
-        }
-
-        root["lstObj"] = lstObj;
-
-        out = fastWriter.write(root);
-        return 0;
+    bool CarTrack::JsonMarshal(Json::Value &out) {
+        out["id"] = this->id;
+        out["type"] = this->type;
+        out["cameraDirection"] = this->cameraDirection;
+        out["x1"] = this->x1;
+        out["y1"] = this->y1;
+        out["x2"] = this->x2;
+        out["y2"] = this->y2;
+        out["latitude"] = this->latitude;
+        out["longitude"] = this->longitude;
+        out["laneCode"] = this->laneCode;
+        out["speed"] = this->speed;
+        out["timeHeadway"] = this->timeHeadway;
+        out["plateNumber"] = this->plateNumber;
+        out["plateColor"] = this->plateColor;
+        return true;
     }
 
-    int JsonUnmarshalMultiViewCarTrack(string in, MultiViewCarTrack &multiViewCarTrack) {
-        Json::Reader reader;
-        Json::Value root;
-        if (!reader.parse(in, root, false)) {
-            return -1;
-        }
-        multiViewCarTrack.oprNum = root["oprNum"].asString();
-        multiViewCarTrack.hardCode = root["hardCode"].asString();
-        multiViewCarTrack.timstamp = root["timstamp"].asDouble();
-        multiViewCarTrack.crossCode = root["crossCode"].asString();
-        multiViewCarTrack.ip = root["ip"].asString();
-        multiViewCarTrack.type = root["type"].asInt();
+    bool CarTrack::JsonUnmarshal(Json::Value in) {
+        this->id = in["id"].asInt();
+        this->type = in["type"].asInt();
+        this->cameraDirection = in["cameraDirection"].asInt();
+        this->x1 = in["x1"].asInt();
+        this->y1 = in["y1"].asInt();
+        this->x2 = in["x2"].asInt();
+        this->y2 = in["y2"].asInt();
+        this->latitude = in["latitude"].asInt();
+        this->longitude = in["longitude"].asInt();
+        this->laneCode = in["laneCode"].asString();
+        this->speed = in["speed"].asInt();
+        this->timeHeadway = in["timeHeadway"].asInt();
+        this->plateNumber = in["plateNumber"].asString();
+        this->plateColor = in["plateColor"].asString();
+        return true;
+    }
 
-        if (root["lstObj"].isArray()) {
-            Json::Value lstObj = root["lstObj"];
+    bool MultiViewCarTrack::JsonMarshal(Json::Value &out) {
+
+        out["oprNum"] = this->oprNum;
+        out["hardCode"] = this->hardCode;
+        out["timstamp"] = this->timstamp;
+        out["crossCode"] = this->crossCode;
+        out["ip"] = this->ip;
+        out["type"] = this->type;
+
+        Json::Value lstObj = Json::arrayValue;
+        if (!this->lstObj.empty()) {
+            for (auto iter:this->lstObj) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    lstObj.append(item);
+                }
+            }
+        } else {
+            lstObj.resize(0);
+        }
+
+        out["lstObj"] = lstObj;
+
+        return true;
+    }
+
+    bool MultiViewCarTrack::JsonUnmarshal(Json::Value in) {
+
+        this->oprNum = in["oprNum"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossCode = in["crossCode"].asString();
+        this->ip = in["ip"].asString();
+        this->type = in["type"].asInt();
+
+        if (in["lstObj"].isArray()) {
+            Json::Value lstObj = in["lstObj"];
             for (auto iter:lstObj) {
                 CarTrack item;
-                item.id = iter["id"].asInt();
-                item.type = iter["type"].asInt();
-                item.cameraDirection = iter["cameraDirection"].asInt();
-                item.x1 = iter["x1"].asInt();
-                item.y1 = iter["y1"].asInt();
-                item.x2 = iter["x2"].asInt();
-                item.y2 = iter["y2"].asInt();
-                item.latitude = iter["latitude"].asInt();
-                item.longitude = iter["longitude"].asInt();
-                item.laneCode = iter["laneCode"].asString();
-                item.speed = iter["speed"].asInt();
-                item.timeHeadway = iter["timeHeadway"].asInt();
-                item.plateNumber = iter["plateNumber"].asString();
-                item.plateColor = iter["plateColor"].asString();
-
-                multiViewCarTrack.lstObj.push_back(item);
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstObj.push_back(item);
+                }
             }
         }
-
-        return 0;
+        return true;
     }
 
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
@@ -1051,9 +775,6 @@ namespace common {
 
         return true;
     }
-
-
-
 
     bool TrafficFlowLineup::JsonUnmarshal(Json::Value in) {
         this->LaneID = in["LaneID"].asInt();
@@ -1156,6 +877,7 @@ namespace common {
 
         return true;
     }
+
     int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;
         //1.头部
@@ -1182,5 +904,46 @@ namespace common {
         pkg.head.len = len;
 
         return 0;
+    }
+
+    bool MultiViewCarTracks::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["recordDateTime"] = this->recordDateTime;
+
+        Json::Value lstObj = Json::arrayValue;
+        if (!this->lstObj.empty()) {
+            for (auto iter:this->lstObj) {
+                Json::Value item;
+                if (iter.JsonMarshal(item)) {
+                    lstObj.append(item);
+                }
+            }
+        } else {
+            lstObj.resize(0);
+        }
+
+        out["lstObj"] = lstObj;
+
+        return true;
+    }
+
+    bool MultiViewCarTracks::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->recordDateTime = in["recordDateTime"].asString();
+
+        if (in["lstObj"].isArray()) {
+            Json::Value lstObj = in["lstObj"];
+            for (auto iter:lstObj) {
+                CarTrack item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->lstObj.push_back(item);
+                }
+            }
+        }
+        return true;
     }
 }

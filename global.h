@@ -6,13 +6,11 @@
 #define _GLOBAL_H
 
 #include <server/FusionServer.h>
-#include <multiview/MultiviewServer.h>
 #include <client/FusionClient.h>
 
 typedef struct {
-    FusionServer *server;
-    MultiviewServer *multiviewServer;
-    FusionClient *client;
+    std::vector<FusionServer *> serverList;
+    std::vector<FusionClient *> clientList;
     bool isRun;
 } Local;
 

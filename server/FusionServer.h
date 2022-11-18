@@ -44,7 +44,6 @@ public:
     const timeval checkStatusTimeval = {3, 0};//连续3s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
 
-
     int sock = 0;//服务器socket
     //已连入的客户端列表
     vector<ClientInfo *> vectorClient;
@@ -59,12 +58,15 @@ public:
 #define MaxRoadNum 4 //最多有多少路
 
 //---------------监控数据相关---------//
-    int maxQueueObjs = 30;//最大缓存融合数据量
-    Queue<OBJS> queueObjs;//在同一帧的多路数据
 
-    const uint8_t thresholdFrame = 100;//不同路时间戳相差门限，单位ms
-    uint64_t curTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
-    uint64_t xRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
+    Queue<WatchData,60> watchDatas[MaxRoadNum];
+
+    Queue<OBJS, 30> queueObjs;//在同一帧的多路数据
+
+    const uint8_t watchDatasThresholdFrame = 100;//不同路时间戳相差门限，单位ms
+    uint64_t watchDatasCurTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
+    uint64_t watchDatasXRoadTimestamp[MaxRoadNum] = {0, 0, 0, 0};//多路取同一帧时，第N路的时间戳
+    string watchDatasCrossID;//路口编号
 
     uint64_t curTimeDistance = 0;
     uint64_t timeDistance = 0;
@@ -74,10 +76,10 @@ public:
         vector<OBJECT_INFO_NEW> obj;//融合输出量
         OBJS objInput;//融合输入量
     } MergeData;
-    int maxQueueMergeData = 30;//最大缓存融合数据量
-    Queue<MergeData> queueMergeData;//融合后的数据
-
+    Queue<MergeData, 30> queueMergeData;//融合后的数据
+    int sn_FusionData = 0;
     //临时变量，用于融合 输出的物体检测从第1帧开始，上上帧拿上帧的，上帧拿这次输出结果。航向角则是从第2帧开始，上上帧拿上帧的，上帧拿这次输出结果
+
     int frame = 1;//帧计数
     uint32_t frameCount = 0;//测试用帧计数
     vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
@@ -85,7 +87,6 @@ public:
     double l1_angle;//上帧输出的
     double l2_angle;//上上帧输出的
     double angle;//角
-
 
     //用于融合时的固定变量
 
@@ -135,23 +136,20 @@ public:
 
     thread threadNotMerge;//数据不走多路融合，直接给出，id按照东侧的id加10000，西侧的id加20000，北侧的id加30000，南侧的id加40000
 
+    thread threadTimerTask;
+    //---------车辆轨迹---------//
+    DataUnit<MultiViewCarTrack, MultiViewCarTracks, 30, 66, 33, 4> dataUnit_MultiViewCarTracks;
     //---------------路口交通流向相关--------//
-    DataUnit<TrafficFlows, 30, 1000> dataUnit_TrafficFlows;
-    thread threadFindOneFrame_TrafficFlow;//多路数据寻找时间戳相差不超过指定限度的
-
+    DataUnit<TrafficFlow, TrafficFlows, 30, 1000, 500, 4> dataUnit_TrafficFlows;
     //------交叉口堵塞报警------//
-    DataUnit<CrossTrafficJamAlarm, 30, 1000> dataUnit_CrossTrafficJamAlarm;
-    thread threadFindOneFrame_CrossTrafficJamAlarm;//多路数据寻找时间戳相差不超过指定限度的
+    DataUnit<CrossTrafficJamAlarm, CrossTrafficJamAlarm, 30, 1000, 500, 4> dataUnit_CrossTrafficJamAlarm;
     //--------排队长度等信息------//
-    DataUnit<LineupInfoGather, 30, 1000> dataUnit_LineupInfoGather;
-    thread threadFindOneFrame_LineupInfo;//多路数据寻找时间戳相差不超过指定限度的
+    DataUnit<LineupInfo, LineupInfoGather, 30, 1000, 500, 4> dataUnit_LineupInfoGather;
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
-    thread threadCheck;//服务器客户端数组状态线程
 
 
-    string crossID;//路口编号
     string db = "CLParking.db";
     string eocDB = "ecoConfig.db";
 
@@ -240,7 +238,9 @@ private:
     static void ThreadCheck(void *pServer);
 
 
-    static void ThreadFindOneFrame(void *pServer);
+    static void ThreadTimerTask(void *pServer);
+
+    static void TaskFindOneFrame_FusionData(void *pServer, int cache);
 
     /**
      * 多路数据融合线程
@@ -248,22 +248,16 @@ private:
      */
     static void ThreadMerge(void *pServer);
 
-
     static void ThreadNotMerge(void *pServer);
 
-    static void TaskFindOneFrame_TrafficFlow(void *pServer);
+    static void TaskFindOneFrame_TrafficFlow(void *pServer, int cache);
 
-    static void ThreadFindOneFrame_TrafficFlow(void *pServer);
+    static void TaskFindOneFrame_LineupInfo(void *pServer, int cache);
 
+    static void TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cache);
 
-    static void TaskFindOneFrame_LineupInfo(void *pServer);
+    static void TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache);
 
-    static void ThreadFindOneFrame_LineupInfo(void *pServer);
-
-
-    static void TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer);
-
-    static void ThreadFindOneFrame_CrossTrafficJamAlarm(void *pServer);
 };
 
 #ifdef __cplusplus

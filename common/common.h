@@ -28,6 +28,21 @@ namespace common {
 #define MEMBER_SIZE(type, member) \
     sizeof(((type *)0)->member)
 
+
+    /**
+    * 打印hex输出
+    * @param data
+    * @param len
+    */
+    void PrintHex(uint8_t *data, uint32_t len);
+
+    /**
+     * 产生uuid
+     * @return uuid的string
+     */
+    string random_uuid(string seed = "89ab");
+
+
     /**
      * 整体通信大帧结构
      *  1byte   1byte   1byte       2bytes  4bytes  4bytes  Nbytes      2bytes
@@ -47,7 +62,14 @@ namespace common {
         DeviceMultiviewCarTrack = 0x08,//多目车辆轨迹
     };//命令字类型
 
-
+    //基本解包组包函数
+    enum Direction {
+        Unknown = 0,//未知
+        East = 1,//东
+        South = 2,//南
+        West = 3,//西
+        North = 4,//北
+    };
 #pragma pack(1)
     typedef struct {
         uint8_t tag = '$';//固定的头开始 ‘$’ 0x24
@@ -57,14 +79,10 @@ namespace common {
         uint32_t deviceNO;//设备编号
         uint32_t len = 0;//整包长度，从包头到最后的校验位 <帧头>sizeof(PkgHead)+<正文>(json)+<校验>sizeof(PkgCRC)
     } PkgHead;//包头
-
     typedef struct {
         uint16_t data;//校验值，从帧头开始到正文的最后一个字节
     } PkgCRC;
 #pragma pack()
-
-    //方法名枚举
-
 
     //一帧数据格式 <帧头>PkgHead+<正文>string(json)+<校验>PkgCRC
     typedef struct {
@@ -73,13 +91,24 @@ namespace common {
         PkgCRC crc;
     } Pkg;
 
+    /**
+     * 组包函数,此时pkg内 校验码不对，要在组包的时候更新校验码
+     * @param pkg 帧数据
+     * @param out 组帧后的数据地址
+     * @param len 组帧后的数据长度
+     * @return 0：success -1：fail
+     */
+    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len);
 
-    //PkgBody.methodParam.param一般都是json数据，以下是json字符串原始的结构体
-    //现在仅有一个监控数据上传业务 Method(WatchData)
 
-    enum State {
-        //TODO
-    };
+    /**
+     * 解包数据
+     * @param in 一帧数据包
+     * @param len 一阵数据包长度
+     * @param pkg 解包后的数据帧
+     * @return 0：success -1：fail
+     */
+    int Unpack(uint8_t *in, uint32_t len, Pkg &pkg);
 
     typedef struct {
         int state;// `json "state"`
@@ -92,13 +121,19 @@ namespace common {
         double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
     } Beats;//心跳帧 "Beats"
 
-    typedef struct {
+    class AnnuciatorInfo {
+    public:
         int LightID;//`json "LightID"`
         string Light;//`json "Light"`
         int RT;//`json "RT"`
-    } AnnuciatorInfo;//信号机属性
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };//信号机属性
+
+    class ObjTarget {
+    public:
         int objID = 0;//目标ID
         int objCameraID = 0;//摄像头目标ID
         int objType = 0;//目标类型
@@ -112,22 +147,18 @@ namespace common {
         double locationY = 0.0;
         string distance;//距离
         double directionAngle;//航角度
-//        string speed;//速度
         double speedX;
         double speedY;
         double longitude;//经度
         double latitude;//维度
-    } ObjTarget;//目标属性
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    enum Direction {
-        Unknown = 0,//未知
-        East = 1,//东
-        South = 2,//南
-        West = 3,//西
-        North = 4,//北
-    };
+        bool JsonUnmarshal(Json::Value in);
+    };//目标属性
 
-    typedef struct {
+    class WatchData {
+    public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
@@ -139,41 +170,55 @@ namespace common {
         int direction;//方向，枚举类型 enum Direction
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
-    } WatchData;//监控数据,对应命令字DeviceData
+    public:
+        bool JsonMarshal(Json::Value &out);
 
+        bool JsonUnmarshal(Json::Value in);
+    };//监控数据,对应命令字DeviceData
 
-    typedef struct {
+    class RvWayObject {
+    public:
         int wayNo;//对应 Direction
         int roID;//雷达目标编号
         int voID;//视频目标编号
-    } RvWayObject;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class VideoTargets {
+    public:
         int cameraObjID;
         int left = 0;//坐标 左
         int top = 0;//坐标 上
         int right = 0;// 坐标 右
         int bottom = 0;//坐标 下
-    } VideoTargets;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class VideoData {
+    public:
         string rvHardCode;
         vector<VideoTargets> lstVideoTargets;
         string imageData;//图像数据
-    } VideoData;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class ObjMix {
+    public:
         int objID = 0;//目标ID
-//        int cameraObjID = 0;//图像目标ID
         vector<RvWayObject> listRvWayObject;
         int objType = 0;//目标类型
         int objColor = 0;//目标颜色
         string plates;//车牌号
         string plateColor;//车牌颜色
-//        int left = 0;//坐标 左
-//        int top = 0;//坐标 上
-//        int right = 0;// 坐标 右
-//        int bottom = 0;//坐标 下
         float distance;//距离
         float angle;//航角度
         float speed;//速度
@@ -181,113 +226,26 @@ namespace common {
         double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
         double latitude = 0.0;//维度
-        int flagNew = 0;//
-    } ObjMix;//融合后的目标数据
+        int flagNew = 0;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };//融合后的目标数据
+
+    class FusionData {
+    public:
         string oprNum;// `json "oprNum"`
         double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         string crossID;// ``json "crossID"路口编号
         int isHasImage;//`json "isHasImage"` 是否包含图像
-//        string imageData;// `json "imageData"` 当前的视频图像数据
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类
         vector<VideoData> lstVideos;//图像数据，包括图像对应的设备编号、图像识别列表、图像base编码
-    } FusionData;//多路融合数据,对应命令字DeviceData
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    /**
-     * 打印hex输出
-     * @param data
-     * @param len
-     */
-    void PrintHex(uint8_t *data, uint32_t len);
-
-    /**
-     * base64加密
-     * @param input 待加密数据
-     * @param input_length 待加密数据长度
-     * @param output 加密数据
-     * @param output_length 加密数据长度
-     */
-    void
-    base64_encode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length);
-
-    /**
-     * base64解密
-     * @param input 加密数据
-     * @param input_length 加密数据长度
-     * @param output 解密数据
-     * @param output_length 解密数据长度
-     */
-    void
-    base64_decode(unsigned char *input, unsigned int input_length, unsigned char *output, unsigned int *output_length);
-
-
-    /**
-     * 产生uuid
-     * @return uuid的string
-     */
-    string random_uuid(string seed = "89ab");
-
-    //基本解包组包函数
-    /**
-     * 组包函数,此时pkg内 校验码不对，要在组包的时候更新校验码
-     * @param pkg 帧数据
-     * @param out 组帧后的数据地址
-     * @param len 组帧后的数据长度
-     * @return 0：success -1：fail
-     */
-    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len);
-
-    /**
-     * 解包数据
-     * @param in 一帧数据包
-     * @param len 一阵数据包长度
-     * @param pkg 解包后的数据帧
-     * @return 0：success -1：fail
-     */
-    int Unpack(uint8_t *in, uint32_t len, Pkg &pkg);
-
-    /**
-     * WatchData 组json
-     * @param watchData in WatchData数据输入
-     * @param out out json输出
-     * @return 0：success -1：fail
-     */
-    int JsonMarshalWatchData(WatchData watchData, string &out);
-
-    /**
-     * WatchData 解json
-     * @param in  in json字符串
-     * @param watchData out WatchData数据输出
-     * @return 0：success -1：fail
-     */
-    int JsonUnmarshalWatchData(string in, WatchData &watchData);
-
-    /**
-     * 组包监控数据
-     * @param watchData in 监控数据结构体
-     * @param sn 帧号
-     * @param deviceNO 设备编号
-     * @param pkg out 包结构体
-     * @return 0:success -1:fail
-     */
-    int PkgWatchDataWithoutCRC(WatchData watchData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
-
-    /**
-     * FusionData 组json
-     * @param fusionData in FusionData数据输入
-     * @param out out json字符串输出
-     * @return 0：success -1：fail
-     */
-    int JsonMarshalFusionData(FusionData fusionData, string &out);
-
-    /**
-     * FusionData 解json
-     * @param in in json字符串输入
-     * @param fusionData out FusionData结构体输出
-     * @return 0：success -1：fail
-     */
-    int JsonUnmarshalFusionData(string in, FusionData &fusionData);
+        bool JsonUnmarshal(Json::Value in);
+    };//多路融合数据,对应命令字DeviceData
 
     /**
      * 组包融合后的数据
@@ -299,9 +257,8 @@ namespace common {
      */
     int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
-
-    //多目数据
-    typedef struct {
+    class FlowData {
+    public:
         string laneCode;
         int laneDirection;//车道方向
         int flowDirection;
@@ -311,42 +268,42 @@ namespace common {
         double outAverageSpeed;//出口平均速度
         int queueLen;
         int queueCars;
-    } FlowData;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class TrafficFlow {
+    public:
         string oprNum;// `json "oprNum"`
         string hardCode;
         double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         string crossCode;
         vector<FlowData> flowData;
-    } TrafficFlow;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
-        string hardCode;
-        string crossCode;
-        vector<FlowData> flowData;
-    } OneRoadTrafficFlow;
+        bool JsonUnmarshal(Json::Value in);
+    };
 
-    typedef struct {
+    class TrafficFlows {
+    public:
         string oprNum;// `json "oprNum"`
         string crossID;
         double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
         string recordDateTime;
-//        vector<OneRoadTrafficFlow> trafficFlow;
         vector<FlowData> trafficFlow;
-    } TrafficFlows;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    int JsonMarshalTrafficFlow(TrafficFlow trafficFlow, string &out);
-
-    int JsonUnmarshalTrafficFlow(string in, TrafficFlow &trafficFlow);
-
-    int JsonMarshalTrafficFlows(TrafficFlows trafficFlows, string &out);
-
-    int JsonUnmarshalTrafficFlows(string in, TrafficFlows &trafficFlows);
+        bool JsonUnmarshal(Json::Value in);
+    };
 
     int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
-    typedef struct {
+    class CarTrack {
+    public:
         int id;
         int type;
         int cameraDirection;
@@ -361,9 +318,14 @@ namespace common {
         int timeHeadway;
         string plateNumber;
         string plateColor;
-    } CarTrack;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    typedef struct {
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class MultiViewCarTrack {
+    public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
@@ -371,12 +333,24 @@ namespace common {
         string ip;
         int type;
         vector<CarTrack> lstObj;
-    } MultiViewCarTrack;//车辆轨迹
+    public:
+        bool JsonMarshal(Json::Value &out);
 
-    int JsonMarshalMultiViewCarTrack(MultiViewCarTrack multiViewCarTrack, string &out);
+        bool JsonUnmarshal(Json::Value in);
+    };//车辆轨迹
 
-    int JsonUnmarshalMultiViewCarTrack(string in, MultiViewCarTrack &multiViewCarTrack);
+    class MultiViewCarTracks {
+    public:
+        string oprNum;// `json "oprNum"`
+        string crossID;
+        double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
+        string recordDateTime;
+        vector<CarTrack> lstObj;
+    public:
+        bool JsonMarshal(Json::Value &out);
 
+        bool JsonUnmarshal(Json::Value in);
+    };
 
     //---------交叉路口堵塞报警---------//
     class CrossTrafficJamAlarm {
@@ -432,7 +406,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class LineupInfoGather{
+    class LineupInfoGather {
     public:
         string OprNum;
         double Timstamp;
@@ -446,7 +420,7 @@ namespace common {
     };
 
     int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO,
-                                          Pkg &pkg);
+                                      Pkg &pkg);
 }
 
 

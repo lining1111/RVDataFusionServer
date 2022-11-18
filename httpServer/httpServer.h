@@ -9,29 +9,57 @@
 #include <string>
 #include <vector>
 
+#ifdef x86
+#include <jsoncpp/json/json.h>
+#else
+#include <json/json.h>
+#endif
+
 using namespace std;
 
-typedef struct{
+class ServerClientInfo{
+public:
    string ip;
    int direction;
-}FusionClientInfo;
+public:
+    bool JsonMarshal(Json::Value &out);
 
-typedef struct {
-    int clientNum;
-    vector<FusionClientInfo> fusionClientInfos;
-}FusionServerInfo;
+    bool JsonUnmarshal(Json::Value in);
+};
 
+class ServerInfo{
+public:
+    string ip;
+    int port;
+    vector<ServerClientInfo> clients;
+public:
+public:
+    bool JsonMarshal(Json::Value &out);
 
-typedef struct {
-    bool isRun;
-    bool isFusionServerRun;
-    bool isMerge;
-    bool isMultiviewServerRun;
-    bool isClientRun;
-}LocalConnectInfo;
+    bool JsonUnmarshal(Json::Value in);
+};
+
+class CliInfo{
+public:
+    string serverIp;
+    int serverPort;
+    bool isConnect;
+public:
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
+class LocalInfo{
+public:
+    vector<ServerInfo> serverInfos;
+    vector<CliInfo> cliInfos;
+public:
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
 
 int HttpServerInit(int port,Local *local);
 
-int JsonMarshalFusionServerInfo(FusionServerInfo fusionServerInfo,string &out);
-int JsonMarshalLocalConnectInfo(LocalConnectInfo localConnectInfo, string &out);
 #endif //_HTTPSERVER_H

@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <fstream>
 #include <valarray>
+#include <iomanip>
 #include "server/FusionServer.h"
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
@@ -22,9 +23,6 @@ using namespace z_log;
 FusionServer::FusionServer(bool isMerge) {
     this->isRun.store(false);
     this->isMerge = isMerge;
-
-    queueObjs.setMax(maxQueueObjs);
-    queueMergeData.setMax(maxQueueMergeData);
 }
 
 FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isMerge) {
@@ -33,9 +31,6 @@ FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isM
     this->maxListen = maxListen;
     this->isRun.store(false);
     this->isMerge = isMerge;
-
-    queueObjs.setMax(maxQueueObjs);
-    queueMergeData.setMax(maxQueueMergeData);
 }
 
 FusionServer::~FusionServer() {
@@ -130,8 +125,8 @@ static int CallbackGetbelong_intersection(void *data, int argc, char **argv, cha
         for (int i = 0; i < argc; i++) {
             colName = string(azColName[i]);
             if (colName.compare("PlatId") == 0) {
-                server->crossID = string(argv[i]);
-                cout << "get crossID from db:" + server->crossID << endl;
+                server->watchDatasCrossID = string(argv[i]);
+                cout << "get crossID from db:" + server->watchDatasCrossID << endl;
             }
         }
     }
@@ -255,16 +250,6 @@ int FusionServer::Run() {
     pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
     threadMonitor.detach();
 
-    //开启服务器检查客户端线程
-//    threadCheck = thread(ThreadCheck, this);
-//    pthread_setname_np(threadCheck.native_handle(), "FusionServer check");
-//    threadCheck.detach();
-
-    //开启服务器获取一帧大数据线程
-    threadFindOneFrame = thread(ThreadFindOneFrame, this);
-    pthread_setname_np(threadFindOneFrame.native_handle(), "FusionServer findOneFrame");
-    threadFindOneFrame.detach();
-
     if (isMerge) {
         //开启服务器多路数据融合线程
         threadMerge = thread(ThreadMerge, this);
@@ -277,15 +262,10 @@ int FusionServer::Run() {
         threadNotMerge.detach();
     }
 
-    //
-    threadFindOneFrame_TrafficFlow = thread(ThreadFindOneFrame_TrafficFlow, this);
-    pthread_setname_np(threadFindOneFrame_TrafficFlow.native_handle(), "FusionServer findOneFrame_TrafficFlow");
-    threadFindOneFrame_TrafficFlow.detach();
-
-    threadFindOneFrame_LineupInfo = thread(ThreadFindOneFrame_LineupInfo, this);
-    pthread_setname_np(threadFindOneFrame_LineupInfo.native_handle(), "FusionServer findOneFrame_LineupInfo");
-    threadFindOneFrame_LineupInfo.detach();
-
+    //开启定时任务
+    threadTimerTask = thread(ThreadTimerTask, this);
+    pthread_setname_np(threadTimerTask.native_handle(), "FusionServer threadTimerTask");
+    threadTimerTask.detach();
 
     return 0;
 }
@@ -335,7 +315,8 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
         }
     }
     //clientInfo
-    ClientInfo *clientInfo = new ClientInfo(remote_addr, client_sock);
+    int index = this->vectorClient.size();
+    ClientInfo *clientInfo = new ClientInfo(remote_addr, client_sock, this, index);
 
     this->vectorClient.push_back(clientInfo);
     pthread_mutex_unlock(&this->lockVectorClient);
@@ -512,239 +493,229 @@ void FusionServer::ThreadCheck(void *pServer) {
 
 }
 
-void FusionServer::ThreadFindOneFrame(void *pServer) {
+void FusionServer::ThreadTimerTask(void *pServer) {
+
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+    Info("%s run", __FUNCTION__);
+
+    vector<Timer> timers;
+
+    Timer timerFusionData;
+    timerFusionData.start(100, std::bind(TaskFindOneFrame_FusionData, server, 10));
+    timers.push_back(timerFusionData);
+
+
+    Timer timerTrafficFlow;
+    timerTrafficFlow.start(1000, std::bind(TaskFindOneFrame_TrafficFlow, server, 3));
+    timers.push_back(timerTrafficFlow);
+
+    Timer timerLineupInfo;
+    timerLineupInfo.start(1000, std::bind(TaskFindOneFrame_LineupInfo, server, 3));
+    timers.push_back(timerLineupInfo);
+
+
+    Timer timerCrossTrafficJamAlarm;
+    timerCrossTrafficJamAlarm.start(1000, std::bind(TaskFindOneFrame_CrossTrafficJamAlarm, server, 10));
+    timers.push_back(timerCrossTrafficJamAlarm);
+
+    Timer timerMultiViewCarTracks;
+    timerMultiViewCarTracks.start(66, std::bind(TaskFindOneFrame_MultiViewCarTracks, server, 10));
+    timers.push_back(timerMultiViewCarTracks);
+
+    while (server->isRun.load()) {
+        sleep(1);
+    }
+    for (auto &iter: timers) {
+        iter.stop();
+    }
+    Info("%s exit", __FUNCTION__);
+
+
+}
+
+
+void FusionServer::TaskFindOneFrame_FusionData(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
 
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
+    if (server->isRun.load()) {
 
-        usleep(1000 * 100);
-
-        if (!server->isRun) {
-            continue;
-        }
-
-        //如果连接上的客户端数量为0
-        if (server->vectorClient.size() == 0) {
-//            Info("未连入客户端");
-            continue;
-        }
         //所有的客户端都要缓存3帧数据
-        int clientNum = server->vectorClient.size();//连入的客户端数量
         int maxPkgs = 0;//轮询各个路存有的最大帧数
-        bool hasData = false;
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            auto iter = server->vectorClient.at(i);
+        int maxPkgsIndex;
+        for (int i = 0; i < ARRAY_SIZE(server->watchDatas); i++) {
+            auto iter = server->watchDatas[i];
 //            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
             //得到最大帧数
-            if (iter->queueWatchData.size() > maxPkgs) {
-                maxPkgs = iter->queueWatchData.size();
+            if (iter.size() > maxPkgs) {
+                maxPkgs = iter.size();
+                maxPkgsIndex = i;
             }
         }
 //        Info("clientNum %d,maxPkgs %d", clientNum, maxPkgs);
-        if (maxPkgs >= 10) {
-            hasData = true;
-        }
-        if (!hasData) {
-//            Info("全部路数未有3帧数据缓存");
-            continue;
-        }
-
-        pthread_mutex_lock(&server->lockVectorClient);
-        //如果有三帧数据，一直取到就有3帧
-
-//        Info("maxPkgs:%d", maxPkgs);
-        Info("寻找同一帧数据");
-        OBJS objs;//容量为4,依次是北、东、南、西
-
-        //轮询各个连入的客户端，按指定的路口ip来存入数组
-
-        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
-        int connetClientNum = 0;
-        //1.寻找各个路口的客户端索引，未找到就是默认值-1
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            auto iter = server->vectorClient.at(i);
-            for (int j = 0; j < server->roadDirection.size(); j++) {
-                //ip 相同
-                if (iter->direction == server->roadDirection.at(j)) {
-                    id[j] = i;
-//                        Info("第%d路 client数组索引%d sock：%d", j + 1, id[j], server->vector_client.at(i)->sock);
-                    connetClientNum++;
-                }
-            }
-        }
-
-        //2.确定时间戳
-        WatchData watchData;
-        if (server->vectorClient.at(0)->queueWatchData.front(watchData)) {
-            server->curTimestamp = watchData.timstamp;//一直取第一路的时间戳为基准
-            Info("选取的第一路时间戳，方向:%d", int(server->vectorClient.at(0)->direction));
-        } else {
-            server->curTimestamp += 100;
-            Info("时间戳自动加100");
-        }
-
-        //如果现在的时间戳比本地的系统时间差2分钟，则用本地时间-1分钟的标准
-        struct timeval now;
-        gettimeofday(&now, nullptr);
-        uint64_t timestamp = (now.tv_sec * 1000 + now.tv_usec / 1000) - 1 * 60 * 1000;
-        if (server->curTimestamp < timestamp) {
-            Info("选取的系统时间-1分钟");
-            server->curTimestamp = timestamp;
-        }
-
-
-        Info("这次选取的时间戳标准为%lu", server->curTimestamp);
-
-
-        //2.根据时间戳和门限来赋值
-        RoadData obj[4];
-
-        for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-            obj[i].imageData = "";
-            obj[i].hardCode = "";
-            obj[i].listObjs.clear();
-        }
-        //清理第N路的取帧时间戳记录
-        for (int i = 0; i < ARRAY_SIZE(server->xRoadTimestamp); i++) {
-            server->xRoadTimestamp[i] = 0;
-        }
-
-        //测量本次内时间差用的临时变量
-        uint64_t max = 0;
-        uint64_t min = 0;
-
-        //取数据
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] == -1) {
-                //客户端未连入，不填充数据
+        if (maxPkgs >= cache) {
+            Info("寻找同一帧数据");
+            OBJS objs;//容量为4,依次是北、东、南、西
+            //2.确定时间戳
+            WatchData refer;
+            if (server->watchDatas[maxPkgsIndex].front(refer)) {
+                server->watchDatasCurTimestamp = refer.timstamp;//一直取第一路的时间戳为基准
             } else {
-                //客户端连入，填充数据
-                auto curClient = server->vectorClient.at(id[i]);
+                server->watchDatasCurTimestamp += 100;
+                Info("时间戳自动加100");
+            }
+
+            //如果现在的时间戳比本地的系统时间差2分钟，则用本地时间-1分钟的标准
+            struct timeval now;
+            gettimeofday(&now, nullptr);
+            uint64_t timestamp = (now.tv_sec * 1000 + now.tv_usec / 1000) - 1 * 60 * 1000;
+            if (server->watchDatasCurTimestamp < timestamp) {
+                Info("选取的系统时间-1分钟");
+                server->watchDatasCurTimestamp = timestamp;
+            }
+
+            Info("这次选取的时间戳标准为%lu", server->watchDatasCurTimestamp);
+
+
+            //3取数
+            auto obj = objs.roadData;
+            //3.1清理
+            for (int i = 0; i < ARRAY_SIZE(obj); i++) {
+                obj[i].imageData = "";
+                obj[i].hardCode = "";
+                obj[i].listObjs.clear();
+            }
+            //清理第N路的取帧时间戳记录
+            for (int i = 0; i < ARRAY_SIZE(server->watchDatasXRoadTimestamp); i++) {
+                server->watchDatasXRoadTimestamp[i] = 0;
+            }
+            //测量本次内时间差用的临时变量
+            uint64_t max = 0;
+            uint64_t min = 0;
+
+            //3.2取数据
+            int getDataRoadNum = 0;//获取了几路数据
+            for (int i = 0; i < ARRAY_SIZE(server->watchDatas); i++) {
+                auto iter = server->watchDatas[i];
                 //watchData数据
-                if (curClient->queueWatchData.empty()) {
+                if (iter.empty()) {
                     //客户端未有数据传入，不填充数据
                     Info("第%d路未有数据传入，不填充数据", i + 1);
                 } else {
                     //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
                     bool isFind = false;
                     do {
-                        WatchData watchData;
-                        if (curClient->queueWatchData.front(watchData)) {
-                            if ((watchData.timstamp >= (double) (server->curTimestamp - server->thresholdFrame)) &&
-                                (watchData.timstamp <= (double) (server->curTimestamp + server->thresholdFrame))) {
+                        WatchData refer;
+                        if (iter.front(refer)) {
+                            if ((refer.timstamp >=
+                                 (double) (server->watchDatasCurTimestamp - server->watchDatasThresholdFrame)) &&
+                                (refer.timstamp <=
+                                 (double) (server->watchDatasCurTimestamp + server->watchDatasThresholdFrame))) {
                                 //出队列
-                                curClient->queueWatchData.pop(watchData);
+                                WatchData cur;
+                                iter.pop(cur);
                                 //按路记录时间戳
-                                server->xRoadTimestamp[i] = watchData.timstamp;
-                                Info("第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                server->watchDatasXRoadTimestamp[i] = cur.timstamp;
+                                Info("第%d路取的时间戳是%lu", i + 1, server->watchDatasXRoadTimestamp[i]);
 
                                 //get max min
                                 if (max == 0) {
-                                    max = (uint64_t) watchData.timstamp;
+                                    max = (uint64_t) cur.timstamp;
                                 } else {
-                                    max = (uint64_t) watchData.timstamp > max ? (uint64_t) watchData.timstamp : max;
+                                    max = (uint64_t) cur.timstamp > max ? (uint64_t) cur.timstamp : max;
                                 }
 
                                 if (min == 0) {
-                                    min = (uint64_t) watchData.timstamp;
+                                    min = (uint64_t) cur.timstamp;
                                 } else {
-                                    min = (uint64_t) watchData.timstamp < min ? (uint64_t) watchData.timstamp : min;
+                                    min = (uint64_t) cur.timstamp < min ? (uint64_t) cur.timstamp : min;
                                 }
 
 
                                 //TODO 赋值路口编号
-                                if (server->crossID.empty()) {
-                                    server->crossID = watchData.matrixNo;
+                                if (server->watchDatasCrossID.empty()) {
+                                    server->watchDatasCrossID = cur.matrixNo;
                                 }
                                 //时间戳大于当前时间戳，直接取
 
-                                obj[i].hardCode = watchData.hardCode;
-                                obj[i].imageData = watchData.imageData;
+                                obj[i].hardCode = cur.hardCode;
+                                obj[i].imageData = cur.imageData;
 //                                    Info("寻找同一帧，找到第%d路的数据后，hardCode:%s 图像大小%d", i, obj[i].hardCode.c_str(),
 //                                         obj[i].imageData.size());
-                                for (auto item: watchData.lstObjTarget) {
+                                for (auto item: cur.lstObjTarget) {
                                     OBJECT_INFO_T objectInfoT;
                                     //转换
                                     ObjTarget2OBJECT_INFO_T(item, objectInfoT);
                                     obj[i].listObjs.push_back(objectInfoT);
                                 }
+
+                                getDataRoadNum++;
                                 isFind = true;
-                            } else if ((watchData.timstamp <
-                                        (double) (server->curTimestamp - server->thresholdFrame))) {
+                            } else if ((refer.timstamp <
+                                        (double) (server->watchDatasCurTimestamp - server->watchDatasThresholdFrame))) {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) watchData.timstamp);
+                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) refer.timstamp);
                                 //出队列抛弃
-                                curClient->queueWatchData.pop(watchData);
+                                WatchData cur;
+                                iter.pop(cur);
 
-                            } else if ((watchData.timstamp >
-                                        (double) (server->curTimestamp + server->thresholdFrame))) {
-                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) watchData.timstamp);
+                            } else if ((refer.timstamp >
+                                        (double) (server->watchDatasCurTimestamp + server->watchDatasThresholdFrame))) {
+                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) refer.timstamp);
                                 isFind = true;
                             }
-
-                            //如果全部抛完
-                            if (curClient->queueWatchData.empty()) {
-                                //队列为空，直接退出
-                                Info("第%d路队列为空直接退出", i + 1);
-                                isFind = true;
-                            }
-
+                        }
+                        //如果全部抛完
+                        if (iter.empty()) {
+                            //队列为空，直接退出
+                            Info("第%d路队列为空直接退出", i + 1);
+                            isFind = true;
                         }
                     } while (!isFind);
                 }
             }
-        }
-//        Info("max %lu,min %lu", max, min);
-        server->curTimeDistance = (max - min);
-        if (server->timeDistance == 0) {
-            server->timeDistance = server->curTimeDistance;
-        } else {
-            server->timeDistance = server->curTimeDistance > server->timeDistance ?
-                                   server->curTimeDistance : server->timeDistance;
-        }
 
-        Info("当前帧时间差为%lu,统计最大时间差为%lu", server->curTimeDistance, server->timeDistance);
-
-        //3.存入待融合队列，即queueObjs
-        if (connetClientNum == 1) {
-            for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-                if (!obj[i].listObjs.empty() || !obj[i].imageData.empty()) {
-                    objs.hasDataRoadIndex = i;
-//                        Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
-                    break;
-                }
+            //        Info("max %lu,min %lu", max, min);
+            server->curTimeDistance = (max - min);
+            if (server->timeDistance == 0) {
+                server->timeDistance = server->curTimeDistance;
+            } else {
+                server->timeDistance = server->curTimeDistance > server->timeDistance ?
+                                       server->curTimeDistance : server->timeDistance;
             }
-            objs.isOneRoad = true;
-        } else {
-            objs.isOneRoad = false;
+
+            Info("当前帧时间差为%lu,统计最大时间差为%lu", server->curTimeDistance, server->timeDistance);
+
+            //3.存入待融合队列，即queueObjs
+            if (getDataRoadNum == 1) {
+                objs.isOneRoad = true;
+
+                for (int i = 0; i < ARRAY_SIZE(obj); i++) {
+                    if (!obj[i].listObjs.empty() || !obj[i].imageData.empty()) {
+                        objs.hasDataRoadIndex = i;
+//                        Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
+                        break;
+                    }
+                }
+            } else {
+                objs.isOneRoad = false;
+            }
+
+            //时间戳打找到同一帧的时间
+            objs.timestamp = server->watchDatasCurTimestamp;
+
+            if (server->queueObjs.push(objs)) {
+                Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
+            } else {
+                Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
+            }
         }
-
-        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-            objs.roadData[i].hardCode = obj[i].hardCode;
-            objs.roadData[i].imageData = obj[i].imageData;
-            objs.roadData[i].listObjs.assign(obj[i].listObjs.begin(), obj[i].listObjs.end());
-        }
-
-        //时间戳打找到同一帧的时间
-        objs.timestamp = server->curTimestamp;
-
-        if (server->queueObjs.push(objs)) {
-            Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
-        } else {
-            Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
-        }
-
-        maxPkgs--;
-
-        pthread_mutex_unlock(&server->lockVectorClient);
-
     }
-
-    Info("%s exit", __FUNCTION__);
 }
 
 void FusionServer::ThreadMerge(void *pServer) {
@@ -1193,502 +1164,405 @@ void FusionServer::ThreadNotMerge(void *pServer) {
     Info("%s exit", __FUNCTION__);
 }
 
-void FusionServer::TaskFindOneFrame_TrafficFlow(void *pServer) {
+//寻找帧队列头部
+void FusionServer::TaskFindOneFrame_TrafficFlow(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-
+    auto dataUnit = server->dataUnit_TrafficFlows;
     if (server->isRun.load()) {
 
-        //如果连接上的客户端数量为0
-        if (server->vectorClient.size() == 0) {
-//            Info("未连入客户端");
-            return;
-        }
-
         int maxPkgs = 0;//轮询各个路存有的最大帧数
-        bool hasData = false;
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            auto iter = server->vectorClient.at(i);
+        int maxPkgsIndex = 0;
+        for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+            auto iter = dataUnit.i_queue_vector.at(i);
 
             //得到最大帧数
-            if (iter->queueTrafficFlow.size() > maxPkgs) {
-                maxPkgs = iter->queueTrafficFlow.size();
-            }
-        }
-        if (maxPkgs >= 3) {
-            hasData = true;
-        }
-        if (!hasData) {
-//            Info("全部路数未有3帧数据缓存");
-            return;
-        }
-        pthread_mutex_lock(&server->lockVectorClient);
-        //如果有三帧数据，一直取到就有3帧
-//            Info("multiView寻找同一帧数据");
-
-
-        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
-
-        //轮询各个连入的客户端，按指定的路口ip来存入数组
-
-        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
-        int connetClientNum = 0;
-
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            id[i] = i;
-        }
-
-        //2.确定时间戳
-        TrafficFlow trafficFlow;
-        if (server->vectorClient.at(0)->queueTrafficFlow.front(trafficFlow)) {
-            server->dataUnit_TrafficFlows.curTimestamp = trafficFlow.timstamp;//一直取第一路的时间戳为基准
-        }
-
-//            Info("TrafficFlows这次选取的时间戳标准为%lu", server->curTimestamp);
-
-        vector<FlowData> flowDatas;
-        //取数据
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] == -1) {
-                //客户端未连入，不填充数据
-            } else {
-                //客户端连入，填充数据
-                auto curClient = server->vectorClient.at(id[i]);
-                //watchData数据
-                if (curClient->queueTrafficFlow.empty()) {
-                    //客户端未有数据传入，不填充数据
-//                        Info("multiView第%d路未有数据传入，不填充数据", i + 1);
-                } else {
-                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
-                    bool isFind = false;
-                    do {
-                        TrafficFlow trafficFlow1;
-                        if (curClient->queueTrafficFlow.front(trafficFlow1)) {
-                            if ((trafficFlow1.timstamp >=
-                                 (double) (server->dataUnit_TrafficFlows.curTimestamp -
-                                           server->dataUnit_TrafficFlows.thresholdFrame)) &&
-                                (trafficFlow1.timstamp <= (double) (server->dataUnit_TrafficFlows.curTimestamp +
-                                                                    server->dataUnit_TrafficFlows.thresholdFrame))) {
-                                //出队列
-                                curClient->queueTrafficFlow.pop(trafficFlow1);
-                                //按路记录时间戳
-                                server->dataUnit_TrafficFlows.xRoadTimestamp[i] = trafficFlow1.timstamp;
-//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                                //TODO 赋值路口编号
-                                if (server->dataUnit_TrafficFlows.crossID.empty()) {
-                                    server->dataUnit_TrafficFlows.crossID = trafficFlow1.crossCode;
-                                }
-                                //时间戳大于当前时间戳，直接取
-
-                                for (auto item: trafficFlow1.flowData) {
-                                    flowDatas.push_back(item);
-                                }
-                                isFind = true;
-                            } else if ((trafficFlow1.timstamp <
-                                        (double) (server->dataUnit_TrafficFlows.curTimestamp -
-                                                  server->dataUnit_TrafficFlows.thresholdFrame))) {
-                                //小于当前时间戳或者不在门限内，出队列抛弃
-//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
-//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
-                                //出队列
-                                curClient->queueTrafficFlow.pop(trafficFlow1);
-
-                            } else if ((trafficFlow1.timstamp >
-                                        (double) (server->dataUnit_TrafficFlows.curTimestamp +
-                                                  server->dataUnit_TrafficFlows.thresholdFrame))) {
-//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
-//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
-                                isFind = true;
-                            }
-
-                            if (curClient->queueTrafficFlow.empty()) {
-                                //队列为空，直接退出
-                                isFind = true;
-                            }
-                        }
-                    } while (!isFind);
-                }
-            }
-        }
-
-        TrafficFlows trafficFlows;
-        trafficFlows.oprNum = random_uuid();
-        trafficFlows.timestamp = server->dataUnit_TrafficFlows.curTimestamp;
-        trafficFlows.crossID = server->dataUnit_TrafficFlows.crossID;
-
-        trafficFlows.trafficFlow.assign(flowDatas.begin(), flowDatas.end());
-
-        if (!server->dataUnit_TrafficFlows.m_queue.push(trafficFlows)) {
-//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
-        } else {
-//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
-        }
-
-        maxPkgs--;
-        pthread_mutex_unlock(&server->lockVectorClient);
-    }
-}
-
-void FusionServer::ThreadFindOneFrame_TrafficFlow(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    Timer timer;
-    timer.start(1000, std::bind(TaskFindOneFrame_TrafficFlow, server));
-
-
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
-
-        sleep(1);
-        timer.stop();
-    }
-
-    Info("%s exit", __FUNCTION__);
-}
-
-
-void FusionServer::TaskFindOneFrame_LineupInfo(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    if (server->isRun.load()) {
-        //如果连接上的客户端数量为0
-        if (server->vectorClient.size() == 0) {
-//            Info("未连入客户端");
-            return;
-        }
-
-
-        int maxPkgs = 0;//轮询各个路存有的最大帧数
-        bool hasData = false;
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            auto iter = server->vectorClient.at(i);
-
-            //得到最大帧数
-            if (iter->queueLineupInfo.size() > maxPkgs) {
-                maxPkgs = iter->queueLineupInfo.size();
-            }
-        }
-        if (maxPkgs >= 3) {
-            hasData = true;
-        }
-        if (!hasData) {
-//            Info("全部路数未有3帧数据缓存");
-            return;
-        }
-        pthread_mutex_lock(&server->lockVectorClient);
-        //如果有三帧数据，一直取到就有3帧
-//            Info("multiView寻找同一帧数据");
-
-        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
-
-        //轮询各个连入的客户端，按指定的路口ip来存入数组
-
-        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
-        int connetClientNum = 0;
-
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            id[i] = i;
-        }
-
-        //2.确定时间戳
-        LineupInfo lineupInfo;
-        if (server->vectorClient.at(0)->queueLineupInfo.front(lineupInfo)) {
-            server->dataUnit_LineupInfoGather.curTimestamp = lineupInfo.Timstamp;//一直取第一路的时间戳为基准
-        }
-
-//            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
-
-        vector<TrafficFlowLineup> TrafficFlowList;
-        //取数据
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] == -1) {
-                //客户端未连入，不填充数据
-            } else {
-                //客户端连入，填充数据
-                auto curClient = server->vectorClient.at(id[i]);
-                //watchData数据
-                if (curClient->queueLineupInfo.empty()) {
-                    //客户端未有数据传入，不填充数据
-//                        Info("multiView第%d路未有数据传入，不填充数据", i + 1);
-                } else {
-                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
-                    bool isFind = false;
-                    do {
-                        LineupInfo lineupInfo1;
-                        if (curClient->queueLineupInfo.front(lineupInfo1)) {
-                            if ((lineupInfo1.Timstamp >=
-                                 (double) (server->dataUnit_LineupInfoGather.curTimestamp -
-                                           server->dataUnit_LineupInfoGather.thresholdFrame)) &&
-                                (lineupInfo1.Timstamp <=
-                                 (double) (server->dataUnit_LineupInfoGather.curTimestamp +
-                                           server->dataUnit_LineupInfoGather.thresholdFrame))) {
-                                //出队列
-                                curClient->queueLineupInfo.pop(lineupInfo1);
-                                //按路记录时间戳
-                                server->dataUnit_LineupInfoGather.xRoadTimestamp[i] = lineupInfo1.Timstamp;
-//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                                //TODO 赋值路口编号
-                                if (server->dataUnit_LineupInfoGather.crossID.empty()) {
-                                    server->dataUnit_LineupInfoGather.crossID = lineupInfo1.CrossCode;
-                                }
-                                //时间戳大于当前时间戳，直接取
-
-                                for (auto item: lineupInfo1.TrafficFlowList) {
-                                    TrafficFlowList.push_back(item);
-                                }
-                                isFind = true;
-                            } else if ((lineupInfo1.Timstamp <
-                                        (double) (server->dataUnit_LineupInfoGather.curTimestamp -
-                                                  server->dataUnit_LineupInfoGather.thresholdFrame))) {
-                                //小于当前时间戳或者不在门限内，出队列抛弃
-//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
-//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
-                                //出队列
-                                curClient->queueLineupInfo.pop(lineupInfo1);
-
-                            } else if ((lineupInfo1.Timstamp >
-                                        (double) (server->dataUnit_LineupInfoGather.curTimestamp +
-                                                  server->dataUnit_LineupInfoGather.thresholdFrame))) {
-//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
-//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
-                                isFind = true;
-                            }
-
-                            if (curClient->queueTrafficFlow.empty()) {
-                                //队列为空，直接退出
-                                isFind = true;
-                            }
-                        }
-                    } while (!isFind);
-                }
-            }
-        }
-
-        LineupInfoGather lineupInfoGather;
-        lineupInfoGather.OprNum = random_uuid();
-        lineupInfoGather.Timstamp = server->dataUnit_LineupInfoGather.curTimestamp;
-        lineupInfoGather.CrossCode = server->dataUnit_LineupInfoGather.crossID;
-        lineupInfoGather.HardCode = server->matrixNo;
-        lineupInfoGather.TrafficFlowList.assign(TrafficFlowList.begin(), TrafficFlowList.end());
-
-        if (!server->dataUnit_LineupInfoGather.m_queue.push(lineupInfoGather)) {
-//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
-        } else {
-//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
-        }
-
-        maxPkgs--;
-        pthread_mutex_unlock(&server->lockVectorClient);
-
-    }
-}
-
-void FusionServer::ThreadFindOneFrame_LineupInfo(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    Timer timer;
-    timer.start(1000, std::bind(TaskFindOneFrame_LineupInfo, server));
-
-
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
-
-        sleep(1);
-        timer.stop();
-    }
-
-    Info("%s exit", __FUNCTION__);
-}
-
-void FusionServer::TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    if (server->isRun.load()) {
-        //如果连接上的客户端数量为0
-        if (server->vectorClient.size() == 0) {
-//            Info("未连入客户端");
-            return;
-        }
-
-
-        int maxPkgs = 0;//轮询各个路存有的最大帧数
-        int maxPkgsIndex = 0;//最多帧sock数组索引
-        bool hasData = false;
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            auto iter = server->vectorClient.at(i);
-
-            //得到最大帧数
-            if (iter->queueCrossTrafficJamAlarm.size() > maxPkgs) {
-                maxPkgs = iter->queueCrossTrafficJamAlarm.size();
+            if (iter.size() > maxPkgs) {
+                maxPkgs = iter.size();
                 maxPkgsIndex = i;
             }
         }
-        if (maxPkgs >= 10) {
-            hasData = true;
-        }
-        if (!hasData) {
-//            Info("全部路数未有3帧数据缓存");
-            return;
-        }
-        pthread_mutex_lock(&server->lockVectorClient);
-        //如果有三帧数据，一直取到就有3帧
-//            Info("multiView寻找同一帧数据");
-
-        uint64_t timestamp = 0;//时间戳，选取时间最近的方向
-
-        //轮询各个连入的客户端，按指定的路口ip来存入数组
-
-        int id[4] = {-1, -1, -1, -1};//以方向为目的存入的路口方向对应的客户端数组的索引
-        int connetClientNum = 0;
-
-        for (int i = 0; i < server->vectorClient.size(); i++) {
-            id[i] = i;
-        }
-
-        //2.确定时间戳
-        CrossTrafficJamAlarm crossTrafficJamAlarm;
-
-        //先抛1帧
-        CrossTrafficJamAlarm foo;
-        server->vectorClient.at(maxPkgsIndex)->queueCrossTrafficJamAlarm.pop(foo);
-        if (server->vectorClient.at(maxPkgsIndex)->queueCrossTrafficJamAlarm.front(crossTrafficJamAlarm)) {
-            server->dataUnit_CrossTrafficJamAlarm.curTimestamp = crossTrafficJamAlarm.Timstamp;//一直取第一路的时间戳为基准
-        }
-
-//            Info("multiView这次选取的时间戳标准为%lu", server->curTimestamp);
-
-        vector<CrossTrafficJamAlarm> CrossTrafficJamAlarmList;
-        //取数据
-        for (int i = 0; i < ARRAY_SIZE(id); i++) {
-            if (id[i] == -1) {
-                //客户端未连入，不填充数据
-            } else {
-                //客户端连入，填充数据
-                auto curClient = server->vectorClient.at(id[i]);
-                //watchData数据
-                if (curClient->queueCrossTrafficJamAlarm.empty()) {
-                    //客户端未有数据传入，不填充数据
-//                        Info("multiView第%d路未有数据传入，不填充数据", i + 1);
+        vector<FlowData> flowDatas;//数据集合暂存
+        if (maxPkgs > cache) {
+            dataUnit.oneFrame.clear();
+            //2.确定时间戳，取最大帧数的头部帧时间戳
+            TrafficFlow refer;
+            if (dataUnit.i_queue_vector.at(maxPkgsIndex).front(refer)) {
+                dataUnit.curTimestamp = refer.timstamp;
+            }
+            //            Info("TrafficFlows这次选取的时间戳标准为%lu", dataUnit.curTimestamp);
+            for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+                auto iter = dataUnit.i_queue_vector.at(i);
+                if (iter.empty()) {
+//                  Info("multiView第%d路未有数据传入，不填充数据", i + 1);
                 } else {
                     //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
                     bool isFind = false;
                     do {
-                        CrossTrafficJamAlarm crossTrafficJamAlarm1;
-                        if (curClient->queueCrossTrafficJamAlarm.front(crossTrafficJamAlarm1)) {
-                            if ((crossTrafficJamAlarm1.Timstamp >=
-                                 (double) (server->dataUnit_CrossTrafficJamAlarm.curTimestamp -
-                                           server->dataUnit_CrossTrafficJamAlarm.thresholdFrame)) &&
-                                (crossTrafficJamAlarm1.Timstamp <=
-                                 (double) (server->dataUnit_CrossTrafficJamAlarm.curTimestamp +
-                                           server->dataUnit_CrossTrafficJamAlarm.thresholdFrame))) {
+                        TrafficFlow refer;
+                        if (iter.front(refer)) {
+                            if ((refer.timstamp >= (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame)) &&
+                                (refer.timstamp <= (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
                                 //出队列
-                                curClient->queueCrossTrafficJamAlarm.pop(crossTrafficJamAlarm1);
-                                //按路记录时间戳
-                                server->dataUnit_CrossTrafficJamAlarm.xRoadTimestamp[i] = crossTrafficJamAlarm1.Timstamp;
+                                TrafficFlow cur;
+                                if (iter.pop(cur)) {
+                                    //按路记录时间戳
+                                    dataUnit.xRoadTimestamp[i] = cur.timstamp;
 //                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
-                                //TODO 赋值路口编号
-                                if (server->dataUnit_CrossTrafficJamAlarm.crossID.empty()) {
-                                    server->dataUnit_CrossTrafficJamAlarm.crossID = crossTrafficJamAlarm1.CrossCode;
+                                    //TODO 赋值路口编号
+                                    if (dataUnit.crossID.empty()) {
+                                        dataUnit.crossID = cur.crossCode;
+                                    }
+                                    dataUnit.oneFrame.insert(dataUnit.oneFrame.begin() + i, cur);
+
+                                    for (auto item: cur.flowData) {
+                                        flowDatas.push_back(item);
+                                    }
+                                    isFind = true;
                                 }
-                                //时间戳大于当前时间戳，直接取
-                                CrossTrafficJamAlarmList.push_back(crossTrafficJamAlarm1);
-                                isFind = true;
-                            } else if ((crossTrafficJamAlarm1.Timstamp <
-                                        (double) (server->dataUnit_CrossTrafficJamAlarm.curTimestamp -
-                                                  server->dataUnit_CrossTrafficJamAlarm.thresholdFrame))) {
+                            } else if ((refer.timstamp < (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame))) {
                                 //小于当前时间戳或者不在门限内，出队列抛弃
 //                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
 //                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 //出队列
-                                curClient->queueCrossTrafficJamAlarm.pop(crossTrafficJamAlarm1);
-
-                            } else if ((crossTrafficJamAlarm1.Timstamp >
-                                        (double) (server->dataUnit_CrossTrafficJamAlarm.curTimestamp +
-                                                  server->dataUnit_CrossTrafficJamAlarm.thresholdFrame))) {
+                                TrafficFlow cur;
+                                iter.pop(cur);
+                            } else if ((refer.timstamp > (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
 //                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
 //                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
                                 isFind = true;
                             }
+                        }
 
-                            if (curClient->queueCrossTrafficJamAlarm.empty()) {
-                                //队列为空，直接退出
-                                isFind = true;
-                            }
+                        if (iter.empty()) {
+                            //队列为空，直接退出
+                            isFind = true;
                         }
                     } while (!isFind);
                 }
             }
-        }
 
-        bool isJam = false;
-        string jamTime;
-        for (auto iter:CrossTrafficJamAlarmList) {
-            if (iter.AlarmType == 1) {
-                isJam = true;
-                jamTime = iter.AlarmTime;
+            //组织数据放入
+            TrafficFlows trafficFlows;
+            trafficFlows.oprNum = random_uuid();
+            trafficFlows.timestamp = dataUnit.curTimestamp;
+            trafficFlows.crossID = dataUnit.crossID;
+
+            trafficFlows.trafficFlow.assign(flowDatas.begin(), flowDatas.end());
+
+            if (!dataUnit.o_queue.push(trafficFlows)) {
+//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
+            } else {
+//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
             }
         }
-
-
-        CrossTrafficJamAlarm crossTrafficJamAlarm2;
-        crossTrafficJamAlarm2.OprNum = random_uuid();
-        crossTrafficJamAlarm2.Timstamp = server->dataUnit_CrossTrafficJamAlarm.curTimestamp;
-        crossTrafficJamAlarm2.CrossCode = server->dataUnit_CrossTrafficJamAlarm.crossID;
-        crossTrafficJamAlarm2.HardCode = server->matrixNo;
-        if (isJam) {
-            crossTrafficJamAlarm2.AlarmType = 1;
-            crossTrafficJamAlarm2.AlarmStatus = 1;
-            crossTrafficJamAlarm2.AlarmTime = jamTime;
-        } else {
-            crossTrafficJamAlarm2.AlarmType = 0;
-            crossTrafficJamAlarm2.AlarmStatus = 0;
-            crossTrafficJamAlarm2.AlarmTime = jamTime;
-        }
-
-        if (!server->dataUnit_CrossTrafficJamAlarm.m_queue.push(crossTrafficJamAlarm2)) {
-//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
-        } else {
-//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
-        }
-
-        maxPkgs--;
-        pthread_mutex_unlock(&server->lockVectorClient);
-
     }
 }
 
-void FusionServer::ThreadFindOneFrame_CrossTrafficJamAlarm(void *pServer) {
+
+//寻找头部
+void FusionServer::TaskFindOneFrame_LineupInfo(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
+    auto dataUnit = server->dataUnit_LineupInfoGather;
+    if (server->isRun.load()) {
 
-    Timer timer;
-    timer.start(1000, std::bind(TaskFindOneFrame_CrossTrafficJamAlarm, server));
+        int maxPkgs = 0;//轮询各个路存有的最大帧数
+        int maxPkgsIndex = 0;
+        for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+            auto iter = dataUnit.i_queue_vector.at(i);
 
+            //得到最大帧数
+            if (iter.size() > maxPkgs) {
+                maxPkgs = iter.size();
+                maxPkgsIndex = i;
+            }
+        }
+        vector<TrafficFlowLineup> TrafficFlowList;//数据集合暂存
+        if (maxPkgs > cache) {
+            dataUnit.oneFrame.clear();
+            //2.确定时间戳，取最大帧数的头部帧时间戳
+            LineupInfo refer;
+            if (dataUnit.i_queue_vector.at(maxPkgsIndex).front(refer)) {
+                dataUnit.curTimestamp = refer.Timstamp;
+            }
+            //            Info("TrafficFlows这次选取的时间戳标准为%lu", dataUnit.curTimestamp);
+            for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+                auto iter = dataUnit.i_queue_vector.at(i);
+                if (iter.empty()) {
+//                  Info("multiView第%d路未有数据传入，不填充数据", i + 1);
+                } else {
+                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
+                    bool isFind = false;
+                    do {
+                        LineupInfo refer;
+                        if (iter.front(refer)) {
+                            if ((refer.Timstamp >= (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame)) &&
+                                (refer.Timstamp <= (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+                                //出队列
+                                LineupInfo cur;
+                                if (iter.pop(cur)) {
+                                    //按路记录时间戳
+                                    dataUnit.xRoadTimestamp[i] = cur.Timstamp;
+//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                    //TODO 赋值路口编号
+                                    if (dataUnit.crossID.empty()) {
+                                        dataUnit.crossID = cur.CrossCode;
+                                    }
+                                    dataUnit.oneFrame.insert(dataUnit.oneFrame.begin() + i, cur);
 
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
+                                    for (auto item: cur.TrafficFlowList) {
+                                        TrafficFlowList.push_back(item);
+                                    }
+                                    isFind = true;
+                                }
+                            } else if ((refer.Timstamp < (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame))) {
+                                //小于当前时间戳或者不在门限内，出队列抛弃
+//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                //出队列
+                                LineupInfo cur;
+                                iter.pop(cur);
+                            } else if ((refer.Timstamp > (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                isFind = true;
+                            }
+                        }
 
-        sleep(1);
-        timer.stop();
+                        if (iter.empty()) {
+                            //队列为空，直接退出
+                            isFind = true;
+                        }
+                    } while (!isFind);
+                }
+            }
+
+            //组织数据放入
+            LineupInfoGather lineupInfoGather;
+            lineupInfoGather.OprNum = random_uuid();
+            lineupInfoGather.Timstamp = dataUnit.curTimestamp;
+            lineupInfoGather.CrossCode = dataUnit.crossID;
+
+            lineupInfoGather.TrafficFlowList.assign(TrafficFlowList.begin(), TrafficFlowList.end());
+
+            if (!dataUnit.o_queue.push(lineupInfoGather)) {
+//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
+            } else {
+//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
+            }
+        }
     }
-
-    Info("%s exit", __FUNCTION__);
 }
 
+//寻找尾部
+void FusionServer::TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cache) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+    auto dataUnit = server->dataUnit_CrossTrafficJamAlarm;
+    if (server->isRun.load()) {
 
+        int maxPkgs = 0;//轮询各个路存有的最大帧数
+        int maxPkgsIndex = 0;
+        for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+            auto iter = dataUnit.i_queue_vector.at(i);
+
+            //得到最大帧数
+            if (iter.size() > maxPkgs) {
+                maxPkgs = iter.size();
+                maxPkgsIndex = i;
+            }
+        }
+
+
+        if (maxPkgs > cache) {
+            dataUnit.oneFrame.clear();
+            //2.确定时间戳，取最大帧数的尾部帧时间戳
+            CrossTrafficJamAlarm refer;
+            if (dataUnit.i_queue_vector.at(maxPkgsIndex).back(refer)) {
+                dataUnit.curTimestamp = refer.Timstamp;
+            }
+            //            Info("TrafficFlows这次选取的时间戳标准为%lu", dataUnit.curTimestamp);
+            for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+                auto iter = dataUnit.i_queue_vector.at(i);
+                if (iter.empty()) {
+//                  Info("multiView第%d路未有数据传入，不填充数据", i + 1);
+                } else {
+                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
+                    bool isFind = false;
+                    do {
+                        CrossTrafficJamAlarm refer;
+                        if (iter.front(refer)) {
+                            if ((refer.Timstamp >= (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame)) &&
+                                (refer.Timstamp <= (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+                                //出队列
+                                CrossTrafficJamAlarm cur;
+                                if (iter.pop(cur)) {
+                                    //按路记录时间戳
+                                    dataUnit.xRoadTimestamp[i] = cur.Timstamp;
+//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                    //TODO 赋值路口编号
+                                    if (dataUnit.crossID.empty()) {
+                                        dataUnit.crossID = cur.CrossCode;
+                                    }
+                                    dataUnit.oneFrame.insert(dataUnit.oneFrame.begin() + i, cur);
+                                    isFind = true;
+                                }
+                            } else if ((refer.Timstamp < (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame))) {
+                                //小于当前时间戳或者不在门限内，出队列抛弃
+//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                //出队列
+                                CrossTrafficJamAlarm cur;
+                                iter.pop(cur);
+                            } else if ((refer.Timstamp > (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                isFind = true;
+                            }
+                        }
+
+                        if (iter.empty()) {
+                            //队列为空，直接退出
+                            isFind = true;
+                        }
+                    } while (!isFind);
+                }
+            }
+
+            //组织数据放入
+            CrossTrafficJamAlarm crossTrafficJamAlarm;
+            crossTrafficJamAlarm.OprNum = random_uuid();
+            crossTrafficJamAlarm.Timstamp = dataUnit.curTimestamp;
+            crossTrafficJamAlarm.CrossCode = dataUnit.crossID;
+            crossTrafficJamAlarm.AlarmType = 0;
+            crossTrafficJamAlarm.AlarmStatus = 0;
+            auto tp = std::chrono::system_clock::now();
+            auto time = std::chrono::system_clock::to_time_t(tp);
+            std::stringstream ss;
+            ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+            crossTrafficJamAlarm.AlarmTime = ss.str();
+            //判断是否有拥堵
+            for (auto iter:dataUnit.oneFrame) {
+                if (iter.AlarmType == 1) {
+                    crossTrafficJamAlarm.AlarmType = iter.AlarmType;
+                    crossTrafficJamAlarm.AlarmStatus = iter.AlarmStatus;
+                    crossTrafficJamAlarm.AlarmTime = iter.AlarmTime;
+                }
+            }
+
+            if (!dataUnit.o_queue.push(crossTrafficJamAlarm)) {
+//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
+            } else {
+//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
+            }
+        }
+    }
+}
+
+void FusionServer::TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache) {
+    if (pServer == nullptr) {
+        return;
+    }
+    auto server = (FusionServer *) pServer;
+    auto dataUnit = server->dataUnit_MultiViewCarTracks;
+    if (server->isRun.load()) {
+
+        int maxPkgs = 0;//轮询各个路存有的最大帧数
+        int maxPkgsIndex = 0;
+        for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+            auto iter = dataUnit.i_queue_vector.at(i);
+
+            //得到最大帧数
+            if (iter.size() > maxPkgs) {
+                maxPkgs = iter.size();
+                maxPkgsIndex = i;
+            }
+        }
+        vector<CarTrack> lstObj;//数据集合暂存
+        if (maxPkgs > cache) {
+            dataUnit.oneFrame.clear();
+            //2.确定时间戳，取最大帧数的头部帧时间戳
+            MultiViewCarTrack refer;
+            if (dataUnit.i_queue_vector.at(maxPkgsIndex).front(refer)) {
+                dataUnit.curTimestamp = refer.timstamp;
+            }
+            //            Info("TrafficFlows这次选取的时间戳标准为%lu", dataUnit.curTimestamp);
+            for (int i = 0; i < dataUnit.i_queue_vector.size(); i++) {
+                auto iter = dataUnit.i_queue_vector.at(i);
+                if (iter.empty()) {
+//                  Info("multiView第%d路未有数据传入，不填充数据", i + 1);
+                } else {
+                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
+                    bool isFind = false;
+                    do {
+                        MultiViewCarTrack refer;
+                        if (iter.front(refer)) {
+                            if ((refer.timstamp >= (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame)) &&
+                                (refer.timstamp <= (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+                                //出队列
+                                MultiViewCarTrack cur;
+                                if (iter.pop(cur)) {
+                                    //按路记录时间戳
+                                    dataUnit.xRoadTimestamp[i] = cur.timstamp;
+//                                Info("multiView第%d路取的时间戳是%lu", i + 1, server->xRoadTimestamp[i]);
+                                    //TODO 赋值路口编号
+                                    if (dataUnit.crossID.empty()) {
+                                        dataUnit.crossID = cur.crossCode;
+                                    }
+                                    dataUnit.oneFrame.insert(dataUnit.oneFrame.begin() + i, cur);
+
+                                    for (auto item: cur.lstObj) {
+                                        lstObj.push_back(item);
+                                    }
+                                    isFind = true;
+                                }
+                            } else if ((refer.timstamp < (double) (dataUnit.curTimestamp - dataUnit.thresholdFrame))) {
+                                //小于当前时间戳或者不在门限内，出队列抛弃
+//                                Info("multiView第%d路时间戳%lu靠前,舍弃", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                //出队列
+                                MultiViewCarTrack cur;
+                                iter.pop(cur);
+                            } else if ((refer.timstamp > (double) (dataUnit.curTimestamp + dataUnit.thresholdFrame))) {
+//                                Info("multiView第%d路时间戳%lu靠后,保留", i + 1,
+//                                     (uint64_t) curClient->queueTrafficFlow.front().timstamp);
+                                isFind = true;
+                            }
+                        }
+
+                        if (iter.empty()) {
+                            //队列为空，直接退出
+                            isFind = true;
+                        }
+                    } while (!isFind);
+                }
+            }
+
+            //组织数据放入
+            MultiViewCarTracks multiViewCarTracks;
+            multiViewCarTracks.oprNum = random_uuid();
+            multiViewCarTracks.timestamp = dataUnit.curTimestamp;
+            multiViewCarTracks.crossID = dataUnit.crossID;
+            auto tp = std::chrono::system_clock::now();
+            auto time = std::chrono::system_clock::to_time_t(tp);
+            std::stringstream ss;
+            ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+            multiViewCarTracks.recordDateTime = ss.str();
+
+            multiViewCarTracks.lstObj.assign(lstObj.begin(), lstObj.end());
+
+            if (!dataUnit.o_queue.push(multiViewCarTracks)) {
+//                Error("multiView队列已满，未存入数据 timestamp:%f", trafficFlows.timestamp);
+            } else {
+//                Info("multiView数据存入:选取的时间戳:%f", trafficFlows.timestamp);
+            }
+        }
+    }
+}
