@@ -16,6 +16,7 @@
 #include <fstream>
 #include "db/DB.h"
 #include "eoc/Eoc.h"
+#include "monitor/PacketLoss.hpp"
 
 using namespace z_log;
 
@@ -30,7 +31,7 @@ int saveCount = 0;
  * 将服务端得到的融合数据，发送给上层
  * @param p
  */
-static void Task_FusionData(void *p) {
+static void Task_FusionData(void *p, moniter::PacketLoss *packetLoss) {
     if (p == nullptr) {
         return;
     }
@@ -155,20 +156,28 @@ static void Task_FusionData(void *p) {
                         if (cli->SendToBase(pkg) == -1) {
                             cli->isRun = false;
                             Info("连接到上层，发送消息失败");
+                            packetLoss->Fail();
                         } else {
+                            packetLoss->Success();
                             gettimeofday(&end, nullptr);
-
                             int cost = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
 //                Info("融合程序连接到上层，发送数据成功,耗时：%d ms", cost);
                         }
                     } else {
                         Error("未连接到上层，丢弃消息");
+                        packetLoss->Fail();
                     }
                 }
             }
         }
     }
 }
+
+static void MonitorFusionData(moniter::PacketLoss *packetLoss){
+    Info("%s 当前丢包率:%f",__FUNCTION__ ,packetLoss->ShowLoss());
+}
+
+
 
 static void Task_TrafficFlows(void *p) {
     if (p == nullptr) {
@@ -418,23 +427,29 @@ int main(int argc, char **argv) {
     vector<Timer> timers;
 
     Timer timerKeep;
-    timerKeep.start(1000,std::bind(Task_Keep, &local));
+    timerKeep.start(1000, std::bind(Task_Keep, &local));
     timers.push_back(timerKeep);
 
     Timer timerFusionData;
-    timerFusionData.start(1,std::bind(Task_FusionData, &local));
+    moniter::PacketLoss packetLoss(1000 * 60);
+    timerFusionData.start(1, std::bind(Task_FusionData, &local, &packetLoss));
     timers.push_back(timerFusionData);
 
+    //查看丢包
+    Timer timerMontorFusionData;
+    timerMontorFusionData.start(60 * 1000, std::bind(MonitorFusionData, &packetLoss));
+    timers.push_back(timerMontorFusionData);
+
     Timer timerTrafficFlows;
-    timerTrafficFlows.start(1,std::bind(Task_TrafficFlows, &local));
+    timerTrafficFlows.start(1, std::bind(Task_TrafficFlows, &local));
     timers.push_back(timerTrafficFlows);
 
     Timer timerLineupInfoGather;
-    timerLineupInfoGather.start(1,std::bind(Task_LineupInfoGather, &local));
+    timerLineupInfoGather.start(1, std::bind(Task_LineupInfoGather, &local));
     timers.push_back(timerLineupInfoGather);
 
     Timer timerCrossTrafficJamAlarm;
-    timerCrossTrafficJamAlarm.start(1,std::bind(Task_CrossTrafficJamAlarm, &local));
+    timerCrossTrafficJamAlarm.start(1, std::bind(Task_CrossTrafficJamAlarm, &local));
     timers.push_back(timerCrossTrafficJamAlarm);
 
     HttpServerInit(10000, &local);

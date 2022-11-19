@@ -59,6 +59,7 @@ set(SRC_DIRS ./
         log
         ringBuffer
         common
+        monitor
         server
         client
         merge

@@ -43,11 +43,11 @@ int FusionClient::Open() {
     } else {
         int opt = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//        timeval timeout;
-//        timeout.tv_sec = 3;
-//        timeout.tv_usec = 0;
-//        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-//        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+        timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 100*1000;
+        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
     }
 
@@ -306,29 +306,13 @@ void FusionClient::ThreadProcessSend(void *p) {
             continue;
         }
         bzero(buf_send, ARRAY_SIZE(buf_send));
-        len_send = 0;
-
-        timeval begin;
-        timeval end;
-
-        gettimeofday(&begin, nullptr);
-
+        uint32_t len_send = 0;
         //pack
         common::Pack(pkg, buf_send, &len_send);
-
-        int nleft = len_send;
-        uint8_t *ptr = buf_send;
-        do {
-            int ret = send(client->sockfd, ptr, nleft, 0);
-            if (ret == -1) {
-                printf("发送失败");
-                client->isRun = false;
-                break;
-            }
-            nleft -= ret;
-            ptr += ret;
-        } while (nleft > 0);
-
+        int len = send(client->sockfd, buf_send, len_send, 0);
+        if (len != len_send) {
+            printf("send fail");
+        }
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
 }
@@ -380,19 +364,10 @@ int FusionClient::SendToBase(Pkg pkg) {
 
     //pack
     common::Pack(pkg, buf_send, &len_send);
-
-    int nleft = len_send;
-    uint8_t *ptr = buf_send;
-    do {
-        int ret = send(sockfd, ptr, nleft, 0);
-        if (ret == -1) {
-            printf("发送失败");
-            ret1 = -1;
-            break;
-        }
-        nleft -= ret;
-        ptr += ret;
-    } while (nleft > 0);
+    int len = send(sockfd, buf_send, len_send, 0);
+    if (len != len_send) {
+        printf("send fail");
+    }
 
     pthread_mutex_unlock(&lock_sock);
     return ret1;
