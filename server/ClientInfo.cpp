@@ -110,7 +110,7 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
 //        Info("sock %d recv begin========", client->sock);
         len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
 //        Info("sock %d recv end========", client->sock);
-        if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY)) {
+        if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
             //向服务端抛出应该关闭
 //            client->needRelease.store(true);

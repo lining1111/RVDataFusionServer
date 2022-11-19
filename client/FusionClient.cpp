@@ -45,7 +45,7 @@ int FusionClient::Open() {
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         timeval timeout;
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100*1000;
+        timeout.tv_usec = 100 * 1000;
         setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
         setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
@@ -312,6 +312,11 @@ void FusionClient::ThreadProcessSend(void *p) {
         int len = send(client->sockfd, buf_send, len_send, 0);
         if (len != len_send) {
             printf("send fail");
+
+        } else if (len <= 0) {
+            if ((errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
+                client->isRun = false;
+            }
         }
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
@@ -365,8 +370,15 @@ int FusionClient::SendToBase(Pkg pkg) {
     //pack
     common::Pack(pkg, buf_send, &len_send);
     int len = send(sockfd, buf_send, len_send, 0);
+
     if (len != len_send) {
         printf("send fail");
+        ret1 = -1;
+    } else if (len <= 0) {
+        ret1 = -1;
+        if ((errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
+            isRun = false;
+        }
     }
 
     pthread_mutex_unlock(&lock_sock);
