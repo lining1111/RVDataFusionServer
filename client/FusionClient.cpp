@@ -43,11 +43,11 @@ int FusionClient::Open() {
     } else {
         int opt = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-        timeval timeout;
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 100 * 1000;
-        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+//        timeval timeout;
+//        timeout.tv_sec = 0;
+//        timeout.tv_usec = 100 * 1000;
+//        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+//        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
     }
 
@@ -305,19 +305,33 @@ void FusionClient::ThreadProcessSend(void *p) {
         if (!client->queue_send.pop(pkg)) {
             continue;
         }
+        pthread_mutex_lock(&client->lock_sock);
         bzero(buf_send, ARRAY_SIZE(buf_send));
         uint32_t len_send = 0;
         //pack
         common::Pack(pkg, buf_send, &len_send);
-        int len = send(client->sockfd, buf_send, len_send, 0);
-        if (len != len_send) {
-            printf("send fail");
-
-        } else if (len <= 0) {
-            if ((errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
+        //尽力发送
+        int nleft = 0;
+        int nsend = 0;
+        uint8_t *ptr = buf_send;
+        nleft = len_send;
+        while (nleft > 0) {
+            if ((nsend = send(client->sockfd, ptr, nleft, 0)) < 0) {
+                if (errno == EINTR) {
+                    nsend = 0;          /* and call send() again */
+                } else {
+                    printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
+                    pthread_mutex_unlock(&client->lock_sock);
+                    client->isRun = false;
+                }
+            } else if (nsend == 0) {
                 client->isRun = false;
+                break;                  /* EOF */
             }
+            nleft -= nsend;
+            ptr += nsend;
         }
+        pthread_mutex_unlock(&client->lock_sock);
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
 }
@@ -350,7 +364,7 @@ void FusionClient::ThreadCheckStatus(void *p) {
 
 }
 
-int FusionClient::Send(Pkg pkg) {
+int FusionClient::SendQueue(Pkg pkg) {
     //try send lock_queue_recv
     if (!queue_send.push(pkg)) {
         return -1;
@@ -358,7 +372,7 @@ int FusionClient::Send(Pkg pkg) {
     return 0;
 }
 
-int FusionClient::SendToBase(Pkg pkg) {
+int FusionClient::SendBase(Pkg pkg) {
     int ret1 = 0;
 
     pthread_mutex_lock(&lock_sock);
@@ -369,16 +383,26 @@ int FusionClient::SendToBase(Pkg pkg) {
 
     //pack
     common::Pack(pkg, buf_send, &len_send);
-    int len = send(sockfd, buf_send, len_send, 0);
-
-    if (len != len_send) {
-        printf("send fail");
-        ret1 = -1;
-    } else if (len <= 0) {
-        ret1 = -1;
-        if ((errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
+    //尽力发送
+    int nleft = 0;
+    int nsend = 0;
+    uint8_t *ptr = buf_send;
+    nleft = len_send;
+    while (nleft > 0) {
+        if ((nsend = send(sockfd, ptr, nleft, 0)) < 0) {
+            if (errno == EINTR) {
+                nsend = 0;          /* and call send() again */
+            } else {
+                printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
+                pthread_mutex_unlock(&lock_sock);
+                isRun = false;
+            }
+        } else if (nsend == 0) {
             isRun = false;
+            break;                  /* EOF */
         }
+        nleft -= nsend;
+        ptr += nsend;
     }
 
     pthread_mutex_unlock(&lock_sock);

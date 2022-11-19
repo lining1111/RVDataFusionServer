@@ -76,9 +76,9 @@ private:
 
 public:
     //send to server
-    int Send(Pkg pkg);
+    int SendQueue(Pkg pkg);
 
-    int SendToBase(Pkg pkg);
+    int SendBase(Pkg pkg);
 
 };
 

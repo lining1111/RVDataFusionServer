@@ -152,7 +152,7 @@ static void Task_FusionData(void *p, moniter::PacketLoss *packetLoss) {
             for (int j = 0; j < local->clientList.size(); j++) {
                 auto cli = local->clientList.at(j);
                 if (cli->isRun) {
-                    if (cli->SendToBase(pkg) == -1) {
+                    if (cli->SendQueue(pkg) == -1) {
                         Info("连接到上层，发送消息失败");
                         packetLoss->Fail();
                     } else {
@@ -199,7 +199,7 @@ static void Task_TrafficFlows(void *p) {
                 for (int j = 0; j < local->clientList.size(); j++) {
                     auto cli = local->clientList.at(j);
                     if (cli->isRun) {
-                        if (cli->SendToBase(pkg) == -1) {
+                        if (cli->SendBase(pkg) == -1) {
                             Info("server %d TrafficFlows连接到上层%d，发送消息失败,matrixNo:%d", i, j, pkg.head.deviceNO);
                         } else {
 //                Info("server %d TrafficFlows连接到上层%d，发送数据成功,matrixNo:%d", i,,j,pkg.head.deviceNO);
@@ -237,7 +237,7 @@ static void Task_LineupInfoGather(void *p) {
                 for (int j = 0; j < local->clientList.size(); j++) {
                     auto cli = local->clientList.at(j);
                     if (cli->isRun) {
-                        if (cli->SendToBase(pkg) == -1) {
+                        if (cli->SendBase(pkg) == -1) {
                             Info("server %d LineupInfoGather连接到上层%d，发送消息失败,matrixNo:%d", i, j, pkg.head.deviceNO);
                         } else {
 //                Info("server %d LineupInfoGather连接到上层%d，发送数据成功,matrixNo:%d", i,j,pkg.head.deviceNO);
@@ -275,7 +275,7 @@ static void Task_CrossTrafficJamAlarm(void *p) {
                 for (int j = 0; j < local->clientList.size(); j++) {
                     auto cli = local->clientList.at(j);
                     if (cli->isRun) {
-                        if (cli->SendToBase(pkg) == -1) {
+                        if (cli->SendBase(pkg) == -1) {
                             Info("server %d CrossTrafficJamAlarm连接到上层%d，发送消息失败,matrixNo:%d", i, j,
                                  pkg.head.deviceNO);
                         } else {

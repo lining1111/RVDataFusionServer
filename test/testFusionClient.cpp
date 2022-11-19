@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
             pkg.body = "nihao";
             pkg.head.len += pkg.body.length();
 
-            client->Send(pkg);
+            client->SendQueue(pkg);
 
         } else if (user == "2") {
 
