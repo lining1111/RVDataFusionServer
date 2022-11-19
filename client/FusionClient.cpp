@@ -393,11 +393,13 @@ int FusionClient::SendBase(Pkg pkg) {
             if (errno == EINTR) {
                 nsend = 0;          /* and call send() again */
             } else {
+                ret1 = -1;
                 printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
                 pthread_mutex_unlock(&lock_sock);
                 isRun = false;
             }
         } else if (nsend == 0) {
+            ret1 = -1;
             isRun = false;
             break;                  /* EOF */
         }
