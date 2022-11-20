@@ -21,6 +21,7 @@ add_executable(testServer testServer.cpp
         ../ringBuffer/RingBuffer.cpp
         ../log/Log.cpp
         ../server/ClientInfo.cpp
+        ../server/FindOneFrame/FindOneFrame.cpp
         ../server/FusionServer.cpp
         ../client/FusionClient.cpp
         ../merge/merge.cpp
@@ -57,3 +58,6 @@ add_executable(testTimeTask testTimeTask.cpp
         ../timeTask.hpp)
 target_link_libraries(testTimeTask ${LIBS})
 redefine_file_macro(testTimeTask)
+
+add_executable(testTempClass testTempClass.cpp)
+target_link_libraries(testTempClass ${LIBS})

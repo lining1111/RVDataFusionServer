@@ -36,6 +36,7 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *sup
     this->isLive.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
+    queuePkg.setMax(300);
 
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
@@ -294,7 +295,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("watchData json 解析失败");
+                    Error("watchData json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
 
@@ -340,7 +341,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("TrafficFlow json 解析失败");
+                    Error("TrafficFlow json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
                 TrafficFlow trafficFlow;
@@ -364,7 +365,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("CrossTrafficJamAlarm json 解析失败");
+                    Error("CrossTrafficJamAlarm json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
                 CrossTrafficJamAlarm crossTrafficJamAlarm;
@@ -386,7 +387,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("LineupInfo json 解析失败");
+                    Error("LineupInfo json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
                 LineupInfo lineupInfo;
@@ -410,7 +411,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
-                    Error("MultiviewCarTrack json 解析失败");
+                    Error("MultiviewCarTrack json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
                 MultiViewCarTrack multiViewCarTrack;

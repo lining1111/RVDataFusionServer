@@ -22,6 +22,8 @@ FusionClient::FusionClient(string server_ip, unsigned int server_port, void *sup
     this->server_ip = server_ip;
     this->server_port = server_port;
     this->super = super;
+    queuePkg.setMax(1000);
+    queue_send.setMax(1000);
 }
 
 FusionClient::~FusionClient() {

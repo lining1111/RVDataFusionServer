@@ -184,14 +184,14 @@ static void Task_TrafficFlows(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUint = iter->dataUnit_TrafficFlows;
-        if (!dataUint.o_queue.empty()) {
+        auto dataUnit = &iter->dataUnit_TrafficFlows;
+        if (!dataUnit->o_queue.empty()) {
             TrafficFlows data;
-            if (dataUint.o_queue.pop(data)) {
+            if (dataUnit->o_queue.pop(data)) {
                 uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
                 Pkg pkg;
-                PkgTrafficFlowsWithoutCRC(data, dataUint.sn, deviceNo, pkg);
-                dataUint.sn++;
+                PkgTrafficFlowsWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -222,14 +222,14 @@ static void Task_LineupInfoGather(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUint = iter->dataUnit_LineupInfoGather;
-        if (!dataUint.o_queue.empty()) {
+        auto dataUnit = &iter->dataUnit_LineupInfoGather;
+        if (!dataUnit->o_queue.empty()) {
             LineupInfoGather data;
-            if (dataUint.o_queue.pop(data)) {
+            if (dataUnit->o_queue.pop(data)) {
                 uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
                 Pkg pkg;
-                PkgLineupInfoGatherWithoutCRC(data, dataUint.sn, deviceNo, pkg);
-                dataUint.sn++;
+                PkgLineupInfoGatherWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -260,14 +260,14 @@ static void Task_CrossTrafficJamAlarm(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUint = iter->dataUnit_CrossTrafficJamAlarm;
-        if (!dataUint.o_queue.empty()) {
+        auto dataUnit = &iter->dataUnit_CrossTrafficJamAlarm;
+        if (!dataUnit->o_queue.empty()) {
             CrossTrafficJamAlarm data;
-            if (dataUint.o_queue.pop(data)) {
+            if (dataUnit->o_queue.pop(data)) {
                 uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
                 Pkg pkg;
-                PkgCrossTrafficJamAlarmWithoutCRC(data, dataUint.sn, deviceNo, pkg);
-                dataUint.sn++;
+                PkgCrossTrafficJamAlarmWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;

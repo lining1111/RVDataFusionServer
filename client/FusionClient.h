@@ -48,8 +48,8 @@ private:
     uint8_t *pkgBuffer = nullptr;//分包缓冲
     int index = 0;//分包缓冲的索引
 public:
-    Queue<Pkg, 1000> queuePkg;//包消息队列
-    Queue<Pkg, 1000> queue_send;
+    Queue<Pkg> queuePkg;//包消息队列
+    Queue<Pkg> queue_send;
 
 public:
 

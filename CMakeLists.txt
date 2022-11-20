@@ -60,6 +60,7 @@ set(SRC_DIRS ./
         ringBuffer
         common
         monitor
+        server/FindOneFrame
         server
         client
         merge

@@ -12,7 +12,7 @@
 using namespace std;
 
 
-template<typename T, int cap>
+template<typename T>
 class Queue {
 public:
     Queue() {
@@ -20,9 +20,6 @@ public:
         pthread_mutex_init(&mutex, 0);
         // 线程条件变量的初始化
         pthread_cond_init(&cond, 0);
-        if (cap > 0) {
-            setMax(cap);
-        }
     }
 
     ~Queue() {
@@ -125,7 +122,7 @@ public:
         return q.empty();
     }
 
-public:
+private:
     // 如何保证对这个队列的操作是线程安全的？引入互斥锁
 
     queue<T> q;

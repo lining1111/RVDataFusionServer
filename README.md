@@ -46,3 +46,5 @@
         1.4
         threadMerge 从 queueObjs中取出数据进入融合算法，算出融合后的数据vector<OBJECT_INFO_NEW>,存入queueMergeData
         
+###20221120 
+    模板类就是带默认数据类型的通用类

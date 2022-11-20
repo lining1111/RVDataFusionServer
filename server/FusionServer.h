@@ -15,10 +15,6 @@
 #include "merge/merge.h"
 #include "DataUnit.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 using namespace std;
 
 class FusionServer {
@@ -59,9 +55,10 @@ public:
 
 //---------------监控数据相关---------//
 
-    Queue<WatchData,60> watchDatas[MaxRoadNum];
+    mutex mtx_watchData;
+    Queue<WatchData> watchDatas[MaxRoadNum];
 
-    Queue<OBJS, 30> queueObjs;//在同一帧的多路数据
+    Queue<OBJS> queueObjs;//在同一帧的多路数据
 
     const uint8_t watchDatasThresholdFrame = 100;//不同路时间戳相差门限，单位ms
     uint64_t watchDatasCurTimestamp = 0;//当前多方向的标定时间戳，即以这个值为基准，判断多个路口的帧是否在门限内。第一次赋值为接收到第一个方向数据的时间戳单位ms
@@ -76,7 +73,7 @@ public:
         vector<OBJECT_INFO_NEW> obj;//融合输出量
         OBJS objInput;//融合输入量
     } MergeData;
-    Queue<MergeData, 30> queueMergeData;//融合后的数据
+    Queue<MergeData> queueMergeData;//融合后的数据
     int sn_FusionData = 0;
     //临时变量，用于融合 输出的物体检测从第1帧开始，上上帧拿上帧的，上帧拿这次输出结果。航向角则是从第2帧开始，上上帧拿上帧的，上帧拿这次输出结果
 
@@ -112,25 +109,6 @@ public:
     int angle_value = -1000;
 
 
-    /* //斜路口
-     int flag_view = 2;
-     double left_down_x = -21.3;
-     double left_down_y = -20;
-     double left_up_x = -21.3;
-     double left_up_y = 20;
-     double right_up_x = 21.3;
-     double right_up_y = 20;
-     double right_down_x = 21.3;
-     double right_down_y = -20;
-     double repateX = 10;//fix 不变
-     double repateY = 10;
-     double gatetx = 30;//跟路口有关
-     double gatety = 30;//跟路口有关
-     double gatex = 10;//跟路口有关
-     double gatey = 5;//跟路口有关
-     bool time_flag = true;
-     int angle_value = -1000;
- */
     thread threadFindOneFrame;//多路数据寻找时间戳相差不超过指定限度的
     thread threadMerge;//多路数据融合线程
 
@@ -138,13 +116,14 @@ public:
 
     thread threadTimerTask;
     //---------车辆轨迹---------//
-    DataUnit<MultiViewCarTrack, MultiViewCarTracks, 30, 66, 33, 4> dataUnit_MultiViewCarTracks;
+    DataUnit<MultiViewCarTrack, MultiViewCarTracks> dataUnit_MultiViewCarTracks;
     //---------------路口交通流向相关--------//
-    DataUnit<TrafficFlow, TrafficFlows, 30, 1000, 500, 4> dataUnit_TrafficFlows;
+    DataUnit<TrafficFlow, TrafficFlows> dataUnit_TrafficFlows;
     //------交叉口堵塞报警------//
-    DataUnit<CrossTrafficJamAlarm, CrossTrafficJamAlarm, 30, 1000, 500, 4> dataUnit_CrossTrafficJamAlarm;
+    DataUnit<CrossTrafficJamAlarm, CrossTrafficJamAlarm> dataUnit_CrossTrafficJamAlarm;
     //--------排队长度等信息------//
-    DataUnit<LineupInfo, LineupInfoGather, 30, 1000, 500, 4> dataUnit_LineupInfoGather;
+    DataUnit<LineupInfo, LineupInfoGather> dataUnit_LineupInfoGather;
+
 
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
@@ -250,18 +229,14 @@ private:
 
     static void ThreadNotMerge(void *pServer);
 
-    static void TaskFindOneFrame_TrafficFlow(void *pServer, int cache);
+    static void TaskFindOneFrame_TrafficFlow(void *pServer, unsigned int cache);
 
-    static void TaskFindOneFrame_LineupInfo(void *pServer, int cache);
+    static void TaskFindOneFrame_LineupInfoGather(void *pServer, int cache);
 
     static void TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cache);
 
     static void TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache);
 
 };
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif //_FUSIONSERVER_H
