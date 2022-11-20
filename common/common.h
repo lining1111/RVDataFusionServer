@@ -355,13 +355,13 @@ namespace common {
     //---------交叉路口堵塞报警---------//
     class CrossTrafficJamAlarm {
     public:
-        string OprNum;
-        double Timstamp;
-        string CrossCode;
-        string HardCode;
-        int AlarmType;//1：交叉口堵塞
-        int AlarmStatus;//1 有报警 0 报警恢复
-        string AlarmTime;//日期2022-10-31 10:00:21
+        string oprNum;
+        double timstamp;
+        string crossCode;
+        string hardCode;
+        int alarmType;//1：交叉口堵塞
+        int alarmStatus;//1 有报警 0 报警恢复
+        string alarmTime;//日期2022-10-31 10:00:21
     public:
         bool JsonMarshal(Json::Value &out);
 
@@ -375,17 +375,17 @@ namespace common {
 
     class TrafficFlowLineup {
     public:
-        int LaneID;
-        int AverageSpeed;
-        int Flow;
-        int QueueLength;
-        int SumMini;
-        int SumMid;
-        int SumMax;
-        int HeadWay;
-        int HeadWayTime;
-        int Occupancy;
-        int OccupancySpace;
+        int laneID;
+        int averageSpeed;
+        int flow;
+        int queueLength;
+        int sumMini;
+        int sumMid;
+        int sumMax;
+        int headWay;
+        int headWayTime;
+        int occupancy;
+        int occupancySpace;
     public:
         bool JsonMarshal(Json::Value &out);
 
@@ -394,12 +394,12 @@ namespace common {
 
     class LineupInfo {
     public:
-        string OprNum;
-        double Timstamp;
-        string CrossCode;
-        string HardCode;
-        string RecordDateTime;
-        vector<TrafficFlowLineup> TrafficFlowList;
+        string oprNum;
+        double timstamp;
+        string crossCode;
+        string hardCode;
+        string recordDateTime;
+        vector<TrafficFlowLineup> trafficFlowList;
     public:
         bool JsonMarshal(Json::Value &out);
 
@@ -408,11 +408,11 @@ namespace common {
 
     class LineupInfoGather {
     public:
-        string OprNum;
-        double Timstamp;
-        string CrossCode;
-        string HardCode;
-        vector<TrafficFlowLineup> TrafficFlowList;
+        string oprNum;
+        double timstamp;
+        string crossCode;
+        string hardCode;
+        vector<TrafficFlowLineup> trafficFlowList;
     public:
         bool JsonMarshal(Json::Value &out);
 

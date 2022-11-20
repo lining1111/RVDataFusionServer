@@ -240,8 +240,8 @@ namespace common {
         this->imageData = in["imageData"].asString();
         this->direction = in["direction"].asInt();
 
-        if (in["listAnnuciatorInfo"].isArray()) {
-            Json::Value listAnnuciatorInfo = in["listAnnuciatorInfo"];
+        Json::Value listAnnuciatorInfo = in["listAnnuciatorInfo"];
+        if (listAnnuciatorInfo.isArray()) {
             for (auto iter:listAnnuciatorInfo) {
                 AnnuciatorInfo item;
                 if (item.JsonUnmarshal(iter)) {
@@ -250,8 +250,8 @@ namespace common {
             }
         }
 
-        if (in["lstObjTarget"].isArray()) {
-            Json::Value lstObjTarget = in["lstObjTarget"];
+        Json::Value lstObjTarget = in["lstObjTarget"];
+        if (lstObjTarget.isArray()) {
             for (auto iter:lstObjTarget) {
                 ObjTarget item;
                 if (item.JsonUnmarshal(iter)) {
@@ -321,8 +321,8 @@ namespace common {
         this->rvHardCode = in["rvHardCode"].asString();
         this->imageData = in["imageData"].asString();
 
-        if (in["lstVideoTargets"].isArray()) {
-            Json::Value lstVideoTargets = in["lstVideoTargets"];
+        Json::Value lstVideoTargets = in["lstVideoTargets"];
+        if (lstVideoTargets.isArray()) {
             for (auto iter:lstVideoTargets) {
                 VideoTargets item;
                 if (item.JsonUnmarshal(iter)) {
@@ -379,8 +379,8 @@ namespace common {
         this->latitude = in["latitude"].asDouble();
         this->flagNew = in["flagNew"].asInt();
 
-        if (in["listRvWayObject"].isArray()) {
-            Json::Value listRvWayObject = in["listRvWayObject"];
+        Json::Value listRvWayObject = in["listRvWayObject"];
+        if (listRvWayObject.isArray()) {
             for (auto iter:listRvWayObject) {
                 RvWayObject item;
                 if (item.JsonUnmarshal(iter)) {
@@ -434,8 +434,8 @@ namespace common {
         this->crossID = in["crossID"].asString();
         this->isHasImage = in["isHasImage"].asInt();
 
-        if (in["lstObjTarget"].isArray()) {
-            Json::Value lstObjTarget = in["lstObjTarget"];
+        Json::Value lstObjTarget = in["lstObjTarget"];
+        if (lstObjTarget.isArray()) {
             for (auto iter:lstObjTarget) {
                 ObjMix item;
                 if (item.JsonUnmarshal(iter)) {
@@ -444,8 +444,8 @@ namespace common {
             }
         }
 
-        if (in["lstVideos"].isArray()) {
-            Json::Value lstVideos = in["lstVideos"];
+        Json::Value lstVideos = in["lstVideos"];
+        if (lstVideos.isArray()) {
             for (auto iter:lstVideos) {
                 VideoData item;
                 if (item.JsonUnmarshal(iter)) {
@@ -706,26 +706,26 @@ namespace common {
     }
 
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
-        out["OprNum"] = this->OprNum;
-        out["Timstamp"] = this->Timstamp;
-        out["CrossCode"] = this->CrossCode;
-        out["HardCode"] = this->HardCode;
-        out["AlarmType"] = this->AlarmType;
-        out["AlarmStatus"] = this->AlarmStatus;
-        out["AlarmTime"] = this->AlarmTime;
+        out["oprNum"] = this->oprNum;
+        out["timstamp"] = this->timstamp;
+        out["crossCode"] = this->crossCode;
+        out["hardCode"] = this->hardCode;
+        out["alarmType"] = this->alarmType;
+        out["alarmStatus"] = this->alarmStatus;
+        out["alarmTime"] = this->alarmTime;
 
         return true;
     }
 
     bool CrossTrafficJamAlarm::JsonUnmarshal(Json::Value in) {
 
-        this->OprNum = in["OprNum"].asString();
-        this->Timstamp = in["Timstamp"].asDouble();
-        this->CrossCode = in["CrossCode"].asString();
-        this->HardCode = in["HardCode"].asString();
-        this->AlarmType = in["AlarmType"].asInt();
-        this->AlarmStatus = in["AlarmStatus"].asInt();
-        this->AlarmTime = in["AlarmTime"].asInt();
+        this->oprNum = in["oprNum"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossCode = in["crossCode"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->alarmType = in["alarmType"].asInt();
+        this->alarmStatus = in["alarmStatus"].asInt();
+        this->alarmTime = in["alarmTime"].asInt();
 
         return true;
     }
@@ -761,74 +761,74 @@ namespace common {
 
     bool TrafficFlowLineup::JsonMarshal(Json::Value &out) {
 
-        out["LaneID"] = this->LaneID;
-        out["AverageSpeed"] = this->AverageSpeed;
-        out["Flow"] = this->Flow;
-        out["QueueLength"] = this->QueueLength;
-        out["SumMini"] = this->SumMini;
-        out["SumMid"] = this->SumMid;
-        out["SumMax"] = this->SumMax;
-        out["HeadWay"] = this->HeadWay;
-        out["HeadWayTime"] = this->HeadWayTime;
-        out["Occupancy"] = this->Occupancy;
-        out["OccupancySpace"] = this->OccupancySpace;
+        out["laneID"] = this->laneID;
+        out["averageSpeed"] = this->averageSpeed;
+        out["flow"] = this->flow;
+        out["queueLength"] = this->queueLength;
+        out["sumMini"] = this->sumMini;
+        out["sumMid"] = this->sumMid;
+        out["sumMax"] = this->sumMax;
+        out["headWay"] = this->headWay;
+        out["headWayTime"] = this->headWayTime;
+        out["occupancy"] = this->occupancy;
+        out["occupancySpace"] = this->occupancySpace;
 
         return true;
     }
 
     bool TrafficFlowLineup::JsonUnmarshal(Json::Value in) {
-        this->LaneID = in["LaneID"].asInt();
-        this->AverageSpeed = in["AverageSpeed"].asInt();
-        this->Flow = in["Flow"].asInt();
-        this->QueueLength = in["QueueLength"].asInt();
-        this->SumMini = in["SumMini"].asInt();
-        this->SumMid = in["SumMid"].asInt();
-        this->SumMax = in["SumMax"].asInt();
-        this->HeadWay = in["HeadWay"].asInt();
-        this->HeadWayTime = in["HeadWayTime"].asInt();
-        this->Occupancy = in["Occupancy"].asInt();
-        this->OccupancySpace = in["OccupancySpace"].asInt();
+        this->laneID = in["laneID"].asInt();
+        this->averageSpeed = in["averageSpeed"].asInt();
+        this->flow = in["flow"].asInt();
+        this->queueLength = in["queueLength"].asInt();
+        this->sumMini = in["sumMini"].asInt();
+        this->sumMid = in["sumMid"].asInt();
+        this->sumMax = in["sumMax"].asInt();
+        this->headWay = in["headWay"].asInt();
+        this->headWayTime = in["headWayTime"].asInt();
+        this->occupancy = in["occupancy"].asInt();
+        this->occupancySpace = in["occupancySpace"].asInt();
 
         return true;
     }
 
     bool LineupInfo::JsonMarshal(Json::Value &out) {
-        out["OprNum"] = this->OprNum;
-        out["Timstamp"] = this->Timstamp;
-        out["CrossCode"] = this->CrossCode;
-        out["HardCode"] = this->HardCode;
-        out["RecordDateTime"] = this->RecordDateTime;
+        out["oprNum"] = this->oprNum;
+        out["timstamp"] = this->timstamp;
+        out["crossCode"] = this->crossCode;
+        out["hardCode"] = this->hardCode;
+        out["recordDateTime"] = this->recordDateTime;
 
-        Json::Value TrafficFlowList = Json::arrayValue;
-        if (!this->TrafficFlowList.empty()) {
-            for (auto iter:this->TrafficFlowList) {
+        Json::Value trafficFlowList = Json::arrayValue;
+        if (!this->trafficFlowList.empty()) {
+            for (auto iter:this->trafficFlowList) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
-                    TrafficFlowList.append(item);
+                    trafficFlowList.append(item);
                 }
             }
         } else {
-            TrafficFlowList.resize(0);
+            trafficFlowList.resize(0);
         }
 
-        out["TrafficFlowList"] = TrafficFlowList;
+        out["trafficFlowList"] = trafficFlowList;
 
         return true;
     }
 
     bool LineupInfo::JsonUnmarshal(Json::Value in) {
-        this->OprNum = in["OprNum"].asString();
-        this->Timstamp = in["Timstamp"].asDouble();
-        this->CrossCode = in["CrossCode"].asString();
-        this->HardCode = in["HardCode"].asString();
-        this->RecordDateTime = in["RecordDateTime"].asString();
+        this->oprNum = in["oprNum"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossCode = in["crossCode"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->recordDateTime = in["recordDateTime"].asString();
 
-        if (in["TrafficFlowList"].isArray()) {
-            Json::Value TrafficFlowList = in["TrafficFlowList"];
-            for (auto iter:TrafficFlowList) {
+        Json::Value trafficFlowList = in["trafficFlowList"];
+        if (trafficFlowList.isArray()) {
+            for (auto iter:trafficFlowList) {
                 TrafficFlowLineup item;
                 if (item.JsonUnmarshal(iter)) {
-                    this->TrafficFlowList.push_back(item);
+                    this->trafficFlowList.push_back(item);
                 }
             }
         }
@@ -837,40 +837,40 @@ namespace common {
     }
 
     bool LineupInfoGather::JsonMarshal(Json::Value &out) {
-        out["OprNum"] = this->OprNum;
-        out["Timstamp"] = this->Timstamp;
-        out["CrossCode"] = this->CrossCode;
-        out["HardCode"] = this->HardCode;
+        out["oprNum"] = this->oprNum;
+        out["timstamp"] = this->timstamp;
+        out["crossCode"] = this->crossCode;
+        out["hardCode"] = this->hardCode;
 
-        Json::Value TrafficFlowList = Json::arrayValue;
-        if (!this->TrafficFlowList.empty()) {
-            for (auto iter:this->TrafficFlowList) {
+        Json::Value trafficFlowList = Json::arrayValue;
+        if (!this->trafficFlowList.empty()) {
+            for (auto iter:this->trafficFlowList) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
-                    TrafficFlowList.append(item);
+                    trafficFlowList.append(item);
                 }
             }
         } else {
-            TrafficFlowList.resize(0);
+            trafficFlowList.resize(0);
         }
 
-        out["TrafficFlowList"] = TrafficFlowList;
+        out["TrafficFlowList"] = trafficFlowList;
 
         return true;
     }
 
     bool LineupInfoGather::JsonUnmarshal(Json::Value in) {
-        this->OprNum = in["OprNum"].asString();
-        this->Timstamp = in["Timstamp"].asDouble();
-        this->CrossCode = in["CrossCode"].asString();
-        this->HardCode = in["HardCode"].asString();
+        this->oprNum = in["oprNum"].asString();
+        this->timstamp = in["timstamp"].asDouble();
+        this->crossCode = in["crossCode"].asString();
+        this->hardCode = in["hardCode"].asString();
 
-        if (in["TrafficFlowList"].isArray()) {
-            Json::Value TrafficFlowList = in["TrafficFlowList"];
-            for (auto iter:TrafficFlowList) {
+        Json::Value trafficFlowList = in["trafficFlowList"];
+        if (trafficFlowList.isArray()) {
+            for (auto iter:trafficFlowList) {
                 TrafficFlowLineup item;
                 if (item.JsonUnmarshal(iter)) {
-                    this->TrafficFlowList.push_back(item);
+                    this->trafficFlowList.push_back(item);
                 }
             }
         }
@@ -935,8 +935,8 @@ namespace common {
         this->crossID = in["crossID"].asString();
         this->recordDateTime = in["recordDateTime"].asString();
 
-        if (in["lstObj"].isArray()) {
-            Json::Value lstObj = in["lstObj"];
+        Json::Value lstObj = in["lstObj"];
+        if (lstObj.isArray()) {
             for (auto iter:lstObj) {
                 CarTrack item;
                 if (item.JsonUnmarshal(iter)) {

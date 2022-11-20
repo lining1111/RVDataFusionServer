@@ -176,16 +176,16 @@ void testCRC() {
 
 void exampleLineupInfo() {
     LineupInfo lineupInfo;
-    lineupInfo.OprNum = "123";
-    lineupInfo.HardCode = "abc";
+    lineupInfo.oprNum = "123";
+    lineupInfo.hardCode = "abc";
     TrafficFlowLineup trafficFlowLineup;
-    trafficFlowLineup.HeadWay = 1;
-    trafficFlowLineup.AverageSpeed = 2;
-    lineupInfo.TrafficFlowList.push_back(trafficFlowLineup);
+    trafficFlowLineup.headWay = 1;
+    trafficFlowLineup.averageSpeed = 2;
+    lineupInfo.trafficFlowList.push_back(trafficFlowLineup);
     TrafficFlowLineup trafficFlowLineup1;
-    trafficFlowLineup1.HeadWay = 3;
-    trafficFlowLineup1.AverageSpeed = 4;
-    lineupInfo.TrafficFlowList.push_back(trafficFlowLineup1);
+    trafficFlowLineup1.headWay = 3;
+    trafficFlowLineup1.averageSpeed = 4;
+    lineupInfo.trafficFlowList.push_back(trafficFlowLineup1);
     Json::FastWriter fastWriter;
     Json::Reader reader;
 
