@@ -185,6 +185,7 @@ static void Task_TrafficFlows(void *p) {
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
         auto dataUnit = &iter->dataUnit_TrafficFlows;
+        unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             TrafficFlows data;
             if (dataUnit->o_queue.pop(data)) {
@@ -223,6 +224,7 @@ static void Task_LineupInfoGather(void *p) {
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
         auto dataUnit = &iter->dataUnit_LineupInfoGather;
+        unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             LineupInfoGather data;
             if (dataUnit->o_queue.pop(data)) {
@@ -261,6 +263,7 @@ static void Task_CrossTrafficJamAlarm(void *p) {
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
         auto dataUnit = &iter->dataUnit_CrossTrafficJamAlarm;
+        unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             CrossTrafficJamAlarm data;
             if (dataUnit->o_queue.pop(data)) {
@@ -289,6 +292,47 @@ static void Task_CrossTrafficJamAlarm(void *p) {
         }
     }
 }
+
+static void Task_MultiViewCarTracks(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+
+    auto local = (Local *) p;
+
+    for (int i = 0; i < local->serverList.size(); i++) {
+        auto iter = local->serverList.at(i);
+        auto dataUnit = &iter->dataUnit_MultiViewCarTracks;
+        unique_lock<mutex> lck(dataUnit->mtx);
+        if (!dataUnit->o_queue.empty()) {
+            MultiViewCarTracks data;
+            if (dataUnit->o_queue.pop(data)) {
+                uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
+                Pkg pkg;
+                PkgMultiViewCarTracksWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
+                if (local->clientList.empty()) {
+                    Info("client list empty");
+                    continue;
+                }
+                for (int j = 0; j < local->clientList.size(); j++) {
+                    auto cli = local->clientList.at(j);
+                    if (cli->isRun) {
+                        if (cli->SendBase(pkg) == -1) {
+                            Info("server %d CrossTrafficJamAlarm连接到上层%d，发送消息失败,matrixNo:%d", i, j,
+                                 pkg.head.deviceNO);
+                        } else {
+//                Info("server %d CrossTrafficJamAlarm连接到上层%d，发送数据成功,matrixNo:%d", i,j,pkg.head.deviceNO);
+                        }
+                    } else {
+                        Error("server %d CrossTrafficJamAlarm未连接到上层%d，丢弃消息,matrixNo:%d", i, j, pkg.head.deviceNO);
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 
 /**
@@ -437,6 +481,10 @@ int main(int argc, char **argv) {
     Timer timerCrossTrafficJamAlarm;
     timerCrossTrafficJamAlarm.start(1, std::bind(Task_CrossTrafficJamAlarm, &local));
     timers.push_back(timerCrossTrafficJamAlarm);
+
+    Timer timerMultiViewCarTracks;
+    timerMultiViewCarTracks.start(1, std::bind(Task_MultiViewCarTracks, &local));
+    timers.push_back(timerMultiViewCarTracks);
 
     HttpServerInit(10000, &local);
 

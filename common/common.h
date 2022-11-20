@@ -257,6 +257,7 @@ namespace common {
      */
     int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
+    //车流量统计
     class FlowData {
     public:
         string laneCode;
@@ -302,6 +303,7 @@ namespace common {
 
     int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
+    //车辆轨迹
     class CarTrack {
     public:
         int id;
@@ -351,6 +353,10 @@ namespace common {
 
         bool JsonUnmarshal(Json::Value in);
     };
+
+    int
+    PkgMultiViewCarTracksWithoutCRC(MultiViewCarTracks multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+
 
     //---------交叉路口堵塞报警---------//
     class CrossTrafficJamAlarm {

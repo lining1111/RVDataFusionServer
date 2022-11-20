@@ -352,7 +352,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-
+                unique_lock<mutex> lck(server->dataUnit_TrafficFlows.mtx);
                 if (!server->dataUnit_TrafficFlows.i_queue_vector.at(client->indexSuper).push(trafficFlow)) {
                     Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
@@ -373,7 +373,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-
+                unique_lock<mutex> lck(server->dataUnit_CrossTrafficJamAlarm.mtx);
                 if (!server->dataUnit_CrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).push(
                         crossTrafficJamAlarm)) {
                     Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
@@ -395,7 +395,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-
+                unique_lock<mutex> lck(server->dataUnit_LineupInfoGather.mtx);
                 if (!server->dataUnit_LineupInfoGather.i_queue_vector.at(client->indexSuper).push(lineupInfo)) {
                     Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
@@ -419,7 +419,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-
+                unique_lock<mutex> lck(server->dataUnit_MultiViewCarTracks.mtx);
                 if (!server->dataUnit_MultiViewCarTracks.i_queue_vector.at(client->indexSuper).push(
                         multiViewCarTrack)) {
                     Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));

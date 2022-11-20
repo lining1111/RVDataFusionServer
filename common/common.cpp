@@ -906,6 +906,8 @@ namespace common {
         return 0;
     }
 
+
+
     bool MultiViewCarTracks::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
@@ -946,4 +948,33 @@ namespace common {
         }
         return true;
     }
+    int
+    PkgMultiViewCarTracksWithoutCRC(MultiViewCarTracks multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = CmdType::DeviceMultiviewCarTrack;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        multiViewCarTracks.JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
+
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
+
+        pkg.head.len = len;
+
+        return 0;
+    }
 }
+
