@@ -292,8 +292,6 @@ int signalIgnpipe() {
 }
 
 
-typedef map<string, Timer *> TimerTasks;
-
 void addTimerTask(TimerTasks *timerTasks, string name, uint64_t timeval_ms, std::function<void()> task) {
     Timer *timer = new Timer();
     timer->start(timeval_ms, task);
@@ -397,6 +395,8 @@ int main(int argc, char **argv) {
     //开启发送定时任务
     TimerTasks timerTasks;
     StartTimerTask(&timerTasks, &local);
+    local.timerTasks = &timerTasks;
+
 
     HttpServerInit(10000, &local);
 

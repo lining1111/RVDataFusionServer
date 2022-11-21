@@ -418,19 +418,19 @@ void FusionServer::ThreadTimerTask(void *pServer) {
     auto server = (FusionServer *) pServer;
     Info("%s run", __FUNCTION__);
 
-    server->addTimerTask("timerFusionData", server->dataUnitFusionData.fs_ms,
-                         std::bind(TaskFindOneFrame_FusionData, server, 10));
+    server->addTimerTask("fusionServer timerFusionData", server->dataUnitFusionData.fs_ms,
+                         std::bind(TaskFusionData, server, 10));
 
-    server->addTimerTask("timerTrafficFlow", server->dataUnitTrafficFlows.fs_ms,
-                         std::bind(TaskFindOneFrame_TrafficFlow, server, 10));
-    server->addTimerTask("timerLineupInfoGather", server->dataUnitLineupInfoGather.fs_ms,
-                         std::bind(TaskFindOneFrame_LineupInfoGather, server, 10));
+    server->addTimerTask("fusionServer timerTrafficFlow", server->dataUnitTrafficFlows.fs_ms,
+                         std::bind(TaskTrafficFlow, server, 10));
+    server->addTimerTask("fusionServer timerLineupInfoGather", server->dataUnitLineupInfoGather.fs_ms,
+                         std::bind(TaskLineupInfoGather, server, 10));
 
-    server->addTimerTask("timerCrossTrafficJamAlarm", server->dataUnitCrossTrafficJamAlarm.fs_ms,
-                         std::bind(TaskFindOneFrame_CrossTrafficJamAlarm, server, 10));
+    server->addTimerTask("fusionServer timerCrossTrafficJamAlarm", server->dataUnitCrossTrafficJamAlarm.fs_ms,
+                         std::bind(TaskCrossTrafficJamAlarm, server, 10));
 
-    server->addTimerTask("timerMultiViewCarTracks", server->dataUnitMultiViewCarTracks.fs_ms,
-                         std::bind(TaskFindOneFrame_MultiViewCarTracks, server, 10));
+    server->addTimerTask("fusionServer timerMultiViewCarTracks", server->dataUnitMultiViewCarTracks.fs_ms,
+                         std::bind(TaskMultiViewCarTracks, server, 10));
 
     Info("%s exit", __FUNCTION__);
 }
@@ -457,7 +457,7 @@ void FusionServer::deleteTimerTaskAll() {
     }
 }
 
-void FusionServer::TaskFindOneFrame_FusionData(void *pServer, int cache) {
+void FusionServer::TaskFusionData(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
@@ -477,7 +477,7 @@ void FusionServer::TaskFindOneFrame_FusionData(void *pServer, int cache) {
     }
 }
 
-void FusionServer::TaskFindOneFrame_TrafficFlow(void *pServer, unsigned int cache) {
+void FusionServer::TaskTrafficFlow(void *pServer, unsigned int cache) {
     if (pServer == nullptr) {
         return;
     }
@@ -491,7 +491,7 @@ void FusionServer::TaskFindOneFrame_TrafficFlow(void *pServer, unsigned int cach
 }
 
 //寻找头部
-void FusionServer::TaskFindOneFrame_LineupInfoGather(void *pServer, int cache) {
+void FusionServer::TaskLineupInfoGather(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
@@ -505,7 +505,7 @@ void FusionServer::TaskFindOneFrame_LineupInfoGather(void *pServer, int cache) {
 }
 
 //寻找尾部
-void FusionServer::TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cache) {
+void FusionServer::TaskCrossTrafficJamAlarm(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
@@ -518,7 +518,7 @@ void FusionServer::TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cach
     }
 }
 
-void FusionServer::TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache) {
+void FusionServer::TaskMultiViewCarTracks(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }

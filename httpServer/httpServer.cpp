@@ -24,6 +24,12 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
             item1.direction = iter1->direction;
             item.clients.push_back(item1);
         }
+
+        map<string, Timer *>::iterator iter2;
+        for (iter2 = iter->timerTasks.begin(); iter2 != iter->timerTasks.end(); iter2++) {
+            item.tasks.push_back(iter2->first);
+        }
+
         localInfo.serverInfos.push_back(item);
     }
 
@@ -33,6 +39,13 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
         item.serverPort = iter->server_port;
         localInfo.cliInfos.push_back(item);
     }
+
+
+    map<string, Timer *>::iterator iter;
+    for (iter = mLocal->timerTasks->begin(); iter != mLocal->timerTasks->end(); iter++) {
+        localInfo.timerTasksInfo.names.push_back(iter->first);
+    }
+
 
     string jsonStr;
     Json::FastWriter fastWriter;
@@ -92,6 +105,18 @@ bool ServerInfo::JsonMarshal(Json::Value &out) {
     }
     out["clients"] = clients;
 
+    Json::Value tasks = Json::arrayValue;
+    if (!this->tasks.empty()) {
+        for (auto iter:this->tasks) {
+            Json::Value item;
+            item["task"] = iter;
+            tasks.append(item);
+        }
+    } else {
+        tasks.resize(0);
+    }
+    out["tasks"] = tasks;
+
     return true;
 }
 
@@ -106,6 +131,14 @@ bool ServerInfo::JsonUnmarshal(Json::Value in) {
             if (item.JsonUnmarshal(iter)) {
                 this->clients.push_back(item);
             }
+        }
+    }
+    if (in["tasks"].isArray()) {
+        Json::Value tasks = in["tasks"];
+        for (auto iter:tasks) {
+            string item;
+            item = iter.asString();
+            this->tasks.push_back(item);
         }
     }
 
@@ -154,6 +187,10 @@ bool LocalInfo::JsonMarshal(Json::Value &out) {
     }
     out["cliInfos"] = cliInfos;
 
+    Json::Value timerTasksInfo = Json::objectValue;
+    this->timerTasksInfo.JsonMarshal(timerTasksInfo);
+    out["timerTasksInfo"] = timerTasksInfo;
+
     return true;
 }
 
@@ -178,5 +215,36 @@ bool LocalInfo::JsonUnmarshal(Json::Value in) {
         }
     }
 
+    if (in["timerTasksInfo"].isObject()) {
+        Json::Value timerTasksInfo = in["timerTasksInfo"];
+        this->timerTasksInfo.JsonUnmarshal(timerTasksInfo);
+    }
+
+    return true;
+}
+
+bool TimerTasksInfo::JsonMarshal(Json::Value &out) {
+    Json::Value names = Json::arrayValue;
+    if (!this->names.empty()) {
+        for (auto iter:this->names) {
+            Json::Value item;
+            item["name"] = iter;
+            names.append(item);
+        }
+    } else {
+        names.resize(0);
+    }
+    out["names"] = names;
+    return true;
+}
+
+bool TimerTasksInfo::JsonUnmarshal(Json::Value in) {
+    if (!in["names"].empty()) {
+        Json::Value names = in["names"];
+        for (auto iter:names) {
+            string item = iter.asString();
+            this->names.push_back(item);
+        }
+    }
     return true;
 }

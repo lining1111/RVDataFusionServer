@@ -168,7 +168,7 @@ private:
 
     void deleteTimerTaskAll();
 
-    static void TaskFindOneFrame_FusionData(void *pServer, int cache);
+    static void TaskFusionData(void *pServer, int cache);
 
     /**
      * 多路数据融合线程
@@ -178,13 +178,13 @@ private:
 
     static void ThreadNotMerge(void *pServer);
 
-    static void TaskFindOneFrame_TrafficFlow(void *pServer, unsigned int cache);
+    static void TaskTrafficFlow(void *pServer, unsigned int cache);
 
-    static void TaskFindOneFrame_LineupInfoGather(void *pServer, int cache);
+    static void TaskLineupInfoGather(void *pServer, int cache);
 
-    static void TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cache);
+    static void TaskCrossTrafficJamAlarm(void *pServer, int cache);
 
-    static void TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache);
+    static void TaskMultiViewCarTracks(void *pServer, int cache);
 
 };
 

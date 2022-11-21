@@ -32,7 +32,7 @@ public:
     string ip;
     int port;
     vector<ServerClientInfo> clients;
-public:
+    vector<string> tasks;
 public:
     bool JsonMarshal(Json::Value &out);
 
@@ -50,10 +50,20 @@ public:
     bool JsonUnmarshal(Json::Value in);
 };
 
+class TimerTasksInfo{
+public:
+    vector<string> names;
+public:
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
 class LocalInfo{
 public:
     vector<ServerInfo> serverInfos;
     vector<CliInfo> cliInfos;
+    TimerTasksInfo timerTasksInfo;
 public:
     bool JsonMarshal(Json::Value &out);
 

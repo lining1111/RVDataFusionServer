@@ -7,11 +7,12 @@
 
 #include <server/FusionServer.h>
 #include <client/FusionClient.h>
-
+typedef map<string, Timer *> TimerTasks;
 typedef struct {
     std::vector<FusionServer *> serverList;
     std::vector<FusionClient *> clientList;
     bool isRun;
+    TimerTasks *timerTasks;
 } Local;
 
 
