@@ -60,7 +60,7 @@ public:
     thread threadDump;//接收数据并存入环形buffer
 
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
-    Queue<Pkg> queuePkg;
+    Queue<Pkg> queuePkg = Queue<Pkg>(300);
 
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
 

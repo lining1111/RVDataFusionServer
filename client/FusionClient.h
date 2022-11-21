@@ -12,6 +12,7 @@
 #include "common/common.h"
 #include "ringBuffer/RingBuffer.h"
 #include "Queue.h"
+
 using namespace std;
 using namespace common;
 
@@ -48,8 +49,8 @@ private:
     uint8_t *pkgBuffer = nullptr;//分包缓冲
     int index = 0;//分包缓冲的索引
 public:
-    Queue<Pkg> queuePkg;//包消息队列
-    Queue<Pkg> queue_send;
+    Queue<Pkg> queuePkg = Queue<Pkg>(1000);;//包消息队列
+    Queue<Pkg> queue_send = Queue<Pkg>(1000);
 
 public:
 

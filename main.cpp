@@ -40,130 +40,33 @@ static void Task_FusionData(void *p, moniter::PacketLoss *packetLoss) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        FusionServer::MergeData mergeData;
-        if (iter->queueMergeData.pop(mergeData)) {
-            FusionData fusionData;
-            fusionData.oprNum = random_uuid();
-            fusionData.timstamp = mergeData.timestamp;
-            fusionData.crossID = iter->watchDatasCrossID;
-            //lstObjTarget
-            for (int i = 0; i < mergeData.obj.size(); i++) {
-                auto iter = mergeData.obj.at(i);
-                ObjMix objMix;
-                objMix.objID = iter.showID;
-
-                if (iter.objID1 != -INF) {
-                    RvWayObject rvWayObject;
-                    rvWayObject.wayNo = North;
-                    rvWayObject.roID = iter.objID1;
-                    rvWayObject.voID = iter.cameraID1;
-                    objMix.listRvWayObject.push_back(rvWayObject);
+        auto dataUnit = &iter->dataUnitFusionData;
+        unique_lock<mutex> lck(dataUnit->mtx);
+        if (!dataUnit->o_queue.empty()) {
+            FusionData data;
+            if (dataUnit->o_queue.pop(data)) {
+                uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
+                Pkg pkg;
+                PkgFusionDataWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
+                if (local->clientList.empty()) {
+                    Info("client list empty");
+                    continue;
                 }
-                if (iter.objID2 != -INF) {
-                    RvWayObject rvWayObject;
-                    rvWayObject.wayNo = East;
-                    rvWayObject.roID = iter.objID2;
-                    rvWayObject.voID = iter.cameraID2;
-                    objMix.listRvWayObject.push_back(rvWayObject);
-                }
-                if (iter.objID3 != -INF) {
-                    RvWayObject rvWayObject;
-                    rvWayObject.wayNo = South;
-                    rvWayObject.roID = iter.objID3;
-                    rvWayObject.voID = iter.cameraID3;
-                    objMix.listRvWayObject.push_back(rvWayObject);
-                }
-                if (iter.objID4 != -INF) {
-                    RvWayObject rvWayObject;
-                    rvWayObject.wayNo = West;
-                    rvWayObject.roID = iter.objID4;
-                    rvWayObject.voID = iter.cameraID4;
-                    objMix.listRvWayObject.push_back(rvWayObject);
-                }
-
-                objMix.objType = iter.objType;
-                objMix.objColor = 0;
-                objMix.plates = string(iter.plate_number);
-                objMix.plateColor = string(iter.plate_color);
-                objMix.distance = atof(string(iter.distance).c_str());
-                objMix.angle = iter.directionAngle;
-                objMix.speed = iter.speed;
-                objMix.locationX = iter.locationX;
-                objMix.locationY = iter.locationY;
-                objMix.longitude = iter.longitude;
-                objMix.latitude = iter.latitude;
-                objMix.flagNew = iter.flag_new;
-
-                fusionData.lstObjTarget.push_back(objMix);
-            }
-            if (isSendPicData) {
-                fusionData.isHasImage = 1;
-                //lstVideos
-                for (int i = 0; i < ARRAY_SIZE(mergeData.objInput.roadData); i++) {
-                    auto iter = mergeData.objInput.roadData[i];
-                    VideoData videoData;
-                    videoData.rvHardCode = iter.hardCode;
-                    videoData.imageData = iter.imageData;
-                    for (auto iter1:iter.listObjs) {
-                        VideoTargets videoTargets;
-                        videoTargets.cameraObjID = iter1.cameraID;
-                        videoTargets.left = iter1.left;
-                        videoTargets.top = iter1.top;
-                        videoTargets.right = iter1.right;
-                        videoTargets.bottom = iter1.bottom;
-                        videoData.lstVideoTargets.push_back(videoTargets);
-                    }
-                    fusionData.lstVideos.push_back(videoData);
-
-                }
-            } else {
-                fusionData.isHasImage = 0;
-                fusionData.lstVideos.resize(0);
-            }
-
-            uint32_t deviceNo = stoi(iter->matrixNo.substr(0, 10));
-            Pkg pkg;
-            PkgFusionDataWithoutCRC(fusionData, iter->sn_FusionData, deviceNo, pkg);
-            iter->sn_FusionData++;
-            //存10帧数据到txt
-            if (0) {
-//            if (saveCount < 10) {
-                string filePath = "/mnt/mnt_hd/send/" + to_string(fusionData.timstamp) + ".txt";
-                fstream fin;
-                fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
-                if (fin.is_open()) {
-                    fin.write(pkg.body.c_str(), pkg.body.size());
-                    fin.flush();
-                    fin.close();
-                }
-//            saveCount++;
-//            }
-            }
-
-//        Info("sn:%d \t\tfusionData timestamp:%f", pkg.head.sn, fusionData.timstamp);
-
-            if (local->clientList.empty()) {
-                Info("client list empty");
-                continue;
-            }
-            timeval start;
-            timeval end;
-            gettimeofday(&start, nullptr);
-            for (int j = 0; j < local->clientList.size(); j++) {
-                auto cli = local->clientList.at(j);
-                if (cli->isRun) {
-                    if (cli->SendQueue(pkg) == -1) {
-                        Info("连接到上层，发送消息失败");
-                        packetLoss->Fail();
+                for (int j = 0; j < local->clientList.size(); j++) {
+                    auto cli = local->clientList.at(j);
+                    if (cli->isRun) {
+                        if (cli->SendBase(pkg) == -1) {
+                            Info("server %d FusionData连接到上层%d，发送消息失败,matrixNo:%d", i, j, pkg.head.deviceNO);
+                            packetLoss->Fail();
+                        } else {
+//                Info("server %d FusionData连接到上层%d，发送数据成功,matrixNo:%d", i,,j,pkg.head.deviceNO);
+                            packetLoss->Success();
+                        }
                     } else {
-                        packetLoss->Success();
-                        gettimeofday(&end, nullptr);
-                        int cost = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
-//                Info("融合程序连接到上层，发送数据成功,耗时：%d ms", cost);
+                        Error("server %d FusionData未连接到上层%d，丢弃消息,matrixNo:%d", i, j, pkg.head.deviceNO);
+                        packetLoss->Fail();
                     }
-                } else {
-                    Error("未连接到上层，丢弃消息");
-                    packetLoss->Fail();
                 }
             }
         }
@@ -184,7 +87,7 @@ static void Task_TrafficFlows(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUnit = &iter->dataUnit_TrafficFlows;
+        auto dataUnit = &iter->dataUnitTrafficFlows;
         unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             TrafficFlows data;
@@ -223,7 +126,7 @@ static void Task_LineupInfoGather(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUnit = &iter->dataUnit_LineupInfoGather;
+        auto dataUnit = &iter->dataUnitLineupInfoGather;
         unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             LineupInfoGather data;
@@ -262,7 +165,7 @@ static void Task_CrossTrafficJamAlarm(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUnit = &iter->dataUnit_CrossTrafficJamAlarm;
+        auto dataUnit = &iter->dataUnitCrossTrafficJamAlarm;
         unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             CrossTrafficJamAlarm data;
@@ -302,7 +205,7 @@ static void Task_MultiViewCarTracks(void *p) {
 
     for (int i = 0; i < local->serverList.size(); i++) {
         auto iter = local->serverList.at(i);
-        auto dataUnit = &iter->dataUnit_MultiViewCarTracks;
+        auto dataUnit = &iter->dataUnitMultiViewCarTracks;
         unique_lock<mutex> lck(dataUnit->mtx);
         if (!dataUnit->o_queue.empty()) {
             MultiViewCarTracks data;
@@ -332,7 +235,6 @@ static void Task_MultiViewCarTracks(void *p) {
         }
     }
 }
-
 
 
 /**
@@ -389,6 +291,45 @@ int signalIgnpipe() {
     return 0;
 }
 
+
+typedef map<string, Timer *> TimerTasks;
+
+void addTimerTask(TimerTasks *timerTasks, string name, uint64_t timeval_ms, std::function<void()> task) {
+    Timer *timer = new Timer();
+    timer->start(timeval_ms, task);
+    timerTasks->insert(make_pair(name, timer));
+}
+
+moniter::PacketLoss packetLoss(1000 * 60);
+
+void StartTimerTask(TimerTasks *timerTasks, Local *local) {
+
+    addTimerTask(timerTasks, "main timerKeep", 1000, std::bind(Task_Keep, local));
+    addTimerTask(timerTasks, "main timerFusionData", 100, std::bind(Task_FusionData, local, &packetLoss));
+    //查看丢包
+    addTimerTask(timerTasks, "main timerMontorFusionData", 1000 * 60, std::bind(MonitorFusionData, &packetLoss));
+
+    addTimerTask(timerTasks, "main timerTrafficFlows", 100, std::bind(Task_TrafficFlows, local));
+    addTimerTask(timerTasks, "main timerLineupInfoGather", 100, std::bind(Task_LineupInfoGather, local));
+    addTimerTask(timerTasks, "main timerCrossTrafficJamAlarm", 1000 * 10, std::bind(Task_CrossTrafficJamAlarm, local));
+    addTimerTask(timerTasks, "main timerMultiViewCarTracks", 66, std::bind(Task_MultiViewCarTracks, local));
+}
+
+void deleteTimerTask(TimerTasks *timerTasks, string name) {
+    auto timerTask = timerTasks->find(name);
+    if (timerTask != timerTasks->end()) {
+        delete timerTask->second;
+        timerTasks->erase(timerTask++);
+    }
+}
+
+void StopTimerTaskAll(TimerTasks *timerTasks) {
+    auto iter = timerTasks->begin();
+    while (iter != timerTasks->end()) {
+        delete iter->second;
+        iter = timerTasks->erase(iter);
+    }
+}
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
@@ -454,37 +395,8 @@ int main(int argc, char **argv) {
     }
 
     //开启发送定时任务
-    vector<Timer> timers;
-
-    Timer timerKeep;
-    timerKeep.start(1000, std::bind(Task_Keep, &local));
-    timers.push_back(timerKeep);
-
-    Timer timerFusionData;
-    moniter::PacketLoss packetLoss(1000 * 60);
-    timerFusionData.start(1, std::bind(Task_FusionData, &local, &packetLoss));
-    timers.push_back(timerFusionData);
-
-    //查看丢包
-    Timer timerMontorFusionData;
-    timerMontorFusionData.start(60 * 1000, std::bind(MonitorFusionData, &packetLoss));
-    timers.push_back(timerMontorFusionData);
-
-    Timer timerTrafficFlows;
-    timerTrafficFlows.start(1, std::bind(Task_TrafficFlows, &local));
-    timers.push_back(timerTrafficFlows);
-
-    Timer timerLineupInfoGather;
-    timerLineupInfoGather.start(1, std::bind(Task_LineupInfoGather, &local));
-    timers.push_back(timerLineupInfoGather);
-
-    Timer timerCrossTrafficJamAlarm;
-    timerCrossTrafficJamAlarm.start(1, std::bind(Task_CrossTrafficJamAlarm, &local));
-    timers.push_back(timerCrossTrafficJamAlarm);
-
-    Timer timerMultiViewCarTracks;
-    timerMultiViewCarTracks.start(1, std::bind(Task_MultiViewCarTracks, &local));
-    timers.push_back(timerMultiViewCarTracks);
+    TimerTasks timerTasks;
+    StartTimerTask(&timerTasks, &local);
 
     HttpServerInit(10000, &local);
 

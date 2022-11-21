@@ -22,6 +22,14 @@ public:
         pthread_cond_init(&cond, 0);
     }
 
+    Queue(unsigned int max) {
+        // 锁的初始化
+        pthread_mutex_init(&mutex, 0);
+        // 线程条件变量的初始化
+        pthread_cond_init(&cond, 0);
+        setMax(max);
+    }
+
     ~Queue() {
         // 锁的释放
         pthread_mutex_destroy(&mutex);

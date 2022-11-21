@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <fstream>
+#include <string>
+#include <sstream>
 #include <valarray>
 #include <iomanip>
 #include "server/FusionServer.h"
@@ -17,23 +19,18 @@
 #include "simpleini/SimpleIni.h"
 #include "sqlite3.h"
 #include "timeTask.hpp"
-#include "server/FindOneFrame/FindOneFrame.h"
 
 using namespace z_log;
 
 FusionServer::FusionServer(bool isMerge) {
     this->isRun.store(false);
     this->isMerge = isMerge;
-    for (auto &iter:watchDatas) {
-        iter.setMax(30);
-    }
-    queueObjs.setMax(30);
-    queueMergeData.setMax(30);
 
-    dataUnit_MultiViewCarTracks.init(30, 66, 33, 4);
-    dataUnit_TrafficFlows.init(30, 1000, 500, 4);
-    dataUnit_CrossTrafficJamAlarm.init(30, 1000, 500, 4);
-    dataUnit_LineupInfoGather.init(30, 1000, 500, 4);
+    dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
+    dataUnitMultiViewCarTracks.init(30, 66, 33, 4);//66ms一帧
+    dataUnitTrafficFlows.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
 
 }
 
@@ -43,146 +40,58 @@ FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isM
     this->maxListen = maxListen;
     this->isRun.store(false);
     this->isMerge = isMerge;
-    for (auto &iter:watchDatas) {
-        iter.setMax(30);
-    }
-    queueObjs.setMax(30);
-    queueMergeData.setMax(30);
-    dataUnit_MultiViewCarTracks.init(30, 66, 33, 4);
-    dataUnit_TrafficFlows.init(30, 1000, 500, 4);
-    dataUnit_CrossTrafficJamAlarm.init(30, 1000, 500, 4);
-    dataUnit_LineupInfoGather.init(30, 1000, 500, 4);
+    dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
+    dataUnitMultiViewCarTracks.init(30, 66, 33, 4);//66ms一帧
+    dataUnitTrafficFlows.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
 }
 
 FusionServer::~FusionServer() {
+    deleteTimerTaskAll();
     Close();
 }
 
-void FusionServer::initConfig() {
-
-    if (!config.empty()) {
-        FILE *fp = fopen(config.c_str(), "r+");
-        if (fp == nullptr) {
-            Error("can not open file:%s", config.c_str());
-            return;
-        }
-        CSimpleIniA ini;
-        ini.LoadFile(fp);
-
-        const char *S_repateX = ini.GetValue("server", "repateX", "");
-        repateX = atof(S_repateX);
-//        const char *S_widthX = ini.GetValue("server", "widthX", "");
-//        widthX = atof(S_widthX);
-//        const char *S_widthY = ini.GetValue("server", "widthY", "");
-//        widthY = atof(S_widthY);
-//        const char *S_Xmax = ini.GetValue("server", "Xmax", "");
-//        Xmax = atof(S_Xmax);
-//        const char *S_Ymax = ini.GetValue("server", "Ymax", "");
-//        Ymax = atof(S_Ymax);
-        const char *S_gatetx = ini.GetValue("server", "gatetx", "");
-        gatetx = atof(S_gatetx);
-        const char *S_gatety = ini.GetValue("server", "gatety", "");
-        gatety = atof(S_gatety);
-        const char *S_gatex = ini.GetValue("server", "gatex", "");
-        gatex = atof(S_gatex);
-        const char *S_gatey = ini.GetValue("server", "gatey", "");
-        gatey = atof(S_gatey);
-
-        fclose(fp);
-    }
-}
-
-
-static int CallbackGetCL_ParkingArea(void *data, int argc, char **argv, char **azColName) {
-    string colName;
-    if (data != nullptr) {
-        auto server = (FusionServer *) data;
-        for (int i = 0; i < argc; i++) {
-            colName = string(azColName[i]);
-            if (colName.compare("UName") == 0) {
-                server->matrixNo = string(argv[i]);
-                cout << "get matrixNo from db:" + server->matrixNo << endl;
-            }
-        }
-    }
-
-    return 0;
-}
-
-
-void FusionServer::getMatrixNoFromDb() {
+int FusionServer::getMatrixNoFromDb() {
+    //打开数据库
     sqlite3 *db;
-    char *errmsg = nullptr;
-
     string dbName;
 #ifdef arm64
     dbName = "/home/nvidianx/bin/CLParking.db";
 #else
-    dbName = "./CLParking.db";
+    dbName = "./db/CLParking.db";
 #endif
-
-
     //open
     int rc = sqlite3_open(dbName.c_str(), &db);
     if (rc != SQLITE_OK) {
         printf("sqlite open fail\n");
         sqlite3_close(db);
+        return -1;
     }
 
-    //base
-    char *sqlCmd = "select * from CL_ParkingArea";
-    rc = sqlite3_exec(db, sqlCmd, CallbackGetCL_ParkingArea, this, &errmsg);
+    char *sql = "select UName from CL_ParkingArea";
+    char **result, *errmsg;
+    int nrow, ncolumn, i, j, index;
+    string columnName;
+    rc = sqlite3_get_table(db, sql, &result, &nrow, &ncolumn, &errmsg);
     if (rc != SQLITE_OK) {
         printf("sqlite err:%s\n", errmsg);
         sqlite3_free(errmsg);
+        return -1;
     }
-
-}
-
-static int CallbackGetbelong_intersection(void *data, int argc, char **argv, char **azColName) {
-    string colName;
-    if (data != nullptr) {
-        auto server = (FusionServer *) data;
-        for (int i = 0; i < argc; i++) {
-            colName = string(azColName[i]);
-            if (colName.compare("PlatId") == 0) {
-                server->watchDatasCrossID = string(argv[i]);
-                cout << "get crossID from db:" + server->watchDatasCrossID << endl;
+    for (int m = 0; m < nrow; m++) {
+        for (int n = 0; n < ncolumn; n++) {
+            columnName = string(result[n]);
+            if (columnName == "UName") {
+                matrixNo = STR(result[ncolumn + n + m * nrow]);
+                break;
             }
         }
     }
-
+    sqlite3_free_table(result);
+    sqlite3_close(db);
     return 0;
 }
-
-void FusionServer::getCrossIdFromDb() {
-    sqlite3 *db;
-    char *errmsg = nullptr;
-
-    string dbName;
-#ifdef arm64
-    dbName = "/home/nvidianx/eoc_configure.db";
-#else
-    dbName = "./eoc_configure.db";
-#endif
-
-
-    //open
-    int rc = sqlite3_open(dbName.c_str(), &db);
-    if (rc != SQLITE_OK) {
-        printf("sqlite open fail\n");
-        sqlite3_close(db);
-    }
-
-    //intersectionEntity
-    char *sqlCmd = "select * from belong_intersection";
-    rc = sqlite3_exec(db, sqlCmd, CallbackGetbelong_intersection, this, &errmsg);
-    if (rc != SQLITE_OK) {
-        printf("sqlite err:%s\n", errmsg);
-        sqlite3_free(errmsg);
-    }
-}
-
 
 int FusionServer::Open() {
     //1.申请sock
@@ -270,19 +179,6 @@ int FusionServer::Run() {
     threadMonitor = thread(ThreadMonitor, this);
     pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
     threadMonitor.detach();
-
-    if (isMerge) {
-        //开启服务器多路数据融合线程
-        threadMerge = thread(ThreadMerge, this);
-        pthread_setname_np(threadMerge.native_handle(), "FusionServer merge");
-        threadMerge.detach();
-    } else {
-        //开启服务器多路数据不融合线程
-        threadNotMerge = thread(ThreadNotMerge, this);
-        pthread_setname_np(threadNotMerge.native_handle(), "FusionServer notMerge");
-        threadNotMerge.detach();
-    }
-
     //开启定时任务
     threadTimerTask = thread(ThreadTimerTask, this);
     pthread_setname_np(threadTimerTask.native_handle(), "FusionServer threadTimerTask");
@@ -522,729 +418,75 @@ void FusionServer::ThreadTimerTask(void *pServer) {
     auto server = (FusionServer *) pServer;
     Info("%s run", __FUNCTION__);
 
-    vector<Timer> timers;
+    server->addTimerTask("timerFusionData", server->dataUnitFusionData.fs_ms,
+                         std::bind(TaskFindOneFrame_FusionData, server, 10));
 
-    Timer timerFusionData;
-    timerFusionData.start(100, std::bind(TaskFindOneFrame_FusionData, server, 10));
-    timers.push_back(timerFusionData);
+    server->addTimerTask("timerTrafficFlow", server->dataUnitTrafficFlows.fs_ms,
+                         std::bind(TaskFindOneFrame_TrafficFlow, server, 10));
+    server->addTimerTask("timerLineupInfoGather", server->dataUnitLineupInfoGather.fs_ms,
+                         std::bind(TaskFindOneFrame_LineupInfoGather, server, 10));
 
+    server->addTimerTask("timerCrossTrafficJamAlarm", server->dataUnitCrossTrafficJamAlarm.fs_ms,
+                         std::bind(TaskFindOneFrame_CrossTrafficJamAlarm, server, 10));
 
-    Timer timerTrafficFlow;
-    timerTrafficFlow.start(1000, std::bind(TaskFindOneFrame_TrafficFlow, server, 3));
-    timers.push_back(timerTrafficFlow);
+    server->addTimerTask("timerMultiViewCarTracks", server->dataUnitMultiViewCarTracks.fs_ms,
+                         std::bind(TaskFindOneFrame_MultiViewCarTracks, server, 10));
 
-    Timer timerLineupInfo;
-    timerLineupInfo.start(1000, std::bind(TaskFindOneFrame_LineupInfoGather, server, 3));
-    timers.push_back(timerLineupInfo);
-
-
-    Timer timerCrossTrafficJamAlarm;
-    timerCrossTrafficJamAlarm.start(1000, std::bind(TaskFindOneFrame_CrossTrafficJamAlarm, server, 10));
-    timers.push_back(timerCrossTrafficJamAlarm);
-
-    Timer timerMultiViewCarTracks;
-    timerMultiViewCarTracks.start(66, std::bind(TaskFindOneFrame_MultiViewCarTracks, server, 10));
-    timers.push_back(timerMultiViewCarTracks);
-
-    while (server->isRun.load()) {
-        sleep(1);
-    }
-    for (auto &iter: timers) {
-        iter.stop();
-    }
     Info("%s exit", __FUNCTION__);
-
-
 }
 
+void FusionServer::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
+    Timer *timer = new Timer();
+    timer->start(timeval_ms, task);
+    timerTasks.insert(make_pair(name, timer));
+}
+
+void FusionServer::deleteTimerTask(string name) {
+    auto timerTask = timerTasks.find(name);
+    if (timerTask != timerTasks.end()) {
+        delete timerTask->second;
+        timerTasks.erase(timerTask++);
+    }
+}
+
+void FusionServer::deleteTimerTaskAll() {
+    auto iter = timerTasks.begin();
+    while (iter != timerTasks.end()) {
+        delete iter->second;
+        iter = timerTasks.erase(iter);
+    }
+}
 
 void FusionServer::TaskFindOneFrame_FusionData(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-
+    auto dataUnit = &server->dataUnitFusionData;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(server->mtx_watchData);
-        //所有的客户端都要缓存3帧数据
-        int maxPkgs = 0;//轮询各个路存有的最大帧数
-        int maxPkgsIndex;
-        for (int i = 0; i < ARRAY_SIZE(server->watchDatas); i++) {
-            auto iter = server->watchDatas[i];
-//            Info("client-%d,watchData size:%d", iter->sock, iter->queueWatchData.size());
-            //得到最大帧数
-            if (iter.size() > maxPkgs) {
-                maxPkgs = iter.size();
-                maxPkgsIndex = i;
-            }
-        }
-//        Info("clientNum %d,maxPkgs %d", clientNum, maxPkgs);
-        if (maxPkgs >= cache) {
-            Info("寻找同一帧数据");
-            OBJS objs;//容量为4,依次是北、东、南、西
-            //2.确定时间戳
-            WatchData refer;
-            if (server->watchDatas[maxPkgsIndex].front(refer)) {
-                server->watchDatasCurTimestamp = refer.timstamp;//一直取第一路的时间戳为基准
-            } else {
-                server->watchDatasCurTimestamp += 100;
-                Info("时间戳自动加100");
-            }
-
-            //如果现在的时间戳比本地的系统时间差2分钟，则用本地时间-1分钟的标准
-            struct timeval now;
-            gettimeofday(&now, nullptr);
-            uint64_t timestamp = (now.tv_sec * 1000 + now.tv_usec / 1000) - 1 * 60 * 1000;
-            if (server->watchDatasCurTimestamp < timestamp) {
-                Info("选取的系统时间-1分钟");
-                server->watchDatasCurTimestamp = timestamp;
-            }
-
-            Info("这次选取的时间戳标准为%lu", server->watchDatasCurTimestamp);
-
-
-            //3取数
-            auto obj = objs.roadData;
-            //3.1清理
-            for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-                obj[i].imageData = "";
-                obj[i].hardCode = "";
-                obj[i].listObjs.clear();
-            }
-            //清理第N路的取帧时间戳记录
-            for (int i = 0; i < ARRAY_SIZE(server->watchDatasXRoadTimestamp); i++) {
-                server->watchDatasXRoadTimestamp[i] = 0;
-            }
-            //测量本次内时间差用的临时变量
-            uint64_t max = 0;
-            uint64_t min = 0;
-
-            //3.2取数据
-            int getDataRoadNum = 0;//获取了几路数据
-            for (int i = 0; i < ARRAY_SIZE(server->watchDatas); i++) {
-                auto iter = server->watchDatas[i];
-                //watchData数据
-                if (iter.empty()) {
-                    //客户端未有数据传入，不填充数据
-                    Info("第%d路未有数据传入，不填充数据", i + 1);
-                } else {
-                    //找到门限内的数据,1.只有一组数据，则就是它了，如果多组则选取门限内的
-                    bool isFind = false;
-                    do {
-                        WatchData refer;
-                        if (iter.front(refer)) {
-                            if ((refer.timstamp >=
-                                 (double) (server->watchDatasCurTimestamp - server->watchDatasThresholdFrame)) &&
-                                (refer.timstamp <=
-                                 (double) (server->watchDatasCurTimestamp + server->watchDatasThresholdFrame))) {
-                                //出队列
-                                WatchData cur;
-                                iter.pop(cur);
-                                //按路记录时间戳
-                                server->watchDatasXRoadTimestamp[i] = cur.timstamp;
-                                Info("第%d路取的时间戳是%lu", i + 1, server->watchDatasXRoadTimestamp[i]);
-
-                                //get max min
-                                if (max == 0) {
-                                    max = (uint64_t) cur.timstamp;
-                                } else {
-                                    max = (uint64_t) cur.timstamp > max ? (uint64_t) cur.timstamp : max;
-                                }
-
-                                if (min == 0) {
-                                    min = (uint64_t) cur.timstamp;
-                                } else {
-                                    min = (uint64_t) cur.timstamp < min ? (uint64_t) cur.timstamp : min;
-                                }
-
-
-                                //TODO 赋值路口编号
-                                if (server->watchDatasCrossID.empty()) {
-                                    server->watchDatasCrossID = cur.matrixNo;
-                                }
-                                //时间戳大于当前时间戳，直接取
-
-                                obj[i].hardCode = cur.hardCode;
-                                obj[i].imageData = cur.imageData;
-//                                    Info("寻找同一帧，找到第%d路的数据后，hardCode:%s 图像大小%d", i, obj[i].hardCode.c_str(),
-//                                         obj[i].imageData.size());
-                                for (auto item: cur.lstObjTarget) {
-                                    OBJECT_INFO_T objectInfoT;
-                                    //转换
-                                    ObjTarget2OBJECT_INFO_T(item, objectInfoT);
-                                    obj[i].listObjs.push_back(objectInfoT);
-                                }
-
-                                getDataRoadNum++;
-                                isFind = true;
-                            } else if ((refer.timstamp <
-                                        (double) (server->watchDatasCurTimestamp - server->watchDatasThresholdFrame))) {
-                                //小于当前时间戳或者不在门限内，出队列抛弃
-                                Info("第%d路时间戳%lu靠前,舍弃", i + 1, (uint64_t) refer.timstamp);
-                                //出队列抛弃
-                                WatchData cur;
-                                iter.pop(cur);
-
-                            } else if ((refer.timstamp >
-                                        (double) (server->watchDatasCurTimestamp + server->watchDatasThresholdFrame))) {
-                                Info("第%d路时间戳%lu靠后,保留", i + 1, (uint64_t) refer.timstamp);
-                                isFind = true;
-                            }
-                        }
-                        //如果全部抛完
-                        if (iter.empty()) {
-                            //队列为空，直接退出
-                            Info("第%d路队列为空直接退出", i + 1);
-                            isFind = true;
-                        }
-                    } while (!isFind);
-                }
-            }
-
-            //        Info("max %lu,min %lu", max, min);
-            server->curTimeDistance = (max - min);
-            if (server->timeDistance == 0) {
-                server->timeDistance = server->curTimeDistance;
-            } else {
-                server->timeDistance = server->curTimeDistance > server->timeDistance ?
-                                       server->curTimeDistance : server->timeDistance;
-            }
-
-            Info("当前帧时间差为%lu,统计最大时间差为%lu", server->curTimeDistance, server->timeDistance);
-
-            //3.存入待融合队列，即queueObjs
-            if (getDataRoadNum == 1) {
-                objs.isOneRoad = true;
-
-                for (int i = 0; i < ARRAY_SIZE(obj); i++) {
-                    if (!obj[i].listObjs.empty() || !obj[i].imageData.empty()) {
-                        objs.hasDataRoadIndex = i;
-//                        Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
-                        break;
-                    }
-                }
-            } else {
-                objs.isOneRoad = false;
-            }
-
-            //时间戳打找到同一帧的时间
-            objs.timestamp = server->watchDatasCurTimestamp;
-
-            if (server->queueObjs.push(objs)) {
-                Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
-            } else {
-                Error("队列已满，未存入数据 timestamp:%f", objs.timestamp);
-            }
-        }
-    }
-}
-
-void FusionServer::ThreadMerge(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
-
-        //开始融合数据
-        OBJS objs;
-        if (!server->queueObjs.pop(objs)) {
-            continue;
-        }
-//        Info("开始融合");
-//        Info("待融合数据选取的时间戳:%lu", (uint64_t) objs.timestamp);
-
-        //如果只有一路数据，不做多路融合，直接给出
-        if (objs.isOneRoad) {
-//            Info("只有一路数据，不走融合");
-            MergeData mergeData;
-            mergeData.timestamp = objs.timestamp;
-            mergeData.obj.clear();
-
-            Info("hasDataRoadIndex:%d", objs.hasDataRoadIndex);
-            auto copyFrom = objs.roadData[objs.hasDataRoadIndex];
-
-            //结果直接存输入
-            for (auto iter:copyFrom.listObjs) {
-                OBJECT_INFO_NEW item;
-                OBJECT_INFO_T2OBJECT_INFO_NEW(iter, item);
-                mergeData.obj.push_back(item);
-            }
-
-            mergeData.objInput.roadData[objs.hasDataRoadIndex].hardCode = copyFrom.hardCode;
-            mergeData.objInput.roadData[objs.hasDataRoadIndex].imageData = copyFrom.imageData;
-            mergeData.objInput.roadData[objs.hasDataRoadIndex].listObjs.assign(copyFrom.listObjs.begin(),
-                                                                               copyFrom.listObjs.end());
-
-            if (server->queueMergeData.push(mergeData)) {
-//                Info("存入融合数据，size:%d", mergeData.obj.size());
-            } else {
-//                Error("队列已满，抛弃融合数据 ");
-            }
-
-            continue;
-        }
-
-        vector<OBJECT_INFO_NEW> vectorOBJNEW;
-        OBJECT_INFO_NEW dataOut[1000];
-        memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
-
-        int inOBJS = 0;
-
-        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-            inOBJS += objs.roadData[i].listObjs.size();
-        }
-
-//        Info("传入目标数:%d", inOBJS);
-
-        //存输入数据到文件
-        if (0) {
-            string fileName = to_string(server->frameCount) + "_in.txt";
-            ofstream inDataFile;
-            string inDataFileName = "mergeData/" + fileName;
-            inDataFile.open(inDataFileName);
-            string content;
-            for (int j = 0; j < ARRAY_SIZE(objs.roadData); j++) {
-                string split = ",";
-
-                for (int m = 0; m < objs.roadData[j].listObjs.size(); m++) {
-                    auto iter = objs.roadData[j].listObjs.at(m);
-                    content += (to_string(j) + split +
-                                to_string(iter.locationX) + split +
-                                to_string(iter.locationY) + split +
-                                to_string(iter.speedX) + split +
-                                to_string(iter.speedY) + split +
-                                to_string(iter.objID) + split +
-                                to_string(iter.objType));
-                    content += "\n";
-                }
-                //存入图片
-                string inDataPicFileName =
-                        "mergeData/" + to_string(server->frameCount) + "_in_" + to_string(j) + ".jpeg";
-                ofstream inDataPicFile;
-                inDataPicFile.open(inDataPicFileName);
-                if (inDataPicFile.is_open()) {
-                    inDataPicFile.write(objs.roadData[j].imageData.data(), objs.roadData[j].imageData.size());
-                    Info("融合数据图片写入");
-                    inDataPicFile.flush();
-                    inDataPicFile.close();
-                }
-            }
-            if (inDataFile.is_open()) {
-                inDataFile.write((const char *) content.c_str(), content.size());
-                Info("融合数据写入");
-                inDataFile.flush();
-                inDataFile.close();
-            } else {
-                Error("打开文件失败:%s", inDataFileName.c_str());
-            }
-        }
-
-        int num = 0;
-        switch (server->frame) {
-            case 1: {
-                //第一帧
-                server->l1_obj.clear();
-                server->l2_obj.clear();
-
-                num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
-                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
-                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
-                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
-                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
-                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
-                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                  server->l2_obj.size(), dataOut, server->angle_value);
-
-                //斜路口
-                /*     num = merge_total(server->flag_view, server->left_down_x, server->left_down_y,
-                                       server->left_up_x, server->left_up_y,
-                                       server->right_up_x, server->right_up_y,
-                                       server->right_down_x, server->right_down_y,
-                                       server->repateX, server->repateY,
-                                       server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
-                                       objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
-                                       objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
-                                       objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
-                                       objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
-                                       server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                       server->l2_obj.size(), dataOut, server->angle_value);
-     */
-
-                server->time_flag = false;
-
-                //传递历史数据
-                server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
-
-                server->l1_obj.clear();
-                for (int i = 0; i < num; i++) {
-                    server->l1_obj.push_back(dataOut[i]);
-                }
-                server->frame++;
-                server->frameCount++;
-
-                MergeData mergeData;
-                mergeData.obj.clear();
-                for (int i = 0; i < num; i++) {
-                    mergeData.obj.push_back(dataOut[i]);
-                }
-
-                mergeData.timestamp = objs.timestamp;
-                //存输入量
-                for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-                    auto copyFrom = objs.roadData[i];
-                    mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
-                    mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
-                    if (!copyFrom.listObjs.empty()) {
-                        mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
-                                                                       copyFrom.listObjs.end());
-                    }
-                }
-
-                if (server->queueMergeData.push(mergeData)) {
-//                Info("存入融合数据，size:%d", mergeData.obj.size());
-                } else {
-//                Error("队列已满，抛弃融合数据 ");
-                }
-
-                //存输出数据到文件
-                if (0) {
-                    string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
-                    ofstream inDataFileO;
-                    string inDataFileNameO = "mergeData/" + fileNameO;
-                    inDataFileO.open(inDataFileNameO);
-                    string contentO;
-                    for (int j = 0; j < mergeData.obj.size(); j++) {
-                        string split = ",";
-
-                        auto iter = mergeData.obj.at(j);
-                        contentO += (to_string(iter.objID1) + split +
-                                     to_string(iter.objID2) + split +
-                                     to_string(iter.objID3) + split +
-                                     to_string(iter.objID4) + split +
-                                     to_string(iter.showID) + split +
-                                     to_string(iter.cameraID1) + split +
-                                     to_string(iter.cameraID2) + split +
-                                     to_string(iter.cameraID3) + split +
-                                     to_string(iter.cameraID4) + split +
-                                     to_string(iter.locationX) + split +
-                                     to_string(iter.locationY) + split +
-                                     to_string(iter.speed) + split +
-                                     to_string(iter.flag_new));
-                        contentO += "\n";
-                    }
-                    if (inDataFileO.is_open()) {
-                        inDataFileO.write((const char *) contentO.c_str(), contentO.size());
-//                        Info("融合数据写入");
-                        inDataFileO.flush();
-                        inDataFileO.close();
-                    } else {
-//                        Error("打开文件失败:%s", inDataFileNameO.c_str());
-                    }
-                }
-            }
-                break;
-            default: {
-
-                num = merge_total(server->repateX, server->widthX, server->widthY, server->Xmax, server->Ymax,
-                                  server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
-                                  objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
-                                  objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
-                                  objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
-                                  objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
-                                  server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                  server->l2_obj.size(), dataOut, server->angle_value);
-
-                //斜路口
-                /*    num = merge_total(server->flag_view, server->left_down_x, server->left_down_y,
-                                      server->left_up_x, server->left_up_y,
-                                      server->right_up_x, server->right_up_y,
-                                      server->right_down_x, server->right_down_y,
-                                      server->repateX, server->repateY,
-                                      server->gatetx, server->gatety, server->gatex, server->gatey, server->time_flag,
-                                      objs.roadData[0].listObjs.data(), objs.roadData[0].listObjs.size(),
-                                      objs.roadData[1].listObjs.data(), objs.roadData[1].listObjs.size(),
-                                      objs.roadData[2].listObjs.data(), objs.roadData[2].listObjs.size(),
-                                      objs.roadData[3].listObjs.data(), objs.roadData[3].listObjs.size(),
-                                      server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
-                                      server->l2_obj.size(), dataOut, server->angle_value);
-    */
-                //传递历史数据
-                server->l2_obj.assign(server->l1_obj.begin(), server->l1_obj.end());
-                server->l1_obj.clear();
-                for (int i = 0; i < num; i++) {
-                    server->l1_obj.push_back(dataOut[i]);
-                }
-
-                server->frame++;
-
-                if (server->frame > 2) {
-                    server->frame = 2;
-                }
-
-                server->frameCount++;
-                if (server->frameCount >= 0xffffffff) {
-                    Info("帧计数满，从0开始");
-                    server->frameCount = 0;
-                }
-
-                MergeData mergeData;
-                mergeData.obj.clear();
-                for (int i = 0; i < num; i++) {
-                    mergeData.obj.push_back(dataOut[i]);
-                }
-
-                mergeData.timestamp = objs.timestamp;
-                //存输入量
-                for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-                    auto copyFrom = objs.roadData[i];
-                    mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
-                    mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
-                    if (!copyFrom.listObjs.empty()) {
-                        mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
-                                                                       copyFrom.listObjs.end());
-                    }
-                }
-
-                if (server->queueMergeData.push(mergeData)) {
-//                Info("存入融合数据，size:%d", mergeData.obj.size());
-                } else {
-//                Error("队列已满，抛弃融合数据 ");
-                }
-
-                //存输出数据到文件
-                if (0) {
-                    string fileNameO = to_string(server->frameCount - 1) + "_out.txt";
-                    ofstream inDataFileO;
-                    string inDataFileNameO = "mergeData/" + fileNameO;
-                    inDataFileO.open(inDataFileNameO);
-                    string contentO;
-                    for (int j = 0; j < mergeData.obj.size(); j++) {
-                        string split = ",";
-
-                        auto iter = mergeData.obj.at(j);
-                        contentO += (to_string(iter.objID1) + split +
-                                     to_string(iter.objID2) + split +
-                                     to_string(iter.objID3) + split +
-                                     to_string(iter.objID4) + split +
-                                     to_string(iter.showID) + split +
-                                     to_string(iter.cameraID1) + split +
-                                     to_string(iter.cameraID2) + split +
-                                     to_string(iter.cameraID3) + split +
-                                     to_string(iter.cameraID4) + split +
-                                     to_string(iter.locationX) + split +
-                                     to_string(iter.locationY) + split +
-                                     to_string(iter.speed) + split +
-                                     to_string(iter.flag_new));
-                        contentO += "\n";
-                    }
-                    if (inDataFileO.is_open()) {
-                        inDataFileO.write((const char *) contentO.c_str(), contentO.size());
-                        inDataFileO.flush();
-                        inDataFileO.close();
-                    } else {
-//                        Error("打开文件失败:%s", inDataFileNameO.c_str());
-                    }
-                }
-            }
-
-                break;
-        }
-
-    }
-    Info("%s exit", __FUNCTION__);
-}
-
-void FusionServer::ThreadNotMerge(void *pServer) {
-    if (pServer == nullptr) {
-        return;
-    }
-    auto server = (FusionServer *) pServer;
-
-    Info("%s run", __FUNCTION__);
-    while (server->isRun.load()) {
-
-//        Info("不走融合直接发送数据");
-        OBJS objs;
-        if (!server->queueObjs.pop(objs)) {
-            continue;
-        }
-
-//        Info("待融合数据存入:选取的时间戳:%f", objs.timestamp);
-
-        MergeData mergeData;
-        mergeData.obj.clear();
-
-        const int INF = 0x7FFFFFFF;
-        //北、东、南、西
-        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-
-            auto iter = objs.roadData[i];
-
-            for (int j = 0; j < iter.listObjs.size(); j++) {
-                auto iter1 = iter.listObjs.at(j);
-                OBJECT_INFO_NEW item;
-                switch (i) {
-                    case 0://North
-                        item.objID1 = iter1.objID;
-                        item.cameraID1 = iter1.cameraID;
-
-                        item.objID2 = -INF;
-                        item.cameraID2 = -INF;
-                        item.objID3 = -INF;
-                        item.cameraID3 = -INF;
-                        item.objID4 = -INF;
-                        item.cameraID4 = -INF;
-
-                        item.showID = iter1.objID + 10000;
-                        break;
-                    case 1://East
-                        item.objID2 = iter1.objID;
-                        item.cameraID2 = iter1.cameraID;
-
-                        item.objID1 = -INF;
-                        item.cameraID1 = -INF;
-                        item.objID3 = -INF;
-                        item.cameraID3 = -INF;
-                        item.objID4 = -INF;
-                        item.cameraID4 = -INF;
-
-                        item.showID = iter1.objID + 20000;
-                        break;
-                    case 2://South
-                        item.objID3 = iter1.objID;
-                        item.cameraID3 = iter1.cameraID;
-
-                        item.objID2 = -INF;
-                        item.cameraID2 = -INF;
-                        item.objID1 = -INF;
-                        item.cameraID1 = -INF;
-                        item.objID4 = -INF;
-                        item.cameraID4 = -INF;
-
-                        item.showID = iter1.objID + 30000;
-                        break;
-                    case 3:
-                        item.objID4 = iter1.objID;
-                        item.cameraID4 = iter1.cameraID;
-
-                        item.objID2 = -INF;
-                        item.cameraID2 = -INF;
-                        item.objID3 = -INF;
-                        item.cameraID3 = -INF;
-                        item.objID1 = -INF;
-                        item.cameraID1 = -INF;
-
-                        item.showID = iter1.objID + 40000;
-                        break;
-                }
-
-                item.objType = iter1.objType;
-                memcpy(item.plate_number, iter1.plate_number, sizeof(iter1.plate_number));
-                memcpy(item.plate_color, iter1.plate_color, sizeof(iter1.plate_color));
-                item.left = iter1.left;
-                item.top = iter1.top;
-                item.right = iter1.right;
-                item.bottom = iter1.bottom;
-                item.locationX = iter1.locationX;
-                item.locationY = iter1.locationY;
-                memcpy(item.distance, iter1.distance, sizeof(iter1.distance));
-                item.directionAngle = iter1.directionAngle;
-                item.speed = sqrt(iter1.speedX * iter1.speedX + iter1.speedY * iter1.speedY);
-                item.latitude = iter1.latitude;
-                item.longitude = iter1.longitude;
-                item.flag_new = 0;
-
-                mergeData.obj.push_back(item);
-            }
-        }
-
-
-        mergeData.timestamp = objs.timestamp;
-        //存输入量
-        for (int i = 0; i < ARRAY_SIZE(objs.roadData); i++) {
-            auto copyFrom = objs.roadData[i];
-            mergeData.objInput.roadData[i].hardCode = copyFrom.hardCode;
-            mergeData.objInput.roadData[i].imageData = copyFrom.imageData;
-            if (!copyFrom.listObjs.empty()) {
-                mergeData.objInput.roadData[i].listObjs.assign(copyFrom.listObjs.begin(),
-                                                               copyFrom.listObjs.end());
-            }
-        }
-
-
-        if (server->queueMergeData.push(mergeData)) {
-//                Info("存入融合数据，size:%d", mergeData.obj.size());
+        unique_lock<mutex> lck(dataUnit->mtx);
+        //寻找同一帧,并处理
+        DataUnitFusionData::MergeType mergeType;
+        if (server->isMerge) {
+            mergeType = DataUnitFusionData::Merge;
         } else {
-//                Error("队列已满，抛弃融合数据 ");
+            mergeType = DataUnitFusionData::NotMerge;
         }
 
-    }
-    Info("%s exit", __FUNCTION__);
-}
-
-void TaskTrafficFlow(DataUnit<common::TrafficFlow, common::TrafficFlows> &dataUnit) {
-    typedef common::TrafficFlow IType;
-    typedef common::TrafficFlows OType;
-
-
-    OType item;
-    item.oprNum = random_uuid();
-    item.timestamp = dataUnit.curTimestamp;
-    item.crossID = dataUnit.crossID;
-
-    for (auto iter:dataUnit.oneFrame) {
-        if (!iter.flowData.empty()) {
-            for (auto iter1:iter.flowData) {
-                item.trafficFlow.push_back(iter1);
-            }
-        }
-    }
-    if (!dataUnit.o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timestamp);
-    } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timestamp);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitFusionData::TaskProcessOneFrame, mergeType);
     }
 }
-
 
 void FusionServer::TaskFindOneFrame_TrafficFlow(void *pServer, unsigned int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnit_TrafficFlows;
+    auto dataUnit = &server->dataUnitTrafficFlows;
     if (server->isRun.load()) {
         unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        FindOneFrame::FindTrafficFlows(*dataUnit, cache, 1000 * 60, TaskTrafficFlow);
-    }
-}
-
-
-void TaskLineupInfoGather(DataUnit<common::LineupInfo, common::LineupInfoGather> &dataUnit) {
-    typedef common::LineupInfo IType;
-    typedef common::LineupInfoGather OType;
-
-
-    OType item;
-    item.oprNum = random_uuid();
-    item.timstamp = dataUnit.curTimestamp;
-    item.crossCode = dataUnit.crossID;
-
-    for (auto iter:dataUnit.oneFrame) {
-        if (!iter.trafficFlowList.empty()) {
-            for (auto iter1:iter.trafficFlowList) {
-                item.trafficFlowList.push_back(iter1);
-            }
-        }
-    }
-    if (!dataUnit.o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timstamp);
-    } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timstamp);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitTrafficFlows::TaskProcessOneFrame);
     }
 }
 
@@ -1254,43 +496,11 @@ void FusionServer::TaskFindOneFrame_LineupInfoGather(void *pServer, int cache) {
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnit_LineupInfoGather;
+    auto dataUnit = &server->dataUnitLineupInfoGather;
     if (server->isRun.load()) {
         unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        FindOneFrame::FindLineupInfoGather(*dataUnit, cache, 1000 * 60, TaskLineupInfoGather);
-    }
-}
-
-void TaskCrossTrafficJamAlarm(DataUnit<common::CrossTrafficJamAlarm, common::CrossTrafficJamAlarm> &dataUnit) {
-    typedef common::CrossTrafficJamAlarm IType;
-    typedef common::CrossTrafficJamAlarm OType;
-
-
-    OType item;
-    item.oprNum = random_uuid();
-    item.timstamp = dataUnit.curTimestamp;
-    item.crossCode = dataUnit.crossID;
-    item.alarmType = 0;
-    item.alarmStatus = 0;
-    auto tp = std::chrono::system_clock::now();
-    auto time = std::chrono::system_clock::to_time_t(tp);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
-    item.alarmTime = ss.str();
-    //判断是否有拥堵
-    for (auto iter:dataUnit.oneFrame) {
-        if (iter.alarmType == 1) {
-            item.alarmType = iter.alarmType;
-            item.alarmStatus = iter.alarmStatus;
-            item.alarmTime = iter.alarmTime;
-        }
-    }
-
-    if (!dataUnit.o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timstamp);
-    } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timstamp);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitLineupInfoGather::TaskProcessOneFrame);
     }
 }
 
@@ -1300,49 +510,24 @@ void FusionServer::TaskFindOneFrame_CrossTrafficJamAlarm(void *pServer, int cach
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnit_CrossTrafficJamAlarm;
+    auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
     if (server->isRun.load()) {
         unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        FindOneFrame::FindCrossTrafficJamAlarm(*dataUnit, cache, 1000 * 60, TaskCrossTrafficJamAlarm, false);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame, false);
     }
 }
-
-void TaskMultiViewCarTracks(DataUnit<common::MultiViewCarTrack, common::MultiViewCarTracks> &dataUnit) {
-    typedef common::MultiViewCarTrack IType;
-    typedef common::MultiViewCarTracks OType;
-
-
-    OType item;
-    item.oprNum = random_uuid();
-    item.timestamp = dataUnit.curTimestamp;
-    item.crossID = dataUnit.crossID;
-
-    for (auto iter:dataUnit.oneFrame) {
-        if (!iter.lstObj.empty()) {
-            for (auto iter1:iter.lstObj) {
-                item.lstObj.push_back(iter1);
-            }
-        }
-    }
-    if (!dataUnit.o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timestamp);
-    } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timestamp);
-    }
-}
-
 
 void FusionServer::TaskFindOneFrame_MultiViewCarTracks(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnit_MultiViewCarTracks;
+    auto dataUnit = &server->dataUnitMultiViewCarTracks;
     if (server->isRun.load()) {
         unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        FindOneFrame::FindMultiViewCarTracks(*dataUnit, cache, 1000 * 60, TaskMultiViewCarTracks);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitMultiViewCarTracks::TaskProcessOneFrame);
     }
 }
 

@@ -21,7 +21,7 @@ add_executable(testServer testServer.cpp
         ../ringBuffer/RingBuffer.cpp
         ../log/Log.cpp
         ../server/ClientInfo.cpp
-        ../server/FindOneFrame/FindOneFrame.cpp
+        ../server/DataUnit.cpp
         ../server/FusionServer.cpp
         ../client/FusionClient.cpp
         ../merge/merge.cpp

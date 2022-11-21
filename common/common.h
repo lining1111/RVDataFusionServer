@@ -27,7 +27,7 @@ namespace common {
     ( (size_t)( &( ((type*)0)->member)  ) )
 #define MEMBER_SIZE(type, member) \
     sizeof(((type *)0)->member)
-
+#define STR(p) p?p:""
 
     /**
     * 打印hex输出
