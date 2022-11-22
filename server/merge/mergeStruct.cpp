@@ -3,8 +3,8 @@
 //
 
 #include <valarray>
-#include "merge/merge.h"
-#include "merge/mergeStruct.h"
+#include "merge.h"
+#include "mergeStruct.h"
 
 const int INF = 0x7FFFFFFF;
 

@@ -24,8 +24,8 @@ add_executable(testServer testServer.cpp
         ../server/DataUnit.cpp
         ../server/FusionServer.cpp
         ../client/FusionClient.cpp
-        ../merge/merge.cpp
-        ../merge/mergeStruct.cpp)
+        ../server/merge/merge.cpp
+        ../server/merge/mergeStruct.cpp)
 target_link_libraries(testServer ${LIBS})
 redefine_file_macro(testServer)
 

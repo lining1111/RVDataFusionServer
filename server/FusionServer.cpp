@@ -12,17 +12,16 @@
 #include <string>
 #include <sstream>
 #include <valarray>
-#include <iomanip>
 #include "server/FusionServer.h"
 #include "merge/merge.h"
-#include "merge/mergeStruct.h"
 #include "simpleini/SimpleIni.h"
 #include "sqlite3.h"
 #include "timeTask.hpp"
 
 using namespace z_log;
 
-FusionServer::FusionServer(bool isMerge) {
+FusionServer::FusionServer(int port, bool isMerge) {
+    this->port = port;
     this->isRun.store(false);
     this->isMerge = isMerge;
 
@@ -71,7 +70,7 @@ int FusionServer::getMatrixNoFromDb() {
 
     char *sql = "select UName from CL_ParkingArea";
     char **result, *errmsg;
-    int nrow, ncolumn, i, j, index;
+    int nrow, ncolumn;
     string columnName;
     rc = sqlite3_get_table(db, sql, &result, &nrow, &ncolumn, &errmsg);
     if (rc != SQLITE_OK) {

@@ -2,7 +2,7 @@
 // Created by lining on 2/18/22.
 //
 
-#include "merge/merge.h"
+#include "merge.h"
 
 #include <math.h>
 #include <vector>

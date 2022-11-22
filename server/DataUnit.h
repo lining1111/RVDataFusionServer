@@ -8,6 +8,7 @@
 #include "Queue.h"
 #include "common/common.h"
 #include <mutex>
+#include <iostream>
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
 
@@ -25,14 +26,16 @@ public:
     Queue<O> o_queue;//数据队列
     int fs_ms;
     int cap;
+    int numI = 0;
     int thresholdFrame = 10;//时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
 public:
     vector<I> oneFrame;//寻找同一时间戳的数据集
+    uint64_t getData = std::numeric_limits<uint64_t>::max();//按位得值
 
 public:
-    DataUnit() {
+    DataUnit() : cap(30), fs_ms(100), thresholdFrame(100), numI(4) {
 
     }
 
@@ -44,9 +47,12 @@ public:
 
     }
 
+public:
+
     void init(int c, int fs_ms, int threshold_ms, int i_num) {
         this->fs_ms = fs_ms;
         this->cap = c;
+        this->numI = i_num;
         thresholdFrame = threshold_ms;
         i_queue_vector.reserve(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
@@ -56,9 +62,118 @@ public:
         o_queue.setMax(c);
 
         oneFrame.reserve(i_num);
+
         xRoadTimestamp.resize(i_num);
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
+        }
+    }
+
+    bool frontI(I &i, int index) {
+        try {
+            return i_queue_vector.at(index).front(i);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool backI(I &i, int index) {
+        try {
+            return i_queue_vector.at(index).back(i);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool pushI(I i, int index) {
+        try {
+            return i_queue_vector.at(index).push(i);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool popI(I &i, int index) {
+        try {
+            return i_queue_vector.at(index).pop(i);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    int sizeI(int index) {
+        try {
+            return i_queue_vector.at(index).size();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return 0;
+        }
+    }
+
+    int emptyI(int index) {
+        try {
+            return i_queue_vector.at(index).empty();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return true;
+        }
+    }
+
+    bool frontO(O &o) {
+        try {
+            return o_queue.front(o);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool backO(O &o) {
+        try {
+            return o_queue.back(o);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool pushO(O o) {
+        try {
+            return o_queue.push(o);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    bool popO(O &o) {
+        try {
+            return o_queue.pop(o);
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return false;
+        }
+    }
+
+    int sizeO() {
+        try {
+            return o_queue.size();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return 0;
+        }
+    }
+
+    int emptyO() {
+        try {
+            return o_queue.empty();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+            return true;
         }
     }
 };
@@ -75,11 +190,14 @@ public:
     typedef MultiViewCarTrack IType;
     typedef MultiViewCarTracks OType;
 
-    typedef void(*Task)(DataUnitMultiViewCarTracks *);
+    typedef int(*Task)(DataUnitMultiViewCarTracks *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit);
+    static void ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
+                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit);
 };
 
 //车流量统计
@@ -94,11 +212,14 @@ public:
     typedef TrafficFlow IType;
     typedef TrafficFlows OType;
 
-    typedef void(*Task)(DataUnitTrafficFlows *);
+    typedef int(*Task)(DataUnitTrafficFlows *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit);
+    static void ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
+                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit);
 };
 
 //交叉路口堵塞报警
@@ -113,11 +234,14 @@ public:
     typedef CrossTrafficJamAlarm IType;
     typedef CrossTrafficJamAlarm OType;
 
-    typedef void(*Task)(DataUnitCrossTrafficJamAlarm *);
+    typedef int(*Task)(DataUnitCrossTrafficJamAlarm *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit);
+    static void ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
+                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit);
 };
 
 //排队长度等信息
@@ -132,11 +256,14 @@ public:
     typedef LineupInfo IType;
     typedef LineupInfoGather OType;
 
-    typedef void(*Task)(DataUnitLineupInfoGather *);
+    typedef int(*Task)(DataUnitLineupInfoGather *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit);
+    static void ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
+                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit);
 };
 
 //监控数据
@@ -155,11 +282,14 @@ public:
         Merge,
     } MergeType;
 
-    typedef void(*Task)(DataUnitFusionData *, MergeType);
+    typedef int(*Task)(DataUnitFusionData *, MergeType);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, MergeType mergeType, bool isFront = true);
 
-    static void TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
+    static void ThreadGetDataInRange(DataUnitFusionData *dataUnit,
+                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
 
     typedef struct {
         string hardCode;//图像对应的设备编号

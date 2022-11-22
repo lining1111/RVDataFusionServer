@@ -6,13 +6,10 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <iostream>
 #include "server/ClientInfo.h"
 #include "server/FusionServer.h"
 #include "log/Log.h"
 #include "common/CRC.h"
-#include <sys/stat.h>
-#include <fstream>
 
 using namespace z_log;
 using namespace common;
@@ -301,7 +298,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 WatchData watchData;
                 watchData.JsonUnmarshal(pkg.body);
 
-                Info("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%d", client->sock,
+                Info("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
                      inet_ntoa(client->clientAddr.sin_addr),
                      watchData.timstamp,
                      watchData.isHasImage, watchData.lstObjTarget.size());
@@ -317,12 +314,11 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //按照方向顺序放入
                 auto server = (FusionServer *) client->super;
-                unique_lock<mutex> lck(server->dataUnitFusionData.mtx);
                 for (int i = 0; i < ARRAY_SIZE(server->roadDirection); i++) {
                     if (server->roadDirection[i] == client->direction) {
                         //方向相同，放入对应索引下数组
                         //存入队列
-                        if (!server->dataUnitFusionData.i_queue_vector.at(i).push(watchData)) {
+                        if (!server->dataUnitFusionData.pushI(watchData, i)) {
 //                    Info("client:%d WatchData队列已满,丢弃消息:%d-%s", client->sock, pkg.head.cmd, pkg.body.c_str());
 //                    Info("client:%d WatchData队列已满,丢弃消息", client->sock);
                         } else {
@@ -350,8 +346,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                unique_lock<mutex> lck(server->dataUnitTrafficFlows.mtx);
-                if (!server->dataUnitTrafficFlows.i_queue_vector.at(client->indexSuper).push(trafficFlow)) {
+                if (!server->dataUnitTrafficFlows.pushI(trafficFlow, client->indexSuper)) {
                     Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
 
@@ -371,9 +366,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                unique_lock<mutex> lck(server->dataUnitCrossTrafficJamAlarm.mtx);
-                if (!server->dataUnitCrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).push(
-                        crossTrafficJamAlarm)) {
+                if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
                     Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
                          inet_ntoa(client->clientAddr.sin_addr));
                 }
@@ -393,8 +386,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                unique_lock<mutex> lck(server->dataUnitLineupInfoGather.mtx);
-                if (!server->dataUnitLineupInfoGather.i_queue_vector.at(client->indexSuper).push(lineupInfo)) {
+                if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, client->indexSuper)) {
                     Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
@@ -417,9 +409,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                unique_lock<mutex> lck(server->dataUnitMultiViewCarTracks.mtx);
-                if (!server->dataUnitMultiViewCarTracks.i_queue_vector.at(client->indexSuper).push(
-                        multiViewCarTrack)) {
+                if (!server->dataUnitMultiViewCarTracks.pushI(multiViewCarTrack, client->indexSuper)) {
                     Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }

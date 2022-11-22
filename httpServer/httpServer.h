@@ -4,7 +4,7 @@
 
 #ifndef _HTTPSERVER_H
 #define _HTTPSERVER_H
-#include "global.h"
+#include "localBusiness.h"
 
 #include <string>
 #include <vector>
@@ -70,6 +70,6 @@ public:
     bool JsonUnmarshal(Json::Value in);
 };
 
-int HttpServerInit(int port,Local *local);
+int HttpServerInit(int port, LocalBusiness *local);
 
 #endif //_HTTPSERVER_H

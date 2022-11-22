@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "merge/merge.h"
+#include "merge.h"
 #include <vector>
 #include <queue>
 #include <iostream>

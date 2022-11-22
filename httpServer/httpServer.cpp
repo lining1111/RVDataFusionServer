@@ -4,9 +4,12 @@
 
 #include "httpServer.h"
 #include <httplib.h>
+#include "log/Log.h"
+
+using namespace z_log;
 
 httplib::Server svr;
-static Local *mLocal = nullptr;
+static LocalBusiness *mLocal = nullptr;
 
 void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
     resp.set_header("Content-Type", "plain/text");
@@ -17,8 +20,8 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
     for (auto iter:mLocal->serverList) {
         ServerInfo item;
         item.ip = "localhost";
-        item.port = iter->port;
-        for (auto iter1:iter->vectorClient) {
+        item.port = iter.second->port;
+        for (auto iter1:iter.second->vectorClient) {
             ServerClientInfo item1;
             item1.ip = string(inet_ntoa(iter1->clientAddr.sin_addr));
             item1.direction = iter1->direction;
@@ -26,7 +29,7 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
         }
 
         map<string, Timer *>::iterator iter2;
-        for (iter2 = iter->timerTasks.begin(); iter2 != iter->timerTasks.end(); iter2++) {
+        for (iter2 = iter.second->timerTasks.begin(); iter2 != iter.second->timerTasks.end(); iter2++) {
             item.tasks.push_back(iter2->first);
         }
 
@@ -35,14 +38,14 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
 
     for (auto iter:mLocal->clientList) {
         CliInfo item;
-        item.serverIp = iter->server_ip;
-        item.serverPort = iter->server_port;
+        item.serverIp = iter.second->server_ip;
+        item.serverPort = iter.second->server_port;
         localInfo.cliInfos.push_back(item);
     }
 
 
     map<string, Timer *>::iterator iter;
-    for (iter = mLocal->timerTasks->begin(); iter != mLocal->timerTasks->end(); iter++) {
+    for (iter = mLocal->timerTasks.begin(); iter != mLocal->timerTasks.end(); iter++) {
         localInfo.timerTasksInfo.names.push_back(iter->first);
     }
 
@@ -59,11 +62,12 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
 
 void MThread(void *p, int port) {
     httplib::Server *svr = (httplib::Server *) p;
+    Info("开启web服务：%d", port);
     svr->listen("0.0.0.0", port);
 }
 
 
-int HttpServerInit(int port, Local *local) {
+int HttpServerInit(int port, LocalBusiness *local) {
     mLocal = local;
 
     svr.Get("/getLocalInfo", GetLocalInfoCB);

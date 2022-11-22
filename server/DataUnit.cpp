@@ -9,6 +9,7 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include <thread>
 #include "log/Log.h"
 
 using namespace z_log;
@@ -26,15 +27,13 @@ DataUnitMultiViewCarTracks::DataUnitMultiViewCarTracks(int c, int fs_ms, int thr
 
 }
 
-int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task,
-                                             bool isFront) {
+int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
     //1寻找最大帧数
     int maxPkgs = 0;
     int maxPkgsIndex;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        if (iter.size() > maxPkgs) {
-            maxPkgs = iter.size();
+        if (sizeI(i) > maxPkgs) {
+            maxPkgs = sizeI(i);
             maxPkgsIndex = i;
         }
     }
@@ -45,9 +44,10 @@ int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCach
     //2确定标定的时间戳
     IType refer;
     if (isFront) {
-        i_queue_vector.at(maxPkgsIndex).front(refer);
+        frontI(refer, maxPkgsIndex);
+
     } else {
-        i_queue_vector.at(maxPkgsIndex).back(refer);
+        backI(refer, maxPkgsIndex);
     }
     //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
@@ -67,80 +67,95 @@ int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCach
 
     //3取数
     oneFrame.clear();
+    getData = std::numeric_limits<uint64_t>::max();
+    vector<thread> threads;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-        bool isFind = false;
-        do {
-            if (iter.empty()) {
-                std::cout << "第" << to_string(i) << "路数据为空" << endl;
-                isFind = true;
-            } else {
-                IType refer;
-                if (iter.front(refer)) {
-                    if (uint64_t(refer.timstamp) < leftTimestamp) {
-                        //在左值外
-                        if (iter.size() == 1) {
-                            //取用
-                            IType cur;
-                            if (iter.pop(cur)) {
-                                //记录当前路的时间戳
-                                xRoadTimestamp[i] = cur.timstamp;
-                                //记录路口编号
-                                crossID = cur.crossCode;
-                                //将当前路的所有信息缓存入对应的索引
-                                oneFrame.insert(oneFrame.begin() + i, cur);
-                                std::cout << "第" << to_string(i) << "路时间戳较旧但只有1帧，保留:"
-                                          << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                          << endl;
-                                isFind = true;
-                            }
-                        } else {
-                            iter.pop(refer);
-                            std::cout << "第" << to_string(i) << "路时间戳较旧，舍弃:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << endl;
-                        }
-                    } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                               (uint64_t(refer.timstamp) <= rightTimestamp)) {
-                        //在范围内
-                        IType cur;
-                        if (iter.pop(cur)) {
-                            //记录当前路的时间戳
-                            xRoadTimestamp[i] = cur.timstamp;
-                            //记录路口编号
-                            crossID = cur.crossCode;
-                            //将当前路的所有信息缓存入对应的索引
-                            oneFrame.insert(oneFrame.begin() + i, cur);
-                            std::cout << "第" << to_string(i) << "路时间戳在范围内，保留:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << ":" << to_string(rightTimestamp) << endl;
-                            isFind = true;
-                        }
-                    } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                        //在右值外
-                        std::cout << "第" << to_string(i) << "路时间戳较新，保留:"
-                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
-                                  << endl;
-                        isFind = true;
-                    }
-                }
-            }
-        } while (!isFind);
+
+        threads.push_back(thread(ThreadGetDataInRange, this, i, leftTimestamp, rightTimestamp));
+        threads.at(i).detach();
     }
+    //等待找到所以路的数据
+    bool isAllGet = false;
+    while (!isAllGet) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        if ((getData & (1 << numI - 1)) == 0) {
+            isAllGet = true;
+        }
+    }
+
     //调用后续的处理
     if (task != nullptr) {
-        task(this);
+        return task(this);
     }
 
     return 0;
 }
 
-void DataUnitMultiViewCarTracks::TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit) {
-    typedef MultiViewCarTrack IType;
-    typedef MultiViewCarTracks OType;
+void DataUnitMultiViewCarTracks::ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
+                                                      int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
+    bool isFind = false;
+    do {
+        if (dataUnit->emptyI(index)) {
+            std::cout << "第" << to_string(index) << "路数据为空" << endl;
+            isFind = true;
+        } else {
+            IType refer;
+            if (dataUnit->frontI(refer, index)) {
+                if (uint64_t(refer.timstamp) < leftTimestamp) {
+                    //在左值外
+                    if (dataUnit->sizeI(index) == 1) {
+                        //取用
+                        IType cur;
+                        if (dataUnit->popI(cur, index)) {
+                            //记录当前路的时间戳
+                            dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                            //记录路口编号
+                            dataUnit->crossID = cur.crossCode;
+                            //将当前路的所有信息缓存入对应的索引
+                            dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                            std::cout << "第" << to_string(index) << "路时间戳较旧但只有1帧，保留:"
+                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                      << endl;
+                            isFind = true;
+                        }
+                    } else {
+                        dataUnit->popI(refer, index);
+                        std::cout << "第" << to_string(index) << "路时间戳较旧，舍弃:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << endl;
+                    }
+                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                    //在范围内
+                    IType cur;
+                    if (dataUnit->popI(cur, index)) {
+                        //记录当前路的时间戳
+                        dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                        //记录路口编号
+                        dataUnit->crossID = cur.crossCode;
+                        //将当前路的所有信息缓存入对应的索引
+                        dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                        std::cout << "第" << to_string(index) << "路时间戳在范围内，保留:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << ":" << to_string(rightTimestamp) << endl;
+                        isFind = true;
+                    }
+                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
+                    //在右值外
+                    std::cout << "第" << to_string(index) << "路时间戳较新，保留:"
+                              << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
+                              << endl;
+                    isFind = true;
+                }
+            }
+        }
+    } while (!isFind);
 
+    dataUnit->getData = (dataUnit->getData | (1 << index));
+}
 
+int DataUnitMultiViewCarTracks::TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
@@ -153,10 +168,12 @@ void DataUnitMultiViewCarTracks::TaskProcessOneFrame(DataUnitMultiViewCarTracks 
             }
         }
     }
-    if (!dataUnit->o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timestamp);
+    if (!dataUnit->pushO(item)) {
+        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, (uint64_t) item.timestamp);
+        return -1;
     } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timestamp);
+        Info("%s数据存入,timestamp:%lu", __FUNCTION__, (uint64_t) item.timestamp);
+        return 0;
     }
 }
 
@@ -179,9 +196,8 @@ int DataUnitTrafficFlows::FindOneFrame(unsigned int cache, uint64_t toCacheCha, 
     int maxPkgs = 0;
     int maxPkgsIndex;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        if (iter.size() > maxPkgs) {
-            maxPkgs = iter.size();
+        if (sizeI(i) > maxPkgs) {
+            maxPkgs = sizeI(i);
             maxPkgsIndex = i;
         }
     }
@@ -192,9 +208,9 @@ int DataUnitTrafficFlows::FindOneFrame(unsigned int cache, uint64_t toCacheCha, 
     //2确定标定的时间戳
     IType refer;
     if (isFront) {
-        i_queue_vector.at(maxPkgsIndex).front(refer);
+        frontI(refer, maxPkgsIndex);
     } else {
-        i_queue_vector.at(maxPkgsIndex).back(refer);
+        backI(refer, maxPkgsIndex);
     }
     //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
@@ -214,80 +230,95 @@ int DataUnitTrafficFlows::FindOneFrame(unsigned int cache, uint64_t toCacheCha, 
 
     //3取数
     oneFrame.clear();
+    getData = std::numeric_limits<uint64_t>::max();
+    vector<thread> threads;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-        bool isFind = false;
-        do {
-            if (iter.empty()) {
-                std::cout << "第" << to_string(i) << "路数据为空" << endl;
-                isFind = true;
-            } else {
-                IType refer;
-                if (iter.front(refer)) {
-                    if (uint64_t(refer.timstamp) < leftTimestamp) {
-                        //在左值外
-                        if (iter.size() == 1) {
-                            //取用
-                            IType cur;
-                            if (iter.pop(cur)) {
-                                //记录当前路的时间戳
-                                xRoadTimestamp[i] = cur.timstamp;
-                                //记录路口编号
-                                crossID = cur.crossCode;
-                                //将当前路的所有信息缓存入对应的索引
-                                oneFrame.insert(oneFrame.begin() + i, cur);
-                                std::cout << "第" << to_string(i) << "路时间戳较旧但只有1帧，保留:"
-                                          << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                          << endl;
-                                isFind = true;
-                            }
-                        } else {
-                            iter.pop(refer);
-                            std::cout << "第" << to_string(i) << "路时间戳较旧，舍弃:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << endl;
-                        }
-                    } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                               (uint64_t(refer.timstamp) <= rightTimestamp)) {
-                        //在范围内
-                        IType cur;
-                        if (iter.pop(cur)) {
-                            //记录当前路的时间戳
-                            xRoadTimestamp[i] = cur.timstamp;
-                            //记录路口编号
-                            crossID = cur.crossCode;
-                            //将当前路的所有信息缓存入对应的索引
-                            oneFrame.insert(oneFrame.begin() + i, cur);
-                            std::cout << "第" << to_string(i) << "路时间戳在范围内，保留:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << ":" << to_string(rightTimestamp) << endl;
-                            isFind = true;
-                        }
-                    } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                        //在右值外
-                        std::cout << "第" << to_string(i) << "路时间戳较新，保留:"
-                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
-                                  << endl;
-                        isFind = true;
-                    }
-                }
-            }
-        } while (!isFind);
+
+        threads.push_back(thread(ThreadGetDataInRange, this, i, leftTimestamp, rightTimestamp));
+        threads.at(i).detach();
     }
+    //等待找到所以路的数据
+    bool isAllGet = false;
+    while (!isAllGet) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        if ((getData & (1 << numI - 1)) == 0) {
+            isAllGet = true;
+        }
+    }
+
     //调用后续的处理
     if (task != nullptr) {
-        task(this);
+        return task(this);
     }
 
     return 0;
 }
 
-void DataUnitTrafficFlows::TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit) {
-    typedef TrafficFlow IType;
-    typedef TrafficFlows OType;
+void DataUnitTrafficFlows::ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
+                                                int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
+    bool isFind = false;
+    do {
+        if (dataUnit->emptyI(index)) {
+            std::cout << "第" << to_string(index) << "路数据为空" << endl;
+            isFind = true;
+        } else {
+            IType refer;
+            if (dataUnit->frontI(refer, index)) {
+                if (uint64_t(refer.timstamp) < leftTimestamp) {
+                    //在左值外
+                    if (dataUnit->sizeI(index) == 1) {
+                        //取用
+                        IType cur;
+                        if (dataUnit->popI(cur, index)) {
+                            //记录当前路的时间戳
+                            dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                            //记录路口编号
+                            dataUnit->crossID = cur.crossCode;
+                            //将当前路的所有信息缓存入对应的索引
+                            dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                            std::cout << "第" << to_string(index) << "路时间戳较旧但只有1帧，保留:"
+                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                      << endl;
+                            isFind = true;
+                        }
+                    } else {
+                        dataUnit->popI(refer, index);
+                        std::cout << "第" << to_string(index) << "路时间戳较旧，舍弃:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << endl;
+                    }
+                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                    //在范围内
+                    IType cur;
+                    if (dataUnit->popI(cur, index)) {
+                        //记录当前路的时间戳
+                        dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                        //记录路口编号
+                        dataUnit->crossID = cur.crossCode;
+                        //将当前路的所有信息缓存入对应的索引
+                        dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                        std::cout << "第" << to_string(index) << "路时间戳在范围内，保留:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << ":" << to_string(rightTimestamp) << endl;
+                        isFind = true;
+                    }
+                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
+                    //在右值外
+                    std::cout << "第" << to_string(index) << "路时间戳较新，保留:"
+                              << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
+                              << endl;
+                    isFind = true;
+                }
+            }
+        }
+    } while (!isFind);
 
+    dataUnit->getData = (dataUnit->getData | (1 << index));
+}
 
+int DataUnitTrafficFlows::TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
@@ -300,10 +331,12 @@ void DataUnitTrafficFlows::TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit) {
             }
         }
     }
-    if (!dataUnit->o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timestamp);
+    if (!dataUnit->pushO(item)) {
+        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, (uint64_t) item.timestamp);
+        return -1;
     } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timestamp);
+        Info("%s数据存入,timestamp:%lu", __FUNCTION__, (uint64_t) item.timestamp);
+        return 0;
     }
 }
 
@@ -321,15 +354,13 @@ DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int
 
 }
 
-int DataUnitCrossTrafficJamAlarm::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task,
-                                               bool isFront) {
+int DataUnitCrossTrafficJamAlarm::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
     //1寻找最大帧数
     int maxPkgs = 0;
     int maxPkgsIndex;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        if (iter.size() > maxPkgs) {
-            maxPkgs = iter.size();
+        if (sizeI(i) > maxPkgs) {
+            maxPkgs = sizeI(i);
             maxPkgsIndex = i;
         }
     }
@@ -340,9 +371,9 @@ int DataUnitCrossTrafficJamAlarm::FindOneFrame(unsigned int cache, uint64_t toCa
     //2确定标定的时间戳
     IType refer;
     if (isFront) {
-        i_queue_vector.at(maxPkgsIndex).front(refer);
+        frontI(refer, maxPkgsIndex);
     } else {
-        i_queue_vector.at(maxPkgsIndex).back(refer);
+        backI(refer, maxPkgsIndex);
     }
     //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
@@ -362,80 +393,95 @@ int DataUnitCrossTrafficJamAlarm::FindOneFrame(unsigned int cache, uint64_t toCa
 
     //3取数
     oneFrame.clear();
+    getData = std::numeric_limits<uint64_t>::max();
+    vector<thread> threads;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-        bool isFind = false;
-        do {
-            if (iter.empty()) {
-                std::cout << "第" << to_string(i) << "路数据为空" << endl;
-                isFind = true;
-            } else {
-                IType refer;
-                if (iter.front(refer)) {
-                    if (uint64_t(refer.timstamp) < leftTimestamp) {
-                        //在左值外
-                        if (iter.size() == 1) {
-                            //取用
-                            IType cur;
-                            if (iter.pop(cur)) {
-                                //记录当前路的时间戳
-                                xRoadTimestamp[i] = cur.timstamp;
-                                //记录路口编号
-                                crossID = cur.crossCode;
-                                //将当前路的所有信息缓存入对应的索引
-                                oneFrame.insert(oneFrame.begin() + i, cur);
-                                std::cout << "第" << to_string(i) << "路时间戳较旧但只有1帧，保留:"
-                                          << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                          << endl;
-                                isFind = true;
-                            }
-                        } else {
-                            iter.pop(refer);
-                            std::cout << "第" << to_string(i) << "路时间戳较旧，舍弃:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << endl;
-                        }
-                    } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                               (uint64_t(refer.timstamp) <= rightTimestamp)) {
-                        //在范围内
-                        IType cur;
-                        if (iter.pop(cur)) {
-                            //记录当前路的时间戳
-                            xRoadTimestamp[i] = cur.timstamp;
-                            //记录路口编号
-                            crossID = cur.crossCode;
-                            //将当前路的所有信息缓存入对应的索引
-                            oneFrame.insert(oneFrame.begin() + i, cur);
-                            std::cout << "第" << to_string(i) << "路时间戳在范围内，保留:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << ":" << to_string(rightTimestamp) << endl;
-                            isFind = true;
-                        }
-                    } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                        //在右值外
-                        std::cout << "第" << to_string(i) << "路时间戳较新，保留:"
-                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
-                                  << endl;
-                        isFind = true;
-                    }
-                }
-            }
-        } while (!isFind);
+
+        threads.push_back(thread(ThreadGetDataInRange, this, i, leftTimestamp, rightTimestamp));
+        threads.at(i).detach();
     }
+    //等待找到所以路的数据
+    bool isAllGet = false;
+    while (!isAllGet) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        if ((getData & (1 << numI - 1)) == 0) {
+            isAllGet = true;
+        }
+    }
+
     //调用后续的处理
     if (task != nullptr) {
-        task(this);
+        return task(this);
     }
 
     return 0;
 }
 
-void DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit) {
-    typedef CrossTrafficJamAlarm IType;
-    typedef CrossTrafficJamAlarm OType;
+void DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
+                                                        int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
+    bool isFind = false;
+    do {
+        if (dataUnit->emptyI(index)) {
+            std::cout << "第" << to_string(index) << "路数据为空" << endl;
+            isFind = true;
+        } else {
+            IType refer;
+            if (dataUnit->frontI(refer, index)) {
+                if (uint64_t(refer.timstamp) < leftTimestamp) {
+                    //在左值外
+                    if (dataUnit->sizeI(index) == 1) {
+                        //取用
+                        IType cur;
+                        if (dataUnit->popI(cur, index)) {
+                            //记录当前路的时间戳
+                            dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                            //记录路口编号
+                            dataUnit->crossID = cur.crossCode;
+                            //将当前路的所有信息缓存入对应的索引
+                            dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                            std::cout << "第" << to_string(index) << "路时间戳较旧但只有1帧，保留:"
+                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                      << endl;
+                            isFind = true;
+                        }
+                    } else {
+                        dataUnit->popI(refer, index);
+                        std::cout << "第" << to_string(index) << "路时间戳较旧，舍弃:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << endl;
+                    }
+                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                    //在范围内
+                    IType cur;
+                    if (dataUnit->popI(cur, index)) {
+                        //记录当前路的时间戳
+                        dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                        //记录路口编号
+                        dataUnit->crossID = cur.crossCode;
+                        //将当前路的所有信息缓存入对应的索引
+                        dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                        std::cout << "第" << to_string(index) << "路时间戳在范围内，保留:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << ":" << to_string(rightTimestamp) << endl;
+                        isFind = true;
+                    }
+                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
+                    //在右值外
+                    std::cout << "第" << to_string(index) << "路时间戳较新，保留:"
+                              << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
+                              << endl;
+                    isFind = true;
+                }
+            }
+        }
+    } while (!isFind);
 
+    dataUnit->getData = (dataUnit->getData | (1 << index));
+}
 
+int DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timstamp = dataUnit->curTimestamp;
@@ -456,10 +502,12 @@ void DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAl
         }
     }
 
-    if (!dataUnit->o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timstamp);
+    if (!dataUnit->pushO(item)) {
+        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, (uint64_t) item.timstamp);
+        return -1;
     } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timstamp);
+        Info("%s数据存入,timestamp:%lu", __FUNCTION__, (uint64_t) item.timstamp);
+        return 0;
     }
 }
 
@@ -477,15 +525,13 @@ DataUnitLineupInfoGather::DataUnitLineupInfoGather(int c, int fs_ms, int thresho
 
 }
 
-int DataUnitLineupInfoGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task,
-                                           bool isFront) {
+int DataUnitLineupInfoGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
     //1寻找最大帧数
     int maxPkgs = 0;
     int maxPkgsIndex;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        if (iter.size() > maxPkgs) {
-            maxPkgs = iter.size();
+        if (sizeI(i) > maxPkgs) {
+            maxPkgs = sizeI(i);
             maxPkgsIndex = i;
         }
     }
@@ -496,9 +542,9 @@ int DataUnitLineupInfoGather::FindOneFrame(unsigned int cache, uint64_t toCacheC
     //2确定标定的时间戳
     IType refer;
     if (isFront) {
-        i_queue_vector.at(maxPkgsIndex).front(refer);
+        frontI(refer, maxPkgsIndex);
     } else {
-        i_queue_vector.at(maxPkgsIndex).back(refer);
+        backI(refer, maxPkgsIndex);
     }
     //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
@@ -518,80 +564,95 @@ int DataUnitLineupInfoGather::FindOneFrame(unsigned int cache, uint64_t toCacheC
 
     //3取数
     oneFrame.clear();
+    getData = std::numeric_limits<uint64_t>::max();
+    vector<thread> threads;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-        bool isFind = false;
-        do {
-            if (iter.empty()) {
-                std::cout << "第" << to_string(i) << "路数据为空" << endl;
-                isFind = true;
-            } else {
-                IType refer;
-                if (iter.front(refer)) {
-                    if (uint64_t(refer.timstamp) < leftTimestamp) {
-                        //在左值外
-                        if (iter.size() == 1) {
-                            //取用
-                            IType cur;
-                            if (iter.pop(cur)) {
-                                //记录当前路的时间戳
-                                xRoadTimestamp[i] = cur.timstamp;
-                                //记录路口编号
-                                crossID = cur.crossCode;
-                                //将当前路的所有信息缓存入对应的索引
-                                oneFrame.insert(oneFrame.begin() + i, cur);
-                                std::cout << "第" << to_string(i) << "路时间戳较旧但只有1帧，保留:"
-                                          << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                          << endl;
-                                isFind = true;
-                            }
-                        } else {
-                            iter.pop(refer);
-                            std::cout << "第" << to_string(i) << "路时间戳较旧，舍弃:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << endl;
-                        }
-                    } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                               (uint64_t(refer.timstamp) <= rightTimestamp)) {
-                        //在范围内
-                        IType cur;
-                        if (iter.pop(cur)) {
-                            //记录当前路的时间戳
-                            xRoadTimestamp[i] = cur.timstamp;
-                            //记录路口编号
-                            crossID = cur.crossCode;
-                            //将当前路的所有信息缓存入对应的索引
-                            oneFrame.insert(oneFrame.begin() + i, cur);
-                            std::cout << "第" << to_string(i) << "路时间戳在范围内，保留:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << ":" << to_string(rightTimestamp) << endl;
-                            isFind = true;
-                        }
-                    } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                        //在右值外
-                        std::cout << "第" << to_string(i) << "路时间戳较新，保留:"
-                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
-                                  << endl;
-                        isFind = true;
-                    }
-                }
-            }
-        } while (!isFind);
+
+        threads.push_back(thread(ThreadGetDataInRange, this, i, leftTimestamp, rightTimestamp));
+        threads.at(i).detach();
     }
+    //等待找到所以路的数据
+    bool isAllGet = false;
+    while (!isAllGet) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        if ((getData & (1 << numI - 1)) == 0) {
+            isAllGet = true;
+        }
+    }
+
     //调用后续的处理
     if (task != nullptr) {
-        task(this);
+        return task(this);
     }
 
     return 0;
 }
 
-void DataUnitLineupInfoGather::TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit) {
-    typedef LineupInfo IType;
-    typedef LineupInfoGather OType;
+void DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
+                                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
+    bool isFind = false;
+    do {
+        if (dataUnit->emptyI(index)) {
+            std::cout << "第" << to_string(index) << "路数据为空" << endl;
+            isFind = true;
+        } else {
+            IType refer;
+            if (dataUnit->frontI(refer, index)) {
+                if (uint64_t(refer.timstamp) < leftTimestamp) {
+                    //在左值外
+                    if (dataUnit->sizeI(index) == 1) {
+                        //取用
+                        IType cur;
+                        if (dataUnit->popI(cur, index)) {
+                            //记录当前路的时间戳
+                            dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                            //记录路口编号
+                            dataUnit->crossID = cur.crossCode;
+                            //将当前路的所有信息缓存入对应的索引
+                            dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                            std::cout << "第" << to_string(index) << "路时间戳较旧但只有1帧，保留:"
+                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                      << endl;
+                            isFind = true;
+                        }
+                    } else {
+                        dataUnit->popI(refer, index);
+                        std::cout << "第" << to_string(index) << "路时间戳较旧，舍弃:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << endl;
+                    }
+                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                    //在范围内
+                    IType cur;
+                    if (dataUnit->popI(cur, index)) {
+                        //记录当前路的时间戳
+                        dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                        //记录路口编号
+                        dataUnit->crossID = cur.crossCode;
+                        //将当前路的所有信息缓存入对应的索引
+                        dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                        std::cout << "第" << to_string(index) << "路时间戳在范围内，保留:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << ":" << to_string(rightTimestamp) << endl;
+                        isFind = true;
+                    }
+                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
+                    //在右值外
+                    std::cout << "第" << to_string(index) << "路时间戳较新，保留:"
+                              << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
+                              << endl;
+                    isFind = true;
+                }
+            }
+        }
+    } while (!isFind);
 
+    dataUnit->getData = (dataUnit->getData | (1 << index));
+}
 
+int DataUnitLineupInfoGather::TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timstamp = dataUnit->curTimestamp;
@@ -604,10 +665,12 @@ void DataUnitLineupInfoGather::TaskProcessOneFrame(DataUnitLineupInfoGather *dat
             }
         }
     }
-    if (!dataUnit->o_queue.push(item)) {
-        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, item.timstamp);
+    if (!dataUnit->pushO(item)) {
+        Error("%s队列已满，未存入数据 timestamp:%lu", __FUNCTION__, (uint64_t) item.timstamp);
+        return -1;
     } else {
-        Info("%s数据存入,timestamp:%lu", __FUNCTION__, item.timstamp);
+        Info("%s数据存入,timestamp:%lu", __FUNCTION__, (uint64_t) item.timstamp);
+        return 0;
     }
 }
 
@@ -631,9 +694,8 @@ int DataUnitFusionData::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Ta
     int maxPkgs = 0;
     int maxPkgsIndex;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        if (iter.size() > maxPkgs) {
-            maxPkgs = iter.size();
+        if (sizeI(i) > maxPkgs) {
+            maxPkgs = sizeI(i);
             maxPkgsIndex = i;
         }
     }
@@ -644,9 +706,9 @@ int DataUnitFusionData::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Ta
     //2确定标定的时间戳
     IType refer;
     if (isFront) {
-        i_queue_vector.at(maxPkgsIndex).front(refer);
+        frontI(refer, maxPkgsIndex);
     } else {
-        i_queue_vector.at(maxPkgsIndex).back(refer);
+        backI(refer, maxPkgsIndex);
     }
     //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
@@ -665,77 +727,97 @@ int DataUnitFusionData::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Ta
     uint64_t rightTimestamp = curTimestamp + thresholdFrame;
 
     //3取数
+    //3取数
     oneFrame.clear();
+    getData = std::numeric_limits<uint64_t>::max();
+    vector<thread> threads;
     for (int i = 0; i < i_queue_vector.size(); i++) {
-        auto iter = i_queue_vector.at(i);
-        //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-        bool isFind = false;
-        do {
-            if (iter.empty()) {
-                std::cout << "第" << to_string(i) << "路数据为空" << endl;
-                isFind = true;
-            } else {
-                IType refer;
-                if (iter.front(refer)) {
-                    if (uint64_t(refer.timstamp) < leftTimestamp) {
-                        //在左值外
-                        if (iter.size() == 1) {
-                            //取用
-                            IType cur;
-                            if (iter.pop(cur)) {
-                                //记录当前路的时间戳
-                                xRoadTimestamp[i] = cur.timstamp;
-                                //记录路口编号
-                                crossID = cur.matrixNo;
-                                //将当前路的所有信息缓存入对应的索引
-                                oneFrame.insert(oneFrame.begin() + i, cur);
-                                std::cout << "第" << to_string(i) << "路时间戳较旧但只有1帧，保留:"
-                                          << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                          << endl;
-                                isFind = true;
-                            }
-                        } else {
-                            iter.pop(refer);
-                            std::cout << "第" << to_string(i) << "路时间戳较旧，舍弃:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << endl;
-                        }
-                    } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                               (uint64_t(refer.timstamp) <= rightTimestamp)) {
-                        //在范围内
-                        IType cur;
-                        if (iter.pop(cur)) {
-                            //记录当前路的时间戳
-                            xRoadTimestamp[i] = cur.timstamp;
-                            //记录路口编号
-                            crossID = cur.matrixNo;
-                            //将当前路的所有信息缓存入对应的索引
-                            oneFrame.insert(oneFrame.begin() + i, cur);
-                            std::cout << "第" << to_string(i) << "路时间戳在范围内，保留:"
-                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
-                                      << ":" << to_string(rightTimestamp) << endl;
-                            isFind = true;
-                        }
-                    } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                        //在右值外
-                        std::cout << "第" << to_string(i) << "路时间戳较新，保留:"
-                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
-                                  << endl;
-                        isFind = true;
-                    }
-                }
-            }
-        } while (!isFind);
+
+        threads.push_back(thread(ThreadGetDataInRange, this, i, leftTimestamp, rightTimestamp));
+        threads.at(i).detach();
     }
+    //等待找到所以路的数据
+    bool isAllGet = false;
+    while (!isAllGet) {
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        if ((getData & (1 << numI - 1)) == 0) {
+            isAllGet = true;
+        }
+    }
+
     //调用后续的处理
     if (task != nullptr) {
-        task(this, mergeType);
+        return task(this, mergeType);
     }
 
     return 0;
 }
 
-void DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType) {
+void DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
+                                              int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
+    bool isFind = false;
+    do {
+        if (dataUnit->emptyI(index)) {
+            std::cout << "第" << to_string(index) << "路数据为空" << endl;
+            isFind = true;
+        } else {
+            IType refer;
+            if (dataUnit->frontI(refer, index)) {
+                if (uint64_t(refer.timstamp) < leftTimestamp) {
+                    //在左值外
+                    if (dataUnit->sizeI(index) == 1) {
+                        //取用
+                        IType cur;
+                        if (dataUnit->popI(cur, index)) {
+                            //记录当前路的时间戳
+                            dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                            //记录路口编号
+                            dataUnit->crossID = cur.matrixNo;
+                            //将当前路的所有信息缓存入对应的索引
+                            dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                            std::cout << "第" << to_string(index) << "路时间戳较旧但只有1帧，保留:"
+                                      << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                      << endl;
+                            isFind = true;
+                        }
+                    } else {
+                        dataUnit->popI(refer, index);
+                        std::cout << "第" << to_string(index) << "路时间戳较旧，舍弃:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << endl;
+                    }
+                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                    //在范围内
+                    IType cur;
+                    if (dataUnit->popI(cur, index)) {
+                        //记录当前路的时间戳
+                        dataUnit->xRoadTimestamp[index] = cur.timstamp;
+                        //记录路口编号
+                        dataUnit->crossID = cur.matrixNo;
+                        //将当前路的所有信息缓存入对应的索引
+                        dataUnit->oneFrame.insert(dataUnit->oneFrame.begin() + index, cur);
+                        std::cout << "第" << to_string(index) << "路时间戳在范围内，保留:"
+                                  << to_string(uint64_t(refer.timstamp)) << ":" << to_string(leftTimestamp)
+                                  << ":" << to_string(rightTimestamp) << endl;
+                        isFind = true;
+                    }
+                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
+                    //在右值外
+                    std::cout << "第" << to_string(index) << "路时间戳较新，保留:"
+                              << to_string(uint64_t(refer.timstamp)) << ":" << to_string(rightTimestamp)
+                              << endl;
+                    isFind = true;
+                }
+            }
+        }
+    } while (!isFind);
+
+    dataUnit->getData = (dataUnit->getData | (1 << index));
+}
+
+int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType) {
     //1，将同一帧内待输入量存入集合
     DataUnitFusionData::RoadDataInSet roadDataInSet;
     roadDataInSet.roadDataList.reserve(dataUnit->oneFrame.size());
@@ -756,17 +838,18 @@ void DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataU
         //存入对应路的集合
         roadDataInSet.roadDataList.insert(roadDataInSet.roadDataList.begin() + i, item);
     }
+    int ret = 0;
     switch (mergeType) {
         case DataUnitFusionData::NotMerge: {
-            dataUnit->TaskNotMerge(roadDataInSet);
+            ret = dataUnit->TaskNotMerge(roadDataInSet);
         }
             break;
         case DataUnitFusionData::Merge: {
-            dataUnit->TaskMerge(roadDataInSet);
+            ret = dataUnit->TaskMerge(roadDataInSet);
         }
             break;
     }
-
+    return ret;
 }
 
 int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataInSet) {
@@ -860,7 +943,7 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
         }
     }
 
-    GetFusionData(mergeData);
+    return GetFusionData(mergeData);
 }
 
 int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
@@ -1038,14 +1121,14 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         }
     }
 
-    GetFusionData(mergeData);
+    return GetFusionData(mergeData);
 }
 
 int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     const int INF = 0x7FFFFFFF;
-    FusionData fusionData;
-    fusionData.timstamp = mergeData.timestamp;
-    fusionData.crossID = this->crossID;
+    OType item;
+    item.timstamp = mergeData.timestamp;
+    item.crossID = this->crossID;
     //lstObjTarget
     for (auto iter:mergeData.obj) {
         ObjMix objMix;
@@ -1091,12 +1174,12 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
         objMix.latitude = iter.latitude;
         objMix.flagNew = iter.flag_new;
 
-        fusionData.lstObjTarget.push_back(objMix);
+        item.lstObjTarget.push_back(objMix);
     }
 
     bool isSendPicData = true;
     if (isSendPicData) {
-        fusionData.isHasImage = 1;
+        item.isHasImage = 1;
         //lstVideos
         for (auto iter:mergeData.objInput.roadDataList) {
             VideoData videoData;
@@ -1111,17 +1194,17 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
                 videoTargets.bottom = iter1.bottom;
                 videoData.lstVideoTargets.push_back(videoTargets);
             }
-            fusionData.lstVideos.push_back(videoData);
+            item.lstVideos.push_back(videoData);
         }
     } else {
-        fusionData.isHasImage = 0;
-        fusionData.lstVideos.resize(0);
+        item.isHasImage = 0;
+        item.lstVideos.resize(0);
     }
 
-    if (o_queue.push(fusionData)) {
-        Info("存入融合数据成功,timestamp:%lu", (uint64_t) fusionData.timstamp);
+    if (pushO(item)) {
+        Info("存入融合数据成功,timestamp:%lu", (uint64_t) item.timstamp);
     } else {
-        Info("存入融合数据失败,timestamp:%lu", (uint64_t) fusionData.timstamp);
+        Info("存入融合数据失败,timestamp:%lu", (uint64_t) item.timstamp);
     }
 
     return 0;

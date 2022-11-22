@@ -20,20 +20,6 @@ using namespace std;
 
 class FusionServer {
 public:
-    typedef struct {
-        string hardCode;//图像对应的设备编号
-        vector<OBJECT_INFO_T> listObjs;
-        string imageData;
-    } RoadData;//路口数据，包含目标集合、路口设备编号、图像数据
-
-    typedef struct {
-        double timestamp;
-        bool isOneRoad = false;//是否只有一路数据
-        int hasDataRoadIndex;
-        RoadData roadData[4];
-    } OBJS;//同一帧多个路口的数据集合
-
-public:
     uint16_t port = 9000;//暂定9000
     int maxListen = 10;//最大监听数
     bool isMerge = true;
@@ -55,8 +41,6 @@ public:
 
     map<string,Timer*> timerTasks;
 
-#define MaxRoadNum 4 //最多有多少路
-
     vector<int> roadDirection = {
             North,//北
             East,//东
@@ -76,23 +60,14 @@ public:
     //--------排队长度等信息------//
     DataUnitLineupInfoGather dataUnitLineupInfoGather;
 
-
     //处理线程
     thread threadMonitor;//服务器监听客户端状态线程
 
-
     string db = "CLParking.db";
-    string eocDB = "ecoConfig.db";
-
     string matrixNo = "0123456789";
 
-    //测试用,存有的速度为0的id
-    int idSpeed0 = 0;
-    bool isFindSpeed0Id = false;
-
-
 public:
-    FusionServer(bool isMerge);
+    FusionServer(int port, bool isMerge);
 
     FusionServer(uint16_t port, string config, int maxListen, bool isMerge);
 
@@ -125,7 +100,7 @@ private:
      * @param fd
      * @return 0：success -1:fail
      */
-    int setNonblock(int fd);
+    static int setNonblock(int fd);
 
     /**
      * 向客户端数组添加新的客户端

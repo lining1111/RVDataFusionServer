@@ -13,7 +13,7 @@
 #include "common/common.h"
 #include "common/CRC.h"
 #include "log/Log.h"
-#include <fstream>
+#include "cpp-icmplib.h"
 
 using namespace common;
 using namespace z_log;
@@ -29,6 +29,13 @@ FusionClient::~FusionClient() {
 }
 
 int FusionClient::Open() {
+    //先ping下远端开是否可以连接
+    auto result = icmplib::Ping(server_ip, 3).response;
+    if (result != icmplib::PingResponseType::Success) {
+        Error("%s ip %s ping fail:%d", __FUNCTION__, server_ip.c_str(), result);
+        return -1;
+    }
+
     rb = RingBuffer_New(RecvSize);
     if (this->server_ip.empty()) {
         cout << "server ip empty" << endl;

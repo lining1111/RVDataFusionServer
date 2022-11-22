@@ -62,7 +62,7 @@ set(SRC_DIRS ./
         monitor
         server
         client
-        merge
+        server/merge
         simpleini
         db
         getData
