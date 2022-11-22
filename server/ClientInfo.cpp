@@ -274,20 +274,20 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         //解析分包，按照方法名不同，存入不同的队列
         switch (pkg.head.cmd) {
             case CmdType::Response : {
-                Info("client-%d,应答指令", client->sock);
+                Debug("client-%d,应答指令", client->sock);
             }
                 break;
             case CmdType::Login : {
-                Info("client-%d,登录指令", client->sock);
+                Debug("client-%d,登录指令", client->sock);
             }
                 break;
             case CmdType::HeartBeat : {
-                Info("client-%d,心跳指令", client->sock);
+                Debug("client-%d,心跳指令", client->sock);
             }
                 break;
             case CmdType::DeviceData : {
                 //打印下接收的内容
-//                Info("%s\n", pkg.body.c_str());
+//                Debug("%s\n", pkg.body.c_str());
                 Json::Reader reader;
                 Json::Value in;
                 if (!reader.parse(pkg.body, in, false)) {
@@ -298,7 +298,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 WatchData watchData;
                 watchData.JsonUnmarshal(pkg.body);
 
-                Info("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
+                Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
                      inet_ntoa(client->clientAddr.sin_addr),
                      watchData.timstamp,
                      watchData.isHasImage, watchData.lstObjTarget.size());
@@ -341,13 +341,13 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 TrafficFlow trafficFlow;
                 trafficFlow.JsonUnmarshal(in);
 
-//                Info("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
+//                Debug("trafficFlow client-%d,timestamp:%f,flowData size:%d", client->sock, trafficFlow.timstamp,
 //                     trafficFlow.flowData.size());
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitTrafficFlows.pushI(trafficFlow, client->indexSuper)) {
-                    Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Debug("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
 
             }
@@ -367,7 +367,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
-                    Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
+                    Debug("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
                          inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
@@ -387,7 +387,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, client->indexSuper)) {
-                    Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Debug("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
@@ -410,13 +410,13 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitMultiViewCarTracks.pushI(multiViewCarTrack, client->indexSuper)) {
-                    Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Debug("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
             default: {
                 //最后没有对应的方法名
-                Info("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
+                Debug("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
                      pkg.head.cmd, pkg.body.c_str());
             }
                 break;;

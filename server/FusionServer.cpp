@@ -171,6 +171,7 @@ int FusionServer::Run() {
 
     //获取matrixNo
     getMatrixNoFromDb();
+    Info("sn:%s", matrixNo.c_str());
     //获取路口编号
 //    getCrossIdFromDb();
 
