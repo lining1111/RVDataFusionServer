@@ -32,7 +32,6 @@ public:
     vector<uint64_t> xRoadTimestamp;
 public:
     vector<I> oneFrame;//寻找同一时间戳的数据集
-    uint64_t getData = std::numeric_limits<uint64_t>::max();//按位得值
 
 public:
     DataUnit() : cap(30), fs_ms(100), thresholdFrame(100), numI(4) {
@@ -194,7 +193,7 @@ public:
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
+    static int ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
                                      int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit);
@@ -216,8 +215,8 @@ public:
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
-                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit);
 };
@@ -238,8 +237,8 @@ public:
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
-                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit);
 };
@@ -260,8 +259,8 @@ public:
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static void ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
-                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit);
 };
@@ -286,8 +285,8 @@ public:
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, MergeType mergeType, bool isFront = true);
 
-    static void ThreadGetDataInRange(DataUnitFusionData *dataUnit,
-                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
 

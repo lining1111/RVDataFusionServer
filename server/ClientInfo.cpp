@@ -51,9 +51,11 @@ int ClientInfo::Close() {
     if (isLive.load() == true) {
         isLive.store(false);
     }
-//    sleep(1);
+    futureDump.wait();
+    futureGetPkg.wait();
+    futureGetPkgContent.wait();
+
     if (sock > 0) {
-        Info("关闭sock：%d", sock);
         close(sock);
     }
 
@@ -71,27 +73,19 @@ int ClientInfo::ProcessRecv() {
     isLive.store(true);
 
     //dump
-    threadDump = thread(ThreadDump, this);
-    string name = "ClientDump" + to_string(this->sock);
-    pthread_setname_np(threadDump.native_handle(), name.data());
-    threadDump.detach();
+    futureDump = std::async(std::launch::async, ThreadDump, this);
+
     //getPkg
-    threadGetPkg = thread(ThreadGetPkg, this);
-    string name1 = "ClientGetPkg" + to_string(this->sock);
-    pthread_setname_np(threadGetPkg.native_handle(), name1.data());
-    threadGetPkg.detach();
+    futureGetPkg = std::async(std::launch::async, ThreadGetPkg, this);
     //getPkgContent
-    threadGetPkgContent = thread(ThreadGetPkgContent, this);
-    string name2 = "ClientGetPkgContent" + to_string(this->sock);
-    pthread_setname_np(threadGetPkgContent.native_handle(), name2.data());
-    threadGetPkgContent.detach();
+    futureGetPkgContent = std::async(std::launch::async, ThreadGetPkgContent, this);
 
     return 0;
 }
 
-void ClientInfo::ThreadDump(void *pClientInfo) {
+int ClientInfo::ThreadDump(void *pClientInfo) {
     if (pClientInfo == nullptr) {
-        return;
+        return -1;
     }
 
     auto client = (ClientInfo *) pClientInfo;
@@ -125,12 +119,13 @@ void ClientInfo::ThreadDump(void *pClientInfo) {
     }
     //这里退出的打印可能不正常，可以sock都关闭了
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    return 0;
 
 }
 
-void ClientInfo::ThreadGetPkg(void *pClientInfo) {
+int ClientInfo::ThreadGetPkg(void *pClientInfo) {
     if (pClientInfo == nullptr) {
-        return;
+        return -1;
     }
 
     auto client = (ClientInfo *) pClientInfo;
@@ -254,12 +249,12 @@ void ClientInfo::ThreadGetPkg(void *pClientInfo) {
         }
     }
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-
+    return 0;
 }
 
-void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
+int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
     if (pClientInfo == nullptr) {
-        return;
+        return -1;
     }
 
     auto client = (ClientInfo *) pClientInfo;
@@ -299,9 +294,9 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 watchData.JsonUnmarshal(pkg.body);
 
                 Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
-                     inet_ntoa(client->clientAddr.sin_addr),
-                     watchData.timstamp,
-                     watchData.isHasImage, watchData.lstObjTarget.size());
+                      inet_ntoa(client->clientAddr.sin_addr),
+                      watchData.timstamp,
+                      watchData.isHasImage, watchData.lstObjTarget.size());
 
                 //记录接包时间
                 pthread_mutex_lock(&client->lock_receive_time);
@@ -368,7 +363,7 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
                     Debug("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
-                         inet_ntoa(client->clientAddr.sin_addr));
+                          inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
@@ -417,12 +412,12 @@ void ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             default: {
                 //最后没有对应的方法名
                 Debug("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
-                     pkg.head.cmd, pkg.body.c_str());
+                      pkg.head.cmd, pkg.body.c_str());
             }
                 break;;
         }
 
     }
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-
+    return 0;
 }

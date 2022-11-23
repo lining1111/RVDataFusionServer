@@ -6,7 +6,7 @@
 #define _FUSIONCLIENT_H
 
 #include <string>
-#include <thread>
+#include <future>
 #include <queue>
 
 #include "common/common.h"
@@ -29,10 +29,10 @@ public:
     timeval receive_time = {0, 0};
 
 public:
-    thread thread_recv;
-    thread thread_processRecv;
-    thread thread_processSend;
-    thread thread_checkStatus;
+
+    std::shared_future<int> futureDump;
+    std::shared_future<int> futureProcessRev;
+    std::shared_future<int> futureProcessSend;
     long checkStatus_timeval = 5;
     long heartBeatTimeval = 5/*30*/;//应该和server端保持一致
 
@@ -67,11 +67,11 @@ public:
     int Close();
 
 private:
-    static void ThreadRecv(void *p);
+    static int ThreadDump(void *p);
 
-    static void ThreadProcessRecv(void *p);
+    static int ThreadProcessRecv(void *p);
 
-    static void ThreadProcessSend(void *p);
+    static int ThreadProcessSend(void *p);
 
     static void ThreadCheckStatus(void *p);
 

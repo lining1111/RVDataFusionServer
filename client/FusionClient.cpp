@@ -92,14 +92,9 @@ int FusionClient::Run() {
     }
 
     //start pthread
-    thread_recv = thread(ThreadRecv, this);
-    thread_recv.detach();
-
-    thread_processRecv = thread(ThreadProcessRecv, this);
-    thread_processRecv.detach();
-
-    thread_processSend = thread(ThreadProcessSend, this);
-    thread_processSend.detach();
+    futureDump = std::async(std::launch::async, ThreadDump, this);
+    futureProcessRev = std::async(std::launch::async, ThreadProcessRecv, this);
+    futureProcessSend = std::async(std::launch::async, ThreadProcessSend, this);
     //因为上层不会回复，所以不检查状态
 //    thread_checkStatus = thread(ThreadCheckStatus, this);
 //    thread_checkStatus.detach();
@@ -109,6 +104,10 @@ int FusionClient::Run() {
 
 int FusionClient::Close() {
     isRun = false;
+
+    futureDump.wait();
+    futureProcessRev.wait();
+    futureProcessSend.wait();
 
     if (sockfd > 0) {
         close(sockfd);
@@ -123,9 +122,9 @@ int FusionClient::Close() {
     return 0;
 }
 
-void FusionClient::ThreadRecv(void *p) {
+int FusionClient::ThreadDump(void *p) {
     if (p == nullptr) {
-        return;
+        return -1;
     }
     auto client = (FusionClient *) p;
 
@@ -161,12 +160,12 @@ void FusionClient::ThreadRecv(void *p) {
         }
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
-
+    return 0;
 }
 
-void FusionClient::ThreadProcessRecv(void *p) {
+int FusionClient::ThreadProcessRecv(void *p) {
     if (p == nullptr) {
-        return;
+        return -1;
     }
     auto client = (FusionClient *) p;
 
@@ -294,12 +293,12 @@ void FusionClient::ThreadProcessRecv(void *p) {
         }
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
-
+    return 0;
 }
 
-void FusionClient::ThreadProcessSend(void *p) {
+int FusionClient::ThreadProcessSend(void *p) {
     if (p == nullptr) {
-        return;
+        return -1;
     }
     auto client = (FusionClient *) p;
 
@@ -341,6 +340,7 @@ void FusionClient::ThreadProcessSend(void *p) {
         pthread_mutex_unlock(&client->lock_sock);
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
+    return 0;
 }
 
 void FusionClient::ThreadCheckStatus(void *p) {
@@ -368,7 +368,6 @@ void FusionClient::ThreadCheckStatus(void *p) {
         }
     }
     cout << "FusionClient " << __FUNCTION__ << " exit" << endl;
-
 }
 
 int FusionClient::SendQueue(Pkg pkg) {

@@ -175,27 +175,24 @@ int FusionServer::Run() {
     //获取路口编号
 //    getCrossIdFromDb();
 
+
     //开启服务器监视客户端线程
-    threadMonitor = thread(ThreadMonitor, this);
-    pthread_setname_np(threadMonitor.native_handle(), "FusionServer monitor");
-    threadMonitor.detach();
+    futureMonitor = std::async(std::launch::async, ThreadMonitor, this);
     //开启定时任务
-    threadTimerTask = thread(ThreadTimerTask, this);
-    pthread_setname_np(threadTimerTask.native_handle(), "FusionServer threadTimerTask");
-    threadTimerTask.detach();
+    std::shared_future<int> timerTask = std::async(std::launch::async, ThreadTimerTask, this);
+
 
     return 0;
 }
 
 int FusionServer::Close() {
+    isRun.store(false);
+    futureMonitor.wait();
     if (sock > 0) {
         close(sock);
         sock = 0;
     }
     DeleteAllClient();
-
-    isRun.store(false);
-
     return 0;
 }
 
@@ -294,9 +291,9 @@ int FusionServer::DeleteAllClient() {
     return 0;
 }
 
-void FusionServer::ThreadMonitor(void *pServer) {
+int FusionServer::ThreadMonitor(void *pServer) {
     if (pServer == nullptr) {
-        return;
+        return -1;
     }
     auto server = (FusionServer *) pServer;
 
@@ -347,10 +344,8 @@ void FusionServer::ThreadMonitor(void *pServer) {
     }
 
     close(server->epoll_fd);
-    close(server->sock);
-    server->sock = 0;
-
     Info("%s exit", __FUNCTION__);
+    return 0;
 }
 
 void FusionServer::ThreadCheck(void *pServer) {
@@ -410,10 +405,10 @@ void FusionServer::ThreadCheck(void *pServer) {
 
 }
 
-void FusionServer::ThreadTimerTask(void *pServer) {
+int FusionServer::ThreadTimerTask(void *pServer) {
 
     if (pServer == nullptr) {
-        return;
+        return -1;
     }
     auto server = (FusionServer *) pServer;
     Info("%s run", __FUNCTION__);
@@ -433,6 +428,7 @@ void FusionServer::ThreadTimerTask(void *pServer) {
                          std::bind(TaskMultiViewCarTracks, server, 10));
 
     Info("%s exit", __FUNCTION__);
+    return 0;
 }
 
 void FusionServer::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {

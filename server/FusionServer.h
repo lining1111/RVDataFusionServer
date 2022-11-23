@@ -10,7 +10,7 @@
 #include <ctime>
 #include <vector>
 #include <sys/epoll.h>
-#include <thread>
+#include <future>
 #include "server/ClientInfo.h"
 #include "merge/merge.h"
 #include "DataUnit.h"
@@ -61,7 +61,7 @@ public:
     DataUnitLineupInfoGather dataUnitLineupInfoGather;
 
     //处理线程
-    thread threadMonitor;//服务器监听客户端状态线程
+    std::shared_future<int> futureMonitor;//服务器监听客户端状态线程
 
     string db = "CLParking.db";
     string matrixNo = "0123456789";
@@ -127,7 +127,7 @@ private:
      * 服务端监听状态监测线程
      * @param pServer
      */
-    static void ThreadMonitor(void *pServer);
+    static int ThreadMonitor(void *pServer);
 
     /**
      * 服务端存储的客户端数组状态检测线程
@@ -136,7 +136,7 @@ private:
     static void ThreadCheck(void *pServer);
 
 
-    static void ThreadTimerTask(void *pServer);
+    static int ThreadTimerTask(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
     void deleteTimerTask(string name);

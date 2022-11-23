@@ -9,15 +9,11 @@
 #include "common/common.h"
 #include <netinet/in.h>
 #include <queue>
-#include <thread>
+#include <future>
 #include <stdbool.h>
 #include <atomic>
 #include "Queue.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 using namespace std;
 using namespace common;
 
@@ -57,15 +53,12 @@ public:
 
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
     //客户端处理线程
-    thread threadDump;//接收数据并存入环形buffer
-
+    std::shared_future<int> futureDump;
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
     Queue<Pkg> queuePkg = Queue<Pkg>(300);
-
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
-
-    thread threadGetPkg;//将环形buffer内的数据进行分包
-    thread threadGetPkgContent;//获取一包内的数据正文
+    std::shared_future<int> futureGetPkg;
+    std::shared_future<int> futureGetPkgContent;
 
 
 public:
@@ -102,24 +95,21 @@ private:
      * 接收数据缓冲线程
      * @param pClientInfo
      */
-    static void ThreadDump(void *pClientInfo);
+    static int ThreadDump(void *pClientInfo);
 
     /**
      * 分包线程
      * @param pClientInfo
      */
-    static void ThreadGetPkg(void *pClientInfo);
+    static int ThreadGetPkg(void *pClientInfo);
 
     /**
      * 获取一包正文线程
      * @param pClientInfo
      */
-    static void ThreadGetPkgContent(void *pClientInfo);
+    static int ThreadGetPkgContent(void *pClientInfo);
 
 };
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif //_CLIENTINFO_H
