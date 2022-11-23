@@ -34,6 +34,12 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *sup
     this->needRelease.store(false);
     this->direction.store(Unknown);
 
+    timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 100 * 1000;
+//    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+
     //创建以picsocknum为名的文件夹
 //    dirName = "pic" + to_string(this->sock);
 //    int isCreate = mkdir(dirName.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);

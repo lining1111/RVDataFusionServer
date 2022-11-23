@@ -50,11 +50,11 @@ int FusionClient::Open() {
     } else {
         int opt = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//        timeval timeout;
-//        timeout.tv_sec = 0;
-//        timeout.tv_usec = 100 * 1000;
+        timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 100 * 1000;
 //        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-//        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
     }
 
