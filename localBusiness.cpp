@@ -4,6 +4,7 @@
 
 #include <functional>
 #include "localBusiness.h"
+#include <arpa/inet.h>
 
 #include "log/Log.h"
 
@@ -55,7 +56,7 @@ void LocalBusiness::Run() {
 }
 
 void LocalBusiness::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
-    Timer *timer = new Timer();
+    Timer *timer = new Timer(name);
     timer->start(timeval_ms, task);
     timerTasks.insert(make_pair(name, timer));
 }
@@ -151,15 +152,15 @@ void LocalBusiness::Task_MultiViewCarTracks(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层 %s,消息%s失败,matrixNo:%d",
+                        Info("server %s 发送到上层 %s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Info(":发送失败");
+                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
-                            Info(":发送成功");
+                            Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Info(":未连接上层");
+                        Error(":未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -192,15 +193,15 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层%s,消息%s失败,matrixNo:%d",
+                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Info(":发送失败");
+                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
-                            Info(":发送成功");
+                            Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Info(":未连接上层");
+                        Error(":未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -233,15 +234,15 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层%s,消息%s失败,matrixNo:%d",
+                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Info(":发送失败");
+                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
-                            Info(":发送成功");
+                            Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Info(":未连接上层");
+                        Error("未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -275,16 +276,15 @@ void LocalBusiness::Task_TrafficFlows(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层%s,消息%s失败,matrixNo:%d",
+                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Info(":发送失败");
-
+                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
-                            Info(":发送成功");
+                            Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Info(":未连接上层");
+                        Error("未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -317,17 +317,17 @@ void LocalBusiness::Task_FusionData(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层%s,消息%s失败,matrixNo:%d",
+                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Info(":发送失败");
+                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                             local->packetLossFusionData->Fail();
                         } else {
-                            Info(":发送成功");
+                            Error("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                             local->packetLossFusionData->Success();
                         }
                     } else {
-                        Info(":未连接上层");
+                        Error("未连接上层%s", cli->server_ip.c_str());
                         local->packetLossFusionData->Fail();
                     }
                 }
@@ -340,7 +340,6 @@ void LocalBusiness::MonitorPacketLoss(void *p) {
     if (p == nullptr) {
         return;
     }
-
     auto local = (LocalBusiness *) p;
     Info("FusionData 当前丢包率:%f", local->packetLossFusionData->ShowLoss());
 }

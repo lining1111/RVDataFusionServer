@@ -28,9 +28,9 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
             item.clients.push_back(item1);
         }
 
-        map<string, Timer *>::iterator iter2;
-        for (iter2 = iter.second->timerTasks.begin(); iter2 != iter.second->timerTasks.end(); iter2++) {
-            item.tasks.push_back(iter2->first);
+        map<string, Timer *>::iterator iter1;
+        for (iter1 = iter.second->timerTasks.begin(); iter1 != iter.second->timerTasks.end(); iter1++) {
+            localInfo.timerTasksInfo.names.push_back(iter1->first);
         }
 
         localInfo.serverInfos.push_back(item);

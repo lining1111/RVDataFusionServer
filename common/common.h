@@ -8,9 +8,7 @@
 #ifdef x86
 #include <jsoncpp/json/json.h>
 #else
-
 #include <json/json.h>
-
 #endif
 
 #include <cstdint>
@@ -60,6 +58,7 @@ namespace common {
         DevicePicData = 0x06,//设备视频数据回传
         DeviceMultiview = 0x07,//多目数据回传
         DeviceMultiviewCarTrack = 0x08,//多目车辆轨迹
+        CmdUnknown = 0xff,
     };//命令字类型
 
     //基本解包组包函数
@@ -74,7 +73,7 @@ namespace common {
     typedef struct {
         uint8_t tag = '$';//固定的头开始 ‘$’ 0x24
         uint8_t version;//版本号 1.0 hex
-        uint8_t cmd;//命令字类型 详见CmdType
+        uint8_t cmd = CmdUnknown;//命令字类型 详见CmdType
         uint16_t sn = 0;//帧号
         uint32_t deviceNO;//设备编号
         uint32_t len = 0;//整包长度，从包头到最后的校验位 <帧头>sizeof(PkgHead)+<正文>(json)+<校验>sizeof(PkgCRC)
@@ -362,7 +361,7 @@ namespace common {
     class CrossTrafficJamAlarm {
     public:
         string oprNum;
-        double timstamp;
+        double timestamp;
         string crossCode;
         string hardCode;
         int alarmType;//1：交叉口堵塞
@@ -401,7 +400,7 @@ namespace common {
     class LineupInfo {
     public:
         string oprNum;
-        double timstamp;
+        double timestamp;
         string crossCode;
         string hardCode;
         string recordDateTime;
@@ -428,6 +427,5 @@ namespace common {
     int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO,
                                       Pkg &pkg);
 }
-
 
 #endif //_COMMON_H

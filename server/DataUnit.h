@@ -19,7 +19,7 @@ using namespace std;
 template<typename I, typename O>
 class DataUnit {
 public:
-    mutex mtx;
+//    mutex mtx;
     int sn = 0;
     string crossID;
     vector<Queue<I>> i_queue_vector;
@@ -53,14 +53,14 @@ public:
         this->cap = c;
         this->numI = i_num;
         thresholdFrame = threshold_ms;
-        i_queue_vector.reserve(i_num);
+        i_queue_vector.resize(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
             auto iter = i_queue_vector.at(i);
             iter.setMax(2 * c);
         }
         o_queue.setMax(c);
 
-        oneFrame.reserve(i_num);
+        oneFrame.resize(i_num);
 
         xRoadTimestamp.resize(i_num);
         for (auto &iter: xRoadTimestamp) {

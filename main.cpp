@@ -60,9 +60,9 @@ int main(int argc, char **argv) {
     //开启本地业务
     local.Run();
 
-    HttpServerInit(10000, &local);
+//    HttpServerInit(10000, &local);
 
-    StartEocCommon();
+//    StartEocCommon();
     while (true) {
         sleep(10);
     }

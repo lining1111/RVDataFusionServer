@@ -22,18 +22,18 @@ public:
 
 void test() {
     A a;
-    Timer *timer = new Timer();
+    Timer *timer = new Timer("timer1");
     std::cout << "--- start period timer ----" << std::endl;
     timer->start(100, std::bind(a.fun));
 
 //    timer.stop();
 //    std::cout << "--- stop period timer ----" << std::endl;
-    std::map<string, Timer *> timers;
-    timers.insert(make_pair("test", timer));
+    std::map<string, Timer> timers;
+    timers.insert(make_pair("test", *timer));
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     std::cout << "--- stop period timer ----" << std::endl;
     auto iter = timers.find("test");
-    delete iter->second;
+    iter->second.stop();
     iter = timers.erase(iter);
     auto iter1 = timers.find("test");
     if (iter != timers.end()) {

@@ -47,7 +47,7 @@ FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isM
 }
 
 FusionServer::~FusionServer() {
-    deleteTimerTaskAll();
+    StopTimerTaskAll();
     Close();
 }
 
@@ -175,22 +175,27 @@ int FusionServer::Run() {
     //获取路口编号
 //    getCrossIdFromDb();
 
-
+    isLocalThreadRun = true;
     //开启服务器监视客户端线程
     futureMonitor = std::async(std::launch::async, ThreadMonitor, this);
     //开启定时任务
-    std::shared_future<int> timerTask = std::async(std::launch::async, ThreadTimerTask, this);
-
+    std::shared_future<int> timerTask = std::async(std::launch::async, StartTimerTask, this);
+    timerTask.wait();
 
     return 0;
 }
 
 int FusionServer::Close() {
     isRun.store(false);
-    futureMonitor.wait();
     if (sock > 0) {
         close(sock);
-        sock = 0;
+    }
+    if (isLocalThreadRun) {
+        try {
+            futureMonitor.wait();
+        } catch (std::future_error e) {
+            Info(e.what());
+        }
     }
     DeleteAllClient();
     return 0;
@@ -405,7 +410,7 @@ void FusionServer::ThreadCheck(void *pServer) {
 
 }
 
-int FusionServer::ThreadTimerTask(void *pServer) {
+int FusionServer::StartTimerTask(void *pServer) {
 
     if (pServer == nullptr) {
         return -1;
@@ -417,7 +422,7 @@ int FusionServer::ThreadTimerTask(void *pServer) {
                          std::bind(TaskFusionData, server, 10));
 
     server->addTimerTask("fusionServer timerTrafficFlow", server->dataUnitTrafficFlows.fs_ms,
-                         std::bind(TaskTrafficFlow, server, 10));
+                         std::bind(TaskTrafficFlows, server, 10));
     server->addTimerTask("fusionServer timerLineupInfoGather", server->dataUnitLineupInfoGather.fs_ms,
                          std::bind(TaskLineupInfoGather, server, 10));
 
@@ -432,7 +437,7 @@ int FusionServer::ThreadTimerTask(void *pServer) {
 }
 
 void FusionServer::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
-    Timer *timer = new Timer();
+    Timer *timer = new Timer(name);
     timer->start(timeval_ms, task);
     timerTasks.insert(make_pair(name, timer));
 }
@@ -445,7 +450,7 @@ void FusionServer::deleteTimerTask(string name) {
     }
 }
 
-void FusionServer::deleteTimerTaskAll() {
+void FusionServer::StopTimerTaskAll() {
     auto iter = timerTasks.begin();
     while (iter != timerTasks.end()) {
         delete iter->second;
@@ -460,7 +465,8 @@ void FusionServer::TaskFusionData(void *pServer, int cache) {
     auto server = (FusionServer *) pServer;
     auto dataUnit = &server->dataUnitFusionData;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(dataUnit->mtx);
+//        unique_lock<mutex> lck(dataUnit->mtx);
+//        Info("%s", __FUNCTION__);
         //寻找同一帧,并处理
         DataUnitFusionData::MergeType mergeType;
         if (server->isMerge) {
@@ -473,14 +479,14 @@ void FusionServer::TaskFusionData(void *pServer, int cache) {
     }
 }
 
-void FusionServer::TaskTrafficFlow(void *pServer, unsigned int cache) {
+void FusionServer::TaskTrafficFlows(void *pServer, unsigned int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
     auto dataUnit = &server->dataUnitTrafficFlows;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(dataUnit->mtx);
+//        unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
         dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitTrafficFlows::TaskProcessOneFrame);
     }
@@ -494,7 +500,7 @@ void FusionServer::TaskLineupInfoGather(void *pServer, int cache) {
     auto server = (FusionServer *) pServer;
     auto dataUnit = &server->dataUnitLineupInfoGather;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(dataUnit->mtx);
+//        unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
         dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitLineupInfoGather::TaskProcessOneFrame);
     }
@@ -508,7 +514,8 @@ void FusionServer::TaskCrossTrafficJamAlarm(void *pServer, int cache) {
     auto server = (FusionServer *) pServer;
     auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(dataUnit->mtx);
+//        unique_lock<mutex> lck(dataUnit->mtx);
+//        Info("%s", __FUNCTION__);
         //寻找同一帧,并处理
         dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame, false);
     }
@@ -521,7 +528,7 @@ void FusionServer::TaskMultiViewCarTracks(void *pServer, int cache) {
     auto server = (FusionServer *) pServer;
     auto dataUnit = &server->dataUnitMultiViewCarTracks;
     if (server->isRun.load()) {
-        unique_lock<mutex> lck(dataUnit->mtx);
+//        unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
         dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitMultiViewCarTracks::TaskProcessOneFrame);
     }

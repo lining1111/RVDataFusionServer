@@ -18,7 +18,7 @@ namespace moniter {
         uint64_t success = 0;
         double ratioLoss = 0.0;
         double ratioSuccess = 0.0;
-        Timer timer;
+        Timer *timer;
         int timeval_ms;
         bool isInterval = true;
     public:
@@ -53,11 +53,12 @@ namespace moniter {
         }
 
     private:
-        void clear(){
+        void clear() {
             sum = 0;
             loss = 0;
             success = 0;
         }
+
         static void Cal(void *p) {
             if (p == nullptr) {
                 return;
@@ -77,12 +78,13 @@ namespace moniter {
     public:
         PacketLoss(int timeval_ms, bool enableInterval = true) {
             this->timeval_ms = timeval_ms;
+            timer = new Timer("packetLoss");
             //开启定时任务
-            timer.start(timeval_ms, std::bind(Cal, this));
+            timer->start(timeval_ms, std::bind(Cal, this));
         }
 
         ~PacketLoss() {
-            timer.stop();
+            delete timer;
         }
     };
 }

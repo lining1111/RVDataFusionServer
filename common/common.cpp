@@ -707,7 +707,7 @@ namespace common {
 
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
-        out["timstamp"] = this->timstamp;
+        out["timestamp"] = this->timestamp;
         out["crossCode"] = this->crossCode;
         out["hardCode"] = this->hardCode;
         out["alarmType"] = this->alarmType;
@@ -720,12 +720,12 @@ namespace common {
     bool CrossTrafficJamAlarm::JsonUnmarshal(Json::Value in) {
 
         this->oprNum = in["oprNum"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timestamp"].asDouble();
         this->crossCode = in["crossCode"].asString();
         this->hardCode = in["hardCode"].asString();
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
-        this->alarmTime = in["alarmTime"].asInt();
+        this->alarmTime = in["alarmTime"].asString();
 
         return true;
     }
@@ -794,7 +794,7 @@ namespace common {
 
     bool LineupInfo::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
-        out["timstamp"] = this->timstamp;
+        out["timestamp"] = this->timestamp;
         out["crossCode"] = this->crossCode;
         out["hardCode"] = this->hardCode;
         out["recordDateTime"] = this->recordDateTime;
@@ -818,7 +818,7 @@ namespace common {
 
     bool LineupInfo::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timestamp"].asDouble();
         this->crossCode = in["crossCode"].asString();
         this->hardCode = in["hardCode"].asString();
         this->recordDateTime = in["recordDateTime"].asString();
@@ -907,7 +907,6 @@ namespace common {
     }
 
 
-
     bool MultiViewCarTracks::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
@@ -948,6 +947,7 @@ namespace common {
         }
         return true;
     }
+
     int
     PkgMultiViewCarTracksWithoutCRC(MultiViewCarTracks multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;

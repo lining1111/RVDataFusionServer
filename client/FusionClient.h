@@ -29,7 +29,7 @@ public:
     timeval receive_time = {0, 0};
 
 public:
-
+    bool isLocalThreadRun = false;
     std::shared_future<int> futureDump;
     std::shared_future<int> futureProcessRev;
     std::shared_future<int> futureProcessSend;

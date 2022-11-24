@@ -15,11 +15,17 @@
 
 class Timer {
 public:
+
     Timer() : _expired(true), _try_to_expire(false) {
 
     }
 
+    Timer(std::string name) : _name(name), _expired(true), _try_to_expire(false) {
+
+    }
+
     Timer(const Timer &timer) {
+        _name = timer._name;
         _expired = timer._expired.load();
         _try_to_expire = timer._try_to_expire.load();
     }
@@ -40,7 +46,7 @@ public:
                 // sleep every interval and do the task again and again until times up
                 auto start = std::chrono::high_resolution_clock::now();
                 task();
-                std::this_thread::sleep_until(start + std::chrono::milliseconds (interval_ms));
+                std::this_thread::sleep_until(start + std::chrono::milliseconds(interval_ms));
             }
 
             {
@@ -56,7 +62,7 @@ public:
         std::thread([delay_ms, task]() {
             auto start = std::chrono::high_resolution_clock::now();
             task();
-            std::this_thread::sleep_until(start + std::chrono::milliseconds (delay_ms));
+            std::this_thread::sleep_until(start + std::chrono::milliseconds(delay_ms));
         }).detach();
     }
 
@@ -80,7 +86,16 @@ public:
         }
     }
 
+    void setName(std::string name) {
+        _name = name;
+    }
+
+    std::string getName() {
+        return _name;
+    }
+
 private:
+    std::string _name;
     std::atomic<bool> _expired; // timer stopped status
     std::atomic<bool> _try_to_expire; // timer is in stop process
     std::mutex _mutex;

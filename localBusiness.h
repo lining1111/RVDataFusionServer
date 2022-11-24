@@ -13,7 +13,7 @@
 
 class LocalBusiness {
 public:
-    typedef map<string, Timer *> TimerTasks;
+    typedef map<string, Timer*> TimerTasks;
 public:
     bool isRun = false;
     std::map<string, FusionServer *> serverList;

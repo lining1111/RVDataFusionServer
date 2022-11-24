@@ -31,6 +31,10 @@ public:
 
 int main() {
 
+    vector<queue<int>> a_v;
+    a_v.resize(4);
+    a_v.at(1).push(1);
+
     Test<int,double> test(10, 20);
     cout << "num:" << to_string(test.num) << endl;
 

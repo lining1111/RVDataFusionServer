@@ -52,10 +52,11 @@ public:
     atomic_bool needRelease;//客户端处理线程在发现sock异常时，向上抛出释放队列内容信号
 
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
+    bool isLocalThreadRun = false;
     //客户端处理线程
     std::shared_future<int> futureDump;
     //GetPkg 生产者 GetPkgContent消费者 通过queue加锁的方式完成传递
-    Queue<Pkg> queuePkg = Queue<Pkg>(300);
+    Queue<Pkg> queuePkg;
     //从包队列中依据方法名获取正文结构体，有多少方法名就有多少队列
     std::shared_future<int> futureGetPkg;
     std::shared_future<int> futureGetPkgContent;

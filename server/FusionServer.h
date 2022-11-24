@@ -38,8 +38,10 @@ public:
 #define MAX_EVENTS 1024
     struct epoll_event wait_events[MAX_EVENTS];
     atomic_bool isRun;//运行标志
+public:
+    typedef map<string, Timer *> TimerTasks;
 
-    map<string,Timer*> timerTasks;
+    TimerTasks timerTasks;
 
     vector<int> roadDirection = {
             North,//北
@@ -60,6 +62,7 @@ public:
     //--------排队长度等信息------//
     DataUnitLineupInfoGather dataUnitLineupInfoGather;
 
+    bool isLocalThreadRun = false;
     //处理线程
     std::shared_future<int> futureMonitor;//服务器监听客户端状态线程
 
@@ -75,6 +78,7 @@ public:
 
 private:
     int getMatrixNoFromDb();
+
 public:
     /**
      * 打开
@@ -136,12 +140,13 @@ private:
     static void ThreadCheck(void *pServer);
 
 
-    static int ThreadTimerTask(void *pServer);
+    static int StartTimerTask(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
+
     void deleteTimerTask(string name);
 
-    void deleteTimerTaskAll();
+    void StopTimerTaskAll();
 
     static void TaskFusionData(void *pServer, int cache);
 
@@ -153,7 +158,7 @@ private:
 
     static void ThreadNotMerge(void *pServer);
 
-    static void TaskTrafficFlow(void *pServer, unsigned int cache);
+    static void TaskTrafficFlows(void *pServer, unsigned int cache);
 
     static void TaskLineupInfoGather(void *pServer, int cache);
 
