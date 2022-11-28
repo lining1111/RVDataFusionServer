@@ -5,13 +5,14 @@
 #include <functional>
 #include "localBusiness.h"
 #include <arpa/inet.h>
+#include <fstream>
 
 #include "log/Log.h"
 
 using namespace z_log;
 
 LocalBusiness::LocalBusiness() {
-    packetLossFusionData = new moniter::PacketLoss(1000 * 60);
+
 }
 
 LocalBusiness::~LocalBusiness() {
@@ -25,8 +26,6 @@ LocalBusiness::~LocalBusiness() {
         delete iter->second;
         iter = serverList.erase(iter);
     }
-
-    delete packetLossFusionData;
 }
 
 void LocalBusiness::AddServer(string name, int port, bool isMerge) {
@@ -73,8 +72,6 @@ void LocalBusiness::StartTimerTask() {
 
     addTimerTask("localBusiness timerKeep", 1000, std::bind(Task_Keep, this));
     addTimerTask("localBusiness timerFusionData", 100, std::bind(Task_FusionData, this));
-    //查看丢包
-    addTimerTask("localBusiness timerMonitorFusionData", 1000 * 60, std::bind(MonitorPacketLoss, this));
 
     addTimerTask("localBusiness timerTrafficFlows", 100, std::bind(Task_TrafficFlows, this));
     addTimerTask("localBusiness timerLineupInfoGather", 100, std::bind(Task_LineupInfoGather, this));
@@ -130,9 +127,7 @@ void LocalBusiness::Task_MultiViewCarTracks(void *p) {
     if (p == nullptr) {
         return;
     }
-
     auto local = (LocalBusiness *) p;
-
     string msgType = "MultiViewCarTracks";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
@@ -144,6 +139,22 @@ void LocalBusiness::Task_MultiViewCarTracks(void *p) {
                 Pkg pkg;
                 PkgMultiViewCarTracksWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
+                //存发送
+                if (0) {
+                    if (dataUnit->saveCount < 10) {
+                        dataUnit->saveCount++;
+                        //存入图片
+                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        ofstream file;
+                        file.open(fileName);
+                        if (file.is_open()) {
+                            file.write(pkg.body.data(), pkg.body.size());
+                            file.flush();
+                            file.close();
+                        }
+                    }
+                }
+
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -172,7 +183,6 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
     if (p == nullptr) {
         return;
     }
-
     auto local = (LocalBusiness *) p;
     string msgType = "CrossTrafficJamAlarm";
     for (auto &iter: local->serverList) {
@@ -185,6 +195,23 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                 Pkg pkg;
                 PkgCrossTrafficJamAlarmWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
+
+                //存发送
+                if (0) {
+                    if (dataUnit->saveCount < 10) {
+                        dataUnit->saveCount++;
+                        //存入图片
+                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        ofstream file;
+                        file.open(fileName);
+                        if (file.is_open()) {
+                            file.write(pkg.body.data(), pkg.body.size());
+                            file.flush();
+                            file.close();
+                        }
+                    }
+                }
+
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -195,6 +222,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                     if (cli->isRun) {
                         Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
+
                         if (cli->SendBase(pkg) == -1) {
                             Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
@@ -213,9 +241,8 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
     if (p == nullptr) {
         return;
     }
-    string msgType = "LineupInfoGather";
     auto local = (LocalBusiness *) p;
-
+    string msgType = "LineupInfoGather";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitLineupInfoGather;
@@ -226,6 +253,22 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                 Pkg pkg;
                 PkgLineupInfoGatherWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
+                //存发送
+                if (0) {
+                    if (dataUnit->saveCount < 10) {
+                        dataUnit->saveCount++;
+                        //存入图片
+                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        ofstream file;
+                        file.open(fileName);
+                        if (file.is_open()) {
+                            file.write(pkg.body.data(), pkg.body.size());
+                            file.flush();
+                            file.close();
+                        }
+                    }
+                }
+
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -255,7 +298,6 @@ void LocalBusiness::Task_TrafficFlows(void *p) {
     if (p == nullptr) {
         return;
     }
-
     auto local = (LocalBusiness *) p;
     string msgType = "TrafficFlows";
     for (auto &iter: local->serverList) {
@@ -268,6 +310,22 @@ void LocalBusiness::Task_TrafficFlows(void *p) {
                 Pkg pkg;
                 PkgTrafficFlowsWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
+                //存发送
+                if (0) {
+                    if (dataUnit->saveCount < 10) {
+                        dataUnit->saveCount++;
+                        //存入图片
+                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        ofstream file;
+                        file.open(fileName);
+                        if (file.is_open()) {
+                            file.write(pkg.body.data(), pkg.body.size());
+                            file.flush();
+                            file.close();
+                        }
+                    }
+                }
+
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -296,7 +354,6 @@ void LocalBusiness::Task_FusionData(void *p) {
     if (p == nullptr) {
         return;
     }
-
     auto local = (LocalBusiness *) p;
     string msgType = "FusionData";
     for (auto &iter: local->serverList) {
@@ -309,6 +366,22 @@ void LocalBusiness::Task_FusionData(void *p) {
                 Pkg pkg;
                 PkgFusionDataWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
+                //存发送
+                if (0) {
+                    if (dataUnit->saveCount < 10) {
+                        dataUnit->saveCount++;
+                        //存入图片
+                        string fileName = msgType + to_string((uint64_t) data.timstamp) + ".txt";
+                        ofstream file;
+                        file.open(fileName);
+                        if (file.is_open()) {
+                            file.write(pkg.body.data(), pkg.body.size());
+                            file.flush();
+                            file.close();
+                        }
+                    }
+                }
+
                 if (local->clientList.empty()) {
                     Info("client list empty");
                     continue;
@@ -317,29 +390,22 @@ void LocalBusiness::Task_FusionData(void *p) {
                 for (auto &iter1:local->clientList) {
                     auto cli = iter1.second;
                     if (cli->isRun) {
-                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
-                             iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
+                        Info("server %s 发送到上层%s,消息%s,matrixNo:%d,sn:%d,length:%d",
+                             iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO, pkg.head.sn,
+                             pkg.head.len);
                         if (cli->SendBase(pkg) == -1) {
                             Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
-                            local->packetLossFusionData->Fail();
+                            cli->packetLossFusionData->Fail();
                         } else {
-                            Error("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
-                            local->packetLossFusionData->Success();
+                            Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                            cli->packetLossFusionData->Success();
                         }
                     } else {
                         Error("未连接上层%s", cli->server_ip.c_str());
-                        local->packetLossFusionData->Fail();
+                        cli->packetLossFusionData->Fail();
                     }
                 }
             }
         }
     }
-}
-
-void LocalBusiness::MonitorPacketLoss(void *p) {
-    if (p == nullptr) {
-        return;
-    }
-    auto local = (LocalBusiness *) p;
-    Info("FusionData 当前丢包率:%f", local->packetLossFusionData->ShowLoss());
 }

@@ -361,7 +361,7 @@ namespace common {
         }
         out["listRvWayObject"] = listRvWayObject;
 
-        return false;
+        return true;
     }
 
     bool ObjMix::JsonUnmarshal(Json::Value in) {
@@ -389,7 +389,7 @@ namespace common {
             }
         }
 
-        return false;
+        return true;
     }
 
     bool FusionData::JsonMarshal(Json::Value &out) {
@@ -514,7 +514,7 @@ namespace common {
 
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
-        out["timstamp"] = this->timstamp;
+        out["timestamp"] = this->timestamp;
         out["crossCode"] = this->crossCode;
 
         Json::Value flowData = Json::arrayValue;
@@ -537,7 +537,7 @@ namespace common {
 
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timestamp"].asDouble();
         this->crossCode = in["crossCode"].asString();
 
         if (in["flowData"].isArray()) {
@@ -555,7 +555,7 @@ namespace common {
 
     bool TrafficFlows::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
-        out["timstamp"] = this->timestamp;
+        out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["recordDateTime"] = this->recordDateTime;
 
@@ -662,7 +662,7 @@ namespace common {
 
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
-        out["timstamp"] = this->timstamp;
+        out["timestamp"] = this->timestamp;
         out["crossCode"] = this->crossCode;
         out["ip"] = this->ip;
         out["type"] = this->type;
@@ -688,7 +688,7 @@ namespace common {
 
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timestamp"].asDouble();
         this->crossCode = in["crossCode"].asString();
         this->ip = in["ip"].asString();
         this->type = in["type"].asInt();
@@ -838,7 +838,7 @@ namespace common {
 
     bool LineupInfoGather::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
-        out["timstamp"] = this->timstamp;
+        out["timestamp"] = this->timestamp;
         out["crossCode"] = this->crossCode;
         out["hardCode"] = this->hardCode;
 
@@ -861,7 +861,7 @@ namespace common {
 
     bool LineupInfoGather::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timestamp"].asDouble();
         this->crossCode = in["crossCode"].asString();
         this->hardCode = in["hardCode"].asString();
 

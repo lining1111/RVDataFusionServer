@@ -22,9 +22,11 @@ FusionClient::FusionClient(string server_ip, unsigned int server_port, void *sup
     this->server_ip = server_ip;
     this->server_port = server_port;
     this->super = super;
+    packetLossFusionData = new moniter::PacketLoss(1000 * 60);
 }
 
 FusionClient::~FusionClient() {
+    delete packetLossFusionData;
     Close();
 }
 
@@ -99,11 +101,51 @@ int FusionClient::Run() {
     //因为上层不会回复，所以不检查状态
 //    thread_checkStatus = thread(ThreadCheckStatus, this);
 //    thread_checkStatus.detach();
-
+    StartTimerTask();
     return 0;
 }
 
+void FusionClient::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
+    Timer *timer = new Timer(name);
+    timer->start(timeval_ms, task);
+    timerTasks.insert(make_pair(name, timer));
+}
+
+void FusionClient::deleteTimerTask(string name) {
+    auto timerTask = timerTasks.find(name);
+    if (timerTask != timerTasks.end()) {
+        delete timerTask->second;
+        timerTasks.erase(timerTask++);
+    }
+}
+
+
+void FusionClient::StartTimerTask() {
+    //查看丢包
+    addTimerTask("localBusiness timerMonitorFusionData", 1000 * 60, std::bind(MonitorPacketLoss, this));
+}
+
+void FusionClient::StopTimerTaskAll() {
+    auto iter = timerTasks.begin();
+    while (iter != timerTasks.end()) {
+        delete iter->second;
+        iter = timerTasks.erase(iter);
+    }
+}
+
+void FusionClient::MonitorPacketLoss(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto cli = (FusionClient *) p;
+
+    Info("%s FusionData 当前丢包率:%f", cli->server_ip.c_str(), cli->packetLossFusionData->ShowLoss());
+
+}
+
 int FusionClient::Close() {
+    StopTimerTaskAll();
+
     isRun = false;
 
     if (sockfd > 0) {
@@ -133,6 +175,7 @@ int FusionClient::Close() {
     if (pkgBuffer) {
         free(pkgBuffer);
     }
+
 
     return 0;
 }
@@ -344,6 +387,7 @@ int FusionClient::ThreadProcessSend(void *p) {
                     printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
                     pthread_mutex_unlock(&client->lock_sock);
                     client->isRun = false;
+                    break;
                 }
             } else if (nsend == 0) {
                 client->isRun = false;
@@ -413,11 +457,13 @@ int FusionClient::SendBase(Pkg pkg) {
         if ((nsend = send(sockfd, ptr, nleft, 0)) < 0) {
             if (errno == EINTR) {
                 nsend = 0;          /* and call send() again */
+                return -1;
             } else {
                 ret1 = -1;
                 Error("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
                 pthread_mutex_unlock(&lock_sock);
                 isRun = false;
+                return ret1;
             }
         } else if (nsend == 0) {
             ret1 = -1;

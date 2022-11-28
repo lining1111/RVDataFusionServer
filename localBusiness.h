@@ -19,7 +19,6 @@ public:
     std::map<string, FusionServer *> serverList;
     std::map<string, FusionClient *> clientList;
     TimerTasks timerTasks;
-    moniter::PacketLoss *packetLossFusionData;
 public:
     LocalBusiness();
 
@@ -57,7 +56,6 @@ private:
 
     static void Task_FusionData(void *p);
 
-    static void MonitorPacketLoss(void *p);
 };
 
 

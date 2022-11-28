@@ -278,7 +278,7 @@ namespace common {
     public:
         string oprNum;// `json "oprNum"`
         string hardCode;
-        double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        double timestamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         string crossCode;
         vector<FlowData> flowData;
     public:
@@ -329,7 +329,7 @@ namespace common {
     public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
-        double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
+        double timestamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
         string crossCode;
         string ip;
         int type;
@@ -414,7 +414,7 @@ namespace common {
     class LineupInfoGather {
     public:
         string oprNum;
-        double timstamp;
+        double timestamp;
         string crossCode;
         string hardCode;
         vector<TrafficFlowLineup> trafficFlowList;

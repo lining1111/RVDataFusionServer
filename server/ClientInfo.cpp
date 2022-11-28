@@ -320,10 +320,10 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 WatchData watchData;
                 watchData.JsonUnmarshal(in);
 
-//                Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
-//                      inet_ntoa(client->clientAddr.sin_addr),
-//                      watchData.timstamp,
-//                      watchData.isHasImage, watchData.lstObjTarget.size());
+                Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
+                      inet_ntoa(client->clientAddr.sin_addr),
+                      watchData.timstamp,
+                      watchData.isHasImage, watchData.lstObjTarget.size());
 
                 //记录接包时间
                 pthread_mutex_lock(&client->lock_receive_time);

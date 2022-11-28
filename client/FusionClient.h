@@ -12,6 +12,7 @@
 #include "common/common.h"
 #include "ringBuffer/RingBuffer.h"
 #include "Queue.h"
+#include "monitor/PacketLoss.hpp"
 
 using namespace std;
 using namespace common;
@@ -51,7 +52,10 @@ private:
 public:
     Queue<Pkg> queuePkg = Queue<Pkg>(1000);;//包消息队列
     Queue<Pkg> queue_send = Queue<Pkg>(1000);
-
+public:
+    typedef map<string, Timer*> TimerTasks;
+    TimerTasks timerTasks;
+    moniter::PacketLoss *packetLossFusionData;
 public:
 
     FusionClient(string server_ip, unsigned int server_port, void *super);
@@ -66,6 +70,15 @@ public:
 
     int Close();
 
+public:
+    void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
+
+    void deleteTimerTask(string name);
+
+    void StartTimerTask();
+
+    void StopTimerTaskAll();
+
 private:
     static int ThreadDump(void *p);
 
@@ -74,6 +87,7 @@ private:
     static int ThreadProcessSend(void *p);
 
     static void ThreadCheckStatus(void *p);
+    static void MonitorPacketLoss(void *p);
 
 public:
     //send to server

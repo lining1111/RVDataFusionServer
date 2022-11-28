@@ -180,6 +180,7 @@ public:
 //车辆轨迹
 class DataUnitMultiViewCarTracks : public DataUnit<MultiViewCarTrack, MultiViewCarTracks> {
 public:
+    int saveCount = 0;// 测试存包用
     DataUnitMultiViewCarTracks();
 
     ~DataUnitMultiViewCarTracks();
@@ -202,6 +203,7 @@ public:
 //车流量统计
 class DataUnitTrafficFlows : public DataUnit<TrafficFlow, TrafficFlows> {
 public:
+    int saveCount = 0;// 测试存包用
     DataUnitTrafficFlows();
 
     ~DataUnitTrafficFlows();
@@ -224,6 +226,7 @@ public:
 //交叉路口堵塞报警
 class DataUnitCrossTrafficJamAlarm : public DataUnit<CrossTrafficJamAlarm, CrossTrafficJamAlarm> {
 public:
+    int saveCount = 0;// 测试存包用
     DataUnitCrossTrafficJamAlarm();
 
     ~DataUnitCrossTrafficJamAlarm();
@@ -246,6 +249,7 @@ public:
 //排队长度等信息
 class DataUnitLineupInfoGather : public DataUnit<LineupInfo, LineupInfoGather> {
 public:
+    int saveCount = 0;// 测试存包用
     DataUnitLineupInfoGather();
 
     ~DataUnitLineupInfoGather();
@@ -268,6 +272,7 @@ public:
 //监控数据
 class DataUnitFusionData : public DataUnit<WatchData, FusionData> {
 public:
+    int saveCount = 0;// 测试存包用
     DataUnitFusionData();
 
     ~DataUnitFusionData();
