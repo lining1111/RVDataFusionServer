@@ -189,7 +189,7 @@ int FusionServer::Close() {
     isRun.store(false);
     if (sock > 0) {
         shutdown(sock,SHUT_RDWR);
-//        close(sock);
+        close(sock);
     }
     if (isLocalThreadRun) {
         try {
