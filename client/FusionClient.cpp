@@ -149,7 +149,8 @@ int FusionClient::Close() {
     isRun = false;
 
     if (sockfd > 0) {
-        close(sockfd);
+        shutdown(sockfd, SHUT_RDWR);
+//        close(sockfd);
     }
     if (isLocalThreadRun) {
         try {

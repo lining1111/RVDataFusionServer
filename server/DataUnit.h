@@ -31,6 +31,8 @@ public:
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
 public:
+    typedef I IType;
+    typedef O OType;
     vector<I> oneFrame;//寻找同一时间戳的数据集
 
 public:
@@ -178,49 +180,43 @@ public:
 };
 
 //车辆轨迹
-class DataUnitMultiViewCarTracks : public DataUnit<MultiViewCarTrack, MultiViewCarTracks> {
+class DataUnitCarTrackGather : public DataUnit<CarTrack, CarTrackGather> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitMultiViewCarTracks();
+    DataUnitCarTrackGather();
 
-    ~DataUnitMultiViewCarTracks();
+    ~DataUnitCarTrackGather();
 
-    DataUnitMultiViewCarTracks(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num);
 
-    typedef MultiViewCarTrack IType;
-    typedef MultiViewCarTracks OType;
-
-    typedef int(*Task)(DataUnitMultiViewCarTracks *);
+    typedef int(*Task)(DataUnitCarTrackGather *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static int ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
-                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
-    static int TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit);
+    static int TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit);
 };
 
 //车流量统计
-class DataUnitTrafficFlows : public DataUnit<TrafficFlow, TrafficFlows> {
+class DataUnitTrafficFlowGather : public DataUnit<TrafficFlow, TrafficFlowGather> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitTrafficFlows();
+    DataUnitTrafficFlowGather();
 
-    ~DataUnitTrafficFlows();
+    ~DataUnitTrafficFlowGather();
 
-    DataUnitTrafficFlows(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num);
 
-    typedef TrafficFlow IType;
-    typedef TrafficFlows OType;
-
-    typedef int(*Task)(DataUnitTrafficFlows *);
+    typedef int(*Task)(DataUnitTrafficFlowGather *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
 
-    static int ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
+    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
-    static int TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit);
+    static int TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit);
 };
 
 //交叉路口堵塞报警
@@ -232,9 +228,6 @@ public:
     ~DataUnitCrossTrafficJamAlarm();
 
     DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num);
-
-    typedef CrossTrafficJamAlarm IType;
-    typedef CrossTrafficJamAlarm OType;
 
     typedef int(*Task)(DataUnitCrossTrafficJamAlarm *);
 
@@ -256,9 +249,6 @@ public:
 
     DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num);
 
-    typedef LineupInfo IType;
-    typedef LineupInfoGather OType;
-
     typedef int(*Task)(DataUnitLineupInfoGather *);
 
     int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
@@ -279,8 +269,6 @@ public:
 
     DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num);
 
-    typedef WatchData IType;
-    typedef FusionData OType;
     typedef enum {
         NotMerge,
         Merge,

@@ -131,13 +131,13 @@ void LocalBusiness::Task_MultiViewCarTracks(void *p) {
     string msgType = "MultiViewCarTracks";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
-        auto dataUnit = &server->dataUnitMultiViewCarTracks;
+        auto dataUnit = &server->dataUnitCarTrackGather;
         if (!dataUnit->emptyO()) {
-            MultiViewCarTracks data;
+            CarTrackGather data;
             if (dataUnit->popO(data)) {
                 uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
                 Pkg pkg;
-                PkgMultiViewCarTracksWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                PkgCarTrackGatherWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
                 //存发送
                 if (0) {
@@ -302,13 +302,13 @@ void LocalBusiness::Task_TrafficFlows(void *p) {
     string msgType = "TrafficFlows";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
-        auto dataUnit = &server->dataUnitTrafficFlows;
+        auto dataUnit = &server->dataUnitTrafficFlowGather;
         if (!dataUnit->emptyO()) {
-            TrafficFlows data;
+            TrafficFlowGather data;
             if (dataUnit->popO(data)) {
                 uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
                 Pkg pkg;
-                PkgTrafficFlowsWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
+                PkgTrafficFlowGatherWithoutCRC(data, dataUnit->sn, deviceNo, pkg);
                 dataUnit->sn++;
                 //存发送
                 if (0) {

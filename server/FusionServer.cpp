@@ -26,8 +26,8 @@ FusionServer::FusionServer(int port, bool isMerge) {
     this->isMerge = isMerge;
 
     dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
-    dataUnitMultiViewCarTracks.init(30, 66, 33, 4);//66ms一帧
-    dataUnitTrafficFlows.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitCarTrackGather.init(30, 66, 33, 4);//66ms一帧
+    dataUnitTrafficFlowGather.init(30, 1000, 500, 4);//1000ms一帧
     dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
     dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
 
@@ -40,8 +40,8 @@ FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isM
     this->isRun.store(false);
     this->isMerge = isMerge;
     dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
-    dataUnitMultiViewCarTracks.init(30, 66, 33, 4);//66ms一帧
-    dataUnitTrafficFlows.init(30, 1000, 500, 4);//1000ms一帧
+    dataUnitCarTrackGather.init(30, 66, 33, 4);//66ms一帧
+    dataUnitTrafficFlowGather.init(30, 1000, 500, 4);//1000ms一帧
     dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
     dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
 }
@@ -188,7 +188,8 @@ int FusionServer::Run() {
 int FusionServer::Close() {
     isRun.store(false);
     if (sock > 0) {
-        close(sock);
+        shutdown(sock,SHUT_RDWR);
+//        close(sock);
     }
     if (isLocalThreadRun) {
         try {
@@ -421,16 +422,16 @@ int FusionServer::StartTimerTask(void *pServer) {
     server->addTimerTask("fusionServer timerFusionData", server->dataUnitFusionData.fs_ms,
                          std::bind(TaskFusionData, server, 10));
 
-    server->addTimerTask("fusionServer timerTrafficFlow", server->dataUnitTrafficFlows.fs_ms,
-                         std::bind(TaskTrafficFlows, server, 10));
+    server->addTimerTask("fusionServer timerTrafficFlowGather", server->dataUnitTrafficFlowGather.fs_ms,
+                         std::bind(TaskTrafficFlowGather, server, 10));
     server->addTimerTask("fusionServer timerLineupInfoGather", server->dataUnitLineupInfoGather.fs_ms,
                          std::bind(TaskLineupInfoGather, server, 10));
 
     server->addTimerTask("fusionServer timerCrossTrafficJamAlarm", server->dataUnitCrossTrafficJamAlarm.fs_ms,
                          std::bind(TaskCrossTrafficJamAlarm, server, 10));
 
-    server->addTimerTask("fusionServer timerMultiViewCarTracks", server->dataUnitMultiViewCarTracks.fs_ms,
-                         std::bind(TaskMultiViewCarTracks, server, 10));
+    server->addTimerTask("fusionServer timerCarTrackGather", server->dataUnitCarTrackGather.fs_ms,
+                         std::bind(TaskCarTrackGather, server, 10));
 
     Info("%s exit", __FUNCTION__);
     return 0;
@@ -479,16 +480,16 @@ void FusionServer::TaskFusionData(void *pServer, int cache) {
     }
 }
 
-void FusionServer::TaskTrafficFlows(void *pServer, unsigned int cache) {
+void FusionServer::TaskTrafficFlowGather(void *pServer, unsigned int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnitTrafficFlows;
+    auto dataUnit = &server->dataUnitTrafficFlowGather;
     if (server->isRun.load()) {
 //        unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitTrafficFlows::TaskProcessOneFrame);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitTrafficFlowGather::TaskProcessOneFrame);
     }
 }
 
@@ -521,16 +522,16 @@ void FusionServer::TaskCrossTrafficJamAlarm(void *pServer, int cache) {
     }
 }
 
-void FusionServer::TaskMultiViewCarTracks(void *pServer, int cache) {
+void FusionServer::TaskCarTrackGather(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
     }
     auto server = (FusionServer *) pServer;
-    auto dataUnit = &server->dataUnitMultiViewCarTracks;
+    auto dataUnit = &server->dataUnitCarTrackGather;
     if (server->isRun.load()) {
 //        unique_lock<mutex> lck(dataUnit->mtx);
         //寻找同一帧,并处理
-        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitMultiViewCarTracks::TaskProcessOneFrame);
+        dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitCarTrackGather::TaskProcessOneFrame);
     }
 }
 

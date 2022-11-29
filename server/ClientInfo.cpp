@@ -59,7 +59,8 @@ int ClientInfo::Close() {
         isLive.store(false);
     }
     if (sock > 0) {
-        close(sock);
+        shutdown(sock,SHUT_RDWR);
+//        close(sock);
     }
     if (isLocalThreadRun) {
         try {
@@ -420,7 +421,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitTrafficFlows.pushI(trafficFlow, client->indexSuper)) {
+                if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, client->indexSuper)) {
                     Debug("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
 
@@ -436,12 +437,12 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     Error("MultiviewCarTrack json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
-                MultiViewCarTrack multiViewCarTrack;
+                CarTrack multiViewCarTrack;
                 multiViewCarTrack.JsonUnmarshal(in);
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitMultiViewCarTracks.pushI(multiViewCarTrack, client->indexSuper)) {
+                if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, client->indexSuper)) {
                     Debug("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }

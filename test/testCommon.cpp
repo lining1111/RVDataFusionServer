@@ -178,11 +178,11 @@ void exampleLineupInfo() {
     LineupInfo lineupInfo;
     lineupInfo.oprNum = "123";
     lineupInfo.hardCode = "abc";
-    TrafficFlowLineup trafficFlowLineup;
+    OneLineupInfo trafficFlowLineup;
     trafficFlowLineup.headWay = 1;
     trafficFlowLineup.averageSpeed = 2;
     lineupInfo.trafficFlowList.push_back(trafficFlowLineup);
-    TrafficFlowLineup trafficFlowLineup1;
+    OneLineupInfo trafficFlowLineup1;
     trafficFlowLineup1.headWay = 3;
     trafficFlowLineup1.averageSpeed = 4;
     lineupInfo.trafficFlowList.push_back(trafficFlowLineup1);

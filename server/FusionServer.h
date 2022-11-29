@@ -54,9 +54,9 @@ public:
     //---------------监控数据相关---------//
     DataUnitFusionData dataUnitFusionData;
     //---------车辆轨迹---------//
-    DataUnitMultiViewCarTracks dataUnitMultiViewCarTracks;
+    DataUnitCarTrackGather dataUnitCarTrackGather;
     //---------------路口交通流向相关--------//
-    DataUnitTrafficFlows dataUnitTrafficFlows;
+    DataUnitTrafficFlowGather dataUnitTrafficFlowGather;
     //------交叉口堵塞报警------//
     DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm;
     //--------排队长度等信息------//
@@ -139,7 +139,6 @@ private:
      */
     static void ThreadCheck(void *pServer);
 
-
     static int StartTimerTask(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
@@ -154,17 +153,13 @@ private:
      * 多路数据融合线程
      * @param pServer
      */
-    static void ThreadMerge(void *pServer);
-
-    static void ThreadNotMerge(void *pServer);
-
-    static void TaskTrafficFlows(void *pServer, unsigned int cache);
+    static void TaskTrafficFlowGather(void *pServer, unsigned int cache);
 
     static void TaskLineupInfoGather(void *pServer, int cache);
 
     static void TaskCrossTrafficJamAlarm(void *pServer, int cache);
 
-    static void TaskMultiViewCarTracks(void *pServer, int cache);
+    static void TaskCarTrackGather(void *pServer, int cache);
 
 };
 

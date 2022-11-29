@@ -484,7 +484,7 @@ namespace common {
         return 0;
     }
 
-    bool FlowData::JsonMarshal(Json::Value &out) {
+    bool OneFlowData::JsonMarshal(Json::Value &out) {
         out["laneCode"] = this->laneCode;
         out["laneDirection"] = this->laneDirection;
         out["flowDirection"] = this->flowDirection;
@@ -497,7 +497,7 @@ namespace common {
         return true;
     }
 
-    bool FlowData::JsonUnmarshal(Json::Value in) {
+    bool OneFlowData::JsonUnmarshal(Json::Value in) {
         this->laneCode = in["laneCode"].asString();
         this->laneDirection = in["laneDirection"].asInt();
         this->flowDirection = in["flowDirection"].asInt();
@@ -543,7 +543,7 @@ namespace common {
         if (in["flowData"].isArray()) {
             Json::Value flowData = in["flowData"];
             for (auto iter:flowData) {
-                FlowData item;
+                OneFlowData item;
                 if (item.JsonUnmarshal(iter)) {
                     this->flowData.push_back(item);
                 }
@@ -553,7 +553,7 @@ namespace common {
         return true;
     }
 
-    bool TrafficFlows::JsonMarshal(Json::Value &out) {
+    bool TrafficFlowGather::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
@@ -575,7 +575,7 @@ namespace common {
         return true;
     }
 
-    bool TrafficFlows::JsonUnmarshal(Json::Value in) {
+    bool TrafficFlowGather::JsonUnmarshal(Json::Value in) {
 
         this->oprNum = in["oprNum"].asString();
         this->crossID = in["crossID"].asString();
@@ -585,7 +585,7 @@ namespace common {
         if (in["trafficFlow"].isArray()) {
             Json::Value trafficFlow = in["trafficFlow"];
             for (auto iter:trafficFlow) {
-                FlowData item;
+                OneFlowData item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlow.push_back(item);
                 }
@@ -595,7 +595,7 @@ namespace common {
         return true;
     }
 
-    int PkgTrafficFlowsWithoutCRC(TrafficFlows trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;
         //1.头部
         pkg.head.tag = '$';
@@ -622,7 +622,7 @@ namespace common {
         return 0;
     }
 
-    bool CarTrack::JsonMarshal(Json::Value &out) {
+    bool OneCarTrack::JsonMarshal(Json::Value &out) {
         out["id"] = this->id;
         out["type"] = this->type;
         out["cameraDirection"] = this->cameraDirection;
@@ -640,7 +640,7 @@ namespace common {
         return true;
     }
 
-    bool CarTrack::JsonUnmarshal(Json::Value in) {
+    bool OneCarTrack::JsonUnmarshal(Json::Value in) {
         this->id = in["id"].asInt();
         this->type = in["type"].asInt();
         this->cameraDirection = in["cameraDirection"].asInt();
@@ -658,7 +658,7 @@ namespace common {
         return true;
     }
 
-    bool MultiViewCarTrack::JsonMarshal(Json::Value &out) {
+    bool CarTrack::JsonMarshal(Json::Value &out) {
 
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
@@ -684,7 +684,7 @@ namespace common {
         return true;
     }
 
-    bool MultiViewCarTrack::JsonUnmarshal(Json::Value in) {
+    bool CarTrack::JsonUnmarshal(Json::Value in) {
 
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
@@ -696,7 +696,7 @@ namespace common {
         if (in["lstObj"].isArray()) {
             Json::Value lstObj = in["lstObj"];
             for (auto iter:lstObj) {
-                CarTrack item;
+                OneCarTrack item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstObj.push_back(item);
                 }
@@ -759,7 +759,7 @@ namespace common {
         return 0;
     }
 
-    bool TrafficFlowLineup::JsonMarshal(Json::Value &out) {
+    bool OneLineupInfo::JsonMarshal(Json::Value &out) {
 
         out["laneID"] = this->laneID;
         out["averageSpeed"] = this->averageSpeed;
@@ -776,7 +776,7 @@ namespace common {
         return true;
     }
 
-    bool TrafficFlowLineup::JsonUnmarshal(Json::Value in) {
+    bool OneLineupInfo::JsonUnmarshal(Json::Value in) {
         this->laneID = in["laneID"].asInt();
         this->averageSpeed = in["averageSpeed"].asInt();
         this->flow = in["flow"].asInt();
@@ -826,7 +826,7 @@ namespace common {
         Json::Value trafficFlowList = in["trafficFlowList"];
         if (trafficFlowList.isArray()) {
             for (auto iter:trafficFlowList) {
-                TrafficFlowLineup item;
+                OneLineupInfo item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlowList.push_back(item);
                 }
@@ -868,7 +868,7 @@ namespace common {
         Json::Value trafficFlowList = in["trafficFlowList"];
         if (trafficFlowList.isArray()) {
             for (auto iter:trafficFlowList) {
-                TrafficFlowLineup item;
+                OneLineupInfo item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlowList.push_back(item);
                 }
@@ -907,7 +907,7 @@ namespace common {
     }
 
 
-    bool MultiViewCarTracks::JsonMarshal(Json::Value &out) {
+    bool CarTrackGather::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
@@ -930,7 +930,7 @@ namespace common {
         return true;
     }
 
-    bool MultiViewCarTracks::JsonUnmarshal(Json::Value in) {
+    bool CarTrackGather::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
@@ -939,7 +939,7 @@ namespace common {
         Json::Value lstObj = in["lstObj"];
         if (lstObj.isArray()) {
             for (auto iter:lstObj) {
-                CarTrack item;
+                OneCarTrack item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstObj.push_back(item);
                 }
@@ -949,7 +949,7 @@ namespace common {
     }
 
     int
-    PkgMultiViewCarTracksWithoutCRC(MultiViewCarTracks multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+    PkgCarTrackGatherWithoutCRC(CarTrackGather multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;
         //1.头部
         pkg.head.tag = '$';

@@ -13,20 +13,20 @@
 
 using namespace z_log;
 
-DataUnitMultiViewCarTracks::DataUnitMultiViewCarTracks() {
+DataUnitCarTrackGather::DataUnitCarTrackGather() {
 
 }
 
-DataUnitMultiViewCarTracks::~DataUnitMultiViewCarTracks() {
+DataUnitCarTrackGather::~DataUnitCarTrackGather() {
 
 }
 
-DataUnitMultiViewCarTracks::DataUnitMultiViewCarTracks(int c, int fs_ms, int threshold_ms, int i_num) :
+DataUnitCarTrackGather::DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num) :
         DataUnit(c, fs_ms, threshold_ms, i_num) {
 
 }
 
-int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
+int DataUnitCarTrackGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
     //1寻找最大帧数
     int maxPkgs = 0;
     int maxPkgsIndex;
@@ -94,8 +94,8 @@ int DataUnitMultiViewCarTracks::FindOneFrame(unsigned int cache, uint64_t toCach
     return 0;
 }
 
-int DataUnitMultiViewCarTracks::ThreadGetDataInRange(DataUnitMultiViewCarTracks *dataUnit,
-                                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
+                                                 int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
     //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
     Debug("%s第%d路 左值%lu 右值%lu", __PRETTY_FUNCTION__, index, leftTimestamp, rightTimestamp);
     bool isFind = false;
@@ -151,7 +151,7 @@ int DataUnitMultiViewCarTracks::ThreadGetDataInRange(DataUnitMultiViewCarTracks 
     return index;
 }
 
-int DataUnitMultiViewCarTracks::TaskProcessOneFrame(DataUnitMultiViewCarTracks *dataUnit) {
+int DataUnitCarTrackGather::TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
@@ -174,20 +174,20 @@ int DataUnitMultiViewCarTracks::TaskProcessOneFrame(DataUnitMultiViewCarTracks *
 }
 
 
-DataUnitTrafficFlows::DataUnitTrafficFlows() {
+DataUnitTrafficFlowGather::DataUnitTrafficFlowGather() {
 
 }
 
-DataUnitTrafficFlows::~DataUnitTrafficFlows() {
+DataUnitTrafficFlowGather::~DataUnitTrafficFlowGather() {
 
 }
 
-DataUnitTrafficFlows::DataUnitTrafficFlows(int c, int fs_ms, int threshold_ms, int i_num) :
+DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num) :
         DataUnit(c, fs_ms, threshold_ms, i_num) {
 
 }
 
-int DataUnitTrafficFlows::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
+int DataUnitTrafficFlowGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
     //1寻找最大帧数
     int maxPkgs = 0;
     int maxPkgsIndex;
@@ -252,8 +252,8 @@ int DataUnitTrafficFlows::FindOneFrame(unsigned int cache, uint64_t toCacheCha, 
     return 0;
 }
 
-int DataUnitTrafficFlows::ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
-                                               int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
+                                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
     //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
     //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
     Debug("%s第%d路 左值%lu 右值%lu", __PRETTY_FUNCTION__, index, leftTimestamp, rightTimestamp);
@@ -310,7 +310,7 @@ int DataUnitTrafficFlows::ThreadGetDataInRange(DataUnitTrafficFlows *dataUnit,
     return index;
 }
 
-int DataUnitTrafficFlows::TaskProcessOneFrame(DataUnitTrafficFlows *dataUnit) {
+int DataUnitTrafficFlowGather::TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit) {
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
