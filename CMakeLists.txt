@@ -24,6 +24,7 @@ function(redefine_file_macro targetname)
                 SOURCE "${sourcefile}"
                 PROPERTY COMPILE_DEFINITIONS ${defs}
         )
+
     endforeach ()
 endfunction()
 

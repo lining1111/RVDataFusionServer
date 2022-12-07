@@ -8,7 +8,9 @@
 #ifdef x86
 #include <jsoncpp/json/json.h>
 #else
+
 #include <json/json.h>
+
 #endif
 
 #include <cstdint>
@@ -49,15 +51,15 @@ namespace common {
 
 
     enum CmdType {
-        Response = 0x00,//应答指令
-        Login = 0x01,//设备登录
-        HeartBeat = 0x02,//心跳
-        DeviceData = 0x03,//监控数据回传
-        DeviceAlarm = 0x04,//设备报警数据
-        DeviceStatus = 0x05,//设备状态数据
-        DevicePicData = 0x06,//设备视频数据回传
-        DeviceMultiview = 0x07,//多目数据回传
-        DeviceMultiviewCarTrack = 0x08,//多目车辆轨迹
+        CmdResponse = 0x00,//应答指令
+        CmdLogin = 0x01,//设备登录
+        CmdHeartBeat = 0x02,//心跳
+        CmdFusionData = 0x03,//监控实时数据
+        CmdCrossTrafficJamAlarm = 0x04,//交叉路口堵塞报警
+        CmdLineupInfoGather = 0x05,//排队长度等信息
+        CmdPicData = 0x06,//设备视频数据回传
+        CmdTrafficFlowGather = 0x07,//车流量统计
+        CmdCarTrackGather = 0x08,//车辆轨迹
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -176,7 +178,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };//监控数据,对应命令字DeviceData
 
-    class RvWayObject {
+    class OneRvWayObject {
     public:
         int wayNo;//对应 Direction
         int roID;//雷达目标编号
@@ -214,7 +216,7 @@ namespace common {
     class ObjMix {
     public:
         int objID = 0;//目标ID
-        vector<RvWayObject> listRvWayObject;
+        vector<OneRvWayObject> rvWayObject;
         int objType = 0;//目标类型
         int objColor = 0;//目标颜色
         string plates;//车牌号
@@ -278,9 +280,9 @@ namespace common {
     class TrafficFlow {
     public:
         string oprNum;// `json "oprNum"`
+        string crossID;
         string hardCode;
         double timestamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
-        string crossCode;
         vector<OneFlowData> flowData;
     public:
         bool JsonMarshal(Json::Value &out);
@@ -331,7 +333,7 @@ namespace common {
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timestamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
-        string crossCode;
+        string crossID;
         string ip;
         int type;
         vector<OneCarTrack> lstObj;
@@ -354,8 +356,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    int
-    PkgCarTrackGatherWithoutCRC(CarTrackGather multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+    int PkgCarTrackGatherWithoutCRC(CarTrackGather carTrackGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
 
     //---------交叉路口堵塞报警---------//
@@ -363,7 +364,7 @@ namespace common {
     public:
         string oprNum;
         double timestamp;
-        string crossCode;
+        string crossID;
         string hardCode;
         int alarmType;//1：交叉口堵塞
         int alarmStatus;//1 有报警 0 报警恢复
@@ -401,7 +402,7 @@ namespace common {
     public:
         string oprNum;
         double timestamp;
-        string crossCode;
+        string crossID;
         string hardCode;
         string recordDateTime;
         vector<OneLineupInfo> trafficFlowList;
@@ -415,8 +416,9 @@ namespace common {
     public:
         string oprNum;
         double timestamp;
-        string crossCode;
+        string crossID;
         string hardCode;
+        string recordDateTime;
         vector<OneLineupInfo> trafficFlowList;
     public:
         bool JsonMarshal(Json::Value &out);
@@ -424,8 +426,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO,
-                                      Pkg &pkg);
+    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 }
 
 #endif //_COMMON_H

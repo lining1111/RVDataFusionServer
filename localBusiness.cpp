@@ -6,6 +6,7 @@
 #include "localBusiness.h"
 #include <arpa/inet.h>
 #include <fstream>
+#include <iomanip>
 
 #include "log/Log.h"
 
@@ -35,7 +36,7 @@ void LocalBusiness::AddServer(string name, int port, bool isMerge) {
 }
 
 void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort, void *super) {
-    FusionClient *client = new FusionClient(cloudIp, cloudPort, nullptr);//端口号和ip依实际情况而变
+    FusionClient *client = new FusionClient(cloudIp, cloudPort, super);//端口号和ip依实际情况而变
     clientList.insert(make_pair(name, client));
 }
 
@@ -73,10 +74,16 @@ void LocalBusiness::StartTimerTask() {
     addTimerTask("localBusiness timerKeep", 1000, std::bind(Task_Keep, this));
     addTimerTask("localBusiness timerFusionData", 100, std::bind(Task_FusionData, this));
 
-    addTimerTask("localBusiness timerTrafficFlows", 100, std::bind(Task_TrafficFlows, this));
-    addTimerTask("localBusiness timerLineupInfoGather", 100, std::bind(Task_LineupInfoGather, this));
+    addTimerTask("localBusiness timerTrafficFlowGather", 1000, std::bind(Task_TrafficFlowGather, this));
+    addTimerTask("localBusiness timerLineupInfoGather", 1000, std::bind(Task_LineupInfoGather, this));
     addTimerTask("localBusiness timerCrossTrafficJamAlarm", 1000 * 10, std::bind(Task_CrossTrafficJamAlarm, this));
-    addTimerTask("localBusiness timerMultiViewCarTracks", 66, std::bind(Task_MultiViewCarTracks, this));
+    addTimerTask("localBusiness timerMultiViewCarTracks", 66, std::bind(Task_CarTrackGather, this));
+
+
+    //开启伪造数据线程
+//    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
+//    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
+//    addTimerTask("localBusiness timerCreateTrafficFlowGather",1000,std::bind(Task_CreateTrafficFlowGather,this));
 }
 
 
@@ -123,12 +130,12 @@ void LocalBusiness::Task_Keep(void *p) {
     }
 }
 
-void LocalBusiness::Task_MultiViewCarTracks(void *p) {
+void LocalBusiness::Task_CarTrackGather(void *p) {
     if (p == nullptr) {
         return;
     }
     auto local = (LocalBusiness *) p;
-    string msgType = "MultiViewCarTracks";
+    string msgType = "CarTrackGather";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitCarTrackGather;
@@ -294,12 +301,12 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
 }
 
 
-void LocalBusiness::Task_TrafficFlows(void *p) {
+void LocalBusiness::Task_TrafficFlowGather(void *p) {
     if (p == nullptr) {
         return;
     }
     auto local = (LocalBusiness *) p;
-    string msgType = "TrafficFlows";
+    string msgType = "TrafficFlowGather";
     for (auto &iter: local->serverList) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitTrafficFlowGather;
@@ -368,7 +375,7 @@ void LocalBusiness::Task_FusionData(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 10) {
+                    if (dataUnit->saveCount < 5) {
                         dataUnit->saveCount++;
                         //存入图片
                         string fileName = msgType + to_string((uint64_t) data.timstamp) + ".txt";
@@ -407,5 +414,110 @@ void LocalBusiness::Task_FusionData(void *p) {
                 }
             }
         }
+    }
+}
+
+void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto server = local->serverList.find("server1")->second;
+    auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
+    CrossTrafficJamAlarm inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    inData.hardCode = "hardCode";
+    inData.alarmStatus = 0;
+    inData.alarmType = 1;
+    std::time_t t = std::time(nullptr);
+    std::tm *tm = std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%F %T");
+    inData.alarmTime = ss.str();
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 CrossTrafficJamAlarm 插入成功\n");
+    } else {
+        printf("伪造数据 CrossTrafficJamAlarm 插入失败\n");
+    }
+}
+
+void LocalBusiness::Task_CreateLineupInfoGather(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto server = local->serverList.find("server1")->second;
+    auto dataUnit = &server->dataUnitLineupInfoGather;
+    LineupInfoGather inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    inData.hardCode = "hardCode";
+    std::time_t t = std::time(nullptr);
+    std::tm *tm = std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%F %T");
+    inData.recordDateTime = ss.str();
+    OneLineupInfo item1;
+    item1.averageSpeed = 1;
+    item1.flow = 2;
+    item1.headWay = 3;
+    item1.headWayTime = 4;
+    item1.laneID = 5;
+    item1.occupancy = 6;
+    item1.occupancySpace = 7;
+    item1.queueLength = 8;
+    item1.sumMax = 9;
+    item1.sumMid = 10;
+    item1.sumMini = 11;
+    inData.trafficFlowList.push_back(item1);
+
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 LineupInfoGather 插入成功\n");
+    } else {
+        printf("伪造数据 LineupInfoGather 插入失败\n");
+    }
+}
+
+void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto server = local->serverList.find("server1")->second;
+    auto dataUnit = &server->dataUnitTrafficFlowGather;
+    TrafficFlowGather inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    std::time_t t = std::time(nullptr);
+    std::tm *tm = std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%F %T");
+    inData.recordDateTime = ss.str();
+    OneFlowData item1;
+    item1.outAverageSpeed = 1.0;
+    item1.inAverageSpeed = 2.0;
+    item1.laneDirection = 3;
+    item1.flowDirection = 4;
+    item1.inCars = 5;
+    item1.laneCode = "laneCode";
+    item1.outCars = 6;
+    item1.queueCars = 7;
+    item1.queueLen = 8;
+    inData.trafficFlow.push_back(item1);
+
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 TrafficFlowGather 插入成功\n");
+    } else {
+        printf("伪造数据 TrafficFlowGather 插入失败\n");
     }
 }

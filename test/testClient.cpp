@@ -101,7 +101,7 @@ int Msg1(uint8_t *out, uint32_t *len) {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.cmd = CmdType::DeviceData;
+    pkg.head.cmd = CmdType::CmdFusionData;
     pkg.head.sn = 1;
     pkg.head.deviceNO = 0x12345678;
     pkg.head.len = 0;
@@ -202,7 +202,7 @@ int Msg2(uint8_t *out, uint32_t *len) {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.cmd = CmdType::DeviceData;
+    pkg.head.cmd = CmdType::CmdFusionData;
     pkg.head.sn = 2;
     pkg.head.deviceNO = 0x87654321;
     pkg.head.len = 0;

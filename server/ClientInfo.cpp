@@ -295,19 +295,19 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
         Json::Value in;
         //解析分包，按照方法名不同，存入不同的队列
         switch (pkg.head.cmd) {
-            case CmdType::Response : {
+            case CmdType::CmdResponse : {
 //                Debug("client-%d,应答指令", client->sock);
             }
                 break;
-            case CmdType::Login : {
+            case CmdType::CmdLogin : {
 //                Debug("client-%d,登录指令", client->sock);
             }
                 break;
-            case CmdType::HeartBeat : {
+            case CmdType::CmdHeartBeat : {
 //                Debug("client-%d,心跳指令", client->sock);
             }
                 break;
-            case CmdType::DeviceData : {
+            case CmdType::CmdFusionData : {
 //                Debug("client-%d ip:%s,WatchData", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 //打印下接收的内容
 //                Debug("%s\n", pkg.body.c_str());
@@ -352,7 +352,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
             }
                 break;
-            case CmdType::DeviceAlarm : {
+            case CmdType::CmdCrossTrafficJamAlarm : {
 //                Debug("client-%d ip:%s,CrossTrafficJamAlarm", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
@@ -379,7 +379,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 //                     server->dataUnitCrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).size());
             }
                 break;
-            case CmdType::DeviceStatus : {
+            case CmdType::CmdLineupInfoGather : {
 //                Debug("client-%d ip:%s,LineupInfo", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
@@ -399,11 +399,11 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
             }
                 break;
-            case CmdType::DevicePicData : {
+            case CmdType::CmdPicData : {
 //                Info("client-%d,设备视频数据回传", client->sock);
             }
                 break;
-            case CmdType::DeviceMultiview : {
+            case CmdType::CmdTrafficFlowGather : {
 //                Debug("client-%d ip:%s,TrafficFlow", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());
@@ -427,7 +427,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
             }
                 break;
-            case CmdType::DeviceMultiviewCarTrack : {
+            case CmdType::CmdCarTrackGather : {
 //                Debug("client-%d ip:%s,MultiViewCarTrack", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 //打印下接收的内容
 //                Info("%s\n", pkg.body.c_str());

@@ -115,7 +115,7 @@ int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUni
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                             //记录路口编号
-                            dataUnit->crossID = cur.crossCode;
+                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -133,7 +133,7 @@ int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUni
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                         //记录路口编号
-                        dataUnit->crossID = cur.crossCode;
+                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -274,7 +274,7 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                             //记录路口编号
-                            dataUnit->crossID = cur.crossCode;
+                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -292,7 +292,7 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                         //记录路口编号
-                        dataUnit->crossID = cur.crossCode;
+                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -433,7 +433,7 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                             //记录路口编号
-                            dataUnit->crossID = cur.crossCode;
+                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -451,7 +451,7 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                         //记录路口编号
-                        dataUnit->crossID = cur.crossCode;
+                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -473,7 +473,7 @@ int DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAla
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
-    item.crossCode = dataUnit->crossID;
+    item.crossID = dataUnit->crossID;
     item.alarmType = 0;
     item.alarmStatus = 0;
     auto tp = std::chrono::system_clock::now();
@@ -599,7 +599,7 @@ int DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dat
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                             //记录路口编号
-                            dataUnit->crossID = cur.crossCode;
+                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -617,7 +617,7 @@ int DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dat
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
                         //记录路口编号
-                        dataUnit->crossID = cur.crossCode;
+                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -639,7 +639,7 @@ int DataUnitLineupInfoGather::TaskProcessOneFrame(DataUnitLineupInfoGather *data
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
-    item.crossCode = dataUnit->crossID;
+    item.crossID = dataUnit->crossID;
 
     for (auto iter:dataUnit->oneFrame) {
         if (!iter.trafficFlowList.empty()) {
@@ -1125,32 +1125,32 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
         ObjMix objMix;
         objMix.objID = iter.showID;
         if (iter.objID1 != -INF) {
-            RvWayObject rvWayObject;
+            OneRvWayObject rvWayObject;
             rvWayObject.wayNo = North;
             rvWayObject.roID = iter.objID1;
             rvWayObject.voID = iter.cameraID1;
-            objMix.listRvWayObject.push_back(rvWayObject);
+            objMix.rvWayObject.push_back(rvWayObject);
         }
         if (iter.objID2 != -INF) {
-            RvWayObject rvWayObject;
+            OneRvWayObject rvWayObject;
             rvWayObject.wayNo = East;
             rvWayObject.roID = iter.objID2;
             rvWayObject.voID = iter.cameraID2;
-            objMix.listRvWayObject.push_back(rvWayObject);
+            objMix.rvWayObject.push_back(rvWayObject);
         }
         if (iter.objID3 != -INF) {
-            RvWayObject rvWayObject;
+            OneRvWayObject rvWayObject;
             rvWayObject.wayNo = South;
             rvWayObject.roID = iter.objID3;
             rvWayObject.voID = iter.cameraID3;
-            objMix.listRvWayObject.push_back(rvWayObject);
+            objMix.rvWayObject.push_back(rvWayObject);
         }
         if (iter.objID4 != -INF) {
-            RvWayObject rvWayObject;
+            OneRvWayObject rvWayObject;
             rvWayObject.wayNo = West;
             rvWayObject.roID = iter.objID4;
             rvWayObject.voID = iter.cameraID4;
-            objMix.listRvWayObject.push_back(rvWayObject);
+            objMix.rvWayObject.push_back(rvWayObject);
         }
         objMix.objType = iter.objType;
         objMix.objColor = 0;

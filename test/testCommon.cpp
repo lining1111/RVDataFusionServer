@@ -26,7 +26,7 @@ void examplePkg() {
     //1.头部
     pkg.head.tag = '$';
     pkg.head.version = 1;
-    pkg.head.cmd = CmdType::DeviceData;
+    pkg.head.cmd = CmdType::CmdFusionData;
     pkg.head.sn = 1;
     pkg.head.deviceNO = 0x12345678;
     pkg.head.len = 0;

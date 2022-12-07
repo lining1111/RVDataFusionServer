@@ -263,14 +263,14 @@ namespace common {
         return true;
     }
 
-    bool RvWayObject::JsonMarshal(Json::Value &out) {
+    bool OneRvWayObject::JsonMarshal(Json::Value &out) {
         out["wayNo"] = this->wayNo;
         out["roID"] = this->roID;
         out["voID"] = this->voID;
         return true;
     }
 
-    bool RvWayObject::JsonUnmarshal(Json::Value in) {
+    bool OneRvWayObject::JsonUnmarshal(Json::Value in) {
         this->wayNo = in["wayNo"].asInt();
         this->roID = in["roID"].asInt();
         this->voID = in["voID"].asInt();
@@ -348,18 +348,18 @@ namespace common {
         out["latitude"] = this->latitude;
         out["flagNew"] = this->flagNew;
 
-        Json::Value listRvWayObject = Json::arrayValue;
-        if (!this->listRvWayObject.empty()) {
-            for (auto iter:this->listRvWayObject) {
+        Json::Value rvWayObject = Json::arrayValue;
+        if (!this->rvWayObject.empty()) {
+            for (auto iter:this->rvWayObject) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
-                    listRvWayObject.append(item);
+                    rvWayObject.append(item);
                 }
             }
         } else {
-            listRvWayObject.resize(0);
+            rvWayObject.resize(0);
         }
-        out["listRvWayObject"] = listRvWayObject;
+        out["rvWayObject"] = rvWayObject;
 
         return true;
     }
@@ -379,12 +379,12 @@ namespace common {
         this->latitude = in["latitude"].asDouble();
         this->flagNew = in["flagNew"].asInt();
 
-        Json::Value listRvWayObject = in["listRvWayObject"];
-        if (listRvWayObject.isArray()) {
-            for (auto iter:listRvWayObject) {
-                RvWayObject item;
+        Json::Value rvWayObject = in["rvWayObject"];
+        if (rvWayObject.isArray()) {
+            for (auto iter:rvWayObject) {
+                OneRvWayObject item;
                 if (item.JsonUnmarshal(iter)) {
-                    this->listRvWayObject.push_back(item);
+                    this->rvWayObject.push_back(item);
                 }
             }
         }
@@ -462,7 +462,7 @@ namespace common {
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceData;
+        pkg.head.cmd = CmdType::CmdFusionData;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -515,7 +515,7 @@ namespace common {
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
         out["timestamp"] = this->timestamp;
-        out["crossCode"] = this->crossCode;
+        out["crossID"] = this->crossID;
 
         Json::Value flowData = Json::arrayValue;
         if (!this->flowData.empty()) {
@@ -538,7 +538,7 @@ namespace common {
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
         this->timestamp = in["timestamp"].asDouble();
-        this->crossCode = in["crossCode"].asString();
+        this->crossID = in["crossID"].asString();
 
         if (in["flowData"].isArray()) {
             Json::Value flowData = in["flowData"];
@@ -600,7 +600,7 @@ namespace common {
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceMultiview;
+        pkg.head.cmd = CmdType::CmdTrafficFlowGather;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -663,7 +663,7 @@ namespace common {
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
         out["timestamp"] = this->timestamp;
-        out["crossCode"] = this->crossCode;
+        out["crossID"] = this->crossID;
         out["ip"] = this->ip;
         out["type"] = this->type;
 
@@ -689,7 +689,7 @@ namespace common {
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
         this->timestamp = in["timestamp"].asDouble();
-        this->crossCode = in["crossCode"].asString();
+        this->crossID = in["crossID"].asString();
         this->ip = in["ip"].asString();
         this->type = in["type"].asInt();
 
@@ -708,7 +708,7 @@ namespace common {
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
-        out["crossCode"] = this->crossCode;
+        out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
@@ -721,7 +721,7 @@ namespace common {
 
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
-        this->crossCode = in["crossCode"].asString();
+        this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
@@ -736,7 +736,7 @@ namespace common {
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceAlarm;
+        pkg.head.cmd = CmdType::CmdCrossTrafficJamAlarm;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -795,7 +795,7 @@ namespace common {
     bool LineupInfo::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
-        out["crossCode"] = this->crossCode;
+        out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
         out["recordDateTime"] = this->recordDateTime;
 
@@ -819,7 +819,7 @@ namespace common {
     bool LineupInfo::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
-        this->crossCode = in["crossCode"].asString();
+        this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
         this->recordDateTime = in["recordDateTime"].asString();
 
@@ -839,8 +839,9 @@ namespace common {
     bool LineupInfoGather::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
-        out["crossCode"] = this->crossCode;
+        out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
+        out["recordDateTime"] = this->recordDateTime;
 
         Json::Value trafficFlowList = Json::arrayValue;
         if (!this->trafficFlowList.empty()) {
@@ -862,8 +863,9 @@ namespace common {
     bool LineupInfoGather::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
-        this->crossCode = in["crossCode"].asString();
+        this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
+        this->recordDateTime = in["recordDateTime"].asString();
 
         Json::Value trafficFlowList = in["trafficFlowList"];
         if (trafficFlowList.isArray()) {
@@ -883,7 +885,7 @@ namespace common {
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceStatus;
+        pkg.head.cmd = CmdType::CmdLineupInfoGather;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -949,12 +951,12 @@ namespace common {
     }
 
     int
-    PkgCarTrackGatherWithoutCRC(CarTrackGather multiViewCarTracks, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+    PkgCarTrackGatherWithoutCRC(CarTrackGather carTrackGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;
         //1.头部
         pkg.head.tag = '$';
         pkg.head.version = 1;
-        pkg.head.cmd = CmdType::DeviceMultiviewCarTrack;
+        pkg.head.cmd = CmdType::CmdCarTrackGather;
         pkg.head.sn = sn;
         pkg.head.deviceNO = deviceNO;
         pkg.head.len = 0;
@@ -963,7 +965,7 @@ namespace common {
         string jsonStr;
         Json::FastWriter fastWriter;
         Json::Value root;
-        multiViewCarTracks.JsonMarshal(root);
+        carTrackGather.JsonMarshal(root);
         jsonStr = fastWriter.write(root);
 
         pkg.body = jsonStr;

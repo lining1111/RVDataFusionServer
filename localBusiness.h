@@ -46,16 +46,20 @@ private:
     */
     static void Task_Keep(void *p);
 
-    static void Task_MultiViewCarTracks(void *p);
+    static void Task_CarTrackGather(void *p);
 
     static void Task_CrossTrafficJamAlarm(void *p);
 
     static void Task_LineupInfoGather(void *p);
 
-    static void Task_TrafficFlows(void *p);
+    static void Task_TrafficFlowGather(void *p);
 
     static void Task_FusionData(void *p);
 
+    //造数据的线程
+    static void Task_CreateCrossTrafficJamAlarm(void *p);
+    static void Task_CreateLineupInfoGather(void *p);
+    static void Task_CreateTrafficFlowGather(void *p);
 };
 
 
