@@ -61,3 +61,11 @@ redefine_file_macro(testTimeTask)
 
 add_executable(testTempClass testTempClass.cpp)
 target_link_libraries(testTempClass ${LIBS})
+
+##测试信号机通讯
+add_executable(testSingalControl testSingalControl.cpp
+        ../signalControl/signalControlCom.cpp
+        ../signalControl/SignalControl.cpp
+        ../common/CRC.cpp)
+target_link_libraries(testSingalControl ${LIBS})
+redefine_file_macro(testSingalControl)

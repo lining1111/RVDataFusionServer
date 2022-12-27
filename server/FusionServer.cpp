@@ -188,7 +188,7 @@ int FusionServer::Run() {
 int FusionServer::Close() {
     isRun.store(false);
     if (sock > 0) {
-        shutdown(sock,SHUT_RDWR);
+        shutdown(sock, SHUT_RDWR);
         close(sock);
     }
     if (isLocalThreadRun) {
@@ -214,7 +214,7 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
     //多线程处理，不应该设置非阻塞模式
 //    setNonblock(client_sock);
     // epoll add
-    this->ev.events = EPOLLIN | EPOLLET | EPOLLERR | EPOLLRDHUP;
+    this->ev.events = EPOLLHUP | EPOLLET | EPOLLERR | EPOLLRDHUP;
     this->ev.data.fd = client_sock;
     if (epoll_ctl(this->epoll_fd, EPOLL_CTL_ADD, client_sock, &this->ev) == -1) {
         Error("epoll add:%d fail,%s", client_sock, strerror(errno));
@@ -318,8 +318,7 @@ int FusionServer::ThreadMonitor(void *pServer) {
         }
         for (int i = 0; i < nfds; i++) {
             //外部只处理连接和断开状态
-            if ((server->wait_events[i].data.fd == server->sock) &&
-                ((server->wait_events[i].events & EPOLLIN) == EPOLLIN)) {
+            if (server->wait_events[i].data.fd == server->sock) {
                 // 客户端有新的连接请求
                 // 等待客户端连接请求到达
                 client_fd = accept(server->sock, (struct sockaddr *) &remote_addr, &sin_size);
@@ -334,7 +333,7 @@ int FusionServer::ThreadMonitor(void *pServer) {
             } else if ((server->wait_events[i].data.fd > 2) &&
                        ((server->wait_events[i].events & EPOLLERR) ||
                         (server->wait_events[i].events & EPOLLRDHUP) ||
-                        (server->wait_events[i].events & EPOLLOUT))) {
+                        (server->wait_events[i].events & EPOLLHUP))) {
                 //有异常发生 close client
 
                 for (int j = 0; j < server->vectorClient.size(); j++) {

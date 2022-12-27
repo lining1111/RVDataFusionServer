@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(RVDataFusionServer VERSION 0.0.2)
+string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
+set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
 
 set(CMAKE_CXX_STANDARD 11)
@@ -61,6 +63,7 @@ set(SRC_DIRS ./
         ringBuffer
         common
         monitor
+        signalControl
         server
         client
         server/merge

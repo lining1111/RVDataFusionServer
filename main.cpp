@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
             Info("create path failed! error code : %d \n", isCreate1);
     }
 
-    google::SetVersionString(PROJECT_VERSION);
+    google::SetVersionString(VERSION_BUILD_TIME);
     google::ParseCommandLineFlags(&argc, &argv, true);
     z_log::init();
     uint16_t port = FLAGS_port;
