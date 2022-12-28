@@ -112,6 +112,22 @@ namespace ComFrame_GBT20999_2017 {
         return 0;
     }
 
+    void DataItem::GetGroup(uint8_t index, uint8_t typeID, uint8_t objID, uint8_t attrID, uint8_t elementID,
+                            vector<uint8_t> *data) {
+        this->index = index;
+        if (data == nullptr) {
+            this->length = 4;
+            this->data.clear();
+        } else {
+            this->length = 4 + data->size();
+            this->data.assign(data->begin(), data->end());
+        }
+        this->typeID = typeID;
+        this->objID = objID;
+        this->attrID = attrID;
+        this->elementID = elementID;
+    }
+
     int FrameAll::getFromBytes(vector<uint8_t> in) {
         int needLen = 17;
         if (in.size() < needLen) {
@@ -325,144 +341,37 @@ namespace ComFrame_GBT20999_2017 {
         return 0;
     }
 
-    DataItem ReqGetManufacturer() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_Manufacturer;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
+    int ReqGet(DataItem &dataItem, uint8_t index, DataItemType type) {
+        int ret = 0;
+        auto iter = DataItemMap.find(type);
+        if (iter != DataItemMap.end()) {
+            uint32_t value = iter->second.value;
+            uint8_t typeID = (value & 0xff000000) >> 24;
+            uint8_t objID = (value & 0x00ff0000) >> 16;
+            uint8_t attrID = (value & 0x0000ff00) >> 8;
+            uint8_t elementID = (value & 0x000000ff);
+
+            dataItem.GetGroup(index, typeID, objID, attrID, elementID);
+        } else {
+            ret = -1;
+        }
+        return ret;
     }
 
-    DataItem ReqGetDeviceVersion() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_DeviceVersion;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
+    int ReqSet(DataItem &dataItem, uint8_t index, DataItemType type, vector<uint8_t> data) {
+        int ret = 0;
+        auto iter = DataItemMap.find(type);
+        if (iter != DataItemMap.end()) {
+            uint32_t value = iter->second.value;
+            uint8_t typeID = (value & 0xff000000) >> 24;
+            uint8_t objID = (value & 0x00ff0000) >> 16;
+            uint8_t attrID = (value & 0x0000ff00) >> 8;
+            uint8_t elementID = (value & 0x000000ff);
 
-    DataItem ReqGetDeviceNo() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_DeviceNo;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetProductionDate() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_ProductionDate;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetConfigDate() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_ConfigDate;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqSetConfigDate(vector<uint8_t> data) {
-        DataItem dataItem;
-        dataItem.length = 4 + data.size();
-        dataItem.typeID = DataItemTypeID_DeviceInfo;
-        dataItem.objID = DataItemObjID_ConfigDate;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        dataItem.data.assign(data.begin(), data.end());
-        return dataItem;
-    }
-
-    DataItem ReqGetRSCFixRoad() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_RSCFixRoad;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetRSCNet4ConfigIP() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_RSCNet4Config;
-        dataItem.attrID = 1;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetRSCNet4ConfigMask() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_RSCNet4Config;
-        dataItem.attrID = 2;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetRSCNet4ConfigGateway() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_RSCNet4Config;
-        dataItem.attrID = 3;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetCCNet4ConfigIP() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_CCNet4Config;
-        dataItem.attrID = 1;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetCCNet4ConfigMask() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_CCNet4Config;
-        dataItem.attrID = 2;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetCCNet4ConfigGateway() {
-        DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_CCNet4Config;
-        dataItem.attrID = 3;
-        dataItem.elementID = 0;
-        return dataItem;
-    }
-
-    DataItem ReqGetRSCTimeZone() {
-        ComFrame_GBT20999_2017::DataItem dataItem;
-        dataItem.length = 4;
-        dataItem.typeID = DataItemTypeID_BaseInfo;
-        dataItem.objID = DataItemObjID_RSCTimeZone;
-        dataItem.attrID = 0;
-        dataItem.elementID = 0;
-        return dataItem;
+            dataItem.GetGroup(index, typeID, objID, attrID, elementID, &data);
+        } else {
+            ret = -1;
+        }
+        return ret;
     }
 }
