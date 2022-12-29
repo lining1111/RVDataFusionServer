@@ -6,9 +6,12 @@
 #define _PACKETLOSS_HPP
 
 #include <cstdint>
-#include "timeTask.hpp"
+#include "os/timeTask.hpp"
+#include <functional>
 
 using namespace std;
+using namespace os;
+
 namespace moniter {
     class PacketLoss {
     private:

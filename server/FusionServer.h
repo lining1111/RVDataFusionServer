@@ -14,9 +14,10 @@
 #include "server/ClientInfo.h"
 #include "merge/merge.h"
 #include "DataUnit.h"
-#include "timeTask.hpp"
+#include "os/timeTask.hpp"
 
 using namespace std;
+using namespace os;
 
 class FusionServer {
 public:

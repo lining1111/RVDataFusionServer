@@ -2,6 +2,7 @@
 // Created by lining on 12/26/22.
 //
 #include <string>
+#include <algorithm>
 
 #include "../signalControl/signalControlCom.h"
 #include "../signalControl/SignalControl.h"
@@ -82,5 +83,33 @@ void ComFrame_GBT20999_2017Test() {
 
 int main() {
 //    ComTest();
-    ComFrame_GBT20999_2017Test();
+//    ComFrame_GBT20999_2017Test();
+
+    std::map<int, string> mapa = {
+            {1, "1"},
+            {2, "2"},
+            {3, "3"},
+    };
+    string value = "1";
+
+    auto iter = std::find_if(mapa.begin(), mapa.end(), [value](const std::map<int, string>::value_type &item) {
+        return (item.second == value);
+    });
+    if (iter != mapa.end()) {
+        printf("1 find\n");
+    } else {
+        printf("1 not find\n");
+    }
+
+    string value1 = "6";
+
+    auto iter1 = std::find_if(mapa.begin(), mapa.end(), [value1](const std::map<int, string>::value_type &item) {
+        return (item.second == value1);
+    });
+    if (iter1 != mapa.end()) {
+        printf("6 find\n");
+    } else {
+        printf("6 not find\n");
+    }
+
 }

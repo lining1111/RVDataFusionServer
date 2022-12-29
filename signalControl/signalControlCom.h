@@ -104,7 +104,7 @@ namespace ComFrame_GBT20999_2017 {
         CarType_Bus = 0x04,
         CarType_Tramcar = 0x05,
         CarType_Special = 0x06,
-    }CarType;
+    } CarType;
 
     typedef enum {
         PSSType_Fix = 0x10,
@@ -204,6 +204,28 @@ namespace ComFrame_GBT20999_2017 {
 
     class DataItem {
     public:
+        typedef enum {
+            TypeID_Device = 0x01,//设备信息
+            TypeID_Base = 0x02,//基础信息
+            TypeID_LGInfo = 0x03,//灯组信息
+            TypeID_PSInfo = 0x04,//相位信息
+            TypeID_DetectorInfo = 0x05,//检测器信息
+            TypeID_PSSInfo = 0x06,//相位阶段信息
+            TypeID_PSSafe = 0x07,//相位安全信息
+            TypeID_URP = 0x08,//紧急优先
+            TypeID_CP = 0x09,//方案信息
+            TypeID_PTC = 0x0a,//过渡约束
+            TypeID_TT = 0X0b,//日计划
+            TypeID_DS = 0x0c,//调度表
+            TypeID_OnState = 0x0d,//运行状态
+            TypeID_TD = 0x0e,//交通数据
+            TypeID_AlarmData = 0x0f,//报警数据
+            TypeID_BugData = 0x10,//故障数据
+            TypeID_CenterControl = 0x11,//中心控制
+            TypeID_CmdPipe = 0x12,//管道命令
+            TypeID_Len,
+        } TypeID;
+    public:
         uint8_t index;//该条数据值在报文所有操作数据值中的索引位置,从1开始
         uint8_t length;//该条数据值在报文中的长度，包含数据类ID、对象ID、属性ID、数据元素ID、数据值的长度
         uint8_t typeID = 0;//信号机内部数据结构以数据类的形式来组织
@@ -272,107 +294,107 @@ namespace ComFrame_GBT20999_2017 {
 
     typedef enum {
         DataItemType_Unknown = 0,
-        //设备信息
-        DataItemType_Manufacturer = 1,//只读,128bytes,string,不足的地方以0填充
+        //设备信息 Device
+        DataItemType_DeviceManufacturer = 1,//只读,128bytes,string,不足的地方以0填充
         DataItemType_DeviceVersion,//只读,4bytes,bytes,高两个字节代表硬件版本,低两个字节代表软件版本
         DataItemType_DeviceNo,//只读,16bytes,string,不足地方以0填充
-        DataItemType_ManufactureDate,//只读,7bytes,year:2bytes,month day hour min second:1byte
-        DataItemType_ConfigDate,//读写,7bytes,year:2bytes,month day hour min second:1byte
-        //基础信息
-        DataItemType_InstallRoad,//读写,128bytes,string,不足的地方以0填充
-        DataItemType_RSCNet4IP,//读写,4bytes,bytes
-        DataItemType_RSCNet4Mask,//读写,4bytes,bytes
-        DataItemType_RSCNet4Gateway,//读写,4bytes,bytes
-        DataItemType_CCNet4IP,//读写,4bytes,bytes
-        DataItemType_CCNet4Port,//读写,2bytes,bytes
-        DataItemType_CCNet4ComType,//读写,1byte 详见ComType
-        DataItemType_RSCTimezone,//读写,4bytes,bytes
-        DataItemType_RSCID,//读写,4bytes,bytes
-        DataItemType_RSCControlRoadNum,//读写,1byte
-        DataItemType_GPSCLKMark,//只读,1byte,bool
-        DataItemType_RSCNet6IP,//读写,16bytes,bytes
-        DataItemType_RSCNet6Mask,//读写,16bytes,bytes
-        DataItemType_RSCNet6Gateway,//读写,16bytes,bytes
-        DataItemType_CCNet6IP,//读写,16bytes,bytes
-        DataItemType_CCNet6Port,//读写,2bytes,bytes
-        DataItemType_CCNet6ComType,//读写,1byte,详见ComType
-        //灯组信息LG
-        DataItemType_LGNum,//只读,1byte
-        DataItemType_LGConfigNo,//只读,1byte
-        DataItemType_LGConfigType,//读写,1byte,详见LGType
-        DataItemType_LGState,//只读,1byte,详见LGState
-        DataItemType_LGControlNo,//只读,1byte
-        DataItemType_LGControlShield,//只读,1byte,bool
-        DataItemType_LGControlForbid,//只读,1byte,bool
-        //相位信息PS 失去路权过渡灯色LRWTLC 获得路权灯色GRWTLC
-        DataItemType_PSNum,//只读,1byte
-        DataItemType_PSConfigNo,//只读,1byte
-        DataItemType_PSConfigLG,//读写,1byte
-        DataItemType_PSConfigLRWTLC1Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigLRWTLC1Time,//读写,1byte,单位1s
-        DataItemType_PSConfigLRWTLC2Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigLRWTLC2Time,//读写,1byte,单位1s
-        DataItemType_PSConfigLRWTLC3Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigLRWTLC3Time,//读写,1byte,单位1s
-        DataItemType_PSConfigGRWTLC1Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigGRWTLC1Time,//读写,1byte,单位1s
-        DataItemType_PSConfigGRWTLC2Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigGRWTLC2Time,//读写,1byte,单位1s
-        DataItemType_PSConfigGRWTLC3Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigGRWTLC3Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnGRWTLC1Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnGRWTLC1Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnGRWTLC2Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnGRWTLC2Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnGRWTLC3Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnGRWTLC3Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnLRWTLC1Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnLRWTLC1Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnLRWTLC2Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnLRWTLC2Time,//读写,1byte,单位1s
-        DataItemType_PSConfigOnLRWTLC3Type,//读写,1byte,详见LGState
-        DataItemType_PSConfigOnLRWTLC3Time,//读写,1byte,单位1s
-        DataItemType_PSConfigMinGTime,//读写,2bytes,单位1s
-        DataItemType_PSConfigMaxGTime1,//读写,2bytes,单位1s
-        DataItemType_PSConfigMaxGTime2,//读写,2bytes,单位1s
-        DataItemType_PSConfigExtendGTime,//读写,2bytes,单位1s
-        DataItemType_PSConfigNeed,//读写,1byte
-        DataItemType_PSControlNo,//读写,1byte
-        DataItemType_PSControlShield,//只读,1byte,bool
-        DataItemType_PSControlForbid,//只读,1byte,bool
-        //检测器信息 流量监测TC 占有率采集OC
-        DataItemType_DetectorNum,//只读,1byte
-        DataItemType_DetectorConfigNo,//只读,1byte
-        DataItemType_DetectorConfigType,//读写,1byte,详见Detector
-        DataItemType_DetectorConfigTCPeriod,//读写,2bytes,单位1s
-        DataItemType_DetectorConfigOCPeriod,//读写,2bytes,单位1s
-        DataItemType_DetectorConfigInstallPos,//读写,128bytes,string,不足的地方以0填充
-        DataItemType_DetectorStateNo,//只读,1byte
-        DataItemType_DetectorStateCarExist,//只读,1byte,bool
-        DataItemType_DetectorStateCarSpeed,//只读,1byte
-        DataItemType_DetectorStateCarType,//只读,1byte,详见CarType
-        DataItemType_DetectorStateCarPlateNumber,//读写,16bytes,string,不足的地方以0填充
-        DataItemType_DetectorStateLaneQueueLen,//读写,2bytes,单位1米
-        //相位阶段信息 相位阶段PSS
-        DataItemType_PSSConfigStageNum,//只读,1byte
-        DataItemType_PSSConfigStageNo,//只读,1byte
-        DataItemType_PSSConfigStagePS,//读写,8bytes,按位标示bit0:1 bit63:64
-        DataItemType_PSSConfigStageDelayOnTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
-        DataItemType_PSSConfigStageAheadOffTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
-        DataItemType_PSSStateNo,//只读,1byte
-        DataItemType_PSSStateState,//只读,1byte,详见PSSState
-        DataItemType_PSSStateOnTime,//读写,4bytes,单位1s
-        DataItemType_PSSStateLastTime,////读写,4bytes,单位1s
-        DataItemType_PSSControlNo,//只读,1byte
-        DataItemType_PSSControlSoftNeed,//读写,1byte,bool
-        DataItemType_PSSControlShieldMark,//读写,1byte,bool
-        DataItemType_PSSControlForbidMark,//读写,1byte,bool
-        //相位安全信息
-        DataItemType_PSConflictNo,//只读,1byte
-        DataItemType_PSConflictSequence,//读写,8bytes,按位标示bit0:1 bit63:64
-        DataItemType_PSGIntervalNo,//只读,1byte
-        DataItemType_PSGIntervalSequence,//读写,64bytes,单位0.1s,字节标识 byte0:1 byte63:64
-        //紧急优先URP
+        DataItemType_DeviceManufactureDate,//只读,7bytes,year:2bytes,month day hour min second:1byte
+        DataItemType_DeviceConfigDate,//读写,7bytes,year:2bytes,month day hour min second:1byte
+        //基础信息 Base
+        DataItemType_BaseInstallRoad,//读写,128bytes,string,不足的地方以0填充
+        DataItemType_BaseRSCNet4IP,//读写,4bytes,bytes
+        DataItemType_BaseRSCNet4Mask,//读写,4bytes,bytes
+        DataItemType_BaseRSCNet4Gateway,//读写,4bytes,bytes
+        DataItemType_BaseCCNet4IP,//读写,4bytes,bytes
+        DataItemType_BaseCCNet4Port,//读写,2bytes,bytes
+        DataItemType_BaseCCNet4ComType,//读写,1byte 详见ComType
+        DataItemType_BaseRSCTimezone,//读写,4bytes,bytes
+        DataItemType_BaseRSCID,//读写,4bytes,bytes
+        DataItemType_BaseRSCControlRoadNum,//读写,1byte
+        DataItemType_BaseGPSCLKMark,//只读,1byte,bool
+        DataItemType_BaseRSCNet6IP,//读写,16bytes,bytes
+        DataItemType_BaseRSCNet6Mask,//读写,16bytes,bytes
+        DataItemType_BaseRSCNet6Gateway,//读写,16bytes,bytes
+        DataItemType_BaseCCNet6IP,//读写,16bytes,bytes
+        DataItemType_BaseCCNet6Port,//读写,2bytes,bytes
+        DataItemType_BaseCCNet6ComType,//读写,1byte,详见ComType
+        //灯组信息 LGInfo
+        DataItemType_LGInfoNum,//只读,1byte
+        DataItemType_LGInfoConfigNo,//只读,1byte
+        DataItemType_LGInfoConfigType,//读写,1byte,详见LGType
+        DataItemType_LGInfoState,//只读,1byte,详见LGState
+        DataItemType_LGInfoControlNo,//只读,1byte
+        DataItemType_LGInfoControlShield,//只读,1byte,bool
+        DataItemType_LGInfoControlForbid,//只读,1byte,bool
+        //相位信息 PSInfo 失去路权过渡灯色LRWTLC 获得路权灯色GRWTLC
+        DataItemType_PSInfoNum,//只读,1byte
+        DataItemType_PSInfoConfigNo,//只读,1byte
+        DataItemType_PSInfoConfigLG,//读写,1byte
+        DataItemType_PSInfoConfigLRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigLRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigLRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigLRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigLRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigLRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigGRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigGRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigGRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigGRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigGRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigGRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnGRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnGRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnGRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnGRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnGRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnGRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnLRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnLRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnLRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnLRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigOnLRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSInfoConfigOnLRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSInfoConfigMinGTime,//读写,2bytes,单位1s
+        DataItemType_PSInfoConfigMaxGTime1,//读写,2bytes,单位1s
+        DataItemType_PSInfoConfigMaxGTime2,//读写,2bytes,单位1s
+        DataItemType_PSInfoConfigExtendGTime,//读写,2bytes,单位1s
+        DataItemType_PSInfoConfigNeed,//读写,1byte
+        DataItemType_PSInfoControlNo,//读写,1byte
+        DataItemType_PSInfoControlShield,//只读,1byte,bool
+        DataItemType_PSInfoControlForbid,//只读,1byte,bool
+        //检测器信息DetectorInfo 流量监测TC 占有率采集OC
+        DataItemType_DetectorInfoNum,//只读,1byte
+        DataItemType_DetectorInfoConfigNo,//只读,1byte
+        DataItemType_DetectorInfoConfigType,//读写,1byte,详见Detector
+        DataItemType_DetectorInfoConfigTCPeriod,//读写,2bytes,单位1s
+        DataItemType_DetectorInfoConfigOCPeriod,//读写,2bytes,单位1s
+        DataItemType_DetectorInfoConfigInstallPos,//读写,128bytes,string,不足的地方以0填充
+        DataItemType_DetectorInfoStateNo,//只读,1byte
+        DataItemType_DetectorInfoStateCarExist,//只读,1byte,bool
+        DataItemType_DetectorInfoStateCarSpeed,//只读,1byte
+        DataItemType_DetectorInfoStateCarType,//只读,1byte,详见CarType
+        DataItemType_DetectorInfoStateCarPlateNumber,//读写,16bytes,string,不足的地方以0填充
+        DataItemType_DetectorInfoStateLaneQueueLen,//读写,2bytes,单位1米
+        //相位阶段信息PSSInfo 相位阶段 PSS
+        DataItemType_PSSInfoConfigStageNum,//只读,1byte
+        DataItemType_PSSInfoConfigStageNo,//只读,1byte
+        DataItemType_PSSInfoConfigStagePS,//读写,8bytes,按位标示bit0:1 bit63:64
+        DataItemType_PSSInfoConfigStageDelayOnTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
+        DataItemType_PSSInfoConfigStageAheadOffTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
+        DataItemType_PSSInfoStateNo,//只读,1byte
+        DataItemType_PSSInfoStateState,//只读,1byte,详见PSSState
+        DataItemType_PSSInfoStateOnTime,//读写,4bytes,单位1s
+        DataItemType_PSSInfoStateLastTime,////读写,4bytes,单位1s
+        DataItemType_PSSInfoControlNo,//只读,1byte
+        DataItemType_PSSInfoControlSoftNeed,//读写,1byte,bool
+        DataItemType_PSSInfoControlShieldMark,//读写,1byte,bool
+        DataItemType_PSSInfoControlForbidMark,//读写,1byte,bool
+        //相位安全信息 PSSafe
+        DataItemType_PSSafePSConflictNo,//只读,1byte
+        DataItemType_PSSafePSConflictSequence,//读写,8bytes,按位标示bit0:1 bit63:64
+        DataItemType_PSSafePSGIntervalNo,//只读,1byte
+        DataItemType_PSSafePSGIntervalSequence,//读写,64bytes,单位0.1s,字节标识 byte0:1 byte63:64
+        //紧急优先 URP
         DataItemType_URPPriorNum,//只读,1byte
         DataItemType_URPPriorConfigNo,//只读,1byte
         DataItemType_URPPriorConfigReqPSS,//读写,1byte
@@ -389,7 +411,7 @@ namespace ComFrame_GBT20999_2017 {
         DataItemType_URPUrgentStateNo,//只读,1byte
         DataItemType_URPUrgentStateReqState,//只读,1byte,bool
         DataItemType_URPUrgentStateExeState,//只读,1byte,bool
-        //方案信息CP
+        //方案信息 CP
         DataItemType_CPNum,//只读,1byte
         DataItemType_CPConfigNo,//只读,1byte
         DataItemType_CPConfigLaneSeq,//读写,1byte
@@ -399,10 +421,10 @@ namespace ComFrame_GBT20999_2017 {
         DataItemType_CPConfigPSSChain,//读写,16bytes
         DataItemType_CPConfigPSSTimeChain,//读写,32bytes,2字节为1组
         DataItemType_CPConfigPSSTypeChain,//读写,16bytes,详见PSSState
-        //过渡约束PTC
+        //过渡约束 PTC
         DataItemType_PTCConfigNo,//只读,1byte
         DataItemType_PTCConfigValue,//读写,64bytes 值为0：表示可以直接跳转；当值不为0且不等于255时，表示不能直接跳转，该值表 示需要经过该相位阶段号；值为255表示不能跳转
-        //日计划TT
+        //日计划 TT
         DataItemType_TTNum,//只读,1byte
         DataItemType_TTConfigNo,//只读,1byte
         DataItemType_TTConfigLaneSeq,//读写,1byte
@@ -417,7 +439,7 @@ namespace ComFrame_GBT20999_2017 {
         DataItemType_TTConfigActionChain6,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
         DataItemType_TTConfigActionChain7,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
         DataItemType_TTConfigActionChain8,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
-        //调度表DS
+        //调度表 DS
         DataItemType_DSNum,//只读,1byte
         DataItemType_DSConfigNo,//只读,1byte
         DataItemType_DSConfigLaneSeq,//读写,1byte
@@ -460,116 +482,118 @@ namespace ComFrame_GBT20999_2017 {
         DataItemType_BugDataType,//只读,1byte,详见BugDataType
         DataItemType_BugDataTime,//只读,7bytes,year:2bytes,month day hour min second:1byte
         DataItemType_BugDataAction,//只读,1byte,详见BugAction
-        //中心控制CenterControl
+        //中心控制 CenterControl
         DataItemType_CenterControlLaneID,//只读,1byte
         DataItemType_CenterControlAssignPSS,//读写,1byte
         DataItemType_CenterControlAssignPlan,//读写,1byte
         DataItemType_CenterControlAssignOnModel,//读写,1byte,详见Mode
-        //命令管道
+        //命令管道 CmdPipe
         DataItemType_CmdPipeValue,//读写,16bytes,详见CmdPipe
+
+        DataItemType_Len,
     } DataItemType;
 
     static map<DataItemType, DataItemValue> DataItemMap = {
             //设备信息
-            {DataItemType_Manufacturer, {0x01010000, "制造厂商"}},
+            {DataItemType_DeviceManufacturer, {0x01010000, "制造厂商"}},
             {DataItemType_DeviceVersion, {0x01020000, "设备版本"}},
             {DataItemType_DeviceNo, {0x01030000, "设备编号"}},
-            {DataItemType_ManufactureDate, {0x01040000, "出厂日期"}},
-            {DataItemType_ConfigDate, {0x01050000, "配置日期"}},
+            {DataItemType_DeviceManufactureDate, {0x01040000, "出厂日期"}},
+            {DataItemType_DeviceConfigDate, {0x01050000, "配置日期"}},
             //基础信息
-            {DataItemType_InstallRoad, {0x02010000, "信号机安装路口"}},
-            {DataItemType_RSCNet4IP, {0x02020100, "信号机IPV4网络配置IP"}},
-            {DataItemType_RSCNet4Mask, {0x02020200, "信号机IPV4网络配置子网掩码"}},
-            {DataItemType_RSCNet4Gateway, {0x02020300, "信号机IPV4网络配置网关"}},
-            {DataItemType_CCNet4IP, {0x02030100, "上位机IPV4网络配置IP"}},
-            {DataItemType_CCNet4Port, {0x02030200, "上位机IPV4网络配置通信端口"}},
-            {DataItemType_CCNet4ComType, {0x02030300, "上位机IPV4网络配置通信类型"}},
-            {DataItemType_RSCTimezone, {0x02040000, "信号机所属时区"}},
-            {DataItemType_RSCID, {0x02050000, "信号机ID"}},
-            {DataItemType_RSCControlRoadNum, {0x02060000, "信号机控制路口数量"}},
-            {DataItemType_GPSCLKMark, {0x02070000, "GPS时钟标志"}},
-            {DataItemType_RSCNet6IP, {0x02080100, "信号机IPV6网络配置IP"}},
-            {DataItemType_RSCNet6Mask, {0x02080200, "信号机IPV6网络配置子网掩码"}},
-            {DataItemType_RSCNet6Gateway, {0x02080300, "信号机IPV6网络配置网关"}},
-            {DataItemType_CCNet6IP, {0x02090100, "上位机IPV6网络配置IP"}},
-            {DataItemType_CCNet6Port, {0x02090200, "上位机IPV6网络配置通信端口"}},
-            {DataItemType_CCNet6ComType, {0x02090300, "上位机IPV6网络配置通信类型"}},
+            {DataItemType_BaseInstallRoad, {0x02010000, "信号机安装路口"}},
+            {DataItemType_BaseRSCNet4IP, {0x02020100, "信号机IPV4网络配置IP"}},
+            {DataItemType_BaseRSCNet4Mask, {0x02020200, "信号机IPV4网络配置子网掩码"}},
+            {DataItemType_BaseRSCNet4Gateway, {0x02020300, "信号机IPV4网络配置网关"}},
+            {DataItemType_BaseCCNet4IP, {0x02030100, "上位机IPV4网络配置IP"}},
+            {DataItemType_BaseCCNet4Port, {0x02030200, "上位机IPV4网络配置通信端口"}},
+            {DataItemType_BaseCCNet4ComType, {0x02030300, "上位机IPV4网络配置通信类型"}},
+            {DataItemType_BaseRSCTimezone, {0x02040000, "信号机所属时区"}},
+            {DataItemType_BaseRSCID, {0x02050000, "信号机ID"}},
+            {DataItemType_BaseRSCControlRoadNum, {0x02060000, "信号机控制路口数量"}},
+            {DataItemType_BaseGPSCLKMark, {0x02070000, "GPS时钟标志"}},
+            {DataItemType_BaseRSCNet6IP, {0x02080100, "信号机IPV6网络配置IP"}},
+            {DataItemType_BaseRSCNet6Mask, {0x02080200, "信号机IPV6网络配置子网掩码"}},
+            {DataItemType_BaseRSCNet6Gateway, {0x02080300, "信号机IPV6网络配置网关"}},
+            {DataItemType_BaseCCNet6IP, {0x02090100, "上位机IPV6网络配置IP"}},
+            {DataItemType_BaseCCNet6Port, {0x02090200, "上位机IPV6网络配置通信端口"}},
+            {DataItemType_BaseCCNet6ComType, {0x02090300, "上位机IPV6网络配置通信类型"}},
             //灯组信息
-            {DataItemType_LGNum, {0x03010000, "实际灯组数"}},
-            {DataItemType_LGConfigNo, {0x03020100, "灯组配置表编号"}},
-            {DataItemType_LGConfigType, {0x03020200, "灯组配置表类型"}},
-            {DataItemType_LGState, {0x03030100, "灯组状态"}},
-            {DataItemType_LGControlNo, {0x03040100, "灯组控制表编号"}},
-            {DataItemType_LGControlShield, {0x03040200, "灯组控制表屏蔽"}},
-            {DataItemType_LGControlForbid, {0x03040300, "灯组控制表禁止"}},
+            {DataItemType_LGInfoNum, {0x03010000, "实际灯组数"}},
+            {DataItemType_LGInfoConfigNo, {0x03020100, "灯组配置表编号"}},
+            {DataItemType_LGInfoConfigType, {0x03020200, "灯组配置表类型"}},
+            {DataItemType_LGInfoState, {0x03030100, "灯组状态"}},
+            {DataItemType_LGInfoControlNo, {0x03040100, "灯组控制表编号"}},
+            {DataItemType_LGInfoControlShield, {0x03040200, "灯组控制表屏蔽"}},
+            {DataItemType_LGInfoControlForbid, {0x03040300, "灯组控制表禁止"}},
             //相位信息
-            {DataItemType_PSNum, {0x04010000, "实际相位数"}},
-            {DataItemType_PSConfigNo, {0x04020100, "相位配置表编号"}},
-            {DataItemType_PSConfigLG, {0x04020200, "相位配置表灯组"}},
-            {DataItemType_PSConfigLRWTLC1Type, {0x04020300, "相位配置表失去路权过渡灯色1类型"}},
-            {DataItemType_PSConfigLRWTLC1Time, {0x04020400, "相位配置表失去路权过渡灯色1时间"}},
-            {DataItemType_PSConfigLRWTLC2Type, {0x04020500, "相位配置表失去路权过渡灯色2类型"}},
-            {DataItemType_PSConfigLRWTLC2Time, {0x04020600, "相位配置表失去路权过渡灯色2时间"}},
-            {DataItemType_PSConfigLRWTLC3Type, {0x04020700, "相位配置表失去路权过渡灯色3类型"}},
-            {DataItemType_PSConfigLRWTLC3Time, {0x04020800, "相位配置表失去路权过渡灯色3时间"}},
-            {DataItemType_PSConfigGRWTLC1Type, {0x04020900, "相位配置表获得路权过渡灯色1类型"}},
-            {DataItemType_PSConfigGRWTLC1Time, {0x04020a00, "相位配置表获得路权过渡灯色1时间"}},
-            {DataItemType_PSConfigGRWTLC2Type, {0x04020b00, "相位配置表获得路权过渡灯色2类型"}},
-            {DataItemType_PSConfigGRWTLC2Time, {0x04020c00, "相位配置表获得路权过渡灯色2时间"}},
-            {DataItemType_PSConfigGRWTLC3Type, {0x04020d00, "相位配置表获得路权过渡灯色3类型"}},
-            {DataItemType_PSConfigGRWTLC3Time, {0x04020e00, "相位配置表获得路权过渡灯色3时间"}},
-            {DataItemType_PSConfigOnGRWTLC1Type, {0x04020f00, "相位配置表开机获得路权过渡灯色1类型"}},
-            {DataItemType_PSConfigOnGRWTLC1Time, {0x04021000, "相位配置表开机获得路权过渡灯色1时间"}},
-            {DataItemType_PSConfigOnGRWTLC2Type, {0x04021100, "相位配置表开机获得路权过渡灯色2类型"}},
-            {DataItemType_PSConfigOnGRWTLC2Time, {0x04021200, "相位配置表开机获得路权过渡灯色2时间"}},
-            {DataItemType_PSConfigOnGRWTLC3Type, {0x04021300, "相位配置表开机获得路权过渡灯色3类型"}},
-            {DataItemType_PSConfigOnGRWTLC3Time, {0x04021400, "相位配置表开机获得路权过渡灯色3时间"}},
-            {DataItemType_PSConfigOnLRWTLC1Type, {0x04021500, "相位配置表开机失去路权过渡灯色1类型"}},
-            {DataItemType_PSConfigOnLRWTLC1Time, {0x04021600, "相位配置表开机失去路权过渡灯色1时间"}},
-            {DataItemType_PSConfigOnLRWTLC2Type, {0x04021700, "相位配置表开机失去路权过渡灯色2类型"}},
-            {DataItemType_PSConfigOnLRWTLC2Time, {0x04021800, "相位配置表开机失去路权过渡灯色2时间"}},
-            {DataItemType_PSConfigOnLRWTLC3Type, {0x04021900, "相位配置表开机失去路权过渡灯色3类型"}},
-            {DataItemType_PSConfigOnLRWTLC3Time, {0x04021a00, "相位配置表开机失去路权过渡灯色3时间"}},
-            {DataItemType_PSConfigMinGTime, {0x04021b00, "相位配置表最小绿时间"}},
-            {DataItemType_PSConfigMaxGTime1, {0x04021c00, "相位配置表最大绿时间1"}},
-            {DataItemType_PSConfigMaxGTime2, {0x04021d00, "相位配置表最大绿时间2"}},
-            {DataItemType_PSConfigExtendGTime, {0x04021e00, "相位配置表延长绿时间"}},
-            {DataItemType_PSConfigNeed, {0x04021f00, "相位配置表需求"}},
-            {DataItemType_PSControlNo, {0x04030100, "相位控制表编号"}},
-            {DataItemType_PSControlShield, {0x04030200, "相位控制表屏蔽"}},
-            {DataItemType_PSControlForbid, {0x04030300, "相位控制表禁止"}},
+            {DataItemType_PSInfoNum, {0x04010000, "实际相位数"}},
+            {DataItemType_PSInfoConfigNo, {0x04020100, "相位配置表编号"}},
+            {DataItemType_PSInfoConfigLG, {0x04020200, "相位配置表灯组"}},
+            {DataItemType_PSInfoConfigLRWTLC1Type, {0x04020300, "相位配置表失去路权过渡灯色1类型"}},
+            {DataItemType_PSInfoConfigLRWTLC1Time, {0x04020400, "相位配置表失去路权过渡灯色1时间"}},
+            {DataItemType_PSInfoConfigLRWTLC2Type, {0x04020500, "相位配置表失去路权过渡灯色2类型"}},
+            {DataItemType_PSInfoConfigLRWTLC2Time, {0x04020600, "相位配置表失去路权过渡灯色2时间"}},
+            {DataItemType_PSInfoConfigLRWTLC3Type, {0x04020700, "相位配置表失去路权过渡灯色3类型"}},
+            {DataItemType_PSInfoConfigLRWTLC3Time, {0x04020800, "相位配置表失去路权过渡灯色3时间"}},
+            {DataItemType_PSInfoConfigGRWTLC1Type, {0x04020900, "相位配置表获得路权过渡灯色1类型"}},
+            {DataItemType_PSInfoConfigGRWTLC1Time, {0x04020a00, "相位配置表获得路权过渡灯色1时间"}},
+            {DataItemType_PSInfoConfigGRWTLC2Type, {0x04020b00, "相位配置表获得路权过渡灯色2类型"}},
+            {DataItemType_PSInfoConfigGRWTLC2Time, {0x04020c00, "相位配置表获得路权过渡灯色2时间"}},
+            {DataItemType_PSInfoConfigGRWTLC3Type, {0x04020d00, "相位配置表获得路权过渡灯色3类型"}},
+            {DataItemType_PSInfoConfigGRWTLC3Time, {0x04020e00, "相位配置表获得路权过渡灯色3时间"}},
+            {DataItemType_PSInfoConfigOnGRWTLC1Type, {0x04020f00, "相位配置表开机获得路权过渡灯色1类型"}},
+            {DataItemType_PSInfoConfigOnGRWTLC1Time, {0x04021000, "相位配置表开机获得路权过渡灯色1时间"}},
+            {DataItemType_PSInfoConfigOnGRWTLC2Type, {0x04021100, "相位配置表开机获得路权过渡灯色2类型"}},
+            {DataItemType_PSInfoConfigOnGRWTLC2Time, {0x04021200, "相位配置表开机获得路权过渡灯色2时间"}},
+            {DataItemType_PSInfoConfigOnGRWTLC3Type, {0x04021300, "相位配置表开机获得路权过渡灯色3类型"}},
+            {DataItemType_PSInfoConfigOnGRWTLC3Time, {0x04021400, "相位配置表开机获得路权过渡灯色3时间"}},
+            {DataItemType_PSInfoConfigOnLRWTLC1Type, {0x04021500, "相位配置表开机失去路权过渡灯色1类型"}},
+            {DataItemType_PSInfoConfigOnLRWTLC1Time, {0x04021600, "相位配置表开机失去路权过渡灯色1时间"}},
+            {DataItemType_PSInfoConfigOnLRWTLC2Type, {0x04021700, "相位配置表开机失去路权过渡灯色2类型"}},
+            {DataItemType_PSInfoConfigOnLRWTLC2Time, {0x04021800, "相位配置表开机失去路权过渡灯色2时间"}},
+            {DataItemType_PSInfoConfigOnLRWTLC3Type, {0x04021900, "相位配置表开机失去路权过渡灯色3类型"}},
+            {DataItemType_PSInfoConfigOnLRWTLC3Time, {0x04021a00, "相位配置表开机失去路权过渡灯色3时间"}},
+            {DataItemType_PSInfoConfigMinGTime, {0x04021b00, "相位配置表最小绿时间"}},
+            {DataItemType_PSInfoConfigMaxGTime1, {0x04021c00, "相位配置表最大绿时间1"}},
+            {DataItemType_PSInfoConfigMaxGTime2, {0x04021d00, "相位配置表最大绿时间2"}},
+            {DataItemType_PSInfoConfigExtendGTime, {0x04021e00, "相位配置表延长绿时间"}},
+            {DataItemType_PSInfoConfigNeed, {0x04021f00, "相位配置表需求"}},
+            {DataItemType_PSInfoControlNo, {0x04030100, "相位控制表编号"}},
+            {DataItemType_PSInfoControlShield, {0x04030200, "相位控制表屏蔽"}},
+            {DataItemType_PSInfoControlForbid, {0x04030300, "相位控制表禁止"}},
             //检测器信息
-            {DataItemType_DetectorNum, {0x05010000, "实际检测器数"}},
-            {DataItemType_DetectorConfigNo, {0x05020100, "检测器配置表编号"}},
-            {DataItemType_DetectorConfigType, {0x05020200, "检测器配置表类型"}},
-            {DataItemType_DetectorConfigTCPeriod, {0x05020300, "检测器配置表流量采集周期"}},
-            {DataItemType_DetectorConfigOCPeriod, {0x05020400, "检测器配置表占有率采集周期"}},
-            {DataItemType_DetectorConfigInstallPos, {0x05020500, "检测器配置表安装位置"}},
-            {DataItemType_DetectorStateNo, {0x05030100, "检测器状态表编号"}},
-            {DataItemType_DetectorStateCarExist, {0x05030200, "检测器状态表车辆存在状态"}},
-            {DataItemType_DetectorStateCarSpeed, {0x05030300, "检测器状态表车辆速度"}},
-            {DataItemType_DetectorStateCarType, {0x05030400, "检测器状态表车辆类型"}},
-            {DataItemType_DetectorStateCarPlateNumber, {0x05030500, "检测器状态表车辆号牌"}},
-            {DataItemType_DetectorStateLaneQueueLen, {0x05030600, "检测器状态表所在车道排队长度"}},
+            {DataItemType_DetectorInfoNum, {0x05010000, "实际检测器数"}},
+            {DataItemType_DetectorInfoConfigNo, {0x05020100, "检测器配置表编号"}},
+            {DataItemType_DetectorInfoConfigType, {0x05020200, "检测器配置表类型"}},
+            {DataItemType_DetectorInfoConfigTCPeriod, {0x05020300, "检测器配置表流量采集周期"}},
+            {DataItemType_DetectorInfoConfigOCPeriod, {0x05020400, "检测器配置表占有率采集周期"}},
+            {DataItemType_DetectorInfoConfigInstallPos, {0x05020500, "检测器配置表安装位置"}},
+            {DataItemType_DetectorInfoStateNo, {0x05030100, "检测器状态表编号"}},
+            {DataItemType_DetectorInfoStateCarExist, {0x05030200, "检测器状态表车辆存在状态"}},
+            {DataItemType_DetectorInfoStateCarSpeed, {0x05030300, "检测器状态表车辆速度"}},
+            {DataItemType_DetectorInfoStateCarType, {0x05030400, "检测器状态表车辆类型"}},
+            {DataItemType_DetectorInfoStateCarPlateNumber, {0x05030500, "检测器状态表车辆号牌"}},
+            {DataItemType_DetectorInfoStateLaneQueueLen, {0x05030600, "检测器状态表所在车道排队长度"}},
             //相位阶段信息
-            {DataItemType_PSSConfigStageNum, {0x06010000, "实际配置相位阶段数"}},
-            {DataItemType_PSSConfigStageNo, {0x06020100, "相位阶段配置表编号"}},
-            {DataItemType_PSSConfigStagePS, {0x06020200, "相位阶段配置表相位"}},
-            {DataItemType_PSSConfigStageDelayOnTime, {0x06020300, "相位阶段配置表相位晚起动时间"}},
-            {DataItemType_PSSConfigStageAheadOffTime, {0x06020400, "相位阶段配置表相位早结束时间"}},
-            {DataItemType_PSSStateNo, {0x06030100, "相位阶段状态表编号"}},
-            {DataItemType_PSSStateState, {0x06030200, "相位阶段状态表状态"}},
-            {DataItemType_PSSStateOnTime, {0x06030300, "相位阶段状态表已经运行时间"}},
-            {DataItemType_PSSStateLastTime, {0x06030400, "相位阶段状态表剩余时间"}},
-            {DataItemType_PSSControlNo, {0x06040100, "相位阶段控制表编号"}},
-            {DataItemType_PSSControlSoftNeed, {0x06040200, "相位阶段控制表软件需求"}},
-            {DataItemType_PSSControlShieldMark, {0x06040300, "相位阶段控制表屏蔽标志"}},
-            {DataItemType_PSSControlForbidMark, {0x06040400, "相位阶段控制表禁止标志"}},
+            {DataItemType_PSSInfoConfigStageNum, {0x06010000, "实际配置相位阶段数"}},
+            {DataItemType_PSSInfoConfigStageNo, {0x06020100, "相位阶段配置表编号"}},
+            {DataItemType_PSSInfoConfigStagePS, {0x06020200, "相位阶段配置表相位"}},
+            {DataItemType_PSSInfoConfigStageDelayOnTime, {0x06020300, "相位阶段配置表相位晚起动时间"}},
+            {DataItemType_PSSInfoConfigStageAheadOffTime, {0x06020400, "相位阶段配置表相位早结束时间"}},
+            {DataItemType_PSSInfoStateNo, {0x06030100, "相位阶段状态表编号"}},
+            {DataItemType_PSSInfoStateState, {0x06030200, "相位阶段状态表状态"}},
+            {DataItemType_PSSInfoStateOnTime, {0x06030300, "相位阶段状态表已经运行时间"}},
+            {DataItemType_PSSInfoStateLastTime, {0x06030400, "相位阶段状态表剩余时间"}},
+            {DataItemType_PSSInfoControlNo, {0x06040100, "相位阶段控制表编号"}},
+            {DataItemType_PSSInfoControlSoftNeed, {0x06040200, "相位阶段控制表软件需求"}},
+            {DataItemType_PSSInfoControlShieldMark, {0x06040300, "相位阶段控制表屏蔽标志"}},
+            {DataItemType_PSSInfoControlForbidMark, {0x06040400, "相位阶段控制表禁止标志"}},
             //相位安全信息
-            {DataItemType_PSConflictNo, {0x07010100, "相位冲突配置表编号"}},
-            {DataItemType_PSConflictSequence, {0x07010200, "相位冲突配置表序列"}},
-            {DataItemType_PSGIntervalNo, {0x07020100, "相位绿间隔配置表编号"}},
-            {DataItemType_PSGIntervalSequence, {0x07020200, "相位绿间隔配置表序列"}},
+            {DataItemType_PSSafePSConflictNo, {0x07010100, "相位冲突配置表编号"}},
+            {DataItemType_PSSafePSConflictSequence, {0x07010200, "相位冲突配置表序列"}},
+            {DataItemType_PSSafePSGIntervalNo, {0x07020100, "相位绿间隔配置表编号"}},
+            {DataItemType_PSSafePSGIntervalSequence, {0x07020200, "相位绿间隔配置表序列"}},
             //紧急优先
             {DataItemType_URPPriorNum, {0x08010000, "紧急优先实际优先数量"}},
             {DataItemType_URPPriorConfigNo, {0x08020100, "紧急优先优先配置表编号"}},
@@ -671,6 +695,9 @@ namespace ComFrame_GBT20999_2017 {
     static int ReqGet(DataItem &dataItem, uint8_t index, DataItemType type);
 
     static int ReqSet(DataItem &dataItem, uint8_t index, DataItemType type, vector<uint8_t> data);
+
+    static int RspGetType(DataItem dataItem, DataItem::TypeID &typeID,DataItemType &type);
+
 
 };
 

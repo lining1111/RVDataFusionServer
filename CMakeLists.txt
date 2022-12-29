@@ -62,6 +62,7 @@ set(SRC_DIRS ./
         log
         ringBuffer
         common
+        os
         monitor
         signalControl
         server

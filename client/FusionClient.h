@@ -13,9 +13,11 @@
 #include "ringBuffer/RingBuffer.h"
 #include "Queue.h"
 #include "monitor/PacketLoss.hpp"
+#include "os/timeTask.hpp"
 
 using namespace std;
 using namespace common;
+using namespace os;
 
 class FusionClient {
 public:

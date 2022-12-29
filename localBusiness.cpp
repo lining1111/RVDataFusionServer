@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 #include "log/Log.h"
 

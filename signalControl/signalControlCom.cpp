@@ -5,6 +5,7 @@
 #include "signalControlCom.h"
 #include <stdexcept>
 #include "common/CRC.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -373,5 +374,29 @@ namespace ComFrame_GBT20999_2017 {
             ret = -1;
         }
         return ret;
+    }
+
+    int RspGetType(DataItem dataItem, DataItem::TypeID &typeID, DataItemType &type) {
+        if (dataItem.typeID > DataItem::TypeID_Len) {
+            return -1;
+        }
+
+        typeID = (DataItem::TypeID) dataItem.typeID;
+
+        uint32_t value = ((uint32_t) dataItem.typeID << 24) + ((uint32_t) dataItem.objID << 16) +
+                         ((uint32_t) dataItem.attrID << 8) + ((uint32_t) dataItem.elementID);
+
+        auto iter = std::find_if(DataItemMap.begin(), DataItemMap.end(),
+                                 [value](const map<DataItemType, DataItemValue>::value_type &item) {
+                                     return item.second.value == value;
+                                 });
+
+        if (iter != DataItemMap.end()) {
+            type = iter->first;
+        } else {
+            return -1;
+        }
+
+        return 0;
     }
 }
