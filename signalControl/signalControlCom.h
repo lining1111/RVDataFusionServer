@@ -66,6 +66,10 @@ namespace ComFrame_GBT20999_2017 {
         LGType_NonVehicle = 0x02,
         LGType_Pedestrian = 0x03,
         LGType_Road = 0x04,
+        LGType_VariableTrafficSign = 0x05,
+        LGType_BusOnly = 0x06,
+        LGType_TramcarOnly = 0x07,
+        LGType_Special = 0x08,
     } LGType;
 
     typedef enum {
@@ -91,6 +95,16 @@ namespace ComFrame_GBT20999_2017 {
         DetectorType_Ultrasonic = 0x05,
         DetectorType_Infrared = 0x06,
     } DetectorType;
+
+    typedef enum {
+        CarType_Null = 0x00,
+        CarType_Min = 0x01,
+        CarType_Mid = 0x02,
+        CarType_Max = 0x03,
+        CarType_Bus = 0x04,
+        CarType_Tramcar = 0x05,
+        CarType_Special = 0x06,
+    }CarType;
 
     typedef enum {
         PSSType_Fix = 0x10,
@@ -180,13 +194,13 @@ namespace ComFrame_GBT20999_2017 {
     } BugAction;
 
     typedef enum {
-        Cmd_OrderFlash = 0x01,
-        Cmd_OrderRed = 0x02,
-        Cmd_OrderOn = 0x03,
-        Cmd_OrderOff = 0x04,
-        Cmd_OrderReset = 0x05,
-        Cmd_OrderCancel = 0x00,
-    } Cmd;
+        CmdPipe_OrderFlash = 0x01,
+        CmdPipe_OrderRed = 0x02,
+        CmdPipe_OrderOn = 0x03,
+        CmdPipe_OrderOff = 0x04,
+        CmdPipe_OrderReset = 0x05,
+        CmdPipe_OrderCancel = 0x00,
+    } CmdPipe;
 
     class DataItem {
     public:
@@ -259,200 +273,200 @@ namespace ComFrame_GBT20999_2017 {
     typedef enum {
         DataItemType_Unknown = 0,
         //设备信息
-        DataItemType_Manufacturer = 1,
-        DataItemType_DeviceVersion,
-        DataItemType_DeviceNo,
-        DataItemType_ManufactureDate,
-        DataItemType_ConfigDate,
+        DataItemType_Manufacturer = 1,//只读,128bytes,string,不足的地方以0填充
+        DataItemType_DeviceVersion,//只读,4bytes,bytes,高两个字节代表硬件版本,低两个字节代表软件版本
+        DataItemType_DeviceNo,//只读,16bytes,string,不足地方以0填充
+        DataItemType_ManufactureDate,//只读,7bytes,year:2bytes,month day hour min second:1byte
+        DataItemType_ConfigDate,//读写,7bytes,year:2bytes,month day hour min second:1byte
         //基础信息
-        DataItemType_InstallRoad,
-        DataItemType_RSCNet4IP,
-        DataItemType_RSCNet4Mask,
-        DataItemType_RSCNet4Gateway,
-        DataItemType_CCNet4IP,
-        DataItemType_CCNet4Port,
-        DataItemType_CCNet4ComType,
-        DataItemType_RSCTimezone,
-        DataItemType_RSCID,
-        DataItemType_RSCControlRoadNum,
-        DataItemType_GPSCLKMark,
-        DataItemType_RSCNet6IP,
-        DataItemType_RSCNet6Mask,
-        DataItemType_RSCNet6Gateway,
-        DataItemType_CCNet6IP,
-        DataItemType_CCNet6Port,
-        DataItemType_CCNet6ComType,
+        DataItemType_InstallRoad,//读写,128bytes,string,不足的地方以0填充
+        DataItemType_RSCNet4IP,//读写,4bytes,bytes
+        DataItemType_RSCNet4Mask,//读写,4bytes,bytes
+        DataItemType_RSCNet4Gateway,//读写,4bytes,bytes
+        DataItemType_CCNet4IP,//读写,4bytes,bytes
+        DataItemType_CCNet4Port,//读写,2bytes,bytes
+        DataItemType_CCNet4ComType,//读写,1byte 详见ComType
+        DataItemType_RSCTimezone,//读写,4bytes,bytes
+        DataItemType_RSCID,//读写,4bytes,bytes
+        DataItemType_RSCControlRoadNum,//读写,1byte
+        DataItemType_GPSCLKMark,//只读,1byte,bool
+        DataItemType_RSCNet6IP,//读写,16bytes,bytes
+        DataItemType_RSCNet6Mask,//读写,16bytes,bytes
+        DataItemType_RSCNet6Gateway,//读写,16bytes,bytes
+        DataItemType_CCNet6IP,//读写,16bytes,bytes
+        DataItemType_CCNet6Port,//读写,2bytes,bytes
+        DataItemType_CCNet6ComType,//读写,1byte,详见ComType
         //灯组信息LG
-        DataItemType_LGNum,
-        DataItemType_LGConfigNo,
-        DataItemType_LGConfigType,
-        DataItemType_LGState,
-        DataItemType_LGControlNo,
-        DataItemType_LGControlShield,
-        DataItemType_LGControlForbid,
+        DataItemType_LGNum,//只读,1byte
+        DataItemType_LGConfigNo,//只读,1byte
+        DataItemType_LGConfigType,//读写,1byte,详见LGType
+        DataItemType_LGState,//只读,1byte,详见LGState
+        DataItemType_LGControlNo,//只读,1byte
+        DataItemType_LGControlShield,//只读,1byte,bool
+        DataItemType_LGControlForbid,//只读,1byte,bool
         //相位信息PS 失去路权过渡灯色LRWTLC 获得路权灯色GRWTLC
-        DataItemType_PSNum,
-        DataItemType_PSConfigNo,
-        DataItemType_PSConfigLG,
-        DataItemType_PSConfigLRWTLC1Type,
-        DataItemType_PSConfigLRWTLC1Time,
-        DataItemType_PSConfigLRWTLC2Type,
-        DataItemType_PSConfigLRWTLC2Time,
-        DataItemType_PSConfigLRWTLC3Type,
-        DataItemType_PSConfigLRWTLC3Time,
-        DataItemType_PSConfigGRWTLC1Type,
-        DataItemType_PSConfigGRWTLC1Time,
-        DataItemType_PSConfigGRWTLC2Type,
-        DataItemType_PSConfigGRWTLC2Time,
-        DataItemType_PSConfigGRWTLC3Type,
-        DataItemType_PSConfigGRWTLC3Time,
-        DataItemType_PSConfigOnGRWTLC1Type,
-        DataItemType_PSConfigOnGRWTLC1Time,
-        DataItemType_PSConfigOnGRWTLC2Type,
-        DataItemType_PSConfigOnGRWTLC2Time,
-        DataItemType_PSConfigOnGRWTLC3Type,
-        DataItemType_PSConfigOnGRWTLC3Time,
-        DataItemType_PSConfigOnLRWTLC1Type,
-        DataItemType_PSConfigOnLRWTLC1Time,
-        DataItemType_PSConfigOnLRWTLC2Type,
-        DataItemType_PSConfigOnLRWTLC2Time,
-        DataItemType_PSConfigOnLRWTLC3Type,
-        DataItemType_PSConfigOnLRWTLC3Time,
-        DataItemType_PSConfigMinGTime,
-        DataItemType_PSConfigMaxGTime1,
-        DataItemType_PSConfigMaxGTime2,
-        DataItemType_PSConfigExtendGTime,
-        DataItemType_PSConfigNeed,
-        DataItemType_PSControlNo,
-        DataItemType_PSControlShield,
-        DataItemType_PSControlForbid,
+        DataItemType_PSNum,//只读,1byte
+        DataItemType_PSConfigNo,//只读,1byte
+        DataItemType_PSConfigLG,//读写,1byte
+        DataItemType_PSConfigLRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigLRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSConfigLRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigLRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSConfigLRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigLRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSConfigGRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigGRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSConfigGRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigGRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSConfigGRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigGRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnGRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnGRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnGRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnGRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnGRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnGRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnLRWTLC1Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnLRWTLC1Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnLRWTLC2Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnLRWTLC2Time,//读写,1byte,单位1s
+        DataItemType_PSConfigOnLRWTLC3Type,//读写,1byte,详见LGState
+        DataItemType_PSConfigOnLRWTLC3Time,//读写,1byte,单位1s
+        DataItemType_PSConfigMinGTime,//读写,2bytes,单位1s
+        DataItemType_PSConfigMaxGTime1,//读写,2bytes,单位1s
+        DataItemType_PSConfigMaxGTime2,//读写,2bytes,单位1s
+        DataItemType_PSConfigExtendGTime,//读写,2bytes,单位1s
+        DataItemType_PSConfigNeed,//读写,1byte
+        DataItemType_PSControlNo,//读写,1byte
+        DataItemType_PSControlShield,//只读,1byte,bool
+        DataItemType_PSControlForbid,//只读,1byte,bool
         //检测器信息 流量监测TC 占有率采集OC
-        DataItemType_DetectorNum,
-        DataItemType_DetectorConfigNo,
-        DataItemType_DetectorConfigType,
-        DataItemType_DetectorConfigTCPeriod,
-        DataItemType_DetectorConfigOCPeriod,
-        DataItemType_DetectorConfigInstallPos,
-        DataItemType_DetectorStateNo,
-        DataItemType_DetectorStateCarExist,
-        DataItemType_DetectorStateCarSpeed,
-        DataItemType_DetectorStateCarType,
-        DataItemType_DetectorStateCarPlateNumber,
-        DataItemType_DetectorStateLaneQueueLen,
+        DataItemType_DetectorNum,//只读,1byte
+        DataItemType_DetectorConfigNo,//只读,1byte
+        DataItemType_DetectorConfigType,//读写,1byte,详见Detector
+        DataItemType_DetectorConfigTCPeriod,//读写,2bytes,单位1s
+        DataItemType_DetectorConfigOCPeriod,//读写,2bytes,单位1s
+        DataItemType_DetectorConfigInstallPos,//读写,128bytes,string,不足的地方以0填充
+        DataItemType_DetectorStateNo,//只读,1byte
+        DataItemType_DetectorStateCarExist,//只读,1byte,bool
+        DataItemType_DetectorStateCarSpeed,//只读,1byte
+        DataItemType_DetectorStateCarType,//只读,1byte,详见CarType
+        DataItemType_DetectorStateCarPlateNumber,//读写,16bytes,string,不足的地方以0填充
+        DataItemType_DetectorStateLaneQueueLen,//读写,2bytes,单位1米
         //相位阶段信息 相位阶段PSS
-        DataItemType_PSSConfigStageNum,
-        DataItemType_PSSConfigStageNo,
-        DataItemType_PSSConfigStagePSS,
-        DataItemType_PSSConfigStageDelayOnTime,
-        DataItemType_PSSConfigStageAheadOffTime,
-        DataItemType_PSSStateNo,
-        DataItemType_PSSStateState,
-        DataItemType_PSSStateOnTime,
-        DataItemType_PSSStateLastTime,
-        DataItemType_PSSControlNo,
-        DataItemType_PSSControlSoftNeed,
-        DataItemType_PSSControlShieldMark,
-        DataItemType_PSSControlForbidMark,
+        DataItemType_PSSConfigStageNum,//只读,1byte
+        DataItemType_PSSConfigStageNo,//只读,1byte
+        DataItemType_PSSConfigStagePS,//读写,8bytes,按位标示bit0:1 bit63:64
+        DataItemType_PSSConfigStageDelayOnTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
+        DataItemType_PSSConfigStageAheadOffTime,//读写,64bytes,单位1s,字节标识 byte0:1 byte63:64
+        DataItemType_PSSStateNo,//只读,1byte
+        DataItemType_PSSStateState,//只读,1byte,详见PSSState
+        DataItemType_PSSStateOnTime,//读写,4bytes,单位1s
+        DataItemType_PSSStateLastTime,////读写,4bytes,单位1s
+        DataItemType_PSSControlNo,//只读,1byte
+        DataItemType_PSSControlSoftNeed,//读写,1byte,bool
+        DataItemType_PSSControlShieldMark,//读写,1byte,bool
+        DataItemType_PSSControlForbidMark,//读写,1byte,bool
         //相位安全信息
-        DataItemType_PSClashNo,
-        DataItemType_PSClashSequence,
-        DataItemType_PSGIntervalNo,
-        DataItemType_PSGIntervalSequence,
+        DataItemType_PSConflictNo,//只读,1byte
+        DataItemType_PSConflictSequence,//读写,8bytes,按位标示bit0:1 bit63:64
+        DataItemType_PSGIntervalNo,//只读,1byte
+        DataItemType_PSGIntervalSequence,//读写,64bytes,单位0.1s,字节标识 byte0:1 byte63:64
         //紧急优先URP
-        DataItemType_URPPriorNum,
-        DataItemType_URPPriorConfigNo,
-        DataItemType_URPPriorConfigReqPSS,
-        DataItemType_URPPriorConfigReqPri,
-        DataItemType_URPPriorConfigShieldMark,
-        DataItemType_URPPriorStateNo,
-        DataItemType_URPPriorStateReqState,
-        DataItemType_URPPriorStateExeState,
-        DataItemType_URPUrgentNum,
-        DataItemType_URPUrgentConfigNo,
-        DataItemType_URPUrgentConfigReqPSS,
-        DataItemType_URPUrgentConfigReqPri,
-        DataItemType_URPUrgentConfigShieldMark,
-        DataItemType_URPUrgentStateNo,
-        DataItemType_URPUrgentStateReqState,
-        DataItemType_URPUrgentStateExeState,
+        DataItemType_URPPriorNum,//只读,1byte
+        DataItemType_URPPriorConfigNo,//只读,1byte
+        DataItemType_URPPriorConfigReqPSS,//读写,1byte
+        DataItemType_URPPriorConfigReqPri,//读写,1byte,数值越小 优先级越高
+        DataItemType_URPPriorConfigShieldMark,//读写,1byte,bool
+        DataItemType_URPPriorStateNo,//只读,1byte
+        DataItemType_URPPriorStateReqState,//只读,1byte,bool
+        DataItemType_URPPriorStateExeState,//只读,1byte,bool
+        DataItemType_URPUrgentNum,//只读,1byte
+        DataItemType_URPUrgentConfigNo,//只读,1byte
+        DataItemType_URPUrgentConfigReqPSS,//读写,1byte
+        DataItemType_URPUrgentConfigReqPri,//读写,1byte,数值越小 优先级越高
+        DataItemType_URPUrgentConfigShieldMark,//读写,1byte,bool
+        DataItemType_URPUrgentStateNo,//只读,1byte
+        DataItemType_URPUrgentStateReqState,//只读,1byte,bool
+        DataItemType_URPUrgentStateExeState,//只读,1byte,bool
         //方案信息CP
-        DataItemType_CPNum,
-        DataItemType_CPConfigNo,
-        DataItemType_CPConfigLaneSeq,
-        DataItemType_CPConfigPeriod,
-        DataItemType_CPConfigCoordinateSeq,
-        DataItemType_CPConfigPSOffsetTime,
-        DataItemType_CPConfigPSSChain,
-        DataItemType_CPConfigPSSTimeChain,
-        DataItemType_CPConfigPSSTypeChain,
+        DataItemType_CPNum,//只读,1byte
+        DataItemType_CPConfigNo,//只读,1byte
+        DataItemType_CPConfigLaneSeq,//读写,1byte
+        DataItemType_CPConfigPeriod,//读写,4bytes,单位1s
+        DataItemType_CPConfigCoordinateSeq,//读写,1byte
+        DataItemType_CPConfigPSOffsetTime,//读写,2bytes,单位1s
+        DataItemType_CPConfigPSSChain,//读写,16bytes
+        DataItemType_CPConfigPSSTimeChain,//读写,32bytes,2字节为1组
+        DataItemType_CPConfigPSSTypeChain,//读写,16bytes,详见PSSState
         //过渡约束PTC
-        DataItemType_PTCConfigNo,
-        DataItemType_PTCConfigValue,
+        DataItemType_PTCConfigNo,//只读,1byte
+        DataItemType_PTCConfigValue,//读写,64bytes 值为0：表示可以直接跳转；当值不为0且不等于255时，表示不能直接跳转，该值表 示需要经过该相位阶段号；值为255表示不能跳转
         //日计划TT
-        DataItemType_TTNum,
-        DataItemType_TTConfigNo,
-        DataItemType_TTConfigLaneSeq,
-        DataItemType_TTConfigStartTimeChain,
-        DataItemType_TTConfigExePlanChain,
-        DataItemType_TTConfigOnModelChain,
-        DataItemType_TTConfigActionChain1,
-        DataItemType_TTConfigActionChain2,
-        DataItemType_TTConfigActionChain3,
-        DataItemType_TTConfigActionChain4,
-        DataItemType_TTConfigActionChain5,
-        DataItemType_TTConfigActionChain6,
-        DataItemType_TTConfigActionChain7,
-        DataItemType_TTConfigActionChain8,
+        DataItemType_TTNum,//只读,1byte
+        DataItemType_TTConfigNo,//只读,1byte
+        DataItemType_TTConfigLaneSeq,//读写,1byte
+        DataItemType_TTConfigStartTimeChain,//读写,64bytes,日计划详细时段设置，协议约定一天最大48个时段,Byte_Array[1]:Byte_Array[1]表示每天的开始时段,Byte_Array[1表示时钟,Byte_Array[1表示分钟,时段1固定为0:00(即每天从0:00开始),以此类推，直到第48个时段
+        DataItemType_TTConfigExePlanChain,//读写,48bytes,Byte_Array[0]的值表示当天的第１个时段执行的方案，以此类推直到第48个时段
+        DataItemType_TTConfigOnModelChain,//读写,48bytes,Byte_Array[0]的值表示当天的第１个时段执行的方案，以此类推直到第48个时段
+        DataItemType_TTConfigActionChain1,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain2,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain3,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain4,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain5,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain6,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain7,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
+        DataItemType_TTConfigActionChain8,//读写,96bytes,每天的时段动作链１，用于描述信号机在相应时段的动作， Byte_Array[1]:Byte_Array[0]表示每天的第一个时段的动作1,Byte_Array[1]表示动作１类型,Byte_Array[0]表示动作1参数,以此类推
         //调度表DS
-        DataItemType_DSNum,
-        DataItemType_DSConfigNo,
-        DataItemType_DSConfigLaneSeq,
-        DataItemType_DSConfigPrior,
-        DataItemType_DSConfigWeek,
-        DataItemType_DSConfigMonth,
-        DataItemType_DSConfigDay,
-        DataItemType_DSConfigTT,
+        DataItemType_DSNum,//只读,1byte
+        DataItemType_DSConfigNo,//只读,1byte
+        DataItemType_DSConfigLaneSeq,//读写,1byte
+        DataItemType_DSConfigPrior,//读写,1byte,数值越小 优先级越高
+        DataItemType_DSConfigWeek,//读写,1byte,bit0表示星期天,当bit0为1时,表示该调度表星期天需要执行，bit1为星期一,以此类推,bit7保留
+        DataItemType_DSConfigMonth,//读写,2bytes,bit0保留，当bit1为1时，表示该调度表1月需要执行，以此类推，bit13~bit15保留
+        DataItemType_DSConfigDay,//读写,4bytes,当bit0为1时，表示该调度表1日需要执行，以此类推，bit30表示31日，bit31保留
+        DataItemType_DSConfigTT,//读写,1byte
         //运行状态 OnState
-        DataItemType_OnStateDeviceDetectorState,
-        DataItemType_OnStateDeviceModelState,
-        DataItemType_OnStateDeviceGateState,
-        DataItemType_OnStateDeviceVoltage,
-        DataItemType_OnStateDeviceCurrent,
-        DataItemType_OnStateDeviceTemperature,
-        DataItemType_OnStateDeviceHumidity,
-        DataItemType_OnStateDeviceWater,
-        DataItemType_OnStateDeviceSmoke,
-        DataItemType_OnStateDeviceRSCUTC,
-        DataItemType_OnStateDeviceRSCLocTime,
-        DataItemType_OnStateLaneSeq,
-        DataItemType_OnStateOnModel,
-        DataItemType_OnStateCurPlan,
-        DataItemType_OnStateCurPSS,
+        DataItemType_OnStateDeviceDetectorState,//只读,1byte
+        DataItemType_OnStateDeviceModelState,//只读,1byte,数组中的每个字节类型代表８个模块,Byte_Array[7]、...Byte_Array[0]分别代表 bit63~bit56、...bit7~bit1,相应的bit位为1时,表示该模块故障,为0时,表示该模块正常,bit0~bit9表示主控板；bit10~bit39表示相位板（bit10表示相位板1，以此类推）;bit40~bit59表示检测器板（bit40表示检测器板1，以此类推）,其余bit保留
+        DataItemType_OnStateDeviceGateState,//只读,1byte
+        DataItemType_OnStateDeviceVoltage,//只读,2bytes,1V
+        DataItemType_OnStateDeviceCurrent,//只读,2bytes,0.1A
+        DataItemType_OnStateDeviceTemperature,//只读,1byte
+        DataItemType_OnStateDeviceHumidity,//只读,1byte
+        DataItemType_OnStateDeviceWater,//只读,1byte,bool
+        DataItemType_OnStateDeviceSmoke,//只读,1byte,bool
+        DataItemType_OnStateDeviceRSCUTC,//读写,7bytes,year:2bytes,month day hour min second:1byte
+        DataItemType_OnStateDeviceRSCLocTime,//读写,7bytes,year:2bytes,month day hour min second:1byte
+        DataItemType_OnStateLaneSeq,//只读,1byte
+        DataItemType_OnStateOnModel,//只读,1byte,详见Mode
+        DataItemType_OnStateCurPlan,//只读,1byte
+        DataItemType_OnStateCurPSS,//只读,1byte
         //交通数据 TD
-        DataItemType_TDLiveData,
-        DataItemType_TDStatisticDataDetectorNo,
-        DataItemType_TDStatisticDataDetectorFlow,
-        DataItemType_TDStatisticDataDetectorOccupy,
-        DataItemType_TDStatisticDataAvgSpeed,
+        DataItemType_TDLiveData,//只读,8bytes,数组中的每个字节类型代表8个检测器,Byte_Array[7]、...Byte_Array[0]分别代表 bit63~bit56、...bit7~bit0，相应的bit位为1时，表示该检测器上存在车辆,为0时,表示该检测器上不存在车辆,bit0为1时,表示检测器1上有车
+        DataItemType_TDStatisticDataDetectorNo,//只读,8bytes
+        DataItemType_TDStatisticDataDetectorFlow,//只读,2bytes
+        DataItemType_TDStatisticDataDetectorOccupy,//只读,1byte
+        DataItemType_TDStatisticDataAvgSpeed,//只读,2bytes,km/h
         //报警数据 AlarmData
-        DataItemType_AlarmDataCurNum,
-        DataItemType_AlarmDataNo,
-        DataItemType_AlarmDataType,
-        DataItemType_AlarmDataValue,
-        DataItemType_AlarmDataTime,
+        DataItemType_AlarmDataCurNum,//只读,4bytes
+        DataItemType_AlarmDataNo,//只读,4bytes
+        DataItemType_AlarmDataType,//只读,1byte,详见AlarmType
+        DataItemType_AlarmDataValue,//只读,1byte,详见AlarmValue
+        DataItemType_AlarmDataTime,//只读,7bytes,year:2bytes,month day hour min second:1byte
         //故障数据 BugData
-        DataItemType_BugDataCurNum,
-        DataItemType_BugDataNo,
-        DataItemType_BugDataType,
-        DataItemType_BugDataTime,
-        DataItemType_BugDataAction,
+        DataItemType_BugDataCurNum,//只读,4bytes
+        DataItemType_BugDataNo,//只读,4bytes
+        DataItemType_BugDataType,//只读,1byte,详见BugDataType
+        DataItemType_BugDataTime,//只读,7bytes,year:2bytes,month day hour min second:1byte
+        DataItemType_BugDataAction,//只读,1byte,详见BugAction
         //中心控制CenterControl
-        DataItemType_CenterControlLaneID,
-        DataItemType_CenterControlAssignPSS,
-        DataItemType_CenterControlAssignPlan,
-        DataItemType_CenterControlAssignOnModel,
+        DataItemType_CenterControlLaneID,//只读,1byte
+        DataItemType_CenterControlAssignPSS,//读写,1byte
+        DataItemType_CenterControlAssignPlan,//读写,1byte
+        DataItemType_CenterControlAssignOnModel,//读写,1byte,详见Mode
         //命令管道
-        DataItemType_CmdPipeValue,
+        DataItemType_CmdPipeValue,//读写,16bytes,详见CmdPipe
     } DataItemType;
 
     static map<DataItemType, DataItemValue> DataItemMap = {
@@ -540,7 +554,7 @@ namespace ComFrame_GBT20999_2017 {
             //相位阶段信息
             {DataItemType_PSSConfigStageNum, {0x06010000, "实际配置相位阶段数"}},
             {DataItemType_PSSConfigStageNo, {0x06020100, "相位阶段配置表编号"}},
-            {DataItemType_PSSConfigStagePSS, {0x06020200, "相位阶段配置表相位"}},
+            {DataItemType_PSSConfigStagePS, {0x06020200, "相位阶段配置表相位"}},
             {DataItemType_PSSConfigStageDelayOnTime, {0x06020300, "相位阶段配置表相位晚起动时间"}},
             {DataItemType_PSSConfigStageAheadOffTime, {0x06020400, "相位阶段配置表相位早结束时间"}},
             {DataItemType_PSSStateNo, {0x06030100, "相位阶段状态表编号"}},
@@ -552,8 +566,8 @@ namespace ComFrame_GBT20999_2017 {
             {DataItemType_PSSControlShieldMark, {0x06040300, "相位阶段控制表屏蔽标志"}},
             {DataItemType_PSSControlForbidMark, {0x06040400, "相位阶段控制表禁止标志"}},
             //相位安全信息
-            {DataItemType_PSClashNo, {0x07010100, "相位冲突配置表编号"}},
-            {DataItemType_PSClashSequence, {0x07010200, "相位冲突配置表序列"}},
+            {DataItemType_PSConflictNo, {0x07010100, "相位冲突配置表编号"}},
+            {DataItemType_PSConflictSequence, {0x07010200, "相位冲突配置表序列"}},
             {DataItemType_PSGIntervalNo, {0x07020100, "相位绿间隔配置表编号"}},
             {DataItemType_PSGIntervalSequence, {0x07020200, "相位绿间隔配置表序列"}},
             //紧急优先
