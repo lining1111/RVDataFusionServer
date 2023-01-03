@@ -16,9 +16,11 @@
 #include "merge/merge.h"
 #include "simpleini/SimpleIni.h"
 #include "sqlite3.h"
-#include "timeTask.hpp"
+#include "os/timeTask.hpp"
+#include <functional>
 
 using namespace z_log;
+using namespace os;
 
 FusionServer::FusionServer(int port, bool isMerge) {
     this->port = port;

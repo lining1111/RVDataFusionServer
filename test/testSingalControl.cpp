@@ -96,6 +96,7 @@ int main() {
         return (item.second == value);
     });
     if (iter != mapa.end()) {
+        printf("1 key:%d\n",iter->first);
         printf("1 find\n");
     } else {
         printf("1 not find\n");
@@ -107,6 +108,7 @@ int main() {
         return (item.second == value1);
     });
     if (iter1 != mapa.end()) {
+        printf("6 key:%d\n",iter1->first);
         printf("6 find\n");
     } else {
         printf("6 not find\n");

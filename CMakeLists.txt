@@ -32,8 +32,8 @@ endfunction()
 
 #根据实际情况设置
 #set(ARCH arm)
-set(ARCH x86)
-#set(ARCH arm64)
+#set(ARCH x86)
+set(ARCH arm64)
 
 if (${ARCH} STREQUAL arm)
     set(CROSS_COMPILE /usr/local/raspberrypi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-)
@@ -56,7 +56,7 @@ endif ()
 
 add_definitions(-D${ARCH})
 
-set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
+set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl iconv)
 
 set(SRC_DIRS ./
         log

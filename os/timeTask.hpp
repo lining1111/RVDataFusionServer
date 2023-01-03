@@ -4,18 +4,24 @@
 
 #ifndef _TIMETASK_H
 #define _TIMETASK_H
-
+#include <functional>
+#include <chrono>
+#include <thread>
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <condition_variable>
 namespace os {
     class Timer {
     public:
         Timer() : _expired(true), _try_to_expire(false) {
 
         }
-        Timer(string name){
-
+        Timer(std::string name): _name(name), _expired(true), _try_to_expire(false){
         }
 
         Timer(const Timer &timer) {
+            _name = timer._name;
             _expired = timer._expired.load();
             _try_to_expire = timer._try_to_expire.load();
         }
@@ -75,13 +81,20 @@ namespace os {
                     _try_to_expire = false;
             }
         }
+        void setName(std::string name) {
+            _name = name;
+        }
+
+        std::string getName() {
+            return _name;
+        }
 
     private:
         std::atomic<bool> _expired; // timer stopped status
         std::atomic<bool> _try_to_expire; // timer is in stop process
         std::mutex _mutex;
         std::condition_variable _expired_cond;
-        std::string name;
+        std::string _name;
     };
 
 }
