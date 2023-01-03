@@ -59,7 +59,7 @@ int ClientInfo::Close() {
         isLive.store(false);
     }
     if (sock > 0) {
-        shutdown(sock,SHUT_RDWR);
+        shutdown(sock, SHUT_RDWR);
         close(sock);
     }
     if (isLocalThreadRun) {
@@ -114,15 +114,15 @@ int ClientInfo::ThreadDump(void *pClientInfo) {
     auto client = (ClientInfo *) pClientInfo;
 
     Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    uint8_t *buffer = new uint8_t[1024 * 1024];
     while (client->isLive.load()) {
-        uint8_t buffer[1024 * 1024];
         int len = 0;
 //        usleep(10);
         if (client->sock <= 0) {
             continue;
         }
 //        Info("sock %d recv begin========", client->sock);
-        len = recv(client->sock, buffer, ARRAY_SIZE(buffer), 0);
+        len = recv(client->sock, buffer, 1024 * 1024, 0);
 //        Info("sock %d recv end========", client->sock);
         if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
             Error("recv sock %d err:%s", client->sock, strerror(errno));
@@ -141,6 +141,7 @@ int ClientInfo::ThreadDump(void *pClientInfo) {
             }
         }
     }
+    delete[] buffer;
     //这里退出的打印可能不正常，可以sock都关闭了
     Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     return 0;

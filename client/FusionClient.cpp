@@ -187,7 +187,7 @@ int FusionClient::ThreadDump(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    char buf[1024 * 512] = {0};
+    char *buf = new char[1024 * 512];
     int nread = 0;
 
     Info("FusionClient %s run", __FUNCTION__);
@@ -198,8 +198,7 @@ int FusionClient::ThreadDump(void *p) {
             continue;
         }
 
-        memset(buf, 0, ARRAY_SIZE(buf));
-        nread = recv(client->sockfd, buf, sizeof(buf), MSG_NOSIGNAL);
+        nread = recv(client->sockfd, buf, 1024 * 512, 0);
         if (nread < 0) {
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
                 continue;
@@ -218,6 +217,7 @@ int FusionClient::ThreadDump(void *p) {
             RingBuffer_Write(client->rb, buf, nread);
         }
     }
+    delete[] buf;
     Info("FusionClient %s exit", __FUNCTION__);
     return 0;
 }
@@ -361,7 +361,7 @@ int FusionClient::ThreadProcessSend(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    uint8_t buf_send[1024 * 1024] = {0};
+    uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
 
     Info("FusionClient %s run", __FUNCTION__);
@@ -371,7 +371,6 @@ int FusionClient::ThreadProcessSend(void *p) {
             continue;
         }
         pthread_mutex_lock(&client->lock_sock);
-        bzero(buf_send, ARRAY_SIZE(buf_send));
         uint32_t len_send = 0;
         //pack
         common::Pack(pkg, buf_send, &len_send);
@@ -399,6 +398,7 @@ int FusionClient::ThreadProcessSend(void *p) {
         }
         pthread_mutex_unlock(&client->lock_sock);
     }
+    delete[] buf_send;
     Info("FusionClient %s exit", __FUNCTION__);
     return 0;
 }
@@ -442,11 +442,9 @@ int FusionClient::SendBase(Pkg pkg) {
     int ret1 = 0;
 
     pthread_mutex_lock(&lock_sock);
-    uint8_t buf_send[1024 * 1024] = {0};
+    uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
-    bzero(buf_send, ARRAY_SIZE(buf_send));
     len_send = 0;
-
     //pack
     common::Pack(pkg, buf_send, &len_send);
     //尽力发送
@@ -474,7 +472,7 @@ int FusionClient::SendBase(Pkg pkg) {
         nleft -= nsend;
         ptr += nsend;
     }
-
+    delete[] buf_send;
     pthread_mutex_unlock(&lock_sock);
     return ret1;
 }
