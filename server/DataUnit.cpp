@@ -803,7 +803,7 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
     //1，将同一帧内待输入量存入集合
     DataUnitFusionData::RoadDataInSet roadDataInSet;
     roadDataInSet.roadDataList.resize(dataUnit->numI);
-    printf("=====1 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
+//    printf("=====1 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
     roadDataInSet.timestamp = dataUnit->curTimestamp;
     for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
         auto iter = dataUnit->oneFrame.at(i);
@@ -820,7 +820,7 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
         //存入对应路的集合
         roadDataInSet.roadDataList[i] = item;
     }
-    printf("=====2 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
+//    printf("=====2 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
     int ret = 0;
     switch (mergeType) {
         case DataUnitFusionData::NotMerge: {

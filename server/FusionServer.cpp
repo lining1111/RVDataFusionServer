@@ -76,7 +76,7 @@ int FusionServer::getMatrixNoFromDb() {
     string columnName;
     rc = sqlite3_get_table(db, sql, &result, &nrow, &ncolumn, &errmsg);
     if (rc != SQLITE_OK) {
-        printf("sqlite err:%s\n", errmsg);
+        Error("sqlite err:%s", errmsg);
         sqlite3_free(errmsg);
         return -1;
     }
@@ -155,7 +155,7 @@ int FusionServer::Open() {
         return -1;
     }
 
-    Info("server sock %d create success", sock);
+    Notice("server sock %d create success", sock);
 
     isRun.store(true);
     return 0;
@@ -173,7 +173,7 @@ int FusionServer::Run() {
 
     //获取matrixNo
     getMatrixNoFromDb();
-    Info("sn:%s", matrixNo.c_str());
+    Notice("sn:%s", matrixNo.c_str());
     //获取路口编号
 //    getCrossIdFromDb();
 
@@ -197,7 +197,7 @@ int FusionServer::Close() {
         try {
             futureMonitor.wait();
         } catch (std::future_error e) {
-            Info(e.what());
+            Error(e.what());
         }
     }
     DeleteAllClient();
@@ -233,7 +233,7 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
             delete vectorClient.at(i);
             this->vectorClient.erase(this->vectorClient.begin() + i);
             this->vectorClient.shrink_to_fit();
-            Info("remove repeat ip:%s", curIp.c_str());
+            Notice("remove repeat ip:%s", curIp.c_str());
         }
     }
     //clientInfo
@@ -243,7 +243,7 @@ int FusionServer::AddClient(int client_sock, struct sockaddr_in remote_addr) {
     this->vectorClient.push_back(clientInfo);
     pthread_mutex_unlock(&this->lockVectorClient);
 
-    Info("add client %d success,ip:%s", client_sock, addIp.c_str());
+    Notice("add client %d success,ip:%s", client_sock, addIp.c_str());
 
     //开启客户端处理线程
     clientInfo->ProcessRecv();
@@ -271,7 +271,7 @@ int FusionServer::RemoveClient(int client_sock) {
             vectorClient.erase(vectorClient.begin() + i);
             vectorClient.shrink_to_fit();
 
-            Info("remove client:%d", client_sock);
+            Notice("remove client:%d", client_sock);
         }
     }
     pthread_mutex_unlock(&this->lockVectorClient);
@@ -310,7 +310,7 @@ int FusionServer::ThreadMonitor(void *pServer) {
     socklen_t sin_size = sizeof(struct sockaddr_in);
     int client_fd;
 
-    Info("%s run", __FUNCTION__);
+    Notice("server :%d %s run", server->port, __FUNCTION__);
     while (server->isRun.load()) {
         // 等待事件发生
         nfds = epoll_wait(server->epoll_fd, server->wait_events, MAX_EVENTS, -1);
@@ -351,7 +351,7 @@ int FusionServer::ThreadMonitor(void *pServer) {
     }
 
     close(server->epoll_fd);
-    Info("%s exit", __FUNCTION__);
+    Notice("server :%d %s exit", server->port, __FUNCTION__);
     return 0;
 }
 
@@ -361,7 +361,7 @@ void FusionServer::ThreadCheck(void *pServer) {
     }
     auto server = (FusionServer *) pServer;
 
-    Info("%s run", __FUNCTION__);
+    Notice("server :%d %s run", server->port, __FUNCTION__);
     while (server->isRun.load()) {
         sleep(1);
 
@@ -408,7 +408,7 @@ void FusionServer::ThreadCheck(void *pServer) {
 
     }
 
-    Info("%s exit", __FUNCTION__);
+    Notice("server :%d %s exit", server->port, __FUNCTION__);
 
 }
 
@@ -418,7 +418,7 @@ int FusionServer::StartTimerTask(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    Info("%s run", __FUNCTION__);
+    Notice("server :%d %s run", server->port, __FUNCTION__);
 
     server->addTimerTask("fusionServer timerFusionData", server->dataUnitFusionData.fs_ms,
                          std::bind(TaskFusionData, server, 10));
@@ -434,7 +434,7 @@ int FusionServer::StartTimerTask(void *pServer) {
     server->addTimerTask("fusionServer timerCarTrackGather", server->dataUnitCarTrackGather.fs_ms,
                          std::bind(TaskCarTrackGather, server, 10));
 
-    Info("%s exit", __FUNCTION__);
+    Notice("server :%d %s exit", server->port, __FUNCTION__);
     return 0;
 }
 
@@ -494,7 +494,6 @@ void FusionServer::TaskTrafficFlowGather(void *pServer, unsigned int cache) {
     }
 }
 
-//寻找头部
 void FusionServer::TaskLineupInfoGather(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;
@@ -508,7 +507,6 @@ void FusionServer::TaskLineupInfoGather(void *pServer, int cache) {
     }
 }
 
-//寻找尾部
 void FusionServer::TaskCrossTrafficJamAlarm(void *pServer, int cache) {
     if (pServer == nullptr) {
         return;

@@ -40,7 +40,7 @@ int FusionClient::Open() {
 
     rb = RingBuffer_New(RecvSize);
     if (this->server_ip.empty()) {
-        cout << "server ip empty" << endl;
+        Error("server ip empty");
         return -1;
     }
 
@@ -79,8 +79,8 @@ int FusionClient::Open() {
         return -1;
     }
 
-    Info("connect server:%s port:%d success at %s", this->server_ip.c_str(), this->server_port,
-         ctime((time_t *) &tv_now.tv_sec));
+    Notice("connect server:%s port:%d success at %s", this->server_ip.c_str(), this->server_port,
+           ctime((time_t *) &tv_now.tv_sec));
 
     this->sockfd = sockfd;
     isRun = true;
@@ -173,10 +173,9 @@ int FusionClient::Close() {
     RingBuffer_Delete(rb);
     rb = nullptr;
 
-    if (pkgBuffer) {
+    if (pkgBuffer != nullptr) {
         free(pkgBuffer);
     }
-
 
     return 0;
 }
@@ -190,7 +189,7 @@ int FusionClient::ThreadDump(void *p) {
     char *buf = new char[1024 * 512];
     int nread = 0;
 
-    Info("FusionClient %s run", __FUNCTION__);
+    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
         usleep(10);
 
@@ -218,7 +217,7 @@ int FusionClient::ThreadDump(void *p) {
         }
     }
     delete[] buf;
-    Info("FusionClient %s exit", __FUNCTION__);
+    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     return 0;
 }
 
@@ -228,7 +227,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    Info("FusionClient %s run", __FUNCTION__);
+    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
 
         usleep(10);
@@ -351,7 +350,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
                 break;
         }
     }
-    Info("FusionClient %s exit", __FUNCTION__);
+    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     return 0;
 }
 
@@ -364,7 +363,7 @@ int FusionClient::ThreadProcessSend(void *p) {
     uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
 
-    Info("FusionClient %s run", __FUNCTION__);
+    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
         Pkg pkg;
         if (!client->queue_send.pop(pkg)) {
@@ -399,7 +398,7 @@ int FusionClient::ThreadProcessSend(void *p) {
         pthread_mutex_unlock(&client->lock_sock);
     }
     delete[] buf_send;
-    Info("FusionClient %s exit", __FUNCTION__);
+    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     return 0;
 }
 
@@ -409,7 +408,7 @@ void FusionClient::ThreadCheckStatus(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    Info("FusionClient %s run", __FUNCTION__);
+    Notice("FusionClient %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
         sleep(client->checkStatus_timeval);
         if (!client->isRun) {
@@ -427,19 +426,20 @@ void FusionClient::ThreadCheckStatus(void *p) {
             cout << "last receive: " << ctime((time_t *) &client->receive_time.tv_sec) << endl;
         }
     }
-    Info("FusionClient %s exit", __FUNCTION__);
+    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
 }
 
 int FusionClient::SendQueue(Pkg pkg) {
     //try send lock_queue_recv
     if (!queue_send.push(pkg)) {
+        Error("%s fail", __FUNCTION__);
         return -1;
     }
     return 0;
 }
 
 int FusionClient::SendBase(Pkg pkg) {
-    int ret1 = 0;
+    int ret = 0;
 
     pthread_mutex_lock(&lock_sock);
     uint8_t *buf_send = new uint8_t[1024 * 1024];
@@ -458,14 +458,14 @@ int FusionClient::SendBase(Pkg pkg) {
                 nsend = 0;          /* and call send() again */
                 return -1;
             } else {
-                ret1 = -1;
+                ret = -1;
                 Error("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
                 pthread_mutex_unlock(&lock_sock);
                 isRun = false;
-                return ret1;
+                break;
             }
         } else if (nsend == 0) {
-            ret1 = -1;
+            ret = -1;
             isRun = false;
             break;                  /* EOF */
         }
@@ -474,6 +474,6 @@ int FusionClient::SendBase(Pkg pkg) {
     }
     delete[] buf_send;
     pthread_mutex_unlock(&lock_sock);
-    return ret1;
+    return ret;
 }
 

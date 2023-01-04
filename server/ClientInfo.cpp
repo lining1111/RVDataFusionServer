@@ -113,7 +113,7 @@ int ClientInfo::ThreadDump(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     uint8_t *buffer = new uint8_t[1024 * 1024];
     while (client->isLive.load()) {
         int len = 0;
@@ -143,7 +143,7 @@ int ClientInfo::ThreadDump(void *pClientInfo) {
     }
     delete[] buffer;
     //这里退出的打印可能不正常，可以sock都关闭了
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     return 0;
 
 }
@@ -155,7 +155,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
 
         usleep(10);
@@ -274,7 +274,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     return 0;
 }
 
@@ -285,7 +285,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Info("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     while (client->isLive.load()) {
         Pkg pkg;
         if (!client->queuePkg.pop(pkg)) {
@@ -371,8 +371,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
-                    Debug("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
-                          inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
+                         inet_ntoa(client->clientAddr.sin_addr));
                 } else {
 //                    Info("client:%d,timestamp %f CrossTrafficJamAlarm存入", client->sock, crossTrafficJamAlarm.timestamp);
                 }
@@ -396,7 +396,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, client->indexSuper)) {
-                    Debug("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
@@ -423,7 +423,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, client->indexSuper)) {
-                    Debug("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
 
             }
@@ -444,19 +444,19 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, client->indexSuper)) {
-                    Debug("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
                 }
             }
                 break;
             default: {
                 //最后没有对应的方法名
-                Debug("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
+                Error("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
                       pkg.head.cmd, pkg.body.c_str());
             }
                 break;;
         }
 
     }
-    Info("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
     return 0;
 }

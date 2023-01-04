@@ -62,7 +62,7 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
 
 void MThread(void *p, int port) {
     httplib::Server *svr = (httplib::Server *) p;
-    Info("开启web服务：%d", port);
+    Notice("开启web服务：%d", port);
     svr->listen("0.0.0.0", port);
 }
 

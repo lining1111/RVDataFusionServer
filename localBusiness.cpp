@@ -113,7 +113,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    Info("服务端 %s 重启", iter.first.c_str());
+                    Notice("服务端 %s 重启", iter.first.c_str());
                     iter.second->Run();
                 }
             }
@@ -123,7 +123,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    Info("客户端 %s 重启", iter.first.c_str());
+                    Notice("客户端 %s 重启", iter.first.c_str());
                     iter.second->Run();
                 }
             }
