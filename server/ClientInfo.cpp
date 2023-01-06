@@ -61,6 +61,7 @@ int ClientInfo::Close() {
     if (sock > 0) {
         shutdown(sock, SHUT_RDWR);
         close(sock);
+        sock = 0;
     }
     if (isLocalThreadRun) {
         try {

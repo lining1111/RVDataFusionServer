@@ -82,6 +82,10 @@ typedef struct
 }EOC_Associated_Equip;
 
 
+extern EOC_Base_Set g_eoc_base_set;    //基础配置
+extern EOC_Intersection g_eoc_intersection;    //路口信息
+extern EOC_Fusion_Para_Set g_eoc_fusion_para;  //融合参数
+extern vector<EOC_Associated_Equip> g_eoc_associated_equip;  //主控机关联设备
 
 //返回值：1，取到eoc配置；0，eoc配置没下发；-1，初始化数据库失败
 int g_eoc_config_init(void);

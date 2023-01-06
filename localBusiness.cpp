@@ -8,10 +8,15 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "log/Log.h"
 
 using namespace z_log;
+
+static string savePath = "/mnt/mnt_hd/save/";
+static int saveCountMax = 0;
 
 LocalBusiness::LocalBusiness() {
 
@@ -53,6 +58,15 @@ void LocalBusiness::Run() {
         iter.second->Run();
 
     }
+    if (0) {
+        string dirName1 = savePath;
+        int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+        if (!isCreate1)
+            Info("create path:%s\n", dirName1.c_str());
+        else
+            Info("create path failed! error code : %d \n", isCreate1);
+    }
+
     StartTimerTask();
 }
 
@@ -149,10 +163,27 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 10) {
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        Info("create path:%s\n", dirName1.c_str());
+                    else
+                        Info("create path failed! error code : %d \n", isCreate1);
+                    if (saveCountMax > 0) {
+                        if (dataUnit->saveCount < saveCountMax) {
+                            dataUnit->saveCount++;
+                            string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
+                            ofstream file;
+                            file.open(fileName);
+                            if (file.is_open()) {
+                                file.write(pkg.body.data(), pkg.body.size());
+                                file.flush();
+                                file.close();
+                            }
+                        }
+                    } else {
                         dataUnit->saveCount++;
-                        //存入图片
-                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
                         ofstream file;
                         file.open(fileName);
                         if (file.is_open()) {
@@ -161,10 +192,11 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
                             file.close();
                         }
                     }
+
                 }
 
                 if (local->clientList.empty()) {
-                    Info("client list empty");
+                    Error("client list empty");
                     continue;
                 }
 
@@ -174,12 +206,12 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
                         Info("server %s 发送到上层 %s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                            Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
                             Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Error(":未连接上层%s", cli->server_ip.c_str());
+                        Warn(":未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -206,10 +238,28 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
 
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 10) {
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        Info("create path:%s\n", dirName1.c_str());
+                    else
+                        Info("create path failed! error code : %d \n", isCreate1);
+
+                    if (saveCountMax > 0) {
+                        if (dataUnit->saveCount < saveCountMax) {
+                            dataUnit->saveCount++;
+                            string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
+                            ofstream file;
+                            file.open(fileName);
+                            if (file.is_open()) {
+                                file.write(pkg.body.data(), pkg.body.size());
+                                file.flush();
+                                file.close();
+                            }
+                        }
+                    } else {
                         dataUnit->saveCount++;
-                        //存入图片
-                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
                         ofstream file;
                         file.open(fileName);
                         if (file.is_open()) {
@@ -221,7 +271,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                 }
 
                 if (local->clientList.empty()) {
-                    Info("client list empty");
+                    Error("client list empty");
                     continue;
                 }
 
@@ -232,12 +282,12 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
 
                         if (cli->SendBase(pkg) == -1) {
-                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                            Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
                             Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Error(":未连接上层%s", cli->server_ip.c_str());
+                        Warn(":未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -263,10 +313,28 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 10) {
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        Info("create path:%s\n", dirName1.c_str());
+                    else
+                        Info("create path failed! error code : %d \n", isCreate1);
+
+                    if (saveCountMax > 0) {
+                        if (dataUnit->saveCount < saveCountMax) {
+                            dataUnit->saveCount++;
+                            string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
+                            ofstream file;
+                            file.open(fileName);
+                            if (file.is_open()) {
+                                file.write(pkg.body.data(), pkg.body.size());
+                                file.flush();
+                                file.close();
+                            }
+                        }
+                    } else {
                         dataUnit->saveCount++;
-                        //存入图片
-                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
                         ofstream file;
                         file.open(fileName);
                         if (file.is_open()) {
@@ -278,7 +346,7 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                 }
 
                 if (local->clientList.empty()) {
-                    Info("client list empty");
+                    Error("client list empty");
                     continue;
                 }
 
@@ -288,12 +356,12 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                         Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                            Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
                             Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Error("未连接上层%s", cli->server_ip.c_str());
+                        Warn("未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -320,10 +388,28 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 10) {
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        Info("create path:%s\n", dirName1.c_str());
+                    else
+                        Info("create path failed! error code : %d \n", isCreate1);
+
+                    if (saveCountMax > 0) {
+                        if (dataUnit->saveCount < saveCountMax) {
+                            dataUnit->saveCount++;
+                            string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
+                            ofstream file;
+                            file.open(fileName);
+                            if (file.is_open()) {
+                                file.write(pkg.body.data(), pkg.body.size());
+                                file.flush();
+                                file.close();
+                            }
+                        }
+                    } else {
                         dataUnit->saveCount++;
-                        //存入图片
-                        string fileName = msgType + to_string((uint64_t) data.timestamp) + ".txt";
+                        string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timestamp) + ".txt";
                         ofstream file;
                         file.open(fileName);
                         if (file.is_open()) {
@@ -335,7 +421,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                 }
 
                 if (local->clientList.empty()) {
-                    Info("client list empty");
+                    Error("client list empty");
                     continue;
                 }
 
@@ -345,12 +431,12 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                         Info("server %s 发送到上层%s,消息%s,matrixNo:%d",
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
                         if (cli->SendBase(pkg) == -1) {
-                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                            Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                         } else {
                             Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         }
                     } else {
-                        Error("未连接上层%s", cli->server_ip.c_str());
+                        Warn("未连接上层%s", cli->server_ip.c_str());
                     }
                 }
             }
@@ -376,10 +462,28 @@ void LocalBusiness::Task_FusionData(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    if (dataUnit->saveCount < 5) {
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        Info("create path:%s\n", dirName1.c_str());
+                    else
+                        Info("create path failed! error code : %d \n", isCreate1);
+
+                    if (saveCountMax > 0) {
+                        if (dataUnit->saveCount < saveCountMax) {
+                            dataUnit->saveCount++;
+                            string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timstamp) + ".txt";
+                            ofstream file;
+                            file.open(fileName);
+                            if (file.is_open()) {
+                                file.write(pkg.body.data(), pkg.body.size());
+                                file.flush();
+                                file.close();
+                            }
+                        }
+                    } else {
                         dataUnit->saveCount++;
-                        //存入图片
-                        string fileName = msgType + to_string((uint64_t) data.timstamp) + ".txt";
+                        string fileName = savePath + msgType + "/" + to_string((uint64_t) data.timstamp) + ".txt";
                         ofstream file;
                         file.open(fileName);
                         if (file.is_open()) {
@@ -391,7 +495,7 @@ void LocalBusiness::Task_FusionData(void *p) {
                 }
 
                 if (local->clientList.empty()) {
-                    Info("client list empty");
+                    Error("client list empty");
                     continue;
                 }
 
@@ -402,14 +506,14 @@ void LocalBusiness::Task_FusionData(void *p) {
                              iter.first.c_str(), iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO, pkg.head.sn,
                              pkg.head.len);
                         if (cli->SendBase(pkg) == -1) {
-                            Error("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                            Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                             cli->packetLossFusionData->Fail();
                         } else {
                             Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                             cli->packetLossFusionData->Success();
                         }
                     } else {
-                        Error("未连接上层%s", cli->server_ip.c_str());
+                        Warn("未连接上层%s", cli->server_ip.c_str());
                         cli->packetLossFusionData->Fail();
                     }
                 }

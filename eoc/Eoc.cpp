@@ -3,10 +3,6 @@
 //
 
 #include "Eoc.h"
-#include "eoc_comm/sqlite_eoc_db.h"
-#include "eoc_comm/eoc_comm.hpp"
-#include "eoc_comm/configure_eoc_init.h"
-#include "eoc_comm/utility/dns_server.h"
 
 int StartEocCommon() {
     dns_server_start();  /*dns服务*/

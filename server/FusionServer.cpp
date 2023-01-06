@@ -286,10 +286,7 @@ int FusionServer::DeleteAllClient() {
 
         pthread_mutex_lock(&lockVectorClient);
 
-        for (auto iter:vectorClient) {
-            if (iter->sock > 0) {
-                close(iter->sock);
-            }
+        for (auto &iter:vectorClient) {
             delete iter;
         }
         vectorClient.clear();

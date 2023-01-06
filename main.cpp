@@ -34,21 +34,32 @@ DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
 
-    if (0) {
-        string dirName1 = "mergeData";
-        int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-        if (!isCreate1)
-            Info("create path:%s\n", dirName1.c_str());
-        else
-            Info("create path failed! error code : %d \n", isCreate1);
-    }
+    StartEocCommon();
 
     google::SetVersionString(VERSION_BUILD_TIME);
     google::ParseCommandLineFlags(&argc, &argv, true);
     z_log::init();
     uint16_t port = FLAGS_port;
-    string cloudIp = FLAGS_cloudIp;
-    uint16_t cloudPort = FLAGS_cloudPort;
+    string cloudIp;
+
+    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
+        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
+        Notice("采用数据库配置,cloud ip:%s", cloudIp.c_str());
+    } else {
+        cloudIp = FLAGS_cloudIp;
+        Notice("采用程序参数配置,cloud ip:%s", cloudIp.c_str());
+    }
+
+    uint16_t cloudPort;
+
+    if (g_eoc_base_set.PlatformTcpPort != 0) {
+        cloudPort = g_eoc_base_set.PlatformTcpPort;
+        Notice("采用数据库配置,cloud port:%d", cloudPort);
+    } else {
+        cloudPort = FLAGS_cloudPort;
+        Notice("采用程序参数配置,cloud port:%d", cloudPort);
+    }
+
     bool isMerge = FLAGS_isMerge;
 
     signalIgnpipe();
@@ -62,7 +73,6 @@ int main(int argc, char **argv) {
 
 //    HttpServerInit(10000, &local);
 
-//    StartEocCommon();
     while (true) {
         sleep(10);
     }
