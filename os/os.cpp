@@ -89,113 +89,42 @@ namespace os {
         printf("\n");
     }
 
+    wstring GbkToUnicode(string str) {
+//    codecvt_byname<wchar_t, char, mbstate_t>*dd=;
+        wstring_convert<chs_codecvt> gbk(new chs_codecvt("zh_CN.GBK"));    //GBK - whar
 
-    int GbkToUtf8TRANSLATE(char *in, unsigned int *lenOfIn, char *out, unsigned int *lenOfOut) {
-        //
-        /* 目的编码, TRANSLIT：遇到无法转换的字符就找相近字符替换
-         *           IGNORE ：遇到无法转换字符跳过*/
-        int bRes = -1;
-        const char *const encTo = "UTF-8//TRANSLIT"; // TRANSLIT //IGNORE
-        const char *const encFrom = "GBK"; //UNICODE GBK
-        iconv_t cd = iconv_open(encTo, encFrom);
-        if (cd == (iconv_t) -1) {
-            perror("iconv_open");
-            iconv_close(cd);
-            return -1;
-        }
-        /* 由于iconv()函数会修改指针，所以要保存源指针 */
+        return gbk.from_bytes(str);
+    }
 
-        /* 需要转换的字符串 */
-        char bufIn[1024];
-        size_t lenOfBufIn;
-        char *pBufIn = bufIn;
-        memset(bufIn, 0, sizeof(bufIn));
-        snprintf(bufIn, sizeof(bufIn) - 1, "%s", in);
-        lenOfBufIn = *lenOfIn;
+    string GbkToUtf8(string str) {
+        return UnicodeToUtf8(GbkToUnicode(str));
+    }
 
-        /* 存放转换后的字符串 */
-        char bufOut[1024];
-        size_t lenOfBufOut = sizeof(bufOut);
-        char *pBufOut = bufOut;
-        memset(bufOut, 0, sizeof(bufOut));
-
-        /* 进行转换
-         * *@param cd iconv_open()产生的句柄
-         * *@param bufIn 需要转换的字符串
-         * *@param lenOfBufIn存放还有多少字符没有转换
-         * *@param bufOut 存放转换后的字符串
-         *	*@param outlen 存放转换后,tempoutbuf剩余的空间
-         *  */
-        size_t ret = iconv(cd, &pBufIn, &lenOfBufIn, &pBufOut, &lenOfBufOut);
-        if (ret == -1) {
-            perror("iconv");
-            iconv_close(cd);
-            return -1;
-        }
-        memcpy(out, bufOut, strlen(bufOut));
-        *lenOfOut = strlen(bufOut);
-        /* 关闭句柄 */
-        //
-        iconv_close(cd);
-        return bRes;
+    string Utf8ToGbk(string str) {
+        return UnicodeToGbk(Utf8ToUnicode(str));
 
     }
 
-    int Utf8ToGbkTRANSLATE(char *in, unsigned int *lenOfIn, char *out, unsigned int *lenOfOut) {
-        /*
-         *  目的编码, TRANSLIT：遇到无法转换的字符就找相近字符替换
-         *      	IGNORE  ：遇到无法转换字符跳过
-         */
-        char *encTo = "GBK//TRANSLIT";
-        /* 源编码 */
-        char *encFrom = "UTF-8";
+    wstring Utf8ToUnicode(string str) {
+        wstring ret;
 
-        /*
-         * 获得转换句柄
-         * *@param encTo 目标编码方式
-         * *@param encFrom 源编码方式
-         */
-        iconv_t cd = iconv_open(encTo, encFrom);
-        if (cd == (iconv_t) -1) {
-            perror("iconv_open");
-            iconv_close(cd);
-            return -1;
-        }
+        wstring_convert<codecvt_utf8<wchar_t>> wcv;
+        ret = wcv.from_bytes(str);
+        return ret;
+    }
 
-        /* 需要转换的字符串 */
-        char bufIn[1024];
-        size_t lenOfBufIn;
-        char *pBufIn = bufIn;
-        memset(bufIn, 0, sizeof(bufIn));
-        snprintf(bufIn, sizeof(bufIn) - 1, "%s", in);
-        lenOfBufIn = *lenOfIn;
+    string UnicodeToUtf8(wstring wstr) {
+        string ret;
+        wstring_convert<codecvt_utf8<wchar_t>> wcv;
+        ret = wcv.to_bytes(wstr);
+        return ret;
+    }
 
-        /* 存放转换后的字符串 */
-        char bufOut[1024];
-        size_t lenOfBufOut = sizeof(bufOut);
-        char *pBufOut = bufOut;
-        memset(bufOut, 0, sizeof(bufOut));
-        /* 由于iconv()函数会修改指针，所以要保存源指针 */
+    string UnicodeToGbk(wstring wstr) {
+        wstring_convert<chs_codecvt> gbk(new chs_codecvt("zh_CN.GBK"));    //GBK - whar
+        string ret = gbk.to_bytes(wstr);
+        return ret;
 
-        /* 进行转换
-         * *@param cd iconv_open()产生的句柄
-         * *@param bufIn 需要转换的字符串
-         * *@param lenOfBufIn存放还有多少字符没有转换
-         * *@param bufOut 存放转换后的字符串
-         *	*@param outlen 存放转换后,tempoutbuf剩余的空间
-         *  */
-        size_t ret = iconv(cd, &pBufIn, &lenOfBufIn, &pBufOut, &lenOfBufOut);
-        if (ret == -1) {
-            perror("iconv");
-            iconv_close(cd);
-            return -1;
-        }
-
-        memcpy(out, bufOut, strlen(bufOut));
-        *lenOfOut = strlen(bufOut);
-        /* 关闭句柄 */
-        iconv_close(cd);
-        return 0;
     }
 
     void Trim(string &str, char trim) {

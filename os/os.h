@@ -7,6 +7,8 @@
 
 #include <string>
 #include <vector>
+#include <codecvt>
+#include <locale>
 #include "iconv.h"
 
 namespace os {
@@ -27,9 +29,25 @@ namespace os {
      */
     void PrintHex(uint8_t *data, uint32_t len);
 
-    int GbkToUtf8TRANSLATE(char *in, unsigned int *lenOfIn, char *out, unsigned int *lenOfOut);
+    class chs_codecvt : public codecvt_byname<wchar_t, char, std::mbstate_t> {
+    public:
+        chs_codecvt(string s) : codecvt_byname(s) {
 
-    int Utf8ToGbkTRANSLATE(char *in, unsigned int *lenOfIn, char *out, unsigned int *lenOfOut);
+        }
+    };
+
+    string Utf8ToGbk(string);
+
+    string GbkToUtf8(string);
+
+    wstring Utf8ToUnicode(string);
+
+    wstring GbkToUnicode(string);
+
+    string UnicodeToUtf8(wstring);
+
+    string UnicodeToGbk(wstring);
+
 
     void Trim(string &str, char trim);
 
