@@ -114,8 +114,6 @@ int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUni
                         if (dataUnit->popI(cur, index)) {
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                            //记录路口编号
-                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -132,8 +130,6 @@ int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUni
                     if (dataUnit->popI(cur, index)) {
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                        //记录路口编号
-                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -273,8 +269,6 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
                         if (dataUnit->popI(cur, index)) {
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                            //记录路口编号
-                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -291,8 +285,6 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
                     if (dataUnit->popI(cur, index)) {
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                        //记录路口编号
-                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -432,8 +424,6 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
                         if (dataUnit->popI(cur, index)) {
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                            //记录路口编号
-                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -450,8 +440,6 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
                     if (dataUnit->popI(cur, index)) {
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                        //记录路口编号
-                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -598,8 +586,6 @@ int DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dat
                         if (dataUnit->popI(cur, index)) {
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                            //记录路口编号
-                            dataUnit->crossID = cur.crossID;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -616,8 +602,6 @@ int DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dat
                     if (dataUnit->popI(cur, index)) {
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timestamp;
-                        //记录路口编号
-                        dataUnit->crossID = cur.crossID;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timestamp);
@@ -762,8 +746,6 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                         if (dataUnit->popI(cur, index)) {
                             //记录当前路的时间戳
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timstamp;
-                            //记录路口编号
-                            dataUnit->crossID = cur.matrixNo;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
                             Debug("%s第%d路时间戳较旧但只有1帧，保留:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timstamp);
@@ -780,8 +762,6 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                     if (dataUnit->popI(cur, index)) {
                         //记录当前路的时间戳
                         dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timstamp;
-                        //记录路口编号
-                        dataUnit->crossID = cur.matrixNo;
                         //将当前路的所有信息缓存入对应的索引
                         dataUnit->oneFrame[index] = cur;
                         Debug("%s第%d路时间戳在范围内，取出来:%lu", __PRETTY_FUNCTION__, index, (uint64_t) refer.timstamp);

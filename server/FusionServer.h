@@ -69,6 +69,7 @@ public:
 
     string db = "CLParking.db";
     string matrixNo = "0123456789";
+    string plateId;
 
 public:
     FusionServer(int port, bool isMerge);
@@ -79,6 +80,8 @@ public:
 
 private:
     int getMatrixNoFromDb();
+
+    int getPlatId();
 
 public:
     /**

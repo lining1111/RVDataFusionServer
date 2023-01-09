@@ -18,6 +18,7 @@
 #include "sqlite3.h"
 #include "os/timeTask.hpp"
 #include <functional>
+#include "eoc_comm/configure_eoc_init.h"
 
 using namespace z_log;
 using namespace os;
@@ -92,6 +93,16 @@ int FusionServer::getMatrixNoFromDb() {
     sqlite3_free_table(result);
     sqlite3_close(db);
     return 0;
+}
+
+int FusionServer::getPlatId() {
+    this->plateId = string(g_eoc_intersection.PlatId);
+    dataUnitFusionData.crossID = this->plateId;
+    dataUnitCarTrackGather.crossID = this->plateId;
+    dataUnitTrafficFlowGather.crossID = this->plateId;
+    dataUnitCrossTrafficJamAlarm.crossID = this->plateId;
+    dataUnitLineupInfoGather.crossID = this->plateId;
+
 }
 
 int FusionServer::Open() {
