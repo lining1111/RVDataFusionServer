@@ -3,7 +3,7 @@
 #include "version.h"
 #include <gflags/gflags.h>
 #include <csignal>
-#include "localBusiness.h"
+#include "localBussiness/localBusiness.h"
 #include "httpServer/httpServer.h"
 #include "eoc/Eoc.h"
 
@@ -30,6 +30,7 @@ int signalIgnpipe() {
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
 DEFINE_int32(cloudPort, 7890, "云端端口号，默认7890");
+DEFINE_int32(keep, 604800, "云端端口号，默认604800");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
@@ -38,7 +39,7 @@ int main(int argc, char **argv) {
 
     google::SetVersionString(VERSION_BUILD_TIME);
     google::ParseCommandLineFlags(&argc, &argv, true);
-    z_log::init();
+    z_log::init(PROJECT_NAME, FLAGS_keep);
     uint16_t port = FLAGS_port;
     string cloudIp;
 
@@ -76,6 +77,7 @@ int main(int argc, char **argv) {
     while (true) {
         sleep(10);
     }
+    z_log::finish();
 
     return 0;
 }

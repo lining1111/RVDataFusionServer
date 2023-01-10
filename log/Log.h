@@ -22,7 +22,7 @@ namespace z_log {
      * 初始化
      * @return
      */
-    int init();
+    int init(string programName, int keepSeconds = -1);
 
     /**
      * 退出
