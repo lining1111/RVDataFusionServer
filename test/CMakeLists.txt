@@ -1,3 +1,4 @@
+list(TRANSFORM SRC_FILES PREPEND ../)
 ##testIni
 add_executable(testIni testIni.cpp
         ../simpleini/ConvertUTF.c
@@ -15,17 +16,7 @@ target_link_libraries(testCommon ${LIBS})
 redefine_file_macro(testCommon)
 
 ##测试服务端
-add_executable(testServer testServer.cpp
-        ../common/common.cpp
-        ../common/CRC.cpp
-        ../ringBuffer/RingBuffer.cpp
-        ../log/Log.cpp
-        ../server/ClientInfo.cpp
-        ../server/DataUnit.cpp
-        ../server/FusionServer.cpp
-        ../client/FusionClient.cpp
-        ../server/merge/merge.cpp
-        ../server/merge/mergeStruct.cpp)
+add_executable(testServer testServer.cpp ${SRC_FILES})
 target_link_libraries(testServer ${LIBS})
 redefine_file_macro(testServer)
 

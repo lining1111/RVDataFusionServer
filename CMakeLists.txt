@@ -58,7 +58,7 @@ add_definitions(-D${ARCH})
 
 set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
 
-set(SRC_DIRS ./
+set(SRC_DIRS .
         log
         ringBuffer
         common
@@ -72,6 +72,7 @@ set(SRC_DIRS ./
         db
         getData
         httpServer
+        localBussiness
         eoc
         eoc_comm/utility
         eoc_comm)
@@ -80,13 +81,13 @@ include_directories(.)
 include_directories(eoc_comm/utility)
 include_directories(eoc_comm)
 
-
+set(SRC_FILES)
 foreach (src_dir ${SRC_DIRS})
-    aux_source_directory(${src_dir} src_dir_file)
-    set(SRC_FILES ${SRC_FILES} ${src_dir_file})
+    aux_source_directory(${src_dir} SRC_FILES)
 endforeach (src_dir)
+list(REMOVE_ITEM SRC_FILES ./main.cpp)
 
-
+message(STATUS "3.7 SRC_FILES : ${SRC_FILES}")
 add_executable(RVDataFusionServer main.cpp ${SRC_FILES})
 target_link_libraries(RVDataFusionServer libgflags.a ${LIBS})
 redefine_file_macro(RVDataFusionServer)
