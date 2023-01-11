@@ -10,7 +10,7 @@
 #include "common/CRC.h"
 #include "Queue.h"
 #include "log/Log.h"
-#include "ringBuffer/RingBuffer.h"
+#include "ringbuffer/RingBuffer.h"
 
 using namespace common;
 using namespace z_log;

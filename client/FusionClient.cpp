@@ -13,7 +13,7 @@
 #include "common/common.h"
 #include "common/CRC.h"
 #include "log/Log.h"
-#include "cpp-icmplib.h"
+#include "net/cpp-icmplib.h"
 
 using namespace common;
 using namespace z_log;
@@ -38,7 +38,6 @@ int FusionClient::Open() {
         return -1;
     }
 
-    rb = RingBuffer_New(RecvSize);
     if (this->server_ip.empty()) {
         Error("server ip empty");
         return -1;
@@ -82,6 +81,7 @@ int FusionClient::Open() {
     Notice("connect server:%s port:%d success at %s", this->server_ip.c_str(), this->server_port,
            ctime((time_t *) &tv_now.tv_sec));
 
+    rb = new RingBuffer(RecvSize);
     this->sockfd = sockfd;
     isRun = true;
     return 0;
@@ -170,12 +170,9 @@ int FusionClient::Close() {
         }
     }
 
-    RingBuffer_Delete(rb);
-    rb = nullptr;
+    delete rb;
 
-    if (pkgBuffer != nullptr) {
-        free(pkgBuffer);
-    }
+    delete pkgBuffer;
 
     return 0;
 }
@@ -196,8 +193,9 @@ int FusionClient::ThreadDump(void *p) {
         if (!client->isRun) {
             continue;
         }
+        int recvLen = (client->rb->GetWriteLen() < (1024 * 512)) ? client->rb->GetWriteLen() : (1024 * 512);
 
-        nread = recv(client->sockfd, buf, 1024 * 512, 0);
+        nread = recv(client->sockfd, buf, recvLen, 0);
         if (nread < 0) {
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
                 continue;
@@ -212,8 +210,8 @@ int FusionClient::ThreadDump(void *p) {
 //            cout << "recv info" << endl;
             //update receive_time
             gettimeofday(&client->receive_time, nullptr);
-            //把接受数据放到rb_cameraRecv
-            RingBuffer_Write(client->rb, buf, nread);
+            //把接受数据放到
+            client->rb->Write(buf, nread);
         }
     }
     delete[] buf;
@@ -245,9 +243,9 @@ int FusionClient::ThreadProcessRecv(void *p) {
         switch (client->status) {
             case Start: {
                 //开始,寻找包头的开始标志
-                if (client->rb->available_for_read >= MEMBER_SIZE(PkgHead, tag)) {
+                if (client->rb->GetReadLen() >= MEMBER_SIZE(PkgHead, tag)) {
                     char start = '\0';
-                    RingBuffer_Read(client->rb, &start, 1);
+                    client->rb->Read(&start, sizeof(start));
                     if (start == '$') {
                         //找到开始标志
                         client->status = GetHeadStart;
@@ -257,13 +255,12 @@ int FusionClient::ThreadProcessRecv(void *p) {
                 break;
             case GetHeadStart: {
                 //开始寻找头
-                if (client->rb->available_for_read >= (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
+                if (client->rb->GetReadLen() >= (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
                     //获取完整的包头
                     client->pkgHead.tag = '$';
-                    RingBuffer_Read(client->rb, &client->pkgHead.version,
-                                    (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
+                    client->rb->Read(&client->pkgHead.version, (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
                     //buffer申请内存
-                    client->pkgBuffer = (uint8_t *) calloc(1, client->pkgHead.len);
+                    client->pkgBuffer = new uint8_t[client->pkgHead.len];
                     client->index = 0;
                     memcpy(client->pkgBuffer, &client->pkgHead, sizeof(pkgHead));
                     client->index += sizeof(pkgHead);
@@ -276,18 +273,18 @@ int FusionClient::ThreadProcessRecv(void *p) {
                 if (client->bodyLen <= 0) {
                     client->bodyLen = client->pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
                 }
-                if (client->rb->available_for_read >= client->bodyLen) {
+                if (client->rb->GetReadLen() >= client->bodyLen) {
                     //获取正文
-                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, client->bodyLen);
+                    client->rb->Read(client->pkgBuffer + client->index, client->bodyLen);
                     client->index += client->bodyLen;
                     client->status = GetBody;
                 }
             }
                 break;
             case GetBody: {
-                if (client->rb->available_for_read >= sizeof(PkgCRC)) {
+                if (client->rb->GetReadLen() >= sizeof(PkgCRC)) {
                     //获取CRC
-                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, sizeof(PkgCRC));
+                    client->rb->Read(client->pkgBuffer + client->index, sizeof(PkgCRC));
                     client->index += sizeof(PkgCRC);
                     client->status = GetCRC;
                 }
@@ -307,7 +304,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
                     Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
-                        free(client->pkgBuffer);
+                        delete[] client->pkgBuffer;
                         client->pkgBuffer = nullptr;//分包缓冲
                     }
                     client->index = 0;//分包缓冲的索引
@@ -329,7 +326,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
-                        free(client->pkgBuffer);
+                        delete[] client->pkgBuffer;
                         client->pkgBuffer = nullptr;//分包缓冲
                     }
                     client->index = 0;//分包缓冲的索引
@@ -341,7 +338,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
                 //意外状态错乱后，回到最初
                 client->bodyLen = 0;//获取分包头后，得到的包长度
                 if (client->pkgBuffer) {
-                    free(client->pkgBuffer);
+                    delete[] client->pkgBuffer;
                     client->pkgBuffer = nullptr;//分包缓冲
                 }
                 client->index = 0;//分包缓冲的索引

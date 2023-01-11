@@ -12,6 +12,7 @@
 #include <sys/epoll.h>
 #include <future>
 #include "server/ClientInfo.h"
+#include "net/tcpServer/TcpServer.hpp"
 #include "merge/merge.h"
 #include "DataUnit.h"
 #include "os/timeTask.hpp"
@@ -19,26 +20,12 @@
 using namespace std;
 using namespace os;
 
-class FusionServer {
+class FusionServer : public TcpServer<ClientInfo> {
 public:
-    uint16_t port = 9000;//暂定9000
-    int maxListen = 10;//最大监听数
     bool isMerge = true;
-
     const timeval checkStatusTimeval = {3, 0};//连续3s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
 
-    int sock = 0;//服务器socket
-    //已连入的客户端列表
-    vector<ClientInfo *> vectorClient;
-    pthread_mutex_t lockVectorClient = PTHREAD_MUTEX_INITIALIZER;
-
-    //epoll
-    int epoll_fd;
-    struct epoll_event ev;
-#define MAX_EVENTS 1024
-    struct epoll_event wait_events[MAX_EVENTS];
-    atomic_bool isRun;//运行标志
 public:
     typedef map<string, Timer *> TimerTasks;
 
@@ -63,9 +50,8 @@ public:
     //--------排队长度等信息------//
     DataUnitLineupInfoGather dataUnitLineupInfoGather;
 
-    bool isLocalThreadRun = false;
+    bool isLocalBusinessRun = false;
     //处理线程
-    std::shared_future<int> futureMonitor;//服务器监听客户端状态线程
 
     string db = "CLParking.db";
     string matrixNo = "0123456789";
@@ -109,39 +95,6 @@ private:
      * @return 0：success -1:fail
      */
     static int setNonblock(int fd);
-
-    /**
-     * 向客户端数组添加新的客户端
-     * @param client_sock 客户端 sock
-     * @param remote_addr 客户端地址信息
-     * @return 0：success -1：fail
-     */
-    int AddClient(int client_sock, struct sockaddr_in remote_addr);
-
-    /**
-     * 从客户端数组删除一个指定的客户端
-     * @param client_sock 客户端sock
-     * @return 0：success -1：fail
-     */
-    int RemoveClient(int client_sock);
-
-    /**
-     * 删除客户端数组成员
-     * @return 0
-     */
-    int DeleteAllClient();
-
-    /**
-     * 服务端监听状态监测线程
-     * @param pServer
-     */
-    static int ThreadMonitor(void *pServer);
-
-    /**
-     * 服务端存储的客户端数组状态检测线程
-     * @param pServer
-     */
-    static void ThreadCheck(void *pServer);
 
     static int StartTimerTask(void *pServer);
 

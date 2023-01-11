@@ -16,21 +16,13 @@ using namespace common;
 
 //string dirName;
 
-ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *super, int index,
-                       long long int rbCapacity) {
-    this->super = super;
-    this->indexSuper = index;
-    this->clientAddr = clientAddr;
-    this->sock = client_sock;
+ClientInfo::ClientInfo(int client_sock, struct sockaddr_in clientAddr, string name, void *super, int index,
+                       long long int rbCapacity, timeval *readTimeout) :
+        TcpServerClient(client_sock, clientAddr, name, super, index, rbCapacity, readTimeout) {
     this->type = 0;
-    bzero(this->extraData, sizeof(this->extraData) / sizeof(this->extraData[0]));
-    pthread_mutex_lock(&lock_receive_time);
     gettimeofday(&this->receive_time, nullptr);
-    pthread_mutex_unlock(&lock_receive_time);
-    this->rb = RingBuffer_New(rbCapacity);
     this->status = Start;
 
-    this->isLive.store(false);
     this->needRelease.store(false);
     this->direction.store(Unknown);
     this->queuePkg.setMax(300);
@@ -51,24 +43,8 @@ ClientInfo::ClientInfo(struct sockaddr_in clientAddr, int client_sock, void *sup
 }
 
 ClientInfo::~ClientInfo() {
-    Close();
-}
-
-int ClientInfo::Close() {
-    if (isLive.load() == true) {
-        isLive.store(false);
-    }
-    if (sock > 0) {
-        shutdown(sock, SHUT_RDWR);
-        close(sock);
-        sock = 0;
-    }
-    if (isLocalThreadRun) {
-        try {
-            futureDump.wait();
-        } catch (std::future_error e) {
-            Error(e.what());
-        }
+    TcpServerClient::Close();
+    if (isThreadRun) {
         try {
             futureGetPkg.wait();
         } catch (std::future_error e) {
@@ -81,23 +57,13 @@ int ClientInfo::Close() {
         }
     }
 
-
-    if (pkgBuffer != nullptr) {
-        free(pkgBuffer);
-        pkgBuffer = nullptr;
-    }
-
-    RingBuffer_Delete(this->rb);
-    this->rb = nullptr;
-    return 0;
+    delete[] this->pkgBuffer;
 }
 
-int ClientInfo::ProcessRecv() {
-    isLive.store(true);
 
-    isLocalThreadRun = true;
-    //dump
-    futureDump = std::async(std::launch::async, ThreadDump, this);
+int ClientInfo::Run() {
+
+    isThreadRun = true;
 
     //getPkg
     futureGetPkg = std::async(std::launch::async, ThreadGetPkg, this);
@@ -107,48 +73,6 @@ int ClientInfo::ProcessRecv() {
     return 0;
 }
 
-int ClientInfo::ThreadDump(void *pClientInfo) {
-    if (pClientInfo == nullptr) {
-        return -1;
-    }
-
-    auto client = (ClientInfo *) pClientInfo;
-
-    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    uint8_t *buffer = new uint8_t[1024 * 1024];
-    while (client->isLive.load()) {
-        int len = 0;
-//        usleep(10);
-        if (client->sock <= 0) {
-            continue;
-        }
-//        Info("sock %d recv begin========", client->sock);
-        len = recv(client->sock, buffer, 1024 * 1024, 0);
-//        Info("sock %d recv end========", client->sock);
-        if ((len == -1) && (errno != EAGAIN) && (errno != EBUSY) && (errno != EWOULDBLOCK)) {
-            Error("recv sock %d err:%s", client->sock, strerror(errno));
-            //向服务端抛出应该关闭
-//            client->needRelease.store(true);
-        } else if (len > 0) {
-//            Info("sock %d recv len %d", client->sock, len);
-            //将数据存入缓存
-            if (client->rb != nullptr) {
-                RingBuffer_Write(client->rb, buffer, len);
-//                Info("rb buffer write %d", len);
-                pthread_mutex_lock(&client->lock_receive_time);
-                client->isReceive_timeSet = true;
-                gettimeofday(&client->receive_time, nullptr);
-                pthread_mutex_unlock(&client->lock_receive_time);
-            }
-        }
-    }
-    delete[] buffer;
-    //这里退出的打印可能不正常，可以sock都关闭了
-    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    return 0;
-
-}
-
 int ClientInfo::ThreadGetPkg(void *pClientInfo) {
     if (pClientInfo == nullptr) {
         return -1;
@@ -156,12 +80,12 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    while (client->isLive.load()) {
+    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
+    while (client->isConnect) {
 
         usleep(10);
 
-        if (client->rb == nullptr || client->rb->available_for_read == 0) {
+        if (client->rb == nullptr || client->rb->GetReadLen() == 0) {
             //数据缓存区不存在
             continue;
         }
@@ -170,9 +94,9 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
         switch (client->status) {
             case Start: {
                 //开始,寻找包头的开始标志
-                if (client->rb->available_for_read >= MEMBER_SIZE(PkgHead, tag)) {
+                if (client->rb->GetReadLen() >= MEMBER_SIZE(PkgHead, tag)) {
                     char start = '\0';
-                    RingBuffer_Read(client->rb, &start, 1);
+                    client->rb->Read(&start, sizeof(start));
                     if (start == '$') {
                         //找到开始标志
                         client->status = GetHeadStart;
@@ -182,13 +106,12 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
             case GetHeadStart: {
                 //开始寻找头
-                if (client->rb->available_for_read >= (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
+                if (client->rb->GetReadLen() >= (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag))) {
                     //获取完整的包头
                     client->pkgHead.tag = '$';
-                    RingBuffer_Read(client->rb, &client->pkgHead.version,
-                                    (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
+                    client->rb->Read(&client->pkgHead.version, (sizeof(PkgHead) - MEMBER_SIZE(PkgHead, tag)));
                     //buffer申请内存
-                    client->pkgBuffer = (uint8_t *) calloc(1, client->pkgHead.len);
+                    client->pkgBuffer = new uint8_t[client->pkgHead.len];
                     client->index = 0;
                     memcpy(client->pkgBuffer, &client->pkgHead, sizeof(pkgHead));
                     client->index += sizeof(pkgHead);
@@ -201,18 +124,19 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 if (client->bodyLen <= 0) {
                     client->bodyLen = client->pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
                 }
-                if (client->rb->available_for_read >= client->bodyLen) {
+                if (client->rb->GetReadLen() >= client->bodyLen) {
                     //获取正文
-                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, client->bodyLen);
+                    client->rb->Read(client->pkgBuffer + client->index, client->bodyLen);
+
                     client->index += client->bodyLen;
                     client->status = GetBody;
                 }
             }
                 break;
             case GetBody: {
-                if (client->rb->available_for_read >= sizeof(PkgCRC)) {
+                if (client->rb->GetReadLen() >= sizeof(PkgCRC)) {
                     //获取CRC
-                    RingBuffer_Read(client->rb, client->pkgBuffer + client->index, sizeof(PkgCRC));
+                    client->rb->Read(client->pkgBuffer + client->index, sizeof(PkgCRC));
                     client->index += sizeof(PkgCRC);
                     client->status = GetCRC;
                 }
@@ -232,18 +156,14 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                     Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
-                        free(client->pkgBuffer);
-                        client->pkgBuffer = nullptr;//分包缓冲
+                        delete[] client->pkgBuffer;
                     }
                     client->index = 0;//分包缓冲的索引
                     client->status = Start;
                 } else {
 
                     //记录接包时间
-                    pthread_mutex_lock(&client->lock_receive_time);
                     gettimeofday(&client->receive_time, nullptr);
-                    pthread_mutex_unlock(&client->lock_receive_time);
-
                     //存入分包队列
                     if (!client->queuePkg.push(pkg)) {
 //                        Info("client:%d 分包队列已满，丢弃此包", client->sock);
@@ -254,8 +174,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
-                        free(client->pkgBuffer);
-                        client->pkgBuffer = nullptr;//分包缓冲
+                        delete[] client->pkgBuffer;
                     }
                     client->index = 0;//分包缓冲的索引
                     client->status = Start;
@@ -267,7 +186,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 client->bodyLen = 0;//获取分包头后，得到的包长度
                 if (client->pkgBuffer) {
                     free(client->pkgBuffer);
-                    client->pkgBuffer = nullptr;//分包缓冲
+                    delete[] client->pkgBuffer;
                 }
                 client->index = 0;//分包缓冲的索引
                 client->status = Start;
@@ -275,7 +194,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
     return 0;
 }
 
@@ -286,8 +205,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
-    while (client->isLive.load()) {
+    Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
+    while (client->isConnect) {
         Pkg pkg;
         if (!client->queuePkg.pop(pkg)) {
             continue;
@@ -324,14 +243,12 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 watchData.JsonUnmarshal(in);
 
                 Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%zu", client->sock,
-                      inet_ntoa(client->clientAddr.sin_addr),
+                      inet_ntoa(client->addr.sin_addr),
                       watchData.timstamp,
                       watchData.isHasImage, watchData.lstObjTarget.size());
 
                 //记录接包时间
-                pthread_mutex_lock(&client->lock_receive_time);
                 gettimeofday(&client->receive_time, nullptr);
-                pthread_mutex_unlock(&client->lock_receive_time);
 
                 //根据结构体内的方向变量设置客户端的方向
                 client->direction.store(watchData.direction);
@@ -373,7 +290,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
                     Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
-                         inet_ntoa(client->clientAddr.sin_addr));
+                         inet_ntoa(client->addr.sin_addr));
                 } else {
 //                    Info("client:%d,timestamp %f CrossTrafficJamAlarm存入", client->sock, crossTrafficJamAlarm.timestamp);
                 }
@@ -397,7 +314,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, client->indexSuper)) {
-                    Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
             }
                 break;
@@ -424,7 +341,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, client->indexSuper)) {
-                    Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
 
             }
@@ -445,19 +362,19 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
                 if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, client->indexSuper)) {
-                    Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->clientAddr.sin_addr));
+                    Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
             }
                 break;
             default: {
                 //最后没有对应的方法名
-                Error("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->clientAddr.sin_addr),
+                Error("client:%d %s 最后没有对应的方法名:%d,内容:%s", client->sock, inet_ntoa(client->addr.sin_addr),
                       pkg.head.cmd, pkg.body.c_str());
             }
                 break;;
         }
 
     }
-    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->clientAddr.sin_addr), __FUNCTION__);
+    Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
     return 0;
 }

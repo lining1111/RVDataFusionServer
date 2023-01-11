@@ -60,7 +60,7 @@ set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
 
 set(SRC_DIRS .
         log
-        ringBuffer
+        ringbuffer
         common
         os
         monitor

@@ -21,9 +21,9 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
         ServerInfo item;
         item.ip = "localhost";
         item.port = iter.second->port;
-        for (auto iter1:iter.second->vectorClient) {
+        for (auto iter1:iter.second->clients) {
             ServerClientInfo item1;
-            item1.ip = string(inet_ntoa(iter1->clientAddr.sin_addr));
+            item1.ip = string(inet_ntoa(iter1->addr.sin_addr));
             item1.direction = iter1->direction;
             item.clients.push_back(item1);
         }
