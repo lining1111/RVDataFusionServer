@@ -37,8 +37,7 @@ public:
             South,//南
             West,//西
     };
-    string config = "./config.ini";
-    thread threadTimerTask;
+    vector<string> unOrder;//记录已传入的路号，方便将数据存入对应的数据集合内的输入量
     //---------------监控数据相关---------//
     DataUnitFusionData dataUnitFusionData;
     //---------车辆轨迹---------//
@@ -58,9 +57,7 @@ public:
     string plateId;
 
 public:
-    FusionServer(int port, bool isMerge);
-
-    FusionServer(uint16_t port, string config, int maxListen, bool isMerge);
+    FusionServer(int port, bool isMerge, int cliNum);
 
     ~FusionServer();
 
@@ -88,13 +85,9 @@ public:
      */
     int Close();
 
+
+    int FindIndexInUnOrder(const string in);
 private:
-    /**
-     * 设置sock 非阻塞
-     * @param fd
-     * @return 0：success -1:fail
-     */
-    static int setNonblock(int fd);
 
     static int StartTimerTask(void *pServer);
 

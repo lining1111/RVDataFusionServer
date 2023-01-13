@@ -30,7 +30,6 @@ public:
 public:
     //都是客户端的属性信息
     void *super;
-    int indexSuper;
     int type = 0;
     vector<uint8_t> extraData;//特性数据
     bool isReceive_timeSet = false;
@@ -62,7 +61,7 @@ public:
      * @
      * @param rbCapacity 客户端循环buffer的最大容量
      */
-    ClientInfo(int client_sock, struct sockaddr_in clientAddr, string name, void *super, int index,
+    ClientInfo(int client_sock, struct sockaddr_in clientAddr, string name, void *super,
                long long int rbCapacity = MAX_RB, timeval *readTimeout = nullptr);
 
     /**

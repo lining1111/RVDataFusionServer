@@ -16,9 +16,9 @@ using namespace common;
 
 //string dirName;
 
-ClientInfo::ClientInfo(int client_sock, struct sockaddr_in clientAddr, string name, void *super, int index,
+ClientInfo::ClientInfo(int client_sock, struct sockaddr_in clientAddr, string name, void *super,
                        long long int rbCapacity, timeval *readTimeout) :
-        TcpServerClient(client_sock, clientAddr, name, super, index, rbCapacity, readTimeout) {
+        TcpServerClient(client_sock, clientAddr, name, super, rbCapacity, readTimeout) {
     this->type = 0;
     gettimeofday(&this->receive_time, nullptr);
     this->status = Start;
@@ -288,7 +288,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 //                      crossTrafficJamAlarm.timestamp);
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, client->indexSuper)) {
+
+                if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, server->FindIndexInUnOrder(crossTrafficJamAlarm.crossID))) {
                     Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
                          inet_ntoa(client->addr.sin_addr));
                 } else {
@@ -313,7 +314,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, client->indexSuper)) {
+                if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, server->FindIndexInUnOrder(lineupInfo.crossID))) {
                     Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
             }
@@ -340,7 +341,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, client->indexSuper)) {
+                if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, server->FindIndexInUnOrder(trafficFlow.crossID))) {
                     Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
 
@@ -361,7 +362,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, client->indexSuper)) {
+                if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, server->FindIndexInUnOrder(multiViewCarTrack.crossID))) {
                     Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
             }

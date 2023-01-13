@@ -23,26 +23,15 @@
 using namespace z_log;
 using namespace os;
 
-FusionServer::FusionServer(int port, bool isMerge) : TcpServer<ClientInfo>(port, "FusionServer") {
+FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer") {
     this->isMerge = isMerge;
+    unOrder.resize(cliNum);
+    dataUnitFusionData.init(30, 100, 100, cliNum);//100ms一帧
+    dataUnitCarTrackGather.init(30, 66, 33, cliNum);//66ms一帧
+    dataUnitTrafficFlowGather.init(30, 1000, 500, cliNum);//1000ms一帧
+    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, cliNum);//1000ms一帧
+    dataUnitLineupInfoGather.init(30, 1000, 500, cliNum);//1000ms一帧
 
-    dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
-    dataUnitCarTrackGather.init(30, 66, 33, 4);//66ms一帧
-    dataUnitTrafficFlowGather.init(30, 1000, 500, 4);//1000ms一帧
-    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
-    dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
-
-}
-
-FusionServer::FusionServer(uint16_t port, string config, int maxListen, bool isMerge) :
-        TcpServer<ClientInfo>(port, "FusionServer") {
-    this->config = config;
-    this->isMerge = isMerge;
-    dataUnitFusionData.init(30, 100, 100, 4);//100ms一帧
-    dataUnitCarTrackGather.init(30, 66, 33, 4);//66ms一帧
-    dataUnitTrafficFlowGather.init(30, 1000, 500, 4);//1000ms一帧
-    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, 4);//1000ms一帧
-    dataUnitLineupInfoGather.init(30, 1000, 500, 4);//1000ms一帧
 }
 
 FusionServer::~FusionServer() {
@@ -132,11 +121,32 @@ int FusionServer::Close() {
     return 0;
 }
 
-int FusionServer::setNonblock(int fd) {
-    if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) {
-        return -1;
+int FusionServer::FindIndexInUnOrder(const string in) {
+    int index = -1;
+    //首先遍历是否已经存在
+    int alreadyExistIndex = -1;
+    for (int i = 0; i < unOrder.size(); i++) {
+        auto iter = unOrder.at(i);
+        if (iter == in) {
+            alreadyExistIndex = i;
+            break;
+        }
     }
-    return 0;
+    if (alreadyExistIndex >= 0) {
+        index = alreadyExistIndex;
+    } else {
+        //不存在就新加
+        for (int i = 0; i < unOrder.size(); i++) {
+            auto iter = unOrder.at(i);
+            if (iter.empty()) {
+                iter = in;
+                index = i;
+                break;
+            }
+        }
+    }
+
+    return index;
 }
 
 int FusionServer::StartTimerTask(void *pServer) {
@@ -260,5 +270,7 @@ void FusionServer::TaskCarTrackGather(void *pServer, int cache) {
         dataUnit->FindOneFrame(cache, 1000 * 60, DataUnitCarTrackGather::TaskProcessOneFrame);
     }
 }
+
+
 
 

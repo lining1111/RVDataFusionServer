@@ -74,6 +74,8 @@ private:
         //3.设置属性
         int opt = 1;
         setsockopt(sockFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        setsockopt(sockFd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
 
 //    struct timeval timeout;
 //    timeout.tv_sec = 3;
@@ -136,7 +138,7 @@ private:
     */
     void cbConnect(int clientSock, struct sockaddr_in clientSockAddr) {
         string name = "serverClient " + to_string(clientSock);
-        TcpServerClient *client = new TcpServerClient(clientSock, clientSockAddr, name, this, (int) clients.size());
+        TcpServerClient *client = new TcpServerClient(clientSock, clientSockAddr, name, this);
         Info("client %s connect", inet_ntoa(client->addr.sin_addr));
         pthread_mutex_lock(&lockClients);
         clients.push_back(client);

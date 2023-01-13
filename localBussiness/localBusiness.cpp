@@ -36,7 +36,7 @@ LocalBusiness::~LocalBusiness() {
 }
 
 void LocalBusiness::AddServer(string name, int port, bool isMerge) {
-    FusionServer *server = new FusionServer(port, isMerge);
+    FusionServer *server = new FusionServer(port, isMerge, 4);
     server->port = port;
     serverList.insert(make_pair(name, server));
 }

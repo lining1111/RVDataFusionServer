@@ -23,7 +23,6 @@ using namespace std;
 class TcpServerClient {
 public:
     void *super;
-    int superIndex;
     string name;
     int sock;
     struct sockaddr_in addr;
@@ -70,9 +69,9 @@ public:
     bool isConnect = false;
     bool isClose = false;
 public:
-    TcpServerClient(int sock, struct sockaddr_in addr, string name, void *super, int superIndex,
+    TcpServerClient(int sock, struct sockaddr_in addr, string name, void *super,
                     int recvMax = (1024 * 1024), timeval *readTimeout = nullptr) :
-            sock(sock), addr(addr), name(name), super(super), superIndex(superIndex) {
+            sock(sock), addr(addr), name(name), super(super) {
         isConnect = true;
         if (readTimeout != nullptr) {
             setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *) &readTimeout, sizeof(struct timeval));
