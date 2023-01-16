@@ -59,7 +59,7 @@ add_definitions(-D${ARCH})
 set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
 
 set(SRC_DIRS .
-        unity
+        util
         log
         ringbuffer
         common

@@ -2,8 +2,8 @@
 // Created by lining on 1/16/23.
 //
 
-#ifndef _UNITY_H
-#define _UNITY_H
+#ifndef _UTIL_H
+#define _UTIL_H
 
 #include <atomic>
 
@@ -22,4 +22,4 @@ public:
 };
 
 
-#endif //_UNITY_H
+#endif //_UTIL_H
