@@ -265,6 +265,9 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                         } else {
 //                    Info("client:%d,timestamp %f WatchData存入", client->sock, watchData.timstamp);
                         }
+
+                        server->dataUnitFusionData.updateIMaxSizeForTask(i);
+                        break;
 //                        Info("client-%d WatchData size:%d", client->sock,
 //                             server->dataUnitFusionData.i_queue_vector.at(i).size());
                     }
@@ -289,12 +292,15 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 //存入队列
                 auto server = (FusionServer *) client->super;
 
-                if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, server->FindIndexInUnOrder(crossTrafficJamAlarm.crossID))) {
+                if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, server->FindIndexInUnOrder(
+                        crossTrafficJamAlarm.crossID))) {
                     Info("client:%d %s CrossTrafficJamAlarm,丢弃消息", client->sock,
                          inet_ntoa(client->addr.sin_addr));
                 } else {
 //                    Info("client:%d,timestamp %f CrossTrafficJamAlarm存入", client->sock, crossTrafficJamAlarm.timestamp);
                 }
+                server->dataUnitCrossTrafficJamAlarm.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        crossTrafficJamAlarm.crossID));
 //                Info("client-%d CrossTrafficJamAlarm size:%d", client->sock,
 //                     server->dataUnitCrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).size());
             }
@@ -314,9 +320,13 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitLineupInfoGather.pushI(lineupInfo, server->FindIndexInUnOrder(lineupInfo.crossID))) {
+                if (!server->dataUnitLineupInfoGather.pushI(lineupInfo,
+                                                            server->FindIndexInUnOrder(lineupInfo.crossID))) {
                     Info("client:%d %s LineupInfo,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
+
+                server->dataUnitLineupInfoGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        lineupInfo.crossID));
             }
                 break;
             case CmdType::CmdPicData : {
@@ -341,9 +351,13 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow, server->FindIndexInUnOrder(trafficFlow.crossID))) {
+                if (!server->dataUnitTrafficFlowGather.pushI(trafficFlow,
+                                                             server->FindIndexInUnOrder(trafficFlow.crossID))) {
                     Info("client:%d  %s TrafficFlow队列已满,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
+
+                server->dataUnitTrafficFlowGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        trafficFlow.crossID));
 
             }
                 break;
@@ -357,14 +371,18 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                     Error("MultiviewCarTrack json 解析失败%s", reader.getFormattedErrorMessages().c_str());
                     continue;
                 }
-                CarTrack multiViewCarTrack;
-                multiViewCarTrack.JsonUnmarshal(in);
+                CarTrack carTrack;
+                carTrack.JsonUnmarshal(in);
 
                 //存入队列
                 auto server = (FusionServer *) client->super;
-                if (!server->dataUnitCarTrackGather.pushI(multiViewCarTrack, server->FindIndexInUnOrder(multiViewCarTrack.crossID))) {
+                if (!server->dataUnitCarTrackGather.pushI(carTrack,
+                                                          server->FindIndexInUnOrder(carTrack.crossID))) {
                     Info("client:%d %s MultiViewCarTrack,丢弃消息", client->sock, inet_ntoa(client->addr.sin_addr));
                 }
+
+                server->dataUnitCarTrackGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        carTrack.crossID));
             }
                 break;
             default: {

@@ -8,7 +8,10 @@
 #include "Queue.h"
 #include "common/common.h"
 #include <mutex>
+#include <condition_variable>
 #include <iostream>
+#include <atomic>
+#include <functional>
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
 
@@ -19,29 +22,36 @@ using namespace std;
 template<typename I, typename O>
 class DataUnit {
 public:
-//    mutex mtx;
     int sn = 0;
     string crossID;
     vector<Queue<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
     int fs_ms;
+    int cache = 0;
     int cap;
     int numI = 0;
     int thresholdFrame = 10;//时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
+    atomic<int> i_maxSize = {0};//输入数组内单个通道内的最大缓存数
+    atomic<int> i_maxSizeIndex = {0};
+    mutex mtx_i;
+    condition_variable cv_i_task;
+
+    mutex mtx_o;
+    condition_variable cv_o_task;
 public:
     typedef I IType;
     typedef O OType;
     vector<I> oneFrame;//寻找同一时间戳的数据集
 
 public:
-    DataUnit() : cap(30), fs_ms(100), thresholdFrame(100), numI(4) {
+    DataUnit() : cap(30), fs_ms(100), thresholdFrame(100), numI(4), cache(3) {
 
     }
 
-    DataUnit(int c, int fs_ms, int threshold_ms, int i_num) {
-        init(c, fs_ms, threshold_ms, i_num);
+    DataUnit(int c, int fs_ms, int threshold_ms, int i_num, int i_cache) {
+        init(c, fs_ms, threshold_ms, i_num, i_cache);
     }
 
     ~DataUnit() {
@@ -50,11 +60,12 @@ public:
 
 public:
 
-    void init(int c, int fs_ms, int threshold_ms, int i_num) {
+    void init(int c, int fs_ms, int threshold_ms, int i_num, int cache) {
         this->fs_ms = fs_ms;
         this->cap = c;
         this->numI = i_num;
-        thresholdFrame = threshold_ms;
+        this->thresholdFrame = threshold_ms;
+        this->cache = cache;
         i_queue_vector.resize(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
             auto iter = i_queue_vector.at(i);
@@ -177,6 +188,42 @@ public:
             return true;
         }
     }
+
+    void updateIMaxSizeForTask(int index) {
+        unique_lock<mutex> lck(mtx_i);
+
+        //更新最大缓存信息
+        if (i_queue_vector.at(index).size() > i_maxSize) {
+            i_maxSize = i_queue_vector.at(index).size();
+            i_maxSizeIndex = index;
+        }
+
+        if (i_maxSize >= cache) {
+            cv_i_task.notify_one();
+        }
+    }
+
+    void runTask(std::function<void()> task) {
+        unique_lock<mutex> lck(mtx_i);
+        while (i_maxSize < cache) {
+            cv_i_task.wait(lck);
+        }
+
+        //执行相应的流程
+        task();
+        //更新最大缓存信息
+        int maxSize = 0;
+        int maxSizeIndex = 0;
+        for (int i = 0; i < i_queue_vector.size(); i++) {
+            if (i_queue_vector.at(i).size() > maxSize) {
+                maxSize = i_queue_vector.at(i).size();
+                maxSizeIndex = i;
+            }
+        }
+        i_maxSize = maxSize;
+        i_maxSizeIndex = maxSizeIndex;
+
+    }
 };
 
 //车辆轨迹
@@ -187,11 +234,9 @@ public:
 
     ~DataUnitCarTrackGather();
 
-    DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num, int cache);
 
-    typedef int(*Task)(DataUnitCarTrackGather *);
-
-    int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
+    static void FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t toCacheCha, bool isFront);
 
     static int ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
@@ -207,11 +252,9 @@ public:
 
     ~DataUnitTrafficFlowGather();
 
-    DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num, int cache);
 
-    typedef int(*Task)(DataUnitTrafficFlowGather *);
-
-    int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
+    static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, uint64_t toCacheCha, bool isFront = true);
 
     static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
@@ -227,11 +270,9 @@ public:
 
     ~DataUnitCrossTrafficJamAlarm();
 
-    DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num, int cache);
 
-    typedef int(*Task)(DataUnitCrossTrafficJamAlarm *);
-
-    int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
+    static void FindOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit, uint64_t toCacheCha, bool isFront = true);
 
     static int ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
@@ -247,11 +288,9 @@ public:
 
     ~DataUnitLineupInfoGather();
 
-    DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num, int cache);
 
-    typedef int(*Task)(DataUnitLineupInfoGather *);
-
-    int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront = true);
+    static void FindOneFrame(DataUnitLineupInfoGather *dataUnit, uint64_t toCacheCha, bool isFront = true);
 
     static int ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
@@ -267,16 +306,15 @@ public:
 
     ~DataUnitFusionData();
 
-    DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num);
+    DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num, int cache);
 
     typedef enum {
         NotMerge,
         Merge,
     } MergeType;
 
-    typedef int(*Task)(DataUnitFusionData *, MergeType);
-
-    int FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, MergeType mergeType, bool isFront = true);
+    static void
+    FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, bool isFront = true);
 
     static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);

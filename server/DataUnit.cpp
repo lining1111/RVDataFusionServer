@@ -21,77 +21,61 @@ DataUnitCarTrackGather::~DataUnitCarTrackGather() {
 
 }
 
-DataUnitCarTrackGather::DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num) :
-        DataUnit(c, fs_ms, threshold_ms, i_num) {
+DataUnitCarTrackGather::DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
 
 }
 
-int DataUnitCarTrackGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
-    //1寻找最大帧数
-    int maxPkgs = 0;
-    int maxPkgsIndex;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        if (sizeI(i) > maxPkgs) {
-            maxPkgs = sizeI(i);
-            maxPkgsIndex = i;
-        }
-    }
-    //未达到缓存数，退出
-    if (maxPkgs < cache) {
-        return -1;
-    }
-    //2确定标定的时间戳
+void
+DataUnitCarTrackGather::FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t toCacheCha, bool isFront) {
+    //1确定标定的时间戳
     IType refer;
     if (isFront) {
-        frontI(refer, maxPkgsIndex);
-
+        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
     } else {
-        backI(refer, maxPkgsIndex);
+        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
     }
-    //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
+    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (fs_ms * cache) - toCacheCha);
+             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
-        curTimestamp = timestampThreshold;
+        dataUnit->curTimestamp = timestampThreshold;
     } else {
-        curTimestamp = (uint64_t) refer.timestamp;
+        dataUnit->curTimestamp = (uint64_t) refer.timestamp;
     }
-    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, curTimestamp);
-    uint64_t leftTimestamp = curTimestamp - thresholdFrame;
-    uint64_t rightTimestamp = curTimestamp + thresholdFrame;
+    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, dataUnit->curTimestamp);
+    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
-    //3取数
-    oneFrame.clear();
-    oneFrame.resize(numI);
+    //2取数
+    dataUnit->oneFrame.clear();
+    dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, this, i, leftTimestamp,
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
+                                                    leftTimestamp,
                                                     rightTimestamp);
         finishs.push_back(finish);
     }
 
-    for (int i = 0; i < i_queue_vector.size(); i++) {
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         finishs.at(i).wait();
     }
 
 
     //打印下每一路取到的时间戳
-    for (int i = 0; i < oneFrame.size(); i++) {
-        auto iter = oneFrame.at(i);
+    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+        auto iter = dataUnit->oneFrame.at(i);
         if (!iter.oprNum.empty()) {
             Debug("%s第%d路取到的时间戳为%lu", __PRETTY_FUNCTION__, i, (uint64_t) iter.timestamp);
         }
     }
 
     //调用后续的处理
-    if (task != nullptr) {
-        return task(this);
-    }
-
-    return 0;
+    TaskProcessOneFrame(dataUnit);
 }
 
 int DataUnitCarTrackGather::ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
@@ -160,13 +144,19 @@ int DataUnitCarTrackGather::TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit
             }
         }
     }
+    int ret = 0;
     if (!dataUnit->pushO(item)) {
         Debug("%s队列已满，未存入数据 timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return -1;
+        ret = -1;
     } else {
         Debug("%s数据存入,timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return 0;
+        ret = 0;
     }
+
+    unique_lock<mutex> lck(dataUnit->mtx_o);
+    dataUnit->cv_o_task.notify_one();
+
+    return ret;
 }
 
 
@@ -178,74 +168,58 @@ DataUnitTrafficFlowGather::~DataUnitTrafficFlowGather() {
 
 }
 
-DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num) :
-        DataUnit(c, fs_ms, threshold_ms, i_num) {
+DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
 
 }
 
-int DataUnitTrafficFlowGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
-    //1寻找最大帧数
-    int maxPkgs = 0;
-    int maxPkgsIndex;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        if (sizeI(i) > maxPkgs) {
-            maxPkgs = sizeI(i);
-            maxPkgsIndex = i;
-        }
-    }
-    //未达到缓存数，退出
-    if (maxPkgs < cache) {
-        return -1;
-    }
-    //2确定标定的时间戳
+void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit, uint64_t toCacheCha, bool isFront) {
+    //1确定标定的时间戳
     IType refer;
     if (isFront) {
-        frontI(refer, maxPkgsIndex);
+        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
     } else {
-        backI(refer, maxPkgsIndex);
+        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
     }
-    //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
+    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (fs_ms * cache) - toCacheCha);
+             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
-        curTimestamp = timestampThreshold;
+        dataUnit->curTimestamp = timestampThreshold;
     } else {
-        curTimestamp = (uint64_t) refer.timestamp;
+        dataUnit->curTimestamp = (uint64_t) refer.timestamp;
     }
-    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, curTimestamp);
-    uint64_t leftTimestamp = curTimestamp - thresholdFrame;
-    uint64_t rightTimestamp = curTimestamp + thresholdFrame;
+    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, dataUnit->curTimestamp);
+    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
-    //3取数
-    oneFrame.clear();
-    oneFrame.resize(numI);
+    //2取数
+    dataUnit->oneFrame.clear();
+    dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, this, i, leftTimestamp,
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
+                                                    leftTimestamp,
                                                     rightTimestamp);
         finishs.push_back(finish);
     }
 
-    for (int i = 0; i < i_queue_vector.size(); i++) {
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         finishs.at(i).wait();
     }
 
     //打印下每一路取到的时间戳
-    for (int i = 0; i < oneFrame.size(); i++) {
-        auto iter = oneFrame.at(i);
+    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+        auto iter = dataUnit->oneFrame.at(i);
         if (!iter.oprNum.empty()) {
             Debug("%s第%d路取到的时间戳为%lu", __PRETTY_FUNCTION__, i, (uint64_t) iter.timestamp);
         }
     }
     //调用后续的处理
-    if (task != nullptr) {
-        return task(this);
-    }
-
-    return 0;
+    TaskProcessOneFrame(dataUnit);
 }
 
 int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
@@ -315,13 +289,18 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame(DataUnitTrafficFlowGather *da
             }
         }
     }
+    int ret = 0;
     if (!dataUnit->pushO(item)) {
         Debug("%s队列已满，未存入数据 timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return -1;
+        ret = -1;
     } else {
         Debug("%s数据存入,timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return 0;
+        ret = 0;
     }
+    unique_lock<mutex> lck(dataUnit->mtx_o);
+    dataUnit->cv_o_task.notify_one();
+
+    return ret;
 }
 
 
@@ -333,75 +312,59 @@ DataUnitCrossTrafficJamAlarm::~DataUnitCrossTrafficJamAlarm() {
 
 }
 
-DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num) :
-        DataUnit(c, fs_ms, threshold_ms, i_num) {
+DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
 
 }
 
-int DataUnitCrossTrafficJamAlarm::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
-    //1寻找最大帧数
-    int maxPkgs = 0;
-    int maxPkgsIndex;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        if (sizeI(i) > maxPkgs) {
-            maxPkgs = sizeI(i);
-            maxPkgsIndex = i;
-        }
-    }
-    //未达到缓存数，退出
-    if (maxPkgs < cache) {
-        return -1;
-    }
-//    Debug("maxPkg:%d", maxPkgs);
-    //2确定标定的时间戳
+void
+DataUnitCrossTrafficJamAlarm::FindOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit, uint64_t toCacheCha, bool isFront) {
+    //1确定标定的时间戳
     IType refer;
     if (isFront) {
-        frontI(refer, maxPkgsIndex);
+        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
     } else {
-        backI(refer, maxPkgsIndex);
+        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
     }
-    //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
+    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (fs_ms * cache) - toCacheCha);
+             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
-        curTimestamp = timestampThreshold;
+        dataUnit->curTimestamp = timestampThreshold;
     } else {
-        curTimestamp = (uint64_t) refer.timestamp;
+        dataUnit->curTimestamp = (uint64_t) refer.timestamp;
     }
-    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, curTimestamp);
-    uint64_t leftTimestamp = curTimestamp - thresholdFrame;
-    uint64_t rightTimestamp = curTimestamp + thresholdFrame;
+    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, dataUnit->curTimestamp);
+    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
-    //3取数
-    oneFrame.clear();
-    oneFrame.resize(numI);
+    //2取数
+    dataUnit->oneFrame.clear();
+    dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, this, i, leftTimestamp,
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
+                                                    leftTimestamp,
                                                     rightTimestamp);
         finishs.push_back(finish);
     }
 
-    for (int i = 0; i < i_queue_vector.size(); i++) {
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         finishs.at(i).wait();
     }
     //打印下每一路取到的时间戳
-    for (int i = 0; i < oneFrame.size(); i++) {
-        auto iter = oneFrame.at(i);
+    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+        auto iter = dataUnit->oneFrame.at(i);
         if (!iter.oprNum.empty()) {
             Debug("%s第%d路取到的时间戳为%lu", __PRETTY_FUNCTION__, i, (uint64_t) iter.timestamp);
         }
     }
 
     //调用后续的处理
-    if (task != nullptr) {
-        return task(this);
-    }
-
-    return 0;
+    TaskProcessOneFrame(dataUnit);
 }
 
 int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
@@ -478,13 +441,17 @@ int DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAla
         }
     }
 
+    int ret = 0;
     if (!dataUnit->pushO(item)) {
         Debug("%s队列已满，未存入数据 timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return -1;
+        ret = -1;
     } else {
         Debug("%s数据存入,timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return 0;
+        ret = 0;
     }
+    unique_lock<mutex> lck(dataUnit->mtx_o);
+    dataUnit->cv_o_task.notify_one();
+    return ret;
 }
 
 
@@ -496,74 +463,58 @@ DataUnitLineupInfoGather::~DataUnitLineupInfoGather() {
 
 }
 
-DataUnitLineupInfoGather::DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num) :
-        DataUnit(c, fs_ms, threshold_ms, i_num) {
+DataUnitLineupInfoGather::DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
 
 }
 
-int DataUnitLineupInfoGather::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, bool isFront) {
-    //1寻找最大帧数
-    int maxPkgs = 0;
-    int maxPkgsIndex;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        if (sizeI(i) > maxPkgs) {
-            maxPkgs = sizeI(i);
-            maxPkgsIndex = i;
-        }
-    }
-    //未达到缓存数，退出
-    if (maxPkgs < cache) {
-        return -1;
-    }
-    //2确定标定的时间戳
+void DataUnitLineupInfoGather::FindOneFrame(DataUnitLineupInfoGather *dataUnit, uint64_t toCacheCha, bool isFront) {
+    //1确定标定的时间戳
     IType refer;
     if (isFront) {
-        frontI(refer, maxPkgsIndex);
+        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
     } else {
-        backI(refer, maxPkgsIndex);
+        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
     }
-    //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
+    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (fs_ms * cache) - toCacheCha);
+             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
-        curTimestamp = timestampThreshold;
+        dataUnit->curTimestamp = timestampThreshold;
     } else {
-        curTimestamp = (uint64_t) refer.timestamp;
+        dataUnit->curTimestamp = (uint64_t) refer.timestamp;
     }
-    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, curTimestamp);
-    uint64_t leftTimestamp = curTimestamp - thresholdFrame;
-    uint64_t rightTimestamp = curTimestamp + thresholdFrame;
+    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, dataUnit->curTimestamp);
+    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
-    //3取数
-    oneFrame.clear();
-    oneFrame.resize(numI);
+    //2取数
+    dataUnit->oneFrame.clear();
+    dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, this, i, leftTimestamp,
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
+                                                    leftTimestamp,
                                                     rightTimestamp);
         finishs.push_back(finish);
     }
 
-    for (int i = 0; i < i_queue_vector.size(); i++) {
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         finishs.at(i).wait();
     }
     //打印下每一路取到的时间戳
-    for (int i = 0; i < oneFrame.size(); i++) {
-        auto iter = oneFrame.at(i);
+    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+        auto iter = dataUnit->oneFrame.at(i);
         if (!iter.oprNum.empty()) {
             Debug("%s第%d路取到的时间戳为%lu", __PRETTY_FUNCTION__, i, (uint64_t) iter.timestamp);
         }
     }
 
     //调用后续的处理
-    if (task != nullptr) {
-        return task(this);
-    }
-
-    return 0;
+    TaskProcessOneFrame(dataUnit);
 }
 
 int DataUnitLineupInfoGather::ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
@@ -632,13 +583,19 @@ int DataUnitLineupInfoGather::TaskProcessOneFrame(DataUnitLineupInfoGather *data
             }
         }
     }
+
+    int ret = 0;
     if (!dataUnit->pushO(item)) {
         Debug("%s队列已满，未存入数据 timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return -1;
+        ret = -1;
     } else {
         Debug("%s数据存入,timestamp:%lu", __PRETTY_FUNCTION__, (uint64_t) item.timestamp);
-        return 0;
+        ret = 0;
     }
+    unique_lock<mutex> lck(dataUnit->mtx_o);
+    dataUnit->cv_o_task.notify_one();
+
+    return ret;
 }
 
 
@@ -650,80 +607,61 @@ DataUnitFusionData::~DataUnitFusionData() {
 
 }
 
-DataUnitFusionData::DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num) :
-        DataUnit(c, fs_ms, threshold_ms, i_num) {
+DataUnitFusionData::DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
 
 }
 
-int DataUnitFusionData::FindOneFrame(unsigned int cache, uint64_t toCacheCha, Task task, MergeType mergeType,
-                                     bool isFront) {
-    //1寻找最大帧数
-    int maxPkgs = 0;
-    int maxPkgsIndex;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-//        Debug("i index:%d size:%d cur max:%d", i, sizeI(i), maxPkgs);
-        if (sizeI(i) > maxPkgs) {
-            maxPkgs = sizeI(i);
-            maxPkgsIndex = i;
-        }
-    }
-
-    //未达到缓存数，退出
-    if (maxPkgs < cache) {
-        return -1;
-    }
-//    Debug("maxPkg:%d", maxPkgs);
-    //2确定标定的时间戳
+void
+DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, bool isFront) {
+    //1确定标定的时间戳
     IType refer;
     if (isFront) {
-        frontI(refer, maxPkgsIndex);
+        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
     } else {
-        backI(refer, maxPkgsIndex);
+        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
     }
-    //2.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
+    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (fs_ms * cache) - toCacheCha);
+             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timstamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timstamp, (uint64_t) timestampThreshold);
-        curTimestamp = timestampThreshold;
+        dataUnit->curTimestamp = timestampThreshold;
     } else {
-        curTimestamp = (uint64_t) refer.timstamp;
+        dataUnit->curTimestamp = (uint64_t) refer.timstamp;
     }
-    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, curTimestamp);
-    uint64_t leftTimestamp = curTimestamp - thresholdFrame;
-    uint64_t rightTimestamp = curTimestamp + thresholdFrame;
+    Debug("%s取同一帧时,标定时间戳为:%lu", __PRETTY_FUNCTION__, dataUnit->curTimestamp);
+    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
     //3取数
-    oneFrame.clear();
-    oneFrame.resize(numI);
+    dataUnit->oneFrame.clear();
+    dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
-    for (int i = 0; i < i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, this, i, leftTimestamp,
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
+                                                    leftTimestamp,
                                                     rightTimestamp);
         finishs.push_back(finish);
     }
 
-    for (int i = 0; i < i_queue_vector.size(); i++) {
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         finishs.at(i).wait();
     }
 
     //打印下每一路取到的时间戳
-    Debug("====== fusionData oneFrame size:%d", oneFrame.size());
-    for (int i = 0; i < oneFrame.size(); i++) {
-        auto iter = oneFrame.at(i);
+    Debug("====== fusionData oneFrame size:%d", dataUnit->oneFrame.size());
+    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+        auto iter = dataUnit->oneFrame.at(i);
         if (!iter.oprNum.empty()) {
             Debug("%s第%d路取到的时间戳为%lu", __PRETTY_FUNCTION__, i, (uint64_t) iter.timstamp);
         }
     }
 
     //调用后续的处理
-    if (task != nullptr) {
-        return task(this, mergeType);
-    }
-
-    return 0;
+    TaskProcessOneFrame(dataUnit, mergeType);
 }
 
 int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
@@ -812,6 +750,8 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
         }
             break;
     }
+    unique_lock<mutex> lck(dataUnit->mtx_o);
+    dataUnit->cv_o_task.notify_one();
     return ret;
 }
 

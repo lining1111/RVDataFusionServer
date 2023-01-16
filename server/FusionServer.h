@@ -89,7 +89,7 @@ public:
     int FindIndexInUnOrder(const string in);
 private:
 
-    static int StartTimerTask(void *pServer);
+    static int StartLocalBusiness(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
 
@@ -97,19 +97,6 @@ private:
 
     void StopTimerTaskAll();
 
-    static void TaskFusionData(void *pServer, int cache);
-
-    /**
-     * 多路数据融合线程
-     * @param pServer
-     */
-    static void TaskTrafficFlowGather(void *pServer, unsigned int cache);
-
-    static void TaskLineupInfoGather(void *pServer, int cache);
-
-    static void TaskCrossTrafficJamAlarm(void *pServer, int cache);
-
-    static void TaskCarTrackGather(void *pServer, int cache);
 
 };
 
