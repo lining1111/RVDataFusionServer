@@ -123,6 +123,8 @@ void FusionClient::deleteTimerTask(string name) {
 void FusionClient::StartTimerTask() {
     //查看丢包
     addTimerTask("localBusiness timerMonitorFusionData", 1000 * 60, std::bind(MonitorPacketLoss, this));
+    //查看发生成功帧率
+    addTimerTask("localBusiness timerMonitorSendSuccess", 1000 * 60, std::bind(MonitorPacketLoss, this));
 }
 
 void FusionClient::StopTimerTaskAll() {
@@ -140,6 +142,39 @@ void FusionClient::MonitorPacketLoss(void *p) {
     auto cli = (FusionClient *) p;
 
     Info("%s FusionData 当前丢包率:%f", cli->server_ip.c_str(), cli->packetLossFusionData->ShowLoss());
+
+}
+
+
+void FusionClient::MonitorFSDynamic(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto cli = (FusionClient *) p;
+
+    if (cli->fsDynamicFusionData.fs != 0) {
+        Info("%s FusionData 当前发送成功帧率:%d", cli->server_ip.c_str(),
+             cli->fsDynamicFusionData.fs.load());
+    }
+
+    if (cli->fsDynamicCarTrackGather.fs != 0) {
+        Info("%s CarTrackGather 当前发送成功帧率:%d", cli->server_ip.c_str(),
+             cli->fsDynamicCarTrackGather.fs.load());
+    }
+
+    if (cli->fsDynamicTrafficFlowGather.fs != 0) {
+        Info("%s TrafficFlowGather 当前发送成功帧率:%d", cli->server_ip.c_str(),
+             cli->fsDynamicTrafficFlowGather.fs.load());
+    }
+
+    if (cli->fsDynamicCrossTrafficJamAlarm.fs != 0) {
+        Info("%s CrossTrafficJamAlarm 当前发送成功帧率:%d", cli->server_ip.c_str(),
+             cli->fsDynamicCrossTrafficJamAlarm.fs.load());
+    }
+
+    if (cli->fsDynamicLineupInfoGather.fs != 0) {
+        Info("%s LineupInfoGather 当前发送成功帧率:%d", cli->server_ip.c_str(), cli->fsDynamicLineupInfoGather.fs.load());
+    }
 
 }
 

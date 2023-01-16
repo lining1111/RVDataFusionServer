@@ -88,36 +88,36 @@ void LocalBusiness::StartTimerTask() {
 
     addTimerTask("localBusiness timerKeep", 1000, std::bind(Task_Keep, this));
 
-    [this]() {
+    std::thread([this]() {
         while (this->isRun) {
             Task_FusionData(this);
         }
-    }();
+    }).detach();
 
-    [this]() {
+    std::thread([this]() {
         while (this->isRun) {
             Task_TrafficFlowGather(this);
         }
-    }();
+    }).detach();
 
 
-    [this]() {
+    std::thread([this]() {
         while (this->isRun) {
             Task_LineupInfoGather(this);
         }
-    }();
+    }).detach();
 
-    [this]() {
+    std::thread([this]() {
         while (this->isRun) {
             Task_CrossTrafficJamAlarm(this);
         }
-    }();
+    }).detach();
 
-    [this]() {
+    std::thread([this]() {
         while (this->isRun) {
             Task_CarTrackGather(this);
         }
-    }();
+    }).detach();
 
 
     //开启伪造数据线程
@@ -239,6 +239,7 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
                         Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                     } else {
                         Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                        cli->fsDynamicCarTrackGather.Update();
                     }
                 } else {
                     Warn(":未连接上层%s", cli->server_ip.c_str());
@@ -318,6 +319,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                         Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                     } else {
                         Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                        cli->fsDynamicCrossTrafficJamAlarm.Update();
                     }
                 } else {
                     Warn(":未连接上层%s", cli->server_ip.c_str());
@@ -395,6 +397,7 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                         Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                     } else {
                         Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                        cli->fsDynamicLineupInfoGather.Update();
                     }
                 } else {
                     Warn("未连接上层%s", cli->server_ip.c_str());
@@ -473,6 +476,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                         Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
                     } else {
                         Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                        cli->fsDynamicTrafficFlowGather.Update();
                     }
                 } else {
                     Warn("未连接上层%s", cli->server_ip.c_str());
@@ -553,6 +557,7 @@ void LocalBusiness::Task_FusionData(void *p) {
                     } else {
                         Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
                         cli->packetLossFusionData->Success();
+                        cli->fsDynamicFusionData.Update();
                     }
                 } else {
                     Warn("未连接上层%s", cli->server_ip.c_str());
