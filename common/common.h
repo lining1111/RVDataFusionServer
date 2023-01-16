@@ -217,8 +217,9 @@ namespace common {
     public:
         int objID = 0;//目标ID
         vector<OneRvWayObject> rvWayObject;
-        int objType = 0;//目标类型
+        int objType = 0;//目标类型0.汽车1.人2.摩托3.自行车4.三轮
         int objColor = 0;//目标颜色
+        int carType = 0;//0.非汽车1.大型车2.中型车3.小型车4.货车5.公交车算法暂时识别不出来默认填0
         string plates;//车牌号
         string plateColor;//车牌颜色
         float distance;//距离
@@ -366,6 +367,7 @@ namespace common {
         double timestamp;
         string crossID;
         string hardCode;
+        int roadDirection;//0 东向西1 西向东2 南向北3 北向南
         int alarmType;//1：交叉口堵塞
         int alarmStatus;//1 有报警 0 报警恢复
         string alarmTime;//日期2022-10-31 10:00:21

@@ -337,6 +337,7 @@ namespace common {
         out["objID"] = this->objID;
         out["objType"] = this->objType;
         out["objColor"] = this->objColor;
+        out["carType"] = this->carType;
         out["plates"] = this->plates;
         out["plateColor"] = this->plateColor;
         out["distance"] = this->distance;
@@ -368,6 +369,7 @@ namespace common {
         this->objID = in["objID"].asInt();
         this->objType = in["objType"].asInt();
         this->objColor = in["objColor"].asInt();
+        this->carType = in["catType"].asInt();
         this->plates = in["plates"].asString();
         this->plateColor = in["plateColor"].asString();
         this->distance = in["distance"].asFloat();
@@ -710,6 +712,7 @@ namespace common {
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
+        out["roadDirection"] = this->roadDirection;
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
         out["alarmTime"] = this->alarmTime;
@@ -723,6 +726,7 @@ namespace common {
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
+        this->roadDirection = in["roadDirection"].asInt();
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
         this->alarmTime = in["alarmTime"].asString();

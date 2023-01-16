@@ -267,6 +267,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                         }
 
                         server->dataUnitFusionData.updateIMaxSizeForTask(i);
+                        server->dataUnitFusionData.UpdateFSI(i);
                         break;
 //                        Info("client-%d WatchData size:%d", client->sock,
 //                             server->dataUnitFusionData.i_queue_vector.at(i).size());
@@ -301,6 +302,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
                 server->dataUnitCrossTrafficJamAlarm.updateIMaxSizeForTask(server->FindIndexInUnOrder(
                         crossTrafficJamAlarm.crossID));
+                server->dataUnitCrossTrafficJamAlarm.UpdateFSI(server->FindIndexInUnOrder(
+                        crossTrafficJamAlarm.crossID));
 //                Info("client-%d CrossTrafficJamAlarm size:%d", client->sock,
 //                     server->dataUnitCrossTrafficJamAlarm.i_queue_vector.at(client->indexSuper).size());
             }
@@ -326,6 +329,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
 
                 server->dataUnitLineupInfoGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        lineupInfo.crossID));
+                server->dataUnitLineupInfoGather.UpdateFSI(server->FindIndexInUnOrder(
                         lineupInfo.crossID));
             }
                 break;
@@ -358,6 +363,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
                 server->dataUnitTrafficFlowGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
                         trafficFlow.crossID));
+                server->dataUnitTrafficFlowGather.UpdateFSI(server->FindIndexInUnOrder(
+                        trafficFlow.crossID));
 
             }
                 break;
@@ -382,6 +389,8 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
                 }
 
                 server->dataUnitCarTrackGather.updateIMaxSizeForTask(server->FindIndexInUnOrder(
+                        carTrack.crossID));
+                server->dataUnitCarTrackGather.UpdateFSI(server->FindIndexInUnOrder(
                         carTrack.crossID));
             }
                 break;

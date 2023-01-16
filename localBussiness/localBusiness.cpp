@@ -244,6 +244,7 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
                     Warn(":未连接上层%s", cli->server_ip.c_str());
                 }
             }
+            dataUnit->UpdateFSO();
         }
     }
 }
@@ -322,6 +323,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                     Warn(":未连接上层%s", cli->server_ip.c_str());
                 }
             }
+            dataUnit->UpdateFSO();
         }
     }
 }
@@ -398,6 +400,7 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
                     Warn("未连接上层%s", cli->server_ip.c_str());
                 }
             }
+            dataUnit->UpdateFSO();
         }
     }
 }
@@ -475,6 +478,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                     Warn("未连接上层%s", cli->server_ip.c_str());
                 }
             }
+            dataUnit->UpdateFSO();
         }
     }
 }
@@ -555,6 +559,7 @@ void LocalBusiness::Task_FusionData(void *p) {
                     cli->packetLossFusionData->Fail();
                 }
             }
+            dataUnit->UpdateFSO();
         }
     }
 }

@@ -21,8 +21,8 @@ DataUnitCarTrackGather::~DataUnitCarTrackGather() {
 
 }
 
-DataUnitCarTrackGather::DataUnitCarTrackGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
-        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
+DataUnitCarTrackGather::DataUnitCarTrackGather(int c, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, threshold_ms, i_num, cache) {
 
 }
 
@@ -39,7 +39,7 @@ DataUnitCarTrackGather::FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t 
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
+             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
         dataUnit->curTimestamp = timestampThreshold;
@@ -168,8 +168,8 @@ DataUnitTrafficFlowGather::~DataUnitTrafficFlowGather() {
 
 }
 
-DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
-        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
+DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, threshold_ms, i_num, cache) {
 
 }
 
@@ -185,7 +185,7 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
+             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
         dataUnit->curTimestamp = timestampThreshold;
@@ -312,8 +312,8 @@ DataUnitCrossTrafficJamAlarm::~DataUnitCrossTrafficJamAlarm() {
 
 }
 
-DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
-        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
+DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, threshold_ms, i_num, cache) {
 
 }
 
@@ -330,7 +330,7 @@ DataUnitCrossTrafficJamAlarm::FindOneFrame(DataUnitCrossTrafficJamAlarm *dataUni
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
+             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
         dataUnit->curTimestamp = timestampThreshold;
@@ -463,8 +463,8 @@ DataUnitLineupInfoGather::~DataUnitLineupInfoGather() {
 
 }
 
-DataUnitLineupInfoGather::DataUnitLineupInfoGather(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
-        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
+DataUnitLineupInfoGather::DataUnitLineupInfoGather(int c, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, threshold_ms, i_num, cache) {
 
 }
 
@@ -480,7 +480,7 @@ void DataUnitLineupInfoGather::FindOneFrame(DataUnitLineupInfoGather *dataUnit, 
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
+             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timestamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timestamp, (uint64_t) timestampThreshold);
         dataUnit->curTimestamp = timestampThreshold;
@@ -607,8 +607,8 @@ DataUnitFusionData::~DataUnitFusionData() {
 
 }
 
-DataUnitFusionData::DataUnitFusionData(int c, int fs_ms, int threshold_ms, int i_num, int cache) :
-        DataUnit(c, fs_ms, threshold_ms, i_num, cache) {
+DataUnitFusionData::DataUnitFusionData(int c, int threshold_ms, int i_num, int cache) :
+        DataUnit(c, threshold_ms, i_num, cache) {
 
 }
 
@@ -625,7 +625,7 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheC
     auto now = std::chrono::system_clock::now();
     uint64_t timestampThreshold =
             (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_ms * dataUnit->cache) - toCacheCha);
+             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
     if (uint64_t(refer.timstamp) < timestampThreshold) {
         Debug("%s当前时间戳：%lu小于缓存阈值:%lu", __PRETTY_FUNCTION__, (uint64_t) refer.timstamp, (uint64_t) timestampThreshold);
         dataUnit->curTimestamp = timestampThreshold;

@@ -26,11 +26,11 @@ using namespace os;
 FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer") {
     this->isMerge = isMerge;
     unOrder.resize(cliNum);
-    dataUnitFusionData.init(30, 100, 100, cliNum, 10);//100ms一帧
-    dataUnitCarTrackGather.init(30, 66, 33, cliNum, 10);//66ms一帧
-    dataUnitTrafficFlowGather.init(30, 1000, 500, cliNum, 10);//1000ms一帧
-    dataUnitCrossTrafficJamAlarm.init(30, 1000, 500, cliNum, 10);//1000ms一帧
-    dataUnitLineupInfoGather.init(30, 1000, 500, cliNum, 10);//1000ms一帧
+    dataUnitFusionData.init(30, 100, cliNum, 10);//100ms一帧
+    dataUnitCarTrackGather.init(30, 33, cliNum, 10);//66ms一帧
+    dataUnitTrafficFlowGather.init(30, 500, cliNum, 10);//1000ms一帧
+    dataUnitCrossTrafficJamAlarm.init(30, 500, cliNum, 10);//1000ms一帧
+    dataUnitLineupInfoGather.init(30, 500, cliNum, 10);//1000ms一帧
 
 }
 
