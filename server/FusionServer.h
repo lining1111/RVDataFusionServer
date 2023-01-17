@@ -29,6 +29,7 @@ public:
 public:
     typedef map<string, Timer *> TimerTasks;
 
+    vector<pthread_t> localBusinessThreadHandle;
     TimerTasks timerTasks;
 
     vector<int> roadDirection = {
@@ -57,7 +58,7 @@ public:
     string plateId;
 
 public:
-    FusionServer(int port, bool isMerge, int cliNum);
+    FusionServer(int port, bool isMerge, int cliNum = 4);
 
     ~FusionServer();
 
@@ -87,9 +88,11 @@ public:
 
 
     int FindIndexInUnOrder(const string in);
+
 private:
 
     static int StartLocalBusiness(void *pServer);
+
     static int StopLocalBusiness(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);

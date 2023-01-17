@@ -97,6 +97,7 @@ int FusionServer::Open() {
     if (ret == 0) {
         Notice("server sock %d create success", sock);
     }
+
     return ret;
 }
 
@@ -157,7 +158,8 @@ int FusionServer::StartLocalBusiness(void *pServer) {
     server->isLocalBusinessRun = true;
     Notice("server :%d %s start", server->port, __FUNCTION__);
 
-    std::thread([server]() {
+    std::thread threadFusionData = std::thread([server]() {
+
         while (server->isLocalBusinessRun) {
             DataUnitFusionData *dataUnit = &server->dataUnitFusionData;
             DataUnitFusionData::MergeType mergeType;
@@ -168,34 +170,45 @@ int FusionServer::StartLocalBusiness(void *pServer) {
             }
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), mergeType, true));
         }
-    }).detach();
+    });
+    server->localBusinessThreadHandle.push_back(threadFusionData.native_handle());
 
-    std::thread([server]() {
+    threadFusionData.detach();
+
+    std::thread threadTrafficFlowGather = std::thread([server]() {
         while (server->isLocalBusinessRun) {
             DataUnitTrafficFlowGather *dataUnit = &server->dataUnitTrafficFlowGather;
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
         }
-    }).detach();
+    });
+    server->localBusinessThreadHandle.push_back(threadTrafficFlowGather.native_handle());
+    threadTrafficFlowGather.detach();
 
-    std::thread([server]() {
+    std::thread threadLineupInfoGather = std::thread([server]() {
         while (server->isLocalBusinessRun) {
             DataUnitLineupInfoGather *dataUnit = &server->dataUnitLineupInfoGather;
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
         }
-    }).detach();
+    });
+    server->localBusinessThreadHandle.push_back(threadLineupInfoGather.native_handle());
+    threadLineupInfoGather.detach();
 
-    std::thread([server]() {
+    std::thread threadCrossTrafficJamAlarm = std::thread([server]() {
         while (server->isLocalBusinessRun) {
             DataUnitCrossTrafficJamAlarm *dataUnit = &server->dataUnitCrossTrafficJamAlarm;
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), false));
         }
-    }).detach();
-    std::thread([server]() {
+    });
+    server->localBusinessThreadHandle.push_back(threadCrossTrafficJamAlarm.native_handle());
+    threadCrossTrafficJamAlarm.detach();
+    std::thread threadCarTrackGather = std::thread([server]() {
         while (server->isLocalBusinessRun) {
             DataUnitCarTrackGather *dataUnit = &server->dataUnitCarTrackGather;
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
         }
-    }).detach();
+    });
+    server->localBusinessThreadHandle.push_back(threadCarTrackGather.native_handle());
+    threadCarTrackGather.detach();
 
 //    std::thread([server]() {
 //        while (server->isLocalBusinessRun) {
@@ -214,6 +227,10 @@ int FusionServer::StopLocalBusiness(void *pServer) {
     auto server = (FusionServer *) pServer;
 
     server->isLocalBusinessRun = false;
+//    for (auto &iter:server->localBusinessThreadHandle) {
+//        pthread_cancel(iter);
+//    }
+    server->localBusinessThreadHandle.clear();
 
     Notice("server :%d %s stop", server->port, __FUNCTION__);
     return 0;

@@ -35,7 +35,7 @@ DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
 
-//    StartEocCommon();
+    StartEocCommon();
 
     google::SetVersionString(VERSION_BUILD_TIME);
     google::ParseCommandLineFlags(&argc, &argv, true);
@@ -72,11 +72,19 @@ int main(int argc, char **argv) {
     //开启本地业务
     local.Run();
 
+//    FusionServer *server = new FusionServer(port, isMerge);
+//    if (server->Open() == 0) {
+//        server->Run();
+//    }
+//    sleep(1);
+//    delete server;
+
 //    HttpServerInit(10000, &local);
 
     while (true) {
-        sleep(10);
+        sleep(5);
     }
+
     z_log::finish();
 
     return 0;

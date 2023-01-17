@@ -99,7 +99,8 @@ public:
     }
 
     ~DataUnit() {
-
+        cv_i_task.notify_all();
+        cv_o_task.notify_all();
     }
 
 public:
@@ -260,8 +261,12 @@ public:
 
     void runTask(std::function<void()> task) {
         unique_lock<mutex> lck(mtx_i);
-        while (i_maxSize < cache) {
-            cv_i_task.wait(lck);
+//        while (i_maxSize < cache) {
+//            cv_i_task.wait(lck);
+//        }
+        cv_i_task.wait(lck);
+        if (i_maxSize < cache) {
+            return;
         }
 
         //执行相应的流程

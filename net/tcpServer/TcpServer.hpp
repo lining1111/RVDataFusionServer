@@ -22,7 +22,7 @@ template<class TcpServerClient>
 class TcpServer {
 
 public:
-    int sock;
+    int sock = 0;
     int port;
     string name;
     int maxListen = 10;
@@ -36,7 +36,7 @@ public:
 
 protected:
     //epoll
-    int epoll_fd;
+    int epoll_fd = 0;
     struct epoll_event ev;
 #define MAX_EVENTS 1024
     struct epoll_event wait_events[MAX_EVENTS];
@@ -274,6 +274,7 @@ public:
         if (sock > 0) {
             shutdown(sock, SHUT_RDWR);
             close(sock);
+            sock = 0;
         }
         if (isLocalThreadRun) {
             try {
@@ -284,7 +285,10 @@ public:
         }
         isLocalThreadRun = false;
         DeleteAllClient();
-        close(epoll_fd);
+        if (epoll_fd > 0) {
+            close(epoll_fd);
+            epoll_fd = 0;
+        }
         return 0;
     }
 

@@ -181,9 +181,9 @@ void LocalBusiness::Task_CarTrackGather(void *p) {
         auto dataUnit = &server->dataUnitCarTrackGather;
 
         unique_lock<mutex> lck(dataUnit->mtx_o);
-        while (dataUnit->emptyO()) {
-            dataUnit->cv_o_task.wait(lck);
-        }
+
+        dataUnit->cv_o_task.wait(lck);
+
 
         CarTrackGather data;
         if (dataUnit->popO(data)) {
@@ -260,9 +260,9 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
         unique_lock<mutex> lck(dataUnit->mtx_o);
-        while (dataUnit->emptyO()) {
-            dataUnit->cv_o_task.wait(lck);
-        }
+
+        dataUnit->cv_o_task.wait(lck);
+
         CrossTrafficJamAlarm data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
@@ -340,9 +340,9 @@ void LocalBusiness::Task_LineupInfoGather(void *p) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitLineupInfoGather;
         unique_lock<mutex> lck(dataUnit->mtx_o);
-        while (dataUnit->emptyO()) {
-            dataUnit->cv_o_task.wait(lck);
-        }
+
+        dataUnit->cv_o_task.wait(lck);
+
         LineupInfoGather data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
@@ -419,9 +419,9 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitTrafficFlowGather;
         unique_lock<mutex> lck(dataUnit->mtx_o);
-        while (dataUnit->emptyO()) {
-            dataUnit->cv_o_task.wait(lck);
-        }
+
+        dataUnit->cv_o_task.wait(lck);
+
         TrafficFlowGather data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
@@ -497,9 +497,9 @@ void LocalBusiness::Task_FusionData(void *p) {
         auto server = iter.second;
         auto dataUnit = &server->dataUnitFusionData;
         unique_lock<mutex> lck(dataUnit->mtx_o);
-        while (dataUnit->emptyO()) {
-            dataUnit->cv_o_task.wait(lck);
-        }
+
+        dataUnit->cv_o_task.wait(lck);
+
         FusionData data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
