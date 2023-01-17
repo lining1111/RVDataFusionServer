@@ -223,11 +223,6 @@ int FusionClient::ThreadDump(void *p) {
 
     Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
-        usleep(10);
-
-        if (!client->isRun) {
-            continue;
-        }
         int recvLen = (client->rb->GetWriteLen() < (1024 * 512)) ? client->rb->GetWriteLen() : (1024 * 512);
 
         nread = recv(client->sockfd, buf, recvLen, 0);
@@ -248,6 +243,7 @@ int FusionClient::ThreadDump(void *p) {
             //把接受数据放到
             client->rb->Write(buf, nread);
         }
+        usleep(10);
     }
     delete[] buf;
     Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
@@ -262,12 +258,6 @@ int FusionClient::ThreadProcessRecv(void *p) {
 
     Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     while (client->isRun) {
-
-        usleep(10);
-
-        if (!client->isRun) {
-            continue;
-        }
 
         if (client->rb == nullptr) {
             //数据缓存区不存在
@@ -381,6 +371,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
             }
                 break;
         }
+        usleep(10);
     }
     Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
     return 0;

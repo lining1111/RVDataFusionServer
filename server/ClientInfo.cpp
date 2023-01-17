@@ -83,8 +83,6 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
     Notice("client-%d ip:%s %s run", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
     while (client->isConnect) {
 
-        usleep(10);
-
         if (client->rb == nullptr || client->rb->GetReadLen() == 0) {
             //数据缓存区不存在
             continue;
@@ -193,6 +191,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
             }
                 break;
         }
+        usleep(10);
     }
     Notice("client-%d ip:%s %s exit", client->sock, inet_ntoa(client->addr.sin_addr), __FUNCTION__);
     return 0;

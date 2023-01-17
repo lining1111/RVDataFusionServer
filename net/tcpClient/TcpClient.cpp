@@ -119,7 +119,6 @@ int TcpClient::ThreadDump(void *local) {
 
     char *buf = new char[1024 * 1024];
     while (client->isConnect) {
-        usleep(10);
         if (client->isAsynReceive) {
             int recvLen = (client->rb->GetWriteLen() < (1024 * 1024)) ? client->rb->GetWriteLen() : (1024 * 1024);
             int len = recv(client->sock, buf, recvLen, 0);
@@ -135,6 +134,7 @@ int TcpClient::ThreadDump(void *local) {
                 client->rb->Write(buf,len);
             }
         }
+        usleep(10);
     }
     delete[] buf;
     cout << name << " " << __FUNCTION__ << " exit" << endl;

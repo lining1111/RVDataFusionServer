@@ -131,8 +131,6 @@ int TlsClient::ThreadDump(void *pClient) {
 
     while (client->isLive.load()) {
         int len = 0;
-        usleep(10);
-
         if (client->isAsynRecieve) {
 
             FD_ZERO(&fds);
@@ -170,6 +168,7 @@ int TlsClient::ThreadDump(void *pClient) {
                 }
             }
         }
+        usleep(10);
     }
     delete[] buffer;
     printf("client-%d %s exit\n", client->sock, __FUNCTION__);

@@ -44,7 +44,6 @@ public:
         cout << name << " " << __FUNCTION__ << " run" << endl;
         char *buf = new char[1024 * 1024];
         while (client->isConnect) {
-            usleep(10);
             if (client->isAsynReceive) {
                 bzero(buf, 1024 * 1024);
                 int recvLen = (client->rb->GetWriteLen() < (1024 * 1024)) ? client->rb->GetWriteLen() : (1024 * 1024);
@@ -61,6 +60,7 @@ public:
                     client->rb->Write(buf, len);
                 }
             }
+            usleep(10);
         }
         cout << name << " " << __FUNCTION__ << " exit" << endl;
         return 0;
