@@ -62,7 +62,7 @@ namespace z_log {
         }
         printf("开启日志定时清理任务\n");
         while (isInit) {
-            sleep(5);
+            sleep(60 * 60);
             //获取符合条件的日志文件 {ProgramName-*.log}
             vector<string> files;
             files.clear();
@@ -118,7 +118,7 @@ namespace z_log {
 
             //开启定时清理任务
             if (keepSeconds > 0) {
-                std::async(std::launch::async, regularCleanLogFile, keepSeconds);
+                std::thread(regularCleanLogFile, keepSeconds).detach();
             }
 
             return 0;

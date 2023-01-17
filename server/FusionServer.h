@@ -90,6 +90,7 @@ public:
 private:
 
     static int StartLocalBusiness(void *pServer);
+    static int StopLocalBusiness(void *pServer);
 
     void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
 

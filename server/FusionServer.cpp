@@ -31,12 +31,13 @@ FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<Clien
     dataUnitTrafficFlowGather.init(30, 500, cliNum, 10);//1000ms一帧
     dataUnitCrossTrafficJamAlarm.init(30, 500, cliNum, 10);//1000ms一帧
     dataUnitLineupInfoGather.init(30, 500, cliNum, 10);//1000ms一帧
-
+    StartLocalBusiness(this);
 }
 
 FusionServer::~FusionServer() {
     StopTimerTaskAll();
     Close();
+    StopLocalBusiness(this);
 }
 
 int FusionServer::getMatrixNoFromDb() {
@@ -107,17 +108,15 @@ int FusionServer::Run() {
     //获取路口编号
 //    getCrossIdFromDb();
 
-    isLocalBusinessRun = true;
-    //开启定时任务
-    std::shared_future<int> timerTask = std::async(std::launch::async, StartLocalBusiness, this);
-    timerTask.wait();
+//    //开启定时任务
+//    std::shared_future<int> timerTask = std::async(std::launch::async, StartLocalBusiness, this);
+//    timerTask.wait();
 
     return 0;
 }
 
 int FusionServer::Close() {
     TcpServer::Close();
-    isLocalBusinessRun = false;
     return 0;
 }
 
@@ -155,7 +154,8 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    Notice("server :%d %s run", server->port, __FUNCTION__);
+    server->isLocalBusinessRun = true;
+    Notice("server :%d %s start", server->port, __FUNCTION__);
 
     std::thread([server]() {
         while (server->isLocalBusinessRun) {
@@ -190,7 +190,6 @@ int FusionServer::StartLocalBusiness(void *pServer) {
             dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), false));
         }
     }).detach();
-
     std::thread([server]() {
         while (server->isLocalBusinessRun) {
             DataUnitCarTrackGather *dataUnit = &server->dataUnitCarTrackGather;
@@ -198,9 +197,28 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         }
     }).detach();
 
-    Notice("server :%d %s exit", server->port, __FUNCTION__);
+//    std::thread([server]() {
+//        while (server->isLocalBusinessRun) {
+//            sleep(1);
+//            Debug("server sock-%d test,port%d\n", server->sock, server->port);
+//        }
+//    }).detach();
+
     return 0;
 }
+
+int FusionServer::StopLocalBusiness(void *pServer) {
+    if (pServer == nullptr) {
+        return -1;
+    }
+    auto server = (FusionServer *) pServer;
+
+    server->isLocalBusinessRun = false;
+
+    Notice("server :%d %s stop", server->port, __FUNCTION__);
+    return 0;
+}
+
 
 void FusionServer::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
     Timer *timer = new Timer(name);
