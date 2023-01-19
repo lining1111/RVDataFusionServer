@@ -9,7 +9,7 @@
 #include <string>
 #include <time.h>
 #include <sys/time.h>
-#include <zlog.h>
+#include "zlog.h"
 
 using namespace std;
 

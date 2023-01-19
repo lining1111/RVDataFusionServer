@@ -5,6 +5,9 @@ set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
 
 set(CMAKE_CXX_STANDARD 11)
+# 引入Conan的CMake
+include(conan/build/conanbuildinfo.cmake)
+conan_basic_setup()
 
 #重新定义当前目标的源文件的__FILE__宏
 function(redefine_file_macro targetname)
@@ -30,33 +33,7 @@ function(redefine_file_macro targetname)
     endforeach ()
 endfunction()
 
-#根据实际情况设置
-#set(ARCH arm)
-#set(ARCH x86)
-set(ARCH arm64)
-
-if (${ARCH} STREQUAL arm)
-    set(CROSS_COMPILE /usr/local/raspberrypi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-)
-
-    set(CMAKE_C_COMPILER ${CROSS_COMPILE}gcc)
-    set(CMAKE_C_COMPILER_AR ${CROSS_COMPILE}ar)
-    set(CMAKE_C_COMPILER_RANLIB ${CROSS_COMPILE}ranlib)
-    set(CMAKE_CXX_COMPILER ${CROSS_COMPILE}g++)
-endif ()
-
-if (${ARCH} STREQUAL arm64)
-    set(CROSS_COMPILE /usr/local/arm64/gcc-linaro-7.3.1-2018.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-)
-
-    set(CMAKE_C_COMPILER ${CROSS_COMPILE}gcc)
-    set(CMAKE_C_COMPILER_AR ${CROSS_COMPILE}ar)
-    set(CMAKE_C_COMPILER_RANLIB ${CROSS_COMPILE}ranlib)
-    set(CMAKE_CXX_COMPILER ${CROSS_COMPILE}g++)
-endif ()
-
-
-add_definitions(-D${ARCH})
-
-set(LIBS m pthread zlog jsoncpp sqlite3 ssl crypto curl)
+set(LIBS m pthread ${CONAN_LIBS} zlog)
 
 set(SRC_DIRS .
         util
@@ -88,9 +65,23 @@ foreach (src_dir ${SRC_DIRS})
 endforeach (src_dir)
 list(REMOVE_ITEM SRC_FILES ./main.cpp)
 
+
+if (${ARCH} STREQUAL "x64")
+    include_directories(lib/x64)
+    link_directories(lib/x64)
+else()
+    include_directories(lib/arm64)
+    link_directories(lib/arm64)
+endif ()
+
 message(STATUS "3.7 SRC_FILES : ${SRC_FILES}")
 add_executable(RVDataFusionServer main.cpp ${SRC_FILES})
-target_link_libraries(RVDataFusionServer libgflags.a ${LIBS})
+if (${ARCH} STREQUAL "x64")
+    set_target_properties(RVDataFusionServer PROPERTIES LINK_FLAGS "-Wl,-rpath=./lib/x64/")
+else ()
+    set_target_properties(RVDataFusionServer PROPERTIES LINK_FLAGS "-Wl,-rpath=./lib/arm64/")
+endif ()
+target_link_libraries(RVDataFusionServer ${LIBS})
 redefine_file_macro(RVDataFusionServer)
 
 add_subdirectory(test)

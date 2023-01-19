@@ -37,8 +37,8 @@ int main(int argc, char **argv) {
 
     StartEocCommon();
 
-    google::SetVersionString(VERSION_BUILD_TIME);
-    google::ParseCommandLineFlags(&argc, &argv, true);
+    gflags::SetVersionString(VERSION_BUILD_TIME);
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     z_log::init(PROJECT_NAME, FLAGS_keep);
     uint16_t port = FLAGS_port;
     string cloudIp;

@@ -5,14 +5,7 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#ifdef x86
-#include <jsoncpp/json/json.h>
-#else
-
 #include <json/json.h>
-
-#endif
-
 #include <cstdint>
 #include <string>
 #include <vector>
