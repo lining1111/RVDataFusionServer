@@ -4,7 +4,6 @@
 
 #include <cstring>
 #include <sys/time.h>
-
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"

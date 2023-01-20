@@ -2,8 +2,8 @@
 // Created by lining on 1/16/23.
 //
 
-#ifndef _UTIL_H
-#define _UTIL_H
+#ifndef _UTILITY_H
+#define _UTILITY_H
 
 #include <atomic>
 

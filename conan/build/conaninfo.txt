@@ -1,12 +1,10 @@
 [settings]
-    arch=armv8
-    arch_target=armv8
+    arch=x86_64
     build_type=Release
     compiler=gcc
     compiler.libcxx=libstdc++11
     compiler.version=11.3
     os=Linux
-    os_target=Linux
 
 [requires]
     cpp-httplib/0.11.4
@@ -21,26 +19,22 @@
 
 
 [full_settings]
-    arch=armv8
-    arch_build=x86_64
-    arch_target=armv8
+    arch=x86_64
     build_type=Release
     compiler=gcc
     compiler.libcxx=libstdc++11
     compiler.version=11.3
     os=Linux
-    os_build=Linux
-    os_target=Linux
 
 [full_requires]
     cpp-httplib/0.11.4:5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9
-    gflags/2.2.2:3a90b59be9b98821152d298c13ea7332be23b5f6
-    jsoncpp/1.9.5:268472074d8d16d2ea49fbc866f14315360e7d80
-    libcurl/7.87.0:6603d1ba3bff784fb0ba7fff5f643655f6456fcd
-    libuuid/1.0.3:f7bf7f2b9d3c831882a24374763de8125c6889b3
-    openssl/1.1.1s:f7bf7f2b9d3c831882a24374763de8125c6889b3
-    sqlite3/3.40.1:b5d52355dd4e3ebfa64b79c30edb5359b5de0c6c
-    zlib/1.2.13:f7bf7f2b9d3c831882a24374763de8125c6889b3
+    gflags/2.2.2:8276fc35cb766ca9deed0a4af77288a667018486
+    jsoncpp/1.9.5:4ee234385446b17e6b660b359445a070922ea8e1
+    libcurl/7.87.0:fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d
+    libuuid/1.0.3:c10a1a185befd155ccf9af892387d3946f445cf6
+    openssl/1.1.1s:c10a1a185befd155ccf9af892387d3946f445cf6
+    sqlite3/3.40.1:cb16f4e0ce9f858cd81da2bc2c11b479c83fa462
+    zlib/1.2.13:c10a1a185befd155ccf9af892387d3946f445cf6
 
 [full_options]
     cpp-httplib:with_brotli=False
@@ -185,19 +179,4 @@
 
 
 [env]
-    AR=aarch64-linux-gnu-ar
-    AS=aarch64-linux-gnu-as
-    CC=aarch64-linux-gnu-gcc-11
-    CFLAGS=-fPIE -fPIC
-    CHOST=aarch64-linux-gnu
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
-    CXX=aarch64-linux-gnu-g++-11
-    CXXFLAGS=-fPIE -fPIC
-    LD=aarch64-linux-gnu-ld
-    PATH=[/usr/bin]
-    RANLIB=aarch64-linux-gnu-ranlib
-    STRIP=aarch64-linux-gnu-strip
-    env_var=value
-    host_alias=aarch64-linux-gnu
+

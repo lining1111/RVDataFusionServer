@@ -5,7 +5,15 @@ set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
 
 set(CMAKE_CXX_STANDARD 11)
+set(-D${ARCH})
 # 引入Conan的CMake
+if (${ARCH} STREQUAL "x64")
+    execute_process(COMMAND sh build_local.sh
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
+else ()
+    execute_process(COMMAND sh build_aarch64.sh
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
+endif ()
 include(conan/build/conanbuildinfo.cmake)
 conan_basic_setup()
 
@@ -33,28 +41,44 @@ function(redefine_file_macro targetname)
     endforeach ()
 endfunction()
 
+#需要过滤的目录
+macro(SUBDIRLISTINCLUDE result curdir depth filtration_dirlist...)
+    if (${depth} STREQUAL "1")
+        FILE(GLOB_RECURSE children LIST_DIRECTORIES true RELATIVE ${curdir})
+    elseif (${depth} STREQUAL "2")
+        FILE(GLOB_RECURSE children LIST_DIRECTORIES true RELATIVE ${curdir} "${curdir}/*")
+    elseif (${depth} STREQUAL "3")
+        FILE(GLOB_RECURSE children LIST_DIRECTORIES true RELATIVE ${curdir} "${curdir}/*" "${curdir}/*/*")
+    elseif (${depth} STREQUAL "4")
+        FILE(GLOB_RECURSE children LIST_DIRECTORIES true RELATIVE ${curdir} "${curdir}/*" "${curdir}/*/*" "${curdir}/*/*/*")
+    else ()
+        message(FATAL "depth =[1 2 3 4]")
+    endif ()
+
+    #message(DEBUG "\n children: ${children}")
+    set(dirlist "")
+    foreach (child ${children})
+        if ((IS_DIRECTORY ${curdir}/${child}))
+            set(flags 0)
+            foreach (filtration_dir ${filtration_dirlist}) #过滤目录
+                string(FIND ${child} ${filtration_dir} index)
+                if (${index} GREATER_EQUAL 0)
+                    set(flags 1)
+                endif ()
+            endforeach ()
+            if (${flags} EQUAL 0)
+                LIST(APPEND dirlist ${child})
+            endif ()
+        endif ()
+    endforeach ()
+    set(${result} ${dirlist})
+endmacro()
+
 set(LIBS m pthread ${CONAN_LIBS} zlog)
 
-set(SRC_DIRS .
-        util
-        log
-        ringbuffer
-        common
-        os
-        monitor
-        signalControl
-        server
-        client
-        server/merge
-        simpleini
-        db
-        getData
-        httpServer
-        localBussiness
-        eoc
-        eoc_comm/utility
-        eoc_comm)
-
+set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test)
+SUBDIRLISTINCLUDE(SRC_DIRS ${CMAKE_SOURCE_DIR} 2 ${filtration_dirlist})
+message(STATUS "3.7 SRC_DIRS : ${SRC_DIRS}")
 include_directories(.)
 include_directories(eoc_comm/utility)
 include_directories(eoc_comm)
@@ -69,7 +93,7 @@ list(REMOVE_ITEM SRC_FILES ./main.cpp)
 if (${ARCH} STREQUAL "x64")
     include_directories(lib/x64)
     link_directories(lib/x64)
-else()
+else ()
     include_directories(lib/arm64)
     link_directories(lib/arm64)
 endif ()

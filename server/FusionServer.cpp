@@ -44,7 +44,7 @@ int FusionServer::getMatrixNoFromDb() {
     //打开数据库
     sqlite3 *db;
     string dbName;
-#ifdef arm64
+#ifdef aarch64
     dbName = "/home/nvidianx/bin/CLParking.db";
 #else
     dbName = "./db/CLParking.db";

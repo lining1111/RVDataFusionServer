@@ -43,7 +43,7 @@ add_executable(testFusionClient testFusionClient.cpp
         ../common/CRC.cpp
         ../log/Log.cpp
         ../ringbuffer/RingBuffer.cpp
-        ../util/util.cpp)
+        ../utility/utility.cpp)
 target_link_libraries(testFusionClient ${LIBS})
 redefine_file_macro(testFusionClient)
 add_executable(testTimeTask testTimeTask.cpp

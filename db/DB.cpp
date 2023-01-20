@@ -34,7 +34,7 @@ void getCloudConfigFromDb(EocConfigCloud *config) {
     char *errmsg = nullptr;
 
     string dbName;
-#ifdef arm64
+#ifdef aarch64
     dbName = "/home/nvidianx/bin/" + eocConfigDB;
 #else
     dbName = eocConfigDB;
