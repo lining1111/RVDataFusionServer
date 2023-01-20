@@ -109,3 +109,4 @@ target_link_libraries(RVDataFusionServer ${LIBS})
 redefine_file_macro(RVDataFusionServer)
 
 add_subdirectory(test)
+add_custom_command(TARGET RVDataFusionServer POST_BUILD COMMAND echo ${COMPILE_TIME}>${CMAKE_BINARY_DIR}/version)
