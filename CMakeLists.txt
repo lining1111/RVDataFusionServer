@@ -7,6 +7,7 @@ configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/versi
 set(CMAKE_CXX_STANDARD 11)
 set(-D${ARCH})
 # 引入Conan的CMake
+set(CONAN_DISABLE_CHECK_COMPILER 1)
 if (${ARCH} STREQUAL "x64")
     execute_process(COMMAND sh build_local.sh
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
