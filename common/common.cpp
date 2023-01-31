@@ -34,7 +34,7 @@ namespace common {
         const char *c = seed.data();//"89ab"
         char *p = buf;
         unsigned int n, b;
-        gettimeofday(&tmp, NULL);
+        gettimeofday(&tmp, nullptr);
         srand(tmp.tv_usec);
 
         for (n = 0; n < 16; ++n) {
@@ -62,6 +62,31 @@ namespace common {
         }
         *p = 0;
         return string(buf);
+    }
+
+    int PkgClass::PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+        int len = 0;
+        //1.头部
+        pkg.head.tag = '$';
+        pkg.head.version = 1;
+        pkg.head.cmd = this->cmdType;
+        pkg.head.sn = sn;
+        pkg.head.deviceNO = deviceNO;
+        pkg.head.len = 0;
+        len += sizeof(pkg.head);
+        //正文
+        string jsonStr;
+        Json::FastWriter fastWriter;
+        Json::Value root;
+        this->JsonMarshal(root);
+        jsonStr = fastWriter.write(root);
+        pkg.body = jsonStr;
+        len += jsonStr.length();
+        //校验,可以先不设置，等待组包的时候更新
+        pkg.crc.data = 0x0000;
+        len += sizeof(pkg.crc);
+        pkg.head.len = len;
+        return 0;
     }
 
     int Pack(Pkg &pkg, uint8_t *out, uint32_t *len) {
@@ -458,32 +483,32 @@ namespace common {
         return true;
     }
 
-    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::CmdFusionData;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        Json::FastWriter fastWriter;
-        Json::Value root;
-        fusionData.JsonMarshal(root);
-        jsonStr = fastWriter.write(root);
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
-
-        pkg.head.len = len;
-
-        return 0;
-    }
+//    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdFusionData;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        fusionData.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
 
     bool OneFlowData::JsonMarshal(Json::Value &out) {
         out["laneCode"] = this->laneCode;
@@ -596,122 +621,39 @@ namespace common {
         return true;
     }
 
-    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::CmdTrafficFlowGather;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        Json::FastWriter fastWriter;
-        Json::Value root;
-        trafficFlows.JsonMarshal(root);
-        jsonStr = fastWriter.write(root);
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
-
-        pkg.head.len = len;
-
-        return 0;
-    }
-
-    bool OneCarTrack::JsonMarshal(Json::Value &out) {
-        out["id"] = this->id;
-        out["type"] = this->type;
-        out["cameraDirection"] = this->cameraDirection;
-        out["x1"] = this->x1;
-        out["y1"] = this->y1;
-        out["x2"] = this->x2;
-        out["y2"] = this->y2;
-        out["latitude"] = this->latitude;
-        out["longitude"] = this->longitude;
-        out["laneCode"] = this->laneCode;
-        out["speed"] = this->speed;
-        out["timeHeadway"] = this->timeHeadway;
-        out["plateNumber"] = this->plateNumber;
-        out["plateColor"] = this->plateColor;
-        return true;
-    }
-
-    bool OneCarTrack::JsonUnmarshal(Json::Value in) {
-        this->id = in["id"].asInt();
-        this->type = in["type"].asInt();
-        this->cameraDirection = in["cameraDirection"].asInt();
-        this->x1 = in["x1"].asInt();
-        this->y1 = in["y1"].asInt();
-        this->x2 = in["x2"].asInt();
-        this->y2 = in["y2"].asInt();
-        this->latitude = in["latitude"].asInt();
-        this->longitude = in["longitude"].asInt();
-        this->laneCode = in["laneCode"].asString();
-        this->speed = in["speed"].asInt();
-        this->timeHeadway = in["timeHeadway"].asInt();
-        this->plateNumber = in["plateNumber"].asString();
-        this->plateColor = in["plateColor"].asString();
-        return true;
-    }
-
-    bool CarTrack::JsonMarshal(Json::Value &out) {
-
-        out["oprNum"] = this->oprNum;
-        out["hardCode"] = this->hardCode;
-        out["timestamp"] = this->timestamp;
-        out["crossID"] = this->crossID;
-        out["ip"] = this->ip;
-        out["type"] = this->type;
-
-        Json::Value lstObj = Json::arrayValue;
-        if (!this->lstObj.empty()) {
-            for (auto iter:this->lstObj) {
-                Json::Value item;
-                if (iter.JsonMarshal(item)) {
-                    lstObj.append(item);
-                }
-            }
-        } else {
-            lstObj.resize(0);
-        }
-
-        out["lstObj"] = lstObj;
-
-        return true;
-    }
-
-    bool CarTrack::JsonUnmarshal(Json::Value in) {
-
-        this->oprNum = in["oprNum"].asString();
-        this->hardCode = in["hardCode"].asString();
-        this->timestamp = in["timestamp"].asDouble();
-        this->crossID = in["crossID"].asString();
-        this->ip = in["ip"].asString();
-        this->type = in["type"].asInt();
-
-        if (in["lstObj"].isArray()) {
-            Json::Value lstObj = in["lstObj"];
-            for (auto iter:lstObj) {
-                OneCarTrack item;
-                if (item.JsonUnmarshal(iter)) {
-                    this->lstObj.push_back(item);
-                }
-            }
-        }
-        return true;
-    }
+//    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdTrafficFlowGather;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        trafficFlows.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
 
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
-        out["roadDirection"] = this->roadDirection;
+//        out["roadDirection"] = this->roadDirection;
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
         out["alarmTime"] = this->alarmTime;
@@ -725,6 +667,61 @@ namespace common {
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
+//        this->roadDirection = in["roadDirection"].asInt();
+        this->alarmType = in["alarmType"].asInt();
+        this->alarmStatus = in["alarmStatus"].asInt();
+        this->alarmTime = in["alarmTime"].asString();
+
+        return true;
+    }
+
+//    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
+//                                          Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdCrossTrafficJamAlarm;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        crossTrafficJamAlarm.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
+
+    bool IntersectionOverflowAlarm::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        out["roadDirection"] = this->roadDirection;
+        out["alarmType"] = this->alarmType;
+        out["alarmStatus"] = this->alarmStatus;
+        out["alarmTime"] = this->alarmTime;
+
+        return true;
+    }
+
+    bool IntersectionOverflowAlarm::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
         this->roadDirection = in["roadDirection"].asInt();
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
@@ -733,82 +730,161 @@ namespace common {
         return true;
     }
 
-    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
-                                          Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::CmdCrossTrafficJamAlarm;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        Json::FastWriter fastWriter;
-        Json::Value root;
-        crossTrafficJamAlarm.JsonMarshal(root);
-        jsonStr = fastWriter.write(root);
+//    int PkgIntersectionOverflowAlarmWithoutCRC(IntersectionOverflowAlarm intersectionOverflowAlarm, uint16_t sn,
+//                                               uint32_t deviceNO, Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdIntersectionOverflowAlarm;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        intersectionOverflowAlarm.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
 
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
-
-        pkg.head.len = len;
-
-        return 0;
-    }
-
-    bool OneLineupInfo::JsonMarshal(Json::Value &out) {
-
-        out["laneID"] = this->laneID;
-        out["averageSpeed"] = this->averageSpeed;
-        out["flow"] = this->flow;
-        out["queueLength"] = this->queueLength;
-        out["sumMini"] = this->sumMini;
-        out["sumMid"] = this->sumMid;
-        out["sumMax"] = this->sumMax;
-        out["headWay"] = this->headWay;
-        out["headWayTime"] = this->headWayTime;
-        out["occupancy"] = this->occupancy;
-        out["occupancySpace"] = this->occupancySpace;
-
-        return true;
-    }
-
-    bool OneLineupInfo::JsonUnmarshal(Json::Value in) {
-        this->laneID = in["laneID"].asInt();
-        this->averageSpeed = in["averageSpeed"].asInt();
-        this->flow = in["flow"].asInt();
-        this->queueLength = in["queueLength"].asInt();
-        this->sumMini = in["sumMini"].asInt();
-        this->sumMid = in["sumMid"].asInt();
-        this->sumMax = in["sumMax"].asInt();
-        this->headWay = in["headWay"].asInt();
-        this->headWayTime = in["headWayTime"].asInt();
-        this->occupancy = in["occupancy"].asInt();
-        this->occupancySpace = in["occupancySpace"].asInt();
-
-        return true;
-    }
-
-    bool LineupInfo::JsonMarshal(Json::Value &out) {
+    bool InWatchData_1_3_4::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
-        out["recordDateTime"] = this->recordDateTime;
+        out["laneCode"] = this->laneCode;
+        out["laneDirection"] = this->laneDirection;
+        out["flowDirection"] = this->flowDirection;
+        out["detectLocation"] = this->detectLocation;
+        out["vehicleID"] = this->vehicleID;
+        out["vehicleType"] = this->vehicleType;
+        out["vehicleSpeed"] = this->vehicleSpeed;
+        return true;
+    }
+
+    bool InWatchData_1_3_4::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->laneCode = in["laneCode"].asString();
+        this->laneDirection = in["laneDirection"].asInt();
+        this->flowDirection = in["flowDirection"].asInt();
+        this->detectLocation = in["detectLocation"].asInt();
+        this->vehicleID = in["vehicleID"].asInt();
+        this->vehicleType = in["vehicleType"].asInt();
+        this->vehicleSpeed = in["vehicleSpeed"].asInt();
+        return true;
+    }
+
+//    int PkgInWatchData_1_3_4WithoutCRC(InWatchData_1_3_4 inWatchData134, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdInWatchData_1_3_4;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        inWatchData134.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
+
+    bool InWatchData_2_trafficFlowListItem_vehicleIDListItem::JsonMarshal(Json::Value &out) {
+        out["vehicleID"] = this->vehicleID;
+        out["vehicleType"] = this->vehicleType;
+        out["vehicleSpeed"] = this->vehicleSpeed;
+        return true;
+    }
+
+    bool InWatchData_2_trafficFlowListItem_vehicleIDListItem::JsonUnmarshal(Json::Value in) {
+        this->vehicleID = in["vehicleID"].asInt();
+        this->vehicleType = in["vehicleType"].asInt();
+        this->vehicleSpeed = in["vehicleSpeed"].asInt();
+        return true;
+    }
+
+    bool InWatchData_2_trafficFlowListItem::JsonMarshal(Json::Value &out) {
+        out["laneCode"] = this->laneCode;
+        out["laneDirection"] = this->laneDirection;
+        out["flowDirection"] = this->flowDirection;
+
+        Json::Value vehicleIDList = Json::arrayValue;
+        if (!this->vehicleIDList.empty()) {
+            for (auto iter:this->vehicleIDList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                vehicleIDList.append(item);
+            }
+        } else {
+            vehicleIDList.resize(0);
+        }
+
+        out["vehicleIDList"] = vehicleIDList;
+
+        return true;
+    }
+
+    bool InWatchData_2_trafficFlowListItem::JsonUnmarshal(Json::Value in) {
+        this->laneCode = in["laneCode"].asString();
+        this->laneDirection = in["laneDirection"].asInt();
+        this->flowDirection = in["flowDirection"].asInt();
+
+        Json::Value vehicleIDList = in["vehicleIDList"];
+        if (vehicleIDList.isArray()) {
+            for (auto iter:vehicleIDList) {
+                InWatchData_2_trafficFlowListItem_vehicleIDListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->vehicleIDList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool InWatchData_2::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        out["recordLaneSum"] = this->recordLaneSum;
 
         Json::Value trafficFlowList = Json::arrayValue;
         if (!this->trafficFlowList.empty()) {
             for (auto iter:this->trafficFlowList) {
                 Json::Value item;
-                if (iter.JsonMarshal(item)) {
-                    trafficFlowList.append(item);
-                }
+                iter.JsonMarshal(item);
+                trafficFlowList.append(item);
             }
         } else {
             trafficFlowList.resize(0);
@@ -816,170 +892,60 @@ namespace common {
 
         out["trafficFlowList"] = trafficFlowList;
 
+
         return true;
     }
 
-    bool LineupInfo::JsonUnmarshal(Json::Value in) {
+    bool InWatchData_2::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
-        this->recordDateTime = in["recordDateTime"].asString();
+        this->recordLaneSum = in["recordLaneSum"].asInt();
 
         Json::Value trafficFlowList = in["trafficFlowList"];
         if (trafficFlowList.isArray()) {
             for (auto iter:trafficFlowList) {
-                OneLineupInfo item;
+                InWatchData_2_trafficFlowListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlowList.push_back(item);
                 }
             }
-        }
-
-        return true;
-    }
-
-    bool LineupInfoGather::JsonMarshal(Json::Value &out) {
-        out["oprNum"] = this->oprNum;
-        out["timestamp"] = this->timestamp;
-        out["crossID"] = this->crossID;
-        out["hardCode"] = this->hardCode;
-        out["recordDateTime"] = this->recordDateTime;
-
-        Json::Value trafficFlowList = Json::arrayValue;
-        if (!this->trafficFlowList.empty()) {
-            for (auto iter:this->trafficFlowList) {
-                Json::Value item;
-                if (iter.JsonMarshal(item)) {
-                    trafficFlowList.append(item);
-                }
-            }
         } else {
-            trafficFlowList.resize(0);
-        }
-
-        out["TrafficFlowList"] = trafficFlowList;
-
-        return true;
-    }
-
-    bool LineupInfoGather::JsonUnmarshal(Json::Value in) {
-        this->oprNum = in["oprNum"].asString();
-        this->timestamp = in["timestamp"].asDouble();
-        this->crossID = in["crossID"].asString();
-        this->hardCode = in["hardCode"].asString();
-        this->recordDateTime = in["recordDateTime"].asString();
-
-        Json::Value trafficFlowList = in["trafficFlowList"];
-        if (trafficFlowList.isArray()) {
-            for (auto iter:trafficFlowList) {
-                OneLineupInfo item;
-                if (item.JsonUnmarshal(iter)) {
-                    this->trafficFlowList.push_back(item);
-                }
-            }
+            return false;
         }
 
         return true;
     }
 
-    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::CmdLineupInfoGather;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        Json::FastWriter fastWriter;
-        Json::Value root;
-        lineupInfoGather.JsonMarshal(root);
-        jsonStr = fastWriter.write(root);
+//    int PkgInWatchData_2WithoutCRC(InWatchData_2 inWatchData2, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+//        int len = 0;
+//        //1.头部
+//        pkg.head.tag = '$';
+//        pkg.head.version = 1;
+//        pkg.head.cmd = CmdType::CmdInWatchData_2;
+//        pkg.head.sn = sn;
+//        pkg.head.deviceNO = deviceNO;
+//        pkg.head.len = 0;
+//        len += sizeof(pkg.head);
+//        //正文
+//        string jsonStr;
+//        Json::FastWriter fastWriter;
+//        Json::Value root;
+//        inWatchData2.JsonMarshal(root);
+//        jsonStr = fastWriter.write(root);
+//
+//        pkg.body = jsonStr;
+//        len += jsonStr.length();
+//        //校验,可以先不设置，等待组包的时候更新
+//        pkg.crc.data = 0x0000;
+//        len += sizeof(pkg.crc);
+//
+//        pkg.head.len = len;
+//
+//        return 0;
+//    }
 
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
 
-        pkg.head.len = len;
-
-        return 0;
-    }
-
-
-    bool CarTrackGather::JsonMarshal(Json::Value &out) {
-        out["oprNum"] = this->oprNum;
-        out["timestamp"] = this->timestamp;
-        out["crossID"] = this->crossID;
-        out["recordDateTime"] = this->recordDateTime;
-
-        Json::Value lstObj = Json::arrayValue;
-        if (!this->lstObj.empty()) {
-            for (auto iter:this->lstObj) {
-                Json::Value item;
-                if (iter.JsonMarshal(item)) {
-                    lstObj.append(item);
-                }
-            }
-        } else {
-            lstObj.resize(0);
-        }
-
-        out["lstObj"] = lstObj;
-
-        return true;
-    }
-
-    bool CarTrackGather::JsonUnmarshal(Json::Value in) {
-        this->oprNum = in["oprNum"].asString();
-        this->timestamp = in["timestamp"].asDouble();
-        this->crossID = in["crossID"].asString();
-        this->recordDateTime = in["recordDateTime"].asString();
-
-        Json::Value lstObj = in["lstObj"];
-        if (lstObj.isArray()) {
-            for (auto iter:lstObj) {
-                OneCarTrack item;
-                if (item.JsonUnmarshal(iter)) {
-                    this->lstObj.push_back(item);
-                }
-            }
-        }
-        return true;
-    }
-
-    int
-    PkgCarTrackGatherWithoutCRC(CarTrackGather carTrackGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-        int len = 0;
-        //1.头部
-        pkg.head.tag = '$';
-        pkg.head.version = 1;
-        pkg.head.cmd = CmdType::CmdCarTrackGather;
-        pkg.head.sn = sn;
-        pkg.head.deviceNO = deviceNO;
-        pkg.head.len = 0;
-        len += sizeof(pkg.head);
-        //正文
-        string jsonStr;
-        Json::FastWriter fastWriter;
-        Json::Value root;
-        carTrackGather.JsonMarshal(root);
-        jsonStr = fastWriter.write(root);
-
-        pkg.body = jsonStr;
-        len += jsonStr.length();
-        //校验,可以先不设置，等待组包的时候更新
-        pkg.crc.data = 0x0000;
-        len += sizeof(pkg.crc);
-
-        pkg.head.len = len;
-
-        return 0;
-    }
 }
 

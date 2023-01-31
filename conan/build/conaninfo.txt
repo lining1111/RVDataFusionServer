@@ -70,6 +70,7 @@
     libcurl:with_ipv6=True
     libcurl:with_largemaxwritesize=False
     libcurl:with_ldap=False
+    libcurl:with_libgsasl=False
     libcurl:with_libidn=False
     libcurl:with_libpsl=False
     libcurl:with_librtmp=False
@@ -188,13 +189,13 @@
     AR=aarch64-linux-gnu-ar
     AS=aarch64-linux-gnu-as
     CC=aarch64-linux-gnu-gcc
-    CFLAGS=-fPIE -fPIC
+    CFLAGS=-fPIE -fPIC -Wl,-rpath=./:./lib
     CHOST=aarch64-linux-gnu
     CONAN_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
     CONAN_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
     CONAN_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
     CXX=aarch64-linux-gnu-g++
-    CXXFLAGS=-fPIE -fPIC
+    CXXFLAGS=-fPIE -fPIC -Wl,-rpath=./:./lib
     LD=aarch64-linux-gnu-ld
     PATH=[/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin]
     RANLIB=aarch64-linux-gnu-ranlib

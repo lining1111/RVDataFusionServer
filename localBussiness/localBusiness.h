@@ -13,7 +13,7 @@
 
 class LocalBusiness {
 public:
-    typedef map<string, Timer*> TimerTasks;
+    typedef map<string, Timer *> TimerTasks;
 public:
     bool isRun = false;
     std::map<string, FusionServer *> serverList;
@@ -46,19 +46,23 @@ private:
     */
     static void Task_Keep(void *p);
 
-    static void Task_CarTrackGather(void *p);
+    static int SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, uint64_t timestamp, bool isSave = false);
 
     static void Task_CrossTrafficJamAlarm(void *p);
 
-    static void Task_LineupInfoGather(void *p);
+    static void Task_IntersectionOverflowAlarm(void *p);
 
     static void Task_TrafficFlowGather(void *p);
 
     static void Task_FusionData(void *p);
 
+    static void Task_InWatchData_1_3_4(void *p);
+
+    static void Task_InWatchData_2(void *p);
+
     //造数据的线程
     static void Task_CreateCrossTrafficJamAlarm(void *p);
-    static void Task_CreateLineupInfoGather(void *p);
+
     static void Task_CreateTrafficFlowGather(void *p);
 };
 

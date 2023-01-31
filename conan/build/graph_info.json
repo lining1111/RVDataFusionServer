@@ -109,6 +109,10 @@
    "False"
   ],
   [
+   "libcurl:with_libgsasl",
+   "False"
+  ],
+  [
    "libcurl:with_libidn",
    "False"
   ],

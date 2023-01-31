@@ -41,17 +41,15 @@ public:
     vector<string> unOrder;//记录已传入的路号，方便将数据存入对应的数据集合内的输入量
     //---------------监控数据相关---------//
     DataUnitFusionData dataUnitFusionData;
-    //---------车辆轨迹---------//
-    DataUnitCarTrackGather dataUnitCarTrackGather;
     //---------------路口交通流向相关--------//
     DataUnitTrafficFlowGather dataUnitTrafficFlowGather;
     //------交叉口堵塞报警------//
     DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm;
-    //--------排队长度等信息------//
-    DataUnitLineupInfoGather dataUnitLineupInfoGather;
-
-    bool isLocalBusinessRun = false;
-    //处理线程
+    //------路口溢出报警上传-----//
+    DataUnitIntersectionOverflowAlarm dataUnitIntersectionOverflowAlarm;
+    //-----进口监控数据上传----//
+    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4;
+    DataUnitInWatchData_2 dataUnitInWatchData_2;
 
     string db = "CLParking.db";
     string matrixNo = "0123456789";

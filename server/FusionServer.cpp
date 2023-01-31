@@ -26,18 +26,18 @@ using namespace os;
 FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer") {
     this->isMerge = isMerge;
     unOrder.resize(cliNum);
-    dataUnitFusionData.init(30, 100, cliNum, 10);//100ms一帧
-    dataUnitCarTrackGather.init(30, 33, cliNum, 10);//66ms一帧
-    dataUnitTrafficFlowGather.init(30, 500, cliNum, 10);//1000ms一帧
-    dataUnitCrossTrafficJamAlarm.init(30, 500, cliNum, 10);//1000ms一帧
-    dataUnitLineupInfoGather.init(30, 500, cliNum, 10);//1000ms一帧
-    StartLocalBusiness(this);
+    dataUnitFusionData.init(30, 100, cliNum, 10, this);//100ms一帧
+    dataUnitTrafficFlowGather.init(30, 1000, cliNum, 10, this);//1000ms一帧
+    dataUnitCrossTrafficJamAlarm.init(30, 1000, cliNum, 10, this);//1000ms一帧
+    dataUnitIntersectionOverflowAlarm.init(30, 1000, cliNum, 10, this);//1000ms一帧
+    dataUnitInWatchData_1_3_4.init(30, 1000, cliNum, 0, this);
+    dataUnitInWatchData_2.init(30, 1000, cliNum, 0, this);
 }
 
 FusionServer::~FusionServer() {
     StopTimerTaskAll();
     Close();
-    StopLocalBusiness(this);
+//    StopLocalBusiness(this);
 }
 
 int FusionServer::getMatrixNoFromDb() {
@@ -52,7 +52,7 @@ int FusionServer::getMatrixNoFromDb() {
     //open
     int rc = sqlite3_open(dbName.c_str(), &db);
     if (rc != SQLITE_OK) {
-        printf("sqlite open fail\n");
+        printf("sqlite open fail db:%s\n", dbName.c_str());
         sqlite3_close(db);
         return -1;
     }
@@ -84,10 +84,11 @@ int FusionServer::getMatrixNoFromDb() {
 int FusionServer::getPlatId() {
     this->plateId = string(g_eoc_intersection.PlatId);
     dataUnitFusionData.crossID = this->plateId;
-    dataUnitCarTrackGather.crossID = this->plateId;
+//    dataUnitCarTrackGather.crossID = this->plateId;
     dataUnitTrafficFlowGather.crossID = this->plateId;
     dataUnitCrossTrafficJamAlarm.crossID = this->plateId;
-    dataUnitLineupInfoGather.crossID = this->plateId;
+    dataUnitIntersectionOverflowAlarm.crossID = this->plateId;
+//    dataUnitLineupInfoGather.crossID = this->plateId;
 
 }
 
@@ -126,7 +127,7 @@ int FusionServer::FindIndexInUnOrder(const string in) {
     //首先遍历是否已经存在
     int alreadyExistIndex = -1;
     for (int i = 0; i < unOrder.size(); i++) {
-        auto iter = unOrder.at(i);
+        auto &iter = unOrder.at(i);
         if (iter == in) {
             alreadyExistIndex = i;
             break;
@@ -137,7 +138,7 @@ int FusionServer::FindIndexInUnOrder(const string in) {
     } else {
         //不存在就新加
         for (int i = 0; i < unOrder.size(); i++) {
-            auto iter = unOrder.at(i);
+            auto &iter = unOrder.at(i);
             if (iter.empty()) {
                 iter = in;
                 index = i;
@@ -155,60 +156,7 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    server->isLocalBusinessRun = true;
     Notice("server :%d %s start", server->port, __FUNCTION__);
-
-    std::thread threadFusionData = std::thread([server]() {
-
-        while (server->isLocalBusinessRun) {
-            DataUnitFusionData *dataUnit = &server->dataUnitFusionData;
-            DataUnitFusionData::MergeType mergeType;
-            if (server->isMerge) {
-                mergeType = DataUnitFusionData::Merge;
-            } else {
-                mergeType = DataUnitFusionData::NotMerge;
-            }
-            dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), mergeType, true));
-        }
-    });
-    server->localBusinessThreadHandle.push_back(threadFusionData.native_handle());
-
-    threadFusionData.detach();
-
-    std::thread threadTrafficFlowGather = std::thread([server]() {
-        while (server->isLocalBusinessRun) {
-            DataUnitTrafficFlowGather *dataUnit = &server->dataUnitTrafficFlowGather;
-            dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
-        }
-    });
-    server->localBusinessThreadHandle.push_back(threadTrafficFlowGather.native_handle());
-    threadTrafficFlowGather.detach();
-
-    std::thread threadLineupInfoGather = std::thread([server]() {
-        while (server->isLocalBusinessRun) {
-            DataUnitLineupInfoGather *dataUnit = &server->dataUnitLineupInfoGather;
-            dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
-        }
-    });
-    server->localBusinessThreadHandle.push_back(threadLineupInfoGather.native_handle());
-    threadLineupInfoGather.detach();
-
-    std::thread threadCrossTrafficJamAlarm = std::thread([server]() {
-        while (server->isLocalBusinessRun) {
-            DataUnitCrossTrafficJamAlarm *dataUnit = &server->dataUnitCrossTrafficJamAlarm;
-            dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), false));
-        }
-    });
-    server->localBusinessThreadHandle.push_back(threadCrossTrafficJamAlarm.native_handle());
-    threadCrossTrafficJamAlarm.detach();
-    std::thread threadCarTrackGather = std::thread([server]() {
-        while (server->isLocalBusinessRun) {
-            DataUnitCarTrackGather *dataUnit = &server->dataUnitCarTrackGather;
-            dataUnit->runTask(std::bind(dataUnit->FindOneFrame, dataUnit, (60 * 1000), true));
-        }
-    });
-    server->localBusinessThreadHandle.push_back(threadCarTrackGather.native_handle());
-    threadCarTrackGather.detach();
 
 //    std::thread([server]() {
 //        while (server->isLocalBusinessRun) {
@@ -225,8 +173,6 @@ int FusionServer::StopLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-
-    server->isLocalBusinessRun = false;
 //    for (auto &iter:server->localBusinessThreadHandle) {
 //        pthread_cancel(iter);
 //    }

@@ -58,20 +58,11 @@ public:
 public:
     typedef map<string, Timer *> TimerTasks;
     TimerTasks timerTasks;
-    moniter::PacketLoss *packetLossFusionData;
-
-    FSDynamic fsDynamicFusionData;
-    FSDynamic fsDynamicCarTrackGather;
-    FSDynamic fsDynamicTrafficFlowGather;
-    FSDynamic fsDynamicCrossTrafficJamAlarm;
-    FSDynamic fsDynamicLineupInfoGather;
-
 public:
 
     FusionClient(string server_ip, unsigned int server_port, void *super);
 
     ~FusionClient();
-
 
 public:
     int Open();
@@ -97,10 +88,6 @@ private:
     static int ThreadProcessSend(void *p);
 
     static void ThreadCheckStatus(void *p);
-
-    static void MonitorPacketLoss(void *p);
-
-    static void MonitorFSDynamic(void *p);
 
 public:
     //send to server

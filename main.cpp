@@ -28,15 +28,12 @@ int signalIgnpipe() {
 }
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
-DEFINE_string(cloudIp, "10.110.25.149", "云端ip，默认 10.110.25.149");
-DEFINE_int32(cloudPort, 7890, "云端端口号，默认7890");
-DEFINE_int32(keep, 604800, "云端端口号，默认604800");
+DEFINE_string(cloudIp, "139.9.157.176", "云端ip，默认 139.9.157.176");
+DEFINE_int32(cloudPort, 3410, "云端端口号，默认3410");
+DEFINE_int32(keep, 604800, "日志清理周期 单位s，默认604800");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 
 int main(int argc, char **argv) {
-
-    StartEocCommon();
-
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     z_log::init(PROJECT_NAME, FLAGS_keep);
@@ -80,7 +77,7 @@ int main(int argc, char **argv) {
 //    delete server;
 
 //    HttpServerInit(10000, &local);
-
+    StartEocCommon();
     while (true) {
         sleep(5);
     }

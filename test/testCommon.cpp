@@ -174,38 +174,11 @@ void testCRC() {
     cout << "crc:" << to_string(crc) << endl;
 }
 
-void exampleLineupInfo() {
-    LineupInfo lineupInfo;
-    lineupInfo.oprNum = "123";
-    lineupInfo.hardCode = "abc";
-    OneLineupInfo trafficFlowLineup;
-    trafficFlowLineup.headWay = 1;
-    trafficFlowLineup.averageSpeed = 2;
-    lineupInfo.trafficFlowList.push_back(trafficFlowLineup);
-    OneLineupInfo trafficFlowLineup1;
-    trafficFlowLineup1.headWay = 3;
-    trafficFlowLineup1.averageSpeed = 4;
-    lineupInfo.trafficFlowList.push_back(trafficFlowLineup1);
-    Json::FastWriter fastWriter;
-    Json::Reader reader;
-
-    Json::Value out;
-    lineupInfo.JsonMarshal(out);
-    string jsonStr;
-    jsonStr = fastWriter.write(out);
-    cout << jsonStr << endl;
-    LineupInfo lineupInfo1;
-    Json::Value in;
-    reader.parse(jsonStr, in, false);
-    lineupInfo1.JsonUnmarshal(in);
-    cout << "ok" << endl;
-};
 
 int main(int argc, char **argv) {
 
 //    exampleJsonTrafficFlow();
 //    exampleJsonTrafficFlows();
-    exampleLineupInfo();
     string a = "nihao";
     string b;
     b = a;

@@ -49,10 +49,12 @@ namespace common {
         CmdHeartBeat = 0x02,//心跳
         CmdFusionData = 0x03,//监控实时数据
         CmdCrossTrafficJamAlarm = 0x04,//交叉路口堵塞报警
-        CmdLineupInfoGather = 0x05,//排队长度等信息
-        CmdPicData = 0x06,//设备视频数据回传
+//        CmdLineupInfoGather = 0x05,//排队长度等信息
+        CmdIntersectionOverflowAlarm = 0x06,//路口溢出报警
         CmdTrafficFlowGather = 0x07,//车流量统计
-        CmdCarTrackGather = 0x08,//车辆轨迹
+//        CmdCarTrackGather = 0x08,//车辆轨迹
+        CmdInWatchData_1_3_4 = 0x08,//进口监控数据（1）（3）（4）触发式上报
+        CmdInWatchData_2 = 0x09,//进口监控数据（2）周期上报
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -84,6 +86,17 @@ namespace common {
         string body;
         PkgCRC crc;
     } Pkg;
+
+    class PkgClass {
+    public:
+        CmdType cmdType;
+
+        virtual bool JsonMarshal(Json::Value &out) = 0;
+
+        virtual bool JsonUnmarshal(Json::Value in) = 0;
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+    };
 
     /**
      * 组包函数,此时pkg内 校验码不对，要在组包的时候更新校验码
@@ -229,7 +242,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };//融合后的目标数据
 
-    class FusionData {
+    class FusionData : public PkgClass {
     public:
         string oprNum;// `json "oprNum"`
         double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
@@ -238,6 +251,10 @@ namespace common {
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类
         vector<VideoData> lstVideos;//图像数据，包括图像对应的设备编号、图像识别列表、图像base编码
     public:
+        FusionData() {
+            this->cmdType = CmdFusionData;
+        }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
@@ -251,7 +268,7 @@ namespace common {
      * @param pkg out 包结构体
      * @return 0：success -1：fail
      */
-    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+//    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
     //车流量统计
     class OneFlowData {
@@ -284,7 +301,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class TrafficFlowGather {
+    class TrafficFlowGather : public PkgClass {
     public:
         string oprNum;// `json "oprNum"`
         string crossID;
@@ -292,69 +309,44 @@ namespace common {
         string recordDateTime;
         vector<OneFlowData> trafficFlow;
     public:
+        TrafficFlowGather() {
+            this->cmdType = CmdTrafficFlowGather;
+        }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
     };
 
-    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
-
-    //车辆轨迹
-    class OneCarTrack {
-    public:
-        int id;
-        int type;
-        int cameraDirection;
-        int x1;
-        int y1;
-        int x2;
-        int y2;
-        int latitude;
-        int longitude;
-        string laneCode;
-        int speed;
-        int timeHeadway;
-        string plateNumber;
-        string plateColor;
-    public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
-    };
-
-    class CarTrack {
-    public:
-        string oprNum;// `json "oprNum"` uuid()
-        string hardCode;// `json "hardCode"` 设备唯一标识
-        double timestamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
-        string crossID;
-        string ip;
-        int type;
-        vector<OneCarTrack> lstObj;
-    public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
-    };//车辆轨迹
-
-    class CarTrackGather {
-    public:
-        string oprNum;// `json "oprNum"`
-        string crossID;
-        double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
-        string recordDateTime;
-        vector<OneCarTrack> lstObj;
-    public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
-    };
-
-    int PkgCarTrackGatherWithoutCRC(CarTrackGather carTrackGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
-
+//    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
     //---------交叉路口堵塞报警---------//
-    class CrossTrafficJamAlarm {
+    class CrossTrafficJamAlarm : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+//        int roadDirection;//0 东向西1 西向东2 南向北3 北向南
+        int alarmType;//1：交叉口堵塞
+        int alarmStatus;//1 有报警 0 报警恢复
+        string alarmTime;//日期2022-10-31 10:00:21
+    public:
+        CrossTrafficJamAlarm() {
+            this->cmdType = CmdCrossTrafficJamAlarm;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+//    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
+//    Pkg &pkg
+//    );
+
+    //--路口溢出报警上传--//
+    class IntersectionOverflowAlarm : public PkgClass {
     public:
         string oprNum;
         double timestamp;
@@ -365,63 +357,85 @@ namespace common {
         int alarmStatus;//1 有报警 0 报警恢复
         string alarmTime;//日期2022-10-31 10:00:21
     public:
+        IntersectionOverflowAlarm() {
+            this->cmdType = CmdIntersectionOverflowAlarm;
+        }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
     };
 
-    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
-                                          Pkg &pkg);
+//    int PkgIntersectionOverflowAlarmWithoutCRC(IntersectionOverflowAlarm intersectionOverflowAlarm, uint16_t sn,
+//                                               uint32_t deviceNO, Pkg &pkg);
 
-    //-------排队长度等信息--------//
-    class OneLineupInfo {
-    public:
-        int laneID;
-        int averageSpeed;
-        int flow;
-        int queueLength;
-        int sumMini;
-        int sumMid;
-        int sumMax;
-        int headWay;
-        int headWayTime;
-        int occupancy;
-        int occupancySpace;
-    public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
-    };
-
-    class LineupInfo {
+    //透传类型
+    class InWatchData_1_3_4: public PkgClass{
     public:
         string oprNum;
         double timestamp;
         string crossID;
         string hardCode;
-        string recordDateTime;
-        vector<OneLineupInfo> trafficFlowList;
+        string laneCode;//车道编号
+        int laneDirection;//车道方向 1=东，2=南，3=西，4=北 同EOC一致
+        int flowDirection;//流向方向 1=直行车道，2=左转车道，3=右转车道，4=掉头车道，5=直行-左转车道，6=直行右转车道，7=直行-掉头车道，8=左转-掉头车道，9=直行-左转-掉头车道 同EOC一致
+        int detectLocation;//触发线位置 0停止线 42检测线 60检测线
+        int vehicleID;//车辆ID
+        int vehicleType;//车辆类型
+        int vehicleSpeed;//车辆速度
+    public:
+        InWatchData_1_3_4(){
+            this->cmdType = CmdInWatchData_1_3_4;
+        }
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+//    int PkgInWatchData_1_3_4WithoutCRC(InWatchData_1_3_4 inWatchData134, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+
+    //透传类型
+    class InWatchData_2_trafficFlowListItem_vehicleIDListItem {
+    public:
+        int vehicleID;//车辆ID
+        int vehicleType;//车辆类型 0.非汽车1.小型汽车2.大型（公交）3.大型（渣土）4.大型（其他）5.其他 算法暂时识别不出来默认填0
+        int vehicleSpeed;//车辆速度
     public:
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class LineupInfoGather {
+    class InWatchData_2_trafficFlowListItem {
+    public:
+        string laneCode;//车道编号
+        int laneDirection;//车道方向 1=东，2=南，3=西，4=北 同EOC一致
+        int flowDirection;//流向方向 1=直行车道，2=左转车道，3=右转车道，4=掉头车道，5=直行-左转车道，6=直行右转车道，7=直行-掉头车道，8=左转-掉头车道，9=直行-左转-掉头车道 同EOC一致
+        vector<InWatchData_2_trafficFlowListItem_vehicleIDListItem> vehicleIDList;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class InWatchData_2: public PkgClass{
     public:
         string oprNum;
         double timestamp;
         string crossID;
         string hardCode;
-        string recordDateTime;
-        vector<OneLineupInfo> trafficFlowList;
+        int recordLaneSum;//记录上报车道数量
+        vector<InWatchData_2_trafficFlowListItem> trafficFlowList;//
     public:
+        InWatchData_2(){
+            this->cmdType = CmdInWatchData_2;
+        }
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
     };
 
-    int PkgLineupInfoGatherWithoutCRC(LineupInfoGather lineupInfoGather, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+//    int PkgInWatchData_2WithoutCRC(InWatchData_2 inWatchData2, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 }
 
 #endif //_COMMON_H

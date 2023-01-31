@@ -29,7 +29,7 @@ public:
 #define MAX_RB (1024*1024*64)
 public:
     //都是客户端的属性信息
-    void *super;
+    void *super = nullptr;
     int type = 0;
     vector<uint8_t> extraData;//特性数据
     bool isReceive_timeSet = false;

@@ -14,10 +14,12 @@
 #include <functional>
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
+#include "os/timeTask.hpp"
 
 using namespace common;
 
 using namespace std;
+using namespace os;
 
 template<typename I, typename O>
 class DataUnit {
@@ -27,37 +29,22 @@ public:
     vector<Queue<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
     int cache = 0;
+    int i_maxSizeIndex = 0;
+    int fs_i;
     int cap;
     int numI = 0;
     int thresholdFrame = 10;//时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
-    atomic<int> i_maxSize;//输入数组内单个通道内的最大缓存数
-    atomic<int> i_maxSizeIndex;
-    mutex mtx_i;
-    condition_variable cv_i_task;
-
-    mutex mtx_o;
-    condition_variable cv_o_task;
 public:
-    //动态帧率相关
-#define FSCOUNT 100
-    vector<int> vector_timeStart_i;
-    vector<int> vector_count_i;
-    vector<int> vector_fs_i;
-    atomic<int> fs_i;
-
-    atomic<int> timeStart_o;
-    atomic<int> count_o;
-    atomic<int> fs_o;
-
+    void *owner = nullptr;
 public:
     typedef I IType;
     typedef O OType;
     vector<I> oneFrame;//寻找同一时间戳的数据集
-
+    pthread_mutex_t oneFrameMutex = PTHREAD_MUTEX_INITIALIZER;
 public:
-    DataUnit() : cap(30), thresholdFrame(100), numI(4), cache(3) {
+    DataUnit() : cap(30), thresholdFrame(100), fs_i(100), numI(4), cache(3) {
         i_queue_vector.resize(numI);
         for (int i = 0; i < i_queue_vector.size(); i++) {
             auto iter = i_queue_vector.at(i);
@@ -71,45 +58,28 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
-
-        vector_timeStart_i.resize(numI);
-        for (auto &iter:vector_timeStart_i) {
-            iter = 0;
-        }
-        vector_count_i.resize(numI);
-        for (auto &iter:vector_count_i) {
-            iter = 0;
-        }
-        vector_fs_i.resize(numI);
-        for (auto &iter:vector_fs_i) {
-            iter = 0;
-        }
-
-        i_maxSize = 0;
-        i_maxSizeIndex = 0;
-
-        fs_i = 0;
-        timeStart_o = 0;
-        count_o = 0;
-        fs_o = 0;
     }
 
-    DataUnit(int c, int threshold_ms, int i_num, int i_cache) {
-        init(c, threshold_ms, i_num, i_cache);
+    DataUnit(int c, int threshold_ms, int i_num, int i_cache, void *owner) {
+        init(c, threshold_ms, i_num, i_cache, owner);
     }
 
     ~DataUnit() {
-        cv_i_task.notify_all();
-        cv_o_task.notify_all();
+        delete timerBusiness;
     }
 
 public:
 
-    void init(int c, int threshold_ms, int i_num, int cache) {
+    Timer *timerBusiness;
+    string timerBusinessName;
+
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner) {
         this->cap = c;
         this->numI = i_num;
         this->thresholdFrame = threshold_ms;
+        this->fs_i = threshold_ms;
         this->cache = cache;
+        this->owner = owner;
         i_queue_vector.resize(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
             auto iter = i_queue_vector.at(i);
@@ -123,18 +93,6 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
-
-        vector_timeStart_i.resize(numI);
-        vector_count_i.resize(numI);
-        vector_fs_i.resize(numI);
-
-        i_maxSize = 0;
-        i_maxSizeIndex = 0;
-
-        fs_i = 0;
-        timeStart_o = 0;
-        count_o = 0;
-        fs_o = 0;
     }
 
     bool frontI(I &i, int index) {
@@ -245,112 +203,41 @@ public:
         }
     }
 
-    void updateIMaxSizeForTask(int index) {
-        unique_lock<mutex> lck(mtx_i);
-
-        //更新最大缓存信息
-        if (i_queue_vector.at(index).size() > i_maxSize) {
-            i_maxSize = i_queue_vector.at(index).size();
-            i_maxSizeIndex = index;
-        }
-
-        if (i_maxSize >= cache) {
-            cv_i_task.notify_one();
-        }
-    }
-
     void runTask(std::function<void()> task) {
-        unique_lock<mutex> lck(mtx_i);
-//        while (i_maxSize < cache) {
-//            cv_i_task.wait(lck);
-//        }
-        cv_i_task.wait(lck);
-        if (i_maxSize < cache) {
-            return;
-        }
-
-        //执行相应的流程
-        task();
-        //更新最大缓存信息
+        pthread_mutex_lock(&oneFrameMutex);
         int maxSize = 0;
-        int maxSizeIndex = 0;
         for (int i = 0; i < i_queue_vector.size(); i++) {
             if (i_queue_vector.at(i).size() > maxSize) {
                 maxSize = i_queue_vector.at(i).size();
-                maxSizeIndex = i;
+                i_maxSizeIndex = i;
             }
         }
-        i_maxSize = maxSize;
-        i_maxSizeIndex = maxSizeIndex;
+        if (maxSize > cache) {
+            //执行相应的流程
+            task();
+        }
 
+        pthread_mutex_unlock(&oneFrameMutex);
     }
-
-    void UpdateFSI(int index) {
-        //先更新对应路的信息
-        if (vector_timeStart_i.at(index) == 0) {
-            auto now = std::chrono::system_clock::now();
-            vector_timeStart_i.at(index) = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now.time_since_epoch()).count();
-        }
-        vector_count_i.at(index)++;
-        if (vector_count_i.at(index) == FSCOUNT) {
-            //计算当前路的帧率
-            auto now = std::chrono::system_clock::now();
-            vector_fs_i.at(index) = ((std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now.time_since_epoch()).count() - vector_timeStart_i.at(index)) / FSCOUNT);
-
-            //临时变量清零
-            vector_timeStart_i.at(index) = 0;
-            vector_count_i.at(index) = 0;
-            //计算一次加权帧率
-            int count = 0;
-            int sum = 0;
-            for (int i = 0; i < vector_fs_i.size(); i++) {
-                if (vector_fs_i.at(i) != 0) {
-                    sum += vector_fs_i.at(i);
-                    count++;
-                }
-            }
-            fs_i = sum / count;
-        }
-    }
-
-    void UpdateFSO() {
-        if (timeStart_o == 0) {
-            auto now = std::chrono::system_clock::now();
-            timeStart_o = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now.time_since_epoch()).count();
-        }
-        count_o++;
-        if (count_o == FSCOUNT) {
-            auto now = std::chrono::system_clock::now();
-            fs_o = ((std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now.time_since_epoch()).count() - timeStart_o) / FSCOUNT);
-            //临时变量清零
-            timeStart_o = 0;
-            count_o = 0;
-        }
-    }
-
 };
 
 //车辆轨迹
-class DataUnitCarTrackGather : public DataUnit<CarTrack, CarTrackGather> {
-public:
-    int saveCount = 0;// 测试存包用
-    DataUnitCarTrackGather();
-
-    ~DataUnitCarTrackGather();
-
-    DataUnitCarTrackGather(int c, int threshold_ms, int i_num, int cache);
-
-    static void FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t toCacheCha, bool isFront);
-
-    static int ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit);
-};
+//class DataUnitCarTrackGather : public DataUnit<CarTrack, CarTrackGather> {
+//public:
+//    int saveCount = 0;// 测试存包用
+//    DataUnitCarTrackGather();
+//
+//    ~DataUnitCarTrackGather();
+//
+//    DataUnitCarTrackGather(int c, int threshold_ms, int i_num, int cache);
+//
+//    static void FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t toCacheCha, bool isFront);
+//
+//    static int ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
+//                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+//
+//    static int TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit);
+//};
 
 //车流量统计
 class DataUnitTrafficFlowGather : public DataUnit<TrafficFlow, TrafficFlowGather> {
@@ -360,7 +247,11 @@ public:
 
     ~DataUnitTrafficFlowGather();
 
-    DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache);
+    DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, uint64_t toCacheCha, bool isFront = true);
 
@@ -378,7 +269,11 @@ public:
 
     ~DataUnitCrossTrafficJamAlarm();
 
-    DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache);
+    DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
 
     static void FindOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit, uint64_t toCacheCha, bool isFront = true);
 
@@ -386,24 +281,6 @@ public:
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
 
     static int TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit);
-};
-
-//排队长度等信息
-class DataUnitLineupInfoGather : public DataUnit<LineupInfo, LineupInfoGather> {
-public:
-    int saveCount = 0;// 测试存包用
-    DataUnitLineupInfoGather();
-
-    ~DataUnitLineupInfoGather();
-
-    DataUnitLineupInfoGather(int c, int threshold_ms, int i_num, int cache);
-
-    static void FindOneFrame(DataUnitLineupInfoGather *dataUnit, uint64_t toCacheCha, bool isFront = true);
-
-    static int ThreadGetDataInRange(DataUnitLineupInfoGather *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitLineupInfoGather *dataUnit);
 };
 
 //监控数据
@@ -414,7 +291,11 @@ public:
 
     ~DataUnitFusionData();
 
-    DataUnitFusionData(int c, int threshold_ms, int i_num, int cache);
+    DataUnitFusionData(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
 
     typedef enum {
         NotMerge,
@@ -467,5 +348,59 @@ public:
 
     int GetFusionData(MergeData mergeData);
 };
+
+
+//路口溢出报警
+class DataUnitIntersectionOverflowAlarm : public DataUnit<IntersectionOverflowAlarm, IntersectionOverflowAlarm> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitIntersectionOverflowAlarm();
+
+    ~DataUnitIntersectionOverflowAlarm();
+
+    DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
+
+    static void FindOneFrame(DataUnitIntersectionOverflowAlarm *dataUnit, uint64_t toCacheCha, bool isFront = true);
+
+    static int ThreadGetDataInRange(DataUnitIntersectionOverflowAlarm *dataUnit,
+                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+
+    static int TaskProcessOneFrame(DataUnitIntersectionOverflowAlarm *dataUnit);
+};
+
+class DataUnitInWatchData_1_3_4 : public DataUnit<InWatchData_1_3_4, InWatchData_1_3_4> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitInWatchData_1_3_4();
+
+    ~DataUnitInWatchData_1_3_4();
+
+    DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
+
+};
+
+class DataUnitInWatchData_2 : public DataUnit<InWatchData_2, InWatchData_2> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitInWatchData_2();
+
+    ~DataUnitInWatchData_2();
+
+    DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+
+    static void task(void *local);
+
+};
+
 
 #endif //_DATAUNIT_H
