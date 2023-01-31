@@ -11,6 +11,7 @@
 [requires]
     cpp-httplib/0.11.4
     gflags/2.Y.Z
+    glog/0.6.0
     jsoncpp/1.Y.Z
     libcurl/7.Y.Z
     libuuid/1.Y.Z
@@ -35,11 +36,14 @@
 [full_requires]
     cpp-httplib/0.11.4:5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9
     gflags/2.2.2:7809af96123795daecc8e40824218dcf31bfb47f
+    glog/0.6.0:8f07dd17ca803e448d9805e01b194c606e906f20
     jsoncpp/1.9.5:8548d8fca6ceb9b52730acbcd1a582e65b4e2949
     libcurl/7.87.0:ec07ffc6b9a13e2918f79000a98371cd6062b944
+    libunwind/1.6.2:7df535d32c9d20f58dd3d2efb0316281ba963910
     libuuid/1.0.3:102fbb51a697085959ad9971131b6f4f0653f9b8
     openssl/1.1.1s:102fbb51a697085959ad9971131b6f4f0653f9b8
     sqlite3/3.40.1:9711f9335dc87fa5d3794c3f2ec44ccb97a6e454
+    xz_utils/5.2.5:102fbb51a697085959ad9971131b6f4f0653f9b8
     zlib/1.2.13:102fbb51a697085959ad9971131b6f4f0653f9b8
 
 [full_options]
@@ -50,6 +54,11 @@
     gflags:namespace=gflags
     gflags:nothreads=True
     gflags:shared=False
+    glog:fPIC=True
+    glog:shared=False
+    glog:with_gflags=True
+    glog:with_threads=True
+    glog:with_unwind=True
     jsoncpp:fPIC=True
     jsoncpp:shared=False
     libcurl:fPIC=True
@@ -94,6 +103,13 @@
     libcurl:with_verbose_strings=True
     libcurl:with_zlib=True
     libcurl:with_zstd=False
+    libunwind:coredump=True
+    libunwind:fPIC=True
+    libunwind:minidebuginfo=True
+    libunwind:ptrace=True
+    libunwind:setjmp=True
+    libunwind:shared=False
+    libunwind:zlibdebuginfo=True
     libuuid:fPIC=True
     libuuid:shared=False
     openssl:386=False
@@ -179,6 +195,8 @@
     sqlite3:shared=False
     sqlite3:threadsafe=1
     sqlite3:use_alloca=False
+    xz_utils:fPIC=True
+    xz_utils:shared=False
     zlib:fPIC=True
     zlib:shared=False
 

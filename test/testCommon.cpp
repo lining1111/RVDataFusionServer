@@ -9,11 +9,9 @@
 #include "common/common.h"
 #include "common/CRC.h"
 #include "Queue.h"
-#include "log/Log.h"
 #include "ringbuffer/RingBuffer.h"
 
 using namespace common;
-using namespace z_log;
 
 /**
  * 一次帧数据组包解包过程

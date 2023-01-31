@@ -87,8 +87,6 @@ private:
 
     static int ThreadProcessSend(void *p);
 
-    static void ThreadCheckStatus(void *p);
-
 public:
     //send to server
     int SendQueue(Pkg pkg);

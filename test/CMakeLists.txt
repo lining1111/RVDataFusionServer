@@ -10,8 +10,7 @@ redefine_file_macro(testIni)
 add_executable(testCommon testCommon.cpp
         ../common/common.cpp
         ../common/CRC.cpp
-        ../ringbuffer/RingBuffer.cpp
-        ../log/Log.cpp)
+        ../ringbuffer/RingBuffer.cpp)
 target_link_libraries(testCommon ${LIBS})
 redefine_file_macro(testCommon)
 
@@ -25,7 +24,6 @@ add_executable(testClient testClient.cpp
         ../common/common.cpp
         ../common/CRC.cpp
         ../ringbuffer/RingBuffer.cpp
-        ../log/Log.cpp
         ../getData/GetData.cpp)
 target_link_libraries(testClient ${LIBS})
 redefine_file_macro(testClient)
@@ -41,7 +39,6 @@ add_executable(testFusionClient testFusionClient.cpp
         ../client/FusionClient.cpp
         ../common/common.cpp
         ../common/CRC.cpp
-        ../log/Log.cpp
         ../ringbuffer/RingBuffer.cpp
         ../utility/utility.cpp)
 target_link_libraries(testFusionClient ${LIBS})

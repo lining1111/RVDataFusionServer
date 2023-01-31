@@ -12,11 +12,10 @@
 #include "client/FusionClient.h"
 #include "common/common.h"
 #include "common/CRC.h"
-#include "log/Log.h"
+#include <glog/logging.h>
 #include "net/cpp-icmplib.h"
 
 using namespace common;
-using namespace z_log;
 
 FusionClient::FusionClient(string server_ip, unsigned int server_port, void *super) {
     this->server_ip = server_ip;
@@ -29,22 +28,22 @@ FusionClient::~FusionClient() {
 }
 
 int FusionClient::Open() {
+    if (this->server_ip.empty()) {
+        LOG(ERROR) << "server ip empty" << std::endl;
+        return -1;
+    }
     //先ping下远端开是否可以连接
     auto result = icmplib::Ping(server_ip, 3).response;
     if (result != icmplib::PingResponseType::Success) {
-//        Error("%s ip %s ping fail:%d", __FUNCTION__, server_ip.c_str(), result);
+        LOG(ERROR) << "client not connect:" << server_ip;
         return -1;
     }
 
-    if (this->server_ip.empty()) {
-        Error("server ip empty");
-        return -1;
-    }
 
     int sockfd = 0;
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (sockfd == -1) {
-        cout << "create socket failed" << endl;
+        LOG(ERROR) << "create socket failed" << endl;
         return -1;
     } else {
         int opt = 1;
@@ -70,15 +69,12 @@ int FusionClient::Open() {
     gettimeofday(&tv_now, nullptr);
 
     if (ret == -1) {
-        Error("connect server:%s port:%d fail at %s", this->server_ip.c_str(), this->server_port,
-              ctime((time_t *) &tv_now.tv_sec));
+        LOG(ERROR) << "connect server fail:" << this->server_ip << ":" << this->server_port;
         close(sockfd);
         return -1;
     }
 
-    Notice("connect server:%s port:%d success at %s", this->server_ip.c_str(), this->server_port,
-           ctime((time_t *) &tv_now.tv_sec));
-
+    LOG(INFO) << "connect server success:" << this->server_ip << ":" << this->server_port;
     rb = new RingBuffer(RecvSize);
     this->sockfd = sockfd;
     isRun = true;
@@ -87,7 +83,7 @@ int FusionClient::Open() {
 
 int FusionClient::Run() {
     if (!this->isRun) {
-        cout << "server not connect" << endl;
+        LOG(INFO) << "server not connect";
         return -1;
     }
 
@@ -143,17 +139,17 @@ int FusionClient::Close() {
         try {
             futureDump.wait();
         } catch (std::future_error e) {
-            Error(e.what());
+            LOG(INFO) << e.what();
         }
         try {
             futureProcessRev.wait();
         } catch (std::future_error e) {
-            Error(e.what());
+            LOG(INFO) << e.what();
         }
         try {
             futureProcessSend.wait();
         } catch (std::future_error e) {
-            Error(e.what());
+            LOG(INFO) << e.what();
         }
     }
 
@@ -173,7 +169,7 @@ int FusionClient::ThreadDump(void *p) {
     char *buf = new char[1024 * 512];
     int nread = 0;
 
-    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
         int recvLen = (client->rb->GetWriteLen() < (1024 * 512)) ? client->rb->GetWriteLen() : (1024 * 512);
 
@@ -182,11 +178,11 @@ int FusionClient::ThreadDump(void *p) {
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
                 continue;
             }
-            Error("recv info error,errno:%s", strerror(errno));
+            LOG(ERROR) << "recv info error,errno:" << strerror(errno);
             close(client->sockfd);
             timeval tv_now;
             gettimeofday(&tv_now, nullptr);
-            cout << "close sock:" << to_string(client->sockfd) << ",at " << ctime((time_t *) &tv_now.tv_sec) << endl;
+            LOG(ERROR) << "close sock:" << to_string(client->sockfd) << endl;
             client->isRun = false;
         } else if (nread > 0) {
 //            cout << "recv info" << endl;
@@ -198,7 +194,7 @@ int FusionClient::ThreadDump(void *p) {
         usleep(10);
     }
     delete[] buf;
-    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient,"<<client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -208,7 +204,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
 
         if (client->rb == nullptr) {
@@ -278,7 +274,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
 //                PrintHex(client->pkgBuffer, client->pkgHead.len);
                 uint16_t crc = Crc16TabCCITT(client->pkgBuffer, client->pkgHead.len - 2);
                 if (crc != pkg.crc.data) {//CRC校验失败
-                    Error("CRC fail, 计算值:%d,包内值:%d", crc, pkg.crc.data);
+                    LOG(INFO) << "CRC fail, 计算值:" << crc << ",包内值:%d" << pkg.crc.data;
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
                         delete[] client->pkgBuffer;
@@ -292,11 +288,6 @@ int FusionClient::ThreadProcessRecv(void *p) {
                     gettimeofday(&client->receive_time, nullptr);
 
                     //存入分包队列
-//                    if (client->queuePkg.Size() >= client->maxQueuePkg) {
-//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
-//                    } else {
-//                        client->queuePkg.Push(pkg);
-//                    }
                     if (!client->queuePkg.push(pkg)) {
 //                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
                     }
@@ -325,7 +316,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
         }
         usleep(10);
     }
-    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient,"<<client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -338,7 +329,7 @@ int FusionClient::ThreadProcessSend(void *p) {
     uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
 
-    Notice("FusionClient %s:%d %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
         Pkg pkg;
         if (!client->queue_send.pop(pkg)) {
@@ -368,41 +359,14 @@ int FusionClient::ThreadProcessSend(void *p) {
         pthread_mutex_unlock(&client->lock_sock);
     }
     delete[] buf_send;
-    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
-}
-
-void FusionClient::ThreadCheckStatus(void *p) {
-    if (p == nullptr) {
-        return;
-    }
-    auto client = (FusionClient *) p;
-
-    Notice("FusionClient %s run", client->server_ip.c_str(), client->server_port, __FUNCTION__);
-    while (client->isRun) {
-        sleep(client->checkStatus_timeval);
-        if (!client->isRun) {
-            continue;
-        }
-
-        timeval tv_now;
-
-        gettimeofday(&tv_now, nullptr);
-        if ((tv_now.tv_sec - client->receive_time.tv_sec) >= 2 * client->heartBeatTimeval) {
-            //long time no receive
-            client->isRun = false;
-            cout << "long time no receive " << endl;
-            cout << "now: " << ctime((time_t *) &tv_now.tv_sec) << endl;
-            cout << "last receive: " << ctime((time_t *) &client->receive_time.tv_sec) << endl;
-        }
-    }
-    Notice("FusionClient %s:%d %s exit", client->server_ip.c_str(), client->server_port, __FUNCTION__);
 }
 
 int FusionClient::SendQueue(Pkg pkg) {
     //try send lock_queue_recv
     if (!queue_send.push(pkg)) {
-        Error("%s fail", __FUNCTION__);
+        LOG(INFO) << __FUNCTION__ << " fail";
         return -1;
     }
     return 0;
@@ -425,7 +389,7 @@ int FusionClient::SendBase(Pkg pkg) {
     while (nleft > 0) {
         if ((nsend = send(sockfd, ptr, nleft, 0)) < 0) {
             ret = -1;
-            Error("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
+            printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
             isRun = false;
             break;
         } else if (nsend == 0) {

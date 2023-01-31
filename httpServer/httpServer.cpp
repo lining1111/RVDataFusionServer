@@ -4,9 +4,7 @@
 
 #include "httpServer.h"
 #include <httplib.h>
-#include "log/Log.h"
-
-using namespace z_log;
+#include "glog/logging.h"
 
 httplib::Server svr;
 static LocalBusiness *mLocal = nullptr;
@@ -62,7 +60,7 @@ void GetLocalInfoCB(const httplib::Request &req, httplib::Response &resp) {
 
 void MThread(void *p, int port) {
     httplib::Server *svr = (httplib::Server *) p;
-    Notice("开启web服务：%d", port);
+    LOG(INFO) << "开启web服务:" << port;
     svr->listen("0.0.0.0", port);
 }
 

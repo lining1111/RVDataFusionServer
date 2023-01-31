@@ -10,11 +10,7 @@
 #include <future>
 #include <sys/epoll.h>
 #include <iostream>
-
 #include "TcpServerClient.hpp"
-#include "log/Log.h"
-
-using namespace z_log;
 
 using namespace std;
 
@@ -139,7 +135,7 @@ private:
     void cbConnect(int clientSock, struct sockaddr_in clientSockAddr) {
         string name = "serverClient " + to_string(clientSock);
         TcpServerClient *client = new TcpServerClient(clientSock, clientSockAddr, name, this);
-        Info("client %s connect", inet_ntoa(client->addr.sin_addr));
+        printf("client %s connect", inet_ntoa(client->addr.sin_addr));
         pthread_mutex_lock(&lockClients);
         clients.push_back(client);
         pthread_mutex_unlock(&lockClients);

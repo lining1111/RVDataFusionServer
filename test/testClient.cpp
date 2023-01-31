@@ -7,11 +7,10 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
+#include <csignal>
 #include "common/CRC.h"
-#include "log/Log.h"
 #include "common/common.h"
 
-using namespace z_log;
 using namespace std;
 using namespace common;
 
@@ -227,7 +226,7 @@ int main(int argc, char **argv) {
     int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (sockfd <= 0) {
-        Fatal("client <=0");
+        printf("client <=0\n");
         return -1;
     }
 
@@ -275,11 +274,11 @@ int main(int argc, char **argv) {
     ret = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr));
 
     if (ret == -1) {
-        Error("connect server:%s-%d fail", server_ip.c_str(), server_port);
+        printf("connect server:%s-%d fail\n", server_ip.c_str(), server_port);
         close(sockfd);
         return -1;
     }
-    Info("connect server:%s-%d success", server_ip.c_str(), server_port);
+    printf("connect server:%s-%d success\n", server_ip.c_str(), server_port);
 
 
 //    //获取指定目录下的文件列表
@@ -342,13 +341,13 @@ int main(int argc, char **argv) {
 
                 int len = send(sockfd, msg, msg_len, 0);
                 if (len != msg_len) {
-                    Error("send fail");
+                    printf("send fail\n");
                 } else {
-                    Info("send success len:%d", len);
+                    printf("send success len:%d\n", len);
                 }
                 gettimeofday(&end, nullptr);
                 uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-                Info("pkg sn:%d 发送耗时%lu us\n", i, cost);
+                printf("pkg sn:%d 发送耗时%lu us\n", i, cost);
 
                 if (i == 1) {
                     max = cost;
@@ -377,9 +376,9 @@ int main(int argc, char **argv) {
 //            PrintHex(msg, msg_len);
 
             if (len != msg_len) {
-                Error("send fail");
+                printf("send fail\n");
             } else {
-                Info("send success len:%d", len);
+                printf("send success len:%d\n", len);
             }
         }
 //        int index = 0;

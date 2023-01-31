@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(RVDataFusionServer VERSION 0.0.5)
+project(RVDataFusionServer VERSION 0.1.0)
 string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
 set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
@@ -75,7 +75,7 @@ macro(SUBDIRLISTINCLUDE result curdir depth filtration_dirlist...)
     set(${result} ${dirlist})
 endmacro()
 
-set(LIBS m pthread ${CONAN_LIBS} zlog)
+set(LIBS m pthread ${CONAN_LIBS})
 
 set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test)
 SUBDIRLISTINCLUDE(SRC_DIRS ${CMAKE_SOURCE_DIR} 2 ${filtration_dirlist})

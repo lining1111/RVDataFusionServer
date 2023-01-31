@@ -4,7 +4,7 @@
 
 #include <fcntl.h>
 #include <iostream>
-#include <log/Log.h>
+#include "glog/logging.h"
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -20,7 +20,6 @@
 #include <functional>
 #include "eoc_comm/configure_eoc_init.h"
 
-using namespace z_log;
 using namespace os;
 
 FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer") {
@@ -63,7 +62,7 @@ int FusionServer::getMatrixNoFromDb() {
     string columnName;
     rc = sqlite3_get_table(db, sql, &result, &nrow, &ncolumn, &errmsg);
     if (rc != SQLITE_OK) {
-        Error("sqlite err:%s", errmsg);
+        LOG(INFO) << "sqlite err:" << errmsg;
         sqlite3_free(errmsg);
         return -1;
     }
@@ -96,7 +95,7 @@ int FusionServer::Open() {
 
     int ret = TcpServer::Open();
     if (ret == 0) {
-        Notice("server sock %d create success", sock);
+        LOG(INFO) << "server sock create success:" << sock;
     }
 
     return ret;
@@ -106,7 +105,7 @@ int FusionServer::Run() {
     TcpServer::Run();
     //获取matrixNo
     getMatrixNoFromDb();
-    Notice("sn:%s", matrixNo.c_str());
+    LOG(INFO) << "sn:" << matrixNo;
     //获取路口编号
 //    getCrossIdFromDb();
 
@@ -156,7 +155,7 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    Notice("server :%d %s start", server->port, __FUNCTION__);
+    LOG(INFO) << "server:" << server->port << " StartLocalBusiness start";
 
 //    std::thread([server]() {
 //        while (server->isLocalBusinessRun) {
@@ -178,7 +177,7 @@ int FusionServer::StopLocalBusiness(void *pServer) {
 //    }
     server->localBusinessThreadHandle.clear();
 
-    Notice("server :%d %s stop", server->port, __FUNCTION__);
+    LOG(INFO) << "server:" << server->port << " StopLocalBusiness stop";
     return 0;
 }
 

@@ -10,10 +10,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include "log/Log.h"
-
-using namespace z_log;
+#include "glog/logging.h"
 
 static string savePath = "/mnt/mnt_hd/save/";
 static int saveCountMax = 0;
@@ -62,9 +59,9 @@ void LocalBusiness::Run() {
         string dirName1 = savePath;
         int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         if (!isCreate1)
-            Info("create path:%s\n", dirName1.c_str());
+            LOG(INFO) << "create path:" << dirName1;
         else
-            Info("create path failed! error code : %d \n", isCreate1);
+            LOG(INFO) << "create path failed! error code:" << isCreate1;
     }
 
     StartTimerTask();
@@ -127,7 +124,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    Notice("服务端 %s 重启", iter.first.c_str());
+                    LOG(INFO) << "服务端:" << iter.first << " 重启";
                     iter.second->Run();
                 }
             }
@@ -137,7 +134,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    Notice("客户端 %s 重启", iter.first.c_str());
+                    LOG(INFO) << "客户端:" << iter.first << " 重启";
                     iter.second->Run();
                 }
             }
@@ -151,9 +148,9 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
         string dirName1 = savePath + msgType;
         int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         if (!isCreate1)
-            Info("create path:%s\n", dirName1.c_str());
+            LOG(INFO) << "create path:" << dirName1;
         else
-            Info("create path failed! error code : %d \n", isCreate1);
+            LOG(INFO) << "create path failed! error code:" << isCreate1;
 
         string fileName = savePath + msgType + "/" + to_string(timestamp) + ".txt";
         ofstream file;
@@ -166,22 +163,23 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
     }
 
     if (local->clientList.empty()) {
-        Error("client list empty");
+        LOG(INFO) << "client list empty";
         return -1;
     }
     int ret = 0;
     for (auto &iter1:local->clientList) {
         auto cli = iter1.second;
         if (cli->isRun) {
-            Info("发送到上层%s,消息%s,matrixNo:%d", iter1.first.c_str(), msgType.c_str(), pkg.head.deviceNO);
+            LOG(INFO) << "发送到上层" << cli->server_ip << ":" << cli->server_port << "消息:" << msgType << ",matrixNo:"
+                      << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
-                Warn("%d发送%s失败", pkg.head.cmd, cli->server_ip.c_str());
+                LOG(INFO) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;
             } else {
-                Info("%d发送%s成功", pkg.head.cmd, cli->server_ip.c_str());
+                LOG(INFO) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
             }
         } else {
-            Warn("未连接上层%s", cli->server_ip.c_str());
+            LOG(INFO) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
             ret = -1;
         }
     }
