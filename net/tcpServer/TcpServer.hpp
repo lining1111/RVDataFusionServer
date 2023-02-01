@@ -52,7 +52,7 @@ private:
         //1.申请sock
         int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
         if (sockFd == -1) {
-            printf("Server sock fail:%s\n", strerror(errno));
+            printf("Server:%d sock fail:%s\n", this->port, strerror(errno));
             return -1;
         }
         //2.设置地址、端口
@@ -62,7 +62,7 @@ private:
         server_addr.sin_port = htons(this->port);
         //将套接字绑定到服务器的网络地址上
         if (bind(sockFd, (struct sockaddr *) &server_addr, (socklen_t) sizeof(server_addr)) < 0) {
-            printf("Server sock bind error:%s\n", strerror(errno));
+            printf("Server:%d sock bind error:%s\n", this->port, strerror(errno));
             close(sockFd);
             return -1;
         }
@@ -81,7 +81,7 @@ private:
 
         //4.监听
         if (listen(sockFd, maxListen) != 0) {
-            printf("Server sock listen fail,error:%s\n", strerror(errno));
+            printf("Server:%d sock listen fail,error:%s\n", this->port, strerror(errno));
             close(sockFd);
             return -1;
         }
@@ -147,15 +147,15 @@ private:
      * @param clientSock
      * @param clientSockAddr
      */
-    void cbDisconnect(int clientSock, struct sockaddr_in clientSockAddr) {
+    void cbDisconnect(int clientSock) {
         pthread_mutex_lock(&lockClients);
-        auto iter = clients.begin();
-        do {
-            if (static_cast<TcpServerClient *>(*iter)->sock == clientSock) {
-                delete *iter;
-                iter = clients.erase(iter);
+        for (int i = 0; i < clients.size(); i++) {
+            auto iter = clients.at(i);
+            if (iter->sock == clientSock) {
+                delete iter;
+                clients.erase(clients.begin() + i);
             }
-        } while (iter != clients.end());
+        }
         clients.shrink_to_fit();
         pthread_mutex_unlock(&lockClients);
     }
@@ -203,7 +203,7 @@ private:
                     client_fd = server->wait_events[i].data.fd;
                     //epoll del
                     server->EpollDel(client_fd);
-                    server->cbDisconnect(client_fd, remote_addr);
+                    server->cbDisconnect(client_fd);
                 }
             }
         }
@@ -288,10 +288,13 @@ public:
         return 0;
     }
 
-    void Run() {
-        isRun = true;
+    int Run() {
+        if (!isRun) {
+            return -1;
+        }
         isLocalThreadRun = true;
         futureRun = std::async(std::launch::async, ThreadRun, this);
+        return 0;
     }
 };
 

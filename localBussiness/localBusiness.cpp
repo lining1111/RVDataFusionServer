@@ -83,15 +83,20 @@ void LocalBusiness::deleteTimerTask(string name) {
 
 void LocalBusiness::StartTimerTask() {
 
-    addTimerTask("localBusiness timerKeep", 1000, std::bind(Task_Keep, this));
+    addTimerTask("localBusiness timerKeep", 1000*3, std::bind(Task_Keep, this));
 
-    addTimerTask("localBusiness timerTask_FusionData", 100, std::bind(Task_FusionData, this));
-    addTimerTask("localBusiness timerTask_TrafficFlowGather", 1000, std::bind(Task_TrafficFlowGather, this));
-    addTimerTask("localBusiness timerTask_CrossTrafficJamAlarm", 1000, std::bind(Task_CrossTrafficJamAlarm, this));
+    addTimerTask("localBusiness timerTask_FusionData", 100,
+                 std::bind(Task_FusionData, this));
+    addTimerTask("localBusiness timerTask_TrafficFlowGather", 1000,
+                 std::bind(Task_TrafficFlowGather, this));
+    addTimerTask("localBusiness timerTask_CrossTrafficJamAlarm", 1000,
+                 std::bind(Task_CrossTrafficJamAlarm, this));
     addTimerTask("localBusiness timerTask_IntersectionOverflowAlarm", 1000,
                  std::bind(Task_IntersectionOverflowAlarm, this));
-    addTimerTask("localBusiness timerTask_InWatchData_1_3_4", 1000, std::bind(Task_InWatchData_1_3_4, this));
-    addTimerTask("localBusiness timerTask_InWatchData_2", 1000, std::bind(Task_InWatchData_2, this));
+    addTimerTask("localBusiness timerTask_InWatchData_1_3_4", 1000,
+                 std::bind(Task_InWatchData_1_3_4, this));
+    addTimerTask("localBusiness timerTask_InWatchData_2", 1000,
+                 std::bind(Task_InWatchData_2, this));
 
     //开启伪造数据线程
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
@@ -124,7 +129,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    LOG(INFO) << "服务端:" << iter.first << " 重启";
+                    LOG(WARNING) << "服务端:" << iter.first << " 重启";
                     iter.second->Run();
                 }
             }
@@ -134,7 +139,7 @@ void LocalBusiness::Task_Keep(void *p) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
-                    LOG(INFO) << "客户端:" << iter.first << " 重启";
+                    LOG(WARNING) << "客户端:" << iter.first << " 重启";
                     iter.second->Run();
                 }
             }
@@ -163,15 +168,15 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
     }
 
     if (local->clientList.empty()) {
-        LOG(INFO) << "client list empty";
+        LOG(ERROR) << "client list empty";
         return -1;
     }
     int ret = 0;
     for (auto &iter1:local->clientList) {
         auto cli = iter1.second;
         if (cli->isRun) {
-            LOG(INFO) << "发送到上层" << cli->server_ip << ":" << cli->server_port << "消息:" << msgType << ",matrixNo:"
-                      << pkg.head.deviceNO;
+            LOG(INFO) << "发送到上层" << cli->server_ip << ":" << cli->server_port
+                      << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
                 LOG(INFO) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;

@@ -35,7 +35,7 @@ int FusionClient::Open() {
     //先ping下远端开是否可以连接
     auto result = icmplib::Ping(server_ip, 3).response;
     if (result != icmplib::PingResponseType::Success) {
-        LOG(ERROR) << "client not connect:" << server_ip;
+//        LOG(ERROR) << "client not connect:" << server_ip;
         return -1;
     }
 
@@ -83,7 +83,7 @@ int FusionClient::Open() {
 
 int FusionClient::Run() {
     if (!this->isRun) {
-        LOG(INFO) << "server not connect";
+        LOG(ERROR) << "client not connect:" << server_ip << ":" << server_port;
         return -1;
     }
 
@@ -139,23 +139,23 @@ int FusionClient::Close() {
         try {
             futureDump.wait();
         } catch (std::future_error e) {
-            LOG(INFO) << e.what();
+            LOG(ERROR) << e.what();
         }
         try {
             futureProcessRev.wait();
         } catch (std::future_error e) {
-            LOG(INFO) << e.what();
+            LOG(ERROR) << e.what();
         }
         try {
             futureProcessSend.wait();
         } catch (std::future_error e) {
-            LOG(INFO) << e.what();
+            LOG(ERROR) << e.what();
         }
     }
 
     delete rb;
 
-    delete pkgBuffer;
+    delete[] pkgBuffer;
 
     return 0;
 }
@@ -169,7 +169,7 @@ int FusionClient::ThreadDump(void *p) {
     char *buf = new char[1024 * 512];
     int nread = 0;
 
-    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
         int recvLen = (client->rb->GetWriteLen() < (1024 * 512)) ? client->rb->GetWriteLen() : (1024 * 512);
 
@@ -194,7 +194,7 @@ int FusionClient::ThreadDump(void *p) {
         usleep(10);
     }
     delete[] buf;
-    LOG(INFO) << "FusionClient,"<<client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -204,9 +204,9 @@ int FusionClient::ThreadProcessRecv(void *p) {
     }
     auto client = (FusionClient *) p;
 
-    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
-
+        usleep(100);
         if (client->rb == nullptr) {
             //数据缓存区不存在
             continue;
@@ -274,7 +274,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
 //                PrintHex(client->pkgBuffer, client->pkgHead.len);
                 uint16_t crc = Crc16TabCCITT(client->pkgBuffer, client->pkgHead.len - 2);
                 if (crc != pkg.crc.data) {//CRC校验失败
-                    LOG(INFO) << "CRC fail, 计算值:" << crc << ",包内值:%d" << pkg.crc.data;
+                    VLOG(2) << "CRC fail, 计算值:" << crc << ",包内值:%d" << pkg.crc.data;
                     client->bodyLen = 0;//获取分包头后，得到的包长度
                     if (client->pkgBuffer) {
                         delete[] client->pkgBuffer;
@@ -314,9 +314,8 @@ int FusionClient::ThreadProcessRecv(void *p) {
             }
                 break;
         }
-        usleep(10);
     }
-    LOG(INFO) << "FusionClient,"<<client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -329,7 +328,7 @@ int FusionClient::ThreadProcessSend(void *p) {
     uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
 
-    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
         Pkg pkg;
         if (!client->queue_send.pop(pkg)) {
@@ -359,14 +358,14 @@ int FusionClient::ThreadProcessSend(void *p) {
         pthread_mutex_unlock(&client->lock_sock);
     }
     delete[] buf_send;
-    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
+    LOG(WARNING) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
 }
 
 int FusionClient::SendQueue(Pkg pkg) {
     //try send lock_queue_recv
     if (!queue_send.push(pkg)) {
-        LOG(INFO) << __FUNCTION__ << " fail";
+        LOG(ERROR) << __FUNCTION__ << " fail";
         return -1;
     }
     return 0;

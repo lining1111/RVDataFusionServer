@@ -22,7 +22,7 @@
 
 using namespace os;
 
-FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer") {
+FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer-"+ to_string(port)) {
     this->isMerge = isMerge;
     unOrder.resize(cliNum);
     dataUnitFusionData.init(30, 100, cliNum, 10, this);//100ms一帧
@@ -51,7 +51,7 @@ int FusionServer::getMatrixNoFromDb() {
     //open
     int rc = sqlite3_open(dbName.c_str(), &db);
     if (rc != SQLITE_OK) {
-        printf("sqlite open fail db:%s\n", dbName.c_str());
+        LOG(ERROR) << "sqlite open fail db:" << dbName;
         sqlite3_close(db);
         return -1;
     }
@@ -62,7 +62,7 @@ int FusionServer::getMatrixNoFromDb() {
     string columnName;
     rc = sqlite3_get_table(db, sql, &result, &nrow, &ncolumn, &errmsg);
     if (rc != SQLITE_OK) {
-        LOG(INFO) << "sqlite err:" << errmsg;
+        LOG(ERROR) << "sqlite err:" << errmsg;
         sqlite3_free(errmsg);
         return -1;
     }
@@ -95,17 +95,19 @@ int FusionServer::Open() {
 
     int ret = TcpServer::Open();
     if (ret == 0) {
-        LOG(INFO) << "server sock create success:" << sock;
+        LOG(WARNING) << "server sock create success:" << sock;
     }
 
     return ret;
 }
 
 int FusionServer::Run() {
-    TcpServer::Run();
+    if (TcpServer::Run() != 0) {
+        return -1;
+    }
     //获取matrixNo
     getMatrixNoFromDb();
-    LOG(INFO) << "sn:" << matrixNo;
+    LOG(WARNING) << "sn:" << matrixNo;
     //获取路口编号
 //    getCrossIdFromDb();
 
@@ -155,7 +157,7 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    LOG(INFO) << "server:" << server->port << " StartLocalBusiness start";
+    LOG(WARNING) << "server:" << server->port << " StartLocalBusiness start";
 
 //    std::thread([server]() {
 //        while (server->isLocalBusinessRun) {
@@ -177,7 +179,7 @@ int FusionServer::StopLocalBusiness(void *pServer) {
 //    }
     server->localBusinessThreadHandle.clear();
 
-    LOG(INFO) << "server:" << server->port << " StopLocalBusiness stop";
+    LOG(WARNING) << "server:" << server->port << " StopLocalBusiness stop";
     return 0;
 }
 

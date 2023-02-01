@@ -68,7 +68,7 @@
 //        server->queueMergeData.pop();
 //        Info("server mergeData: timestamp:%f,size:%d",
 //             mergeData.timestamp,
-//             mergeData.obj.size());
+//             mergeData.objOutput.size());
 //    }
 //
 //    delete server;

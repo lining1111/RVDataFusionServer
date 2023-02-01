@@ -323,7 +323,7 @@ public:
 
     typedef struct {
         double timestamp;
-        vector<OBJECT_INFO_NEW> obj;//融合输出量
+        vector<OBJECT_INFO_NEW> objOutput;//融合输出量
         RoadDataInSet objInput;//融合输入量
     } MergeData;
 

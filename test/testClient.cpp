@@ -7,7 +7,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <iostream>
-#include <csignal>
+#include <sys/time.h>
 #include "common/CRC.h"
 #include "common/common.h"
 
@@ -414,8 +414,8 @@ int main(int argc, char **argv) {
 //            watchData.imageData = string(imgBase64).data();
 //            watchData.direction = roadNum;
 //            //lstObjTarget
-//            for (int i = 0; i < getData->obj.size(); i++) {
-//                auto iter = getData->obj.at(i);
+//            for (int i = 0; i < getData->objOutput.size(); i++) {
+//                auto iter = getData->objOutput.at(i);
 //                watchData.lstObjTarget.push_back(iter);
 //            }
 //            //组包
@@ -462,8 +462,8 @@ int main(int argc, char **argv) {
 //                watchData.imageData = string(imgBase64).data();
 //                watchData.direction = roadNum;
 //                //lstObjTarget
-//                for (int j = 0; j < getData->obj.size(); j++) {
-//                    auto iter = getData->obj.at(j);
+//                for (int j = 0; j < getData->objOutput.size(); j++) {
+//                    auto iter = getData->objOutput.at(j);
 //                    watchData.lstObjTarget.push_back(iter);
 //                }
 //                //组包

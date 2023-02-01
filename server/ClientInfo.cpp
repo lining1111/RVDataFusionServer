@@ -62,12 +62,10 @@ int ClientInfo::Run() {
 
     TcpServerClient::Run();
     isThreadRun = true;
-
     //getPkg
     futureGetPkg = std::async(std::launch::async, ThreadGetPkg, this);
     //getPkgContent
     futureGetPkgContent = std::async(std::launch::async, ThreadGetPkgContent, this);
-
     return 0;
 }
 
@@ -78,10 +76,10 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
-
-        if (client->rb == nullptr || client->rb->GetReadLen() == 0) {
+        usleep(100);
+        if (client->rb == nullptr ) {
             //数据缓存区不存在
             continue;
         }
@@ -188,9 +186,8 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
             }
                 break;
         }
-        usleep(10);
     }
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -211,25 +208,14 @@ static int PkgProcessFun_CmdHeartBeat(ClientInfo *client, string content) {
 
 static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
     int ret = 0;
-//    Debug("client-%d ip:%s,WatchData", client->sock, inet_ntoa(client->addr.sin_addr));
-    //打印下接收的内容
-//    Debug("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "watchData json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "watchData json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
-
     WatchData watchData;
     watchData.JsonUnmarshal(in);
-
-//    Debug("client-%d ip:%s,timestamp:%f,imag:%d,obj size:%d",
-//          client->sock, inet_ntoa(client->addr.sin_addr), watchData.timstamp, watchData.isHasImage,
-//          watchData.lstObjTarget.size());
-
-    //记录接包时间
-    gettimeofday(&client->receive_time, nullptr);
 
     //根据结构体内的方向变量设置客户端的方向
     client->direction.store(watchData.direction);
@@ -241,11 +227,15 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
             //方向相同，放入对应索引下数组
             //存入队列
             if (!server->dataUnitFusionData.pushI(watchData, i)) {
-//                Info("client:%d WatchData队列已满,丢弃消息:%s", client->sock, content.c_str());
-                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " FusionData,丢弃消息";
+                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,丢弃消息";
                 ret = -1;
+            } else {
+                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
+                          << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
+                          << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
+                          << server->FindIndexInUnOrder(watchData.hardCode);
             }
-//            Info("client-%d WatchData size:%d", client->sock, server->dataUnitFusionData.i_queue_vector.at(i).size());
+
             break;
         }
     }
@@ -254,74 +244,67 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
 
 static int PkgProcessFun_CmdCrossTrafficJamAlarm(ClientInfo *client, string content) {
     int ret = 0;
-//    Debug("client-%d ip:%s,CrossTrafficJamAlarm", client->sock, inet_ntoa(client->addr.sin_addr));
-    //打印下接收的内容
-//    Info("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "CrossTrafficJamAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "CrossTrafficJamAlarm json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     CrossTrafficJamAlarm crossTrafficJamAlarm;
     crossTrafficJamAlarm.JsonUnmarshal(in);
-//    Debug("CrossTrafficJamAlarm client-%d ip:%s,timestamp:%f",
-//          client->sock, inet_ntoa(client->addr.sin_addr), crossTrafficJamAlarm.timestamp);
     //存入队列
     auto server = (FusionServer *) client->super;
 
-    if (!server->dataUnitCrossTrafficJamAlarm.pushI(crossTrafficJamAlarm, server->FindIndexInUnOrder(
-            crossTrafficJamAlarm.hardCode))) {
+    if (!server->dataUnitCrossTrafficJamAlarm.pushI(
+            crossTrafficJamAlarm, server->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode))) {
         LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,丢弃消息";
         ret = -1;
+    } else {
+        LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,存入消息,"
+                  << "hardCode:" << crossTrafficJamAlarm.hardCode << " crossID:" << crossTrafficJamAlarm.crossID
+                  << "timestamp:" << (uint64_t) crossTrafficJamAlarm.timestamp << " dataUnit i_vector index:"
+                  << server->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
     }
-//    Info("client-%d CrossTrafficJamAlarm timestamp:%f", client->sock, crossTrafficJamAlarm.timestamp);
     return ret;
 }
 
 static int PkgProcessFun_CmdIntersectionOverflowAlarm(ClientInfo *client, string content) {
     int ret = 0;
-//    Info("client-%d,IntersectionOverflowAlarm", client->sock);
-    //打印下接收的内容
-//    Info("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "IntersectionOverflowAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "IntersectionOverflowAlarm json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     IntersectionOverflowAlarm intersectionOverflowAlarm;
     intersectionOverflowAlarm.JsonUnmarshal(in);
-//    Debug("CrossTrafficJamAlarm client-%d ip:%s,timestamp:%f",
-//          client->sock, inet_ntoa(client->addr.sin_addr), intersectionOverflowAlarm.timestamp);
     //存入队列
     auto server = (FusionServer *) client->super;
 
-    if (!server->dataUnitIntersectionOverflowAlarm.pushI(intersectionOverflowAlarm,
-                                                         server->FindIndexInUnOrder(
-                                                                 intersectionOverflowAlarm.hardCode))) {
+    if (!server->dataUnitIntersectionOverflowAlarm.pushI(
+            intersectionOverflowAlarm, server->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode))) {
         LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " IntersectionOverflowAlarm,丢弃消息";
         ret = -1;
+    } else {
+        LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " IntersectionOverflowAlarm,存入消息,"
+                  << "hardCode:" << intersectionOverflowAlarm.hardCode
+                  << " crossID:" << intersectionOverflowAlarm.crossID
+                  << "timestamp:" << (uint64_t) intersectionOverflowAlarm.timestamp << " dataUnit i_vector index:"
+                  << server->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
     }
     return ret;
 }
 
 static int PkgProcessFun_CmdTrafficFlowGather(ClientInfo *client, string content) {
     int ret = 0;
-//    Debug("client-%d ip:%s,TrafficFlow", client->sock, inet_ntoa(client->addr.sin_addr));
-    //打印下接收的内容
-//    Info("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "TrafficFlowGather json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "TrafficFlowGather json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     TrafficFlow trafficFlow;
     trafficFlow.JsonUnmarshal(in);
-
-//    Debug("trafficFlow client-%d,timestamp:%f,flowData size:%d",
-//          client->sock, trafficFlow.timstamp, trafficFlow.flowData.size());
 
     //存入队列
     auto server = (FusionServer *) client->super;
@@ -329,60 +312,61 @@ static int PkgProcessFun_CmdTrafficFlowGather(ClientInfo *client, string content
                                                  server->FindIndexInUnOrder(trafficFlow.hardCode))) {
         LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlowGather,丢弃消息";
         ret = -1;
+    } else {
+        LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlow,存入消息,"
+                  << "hardCode:" << trafficFlow.hardCode << " crossID:" << trafficFlow.crossID
+                  << "timestamp:" << (uint64_t) trafficFlow.timestamp << " dataUnit i_vector index:"
+                  << server->FindIndexInUnOrder(trafficFlow.hardCode);
     }
     return ret;
 }
 
 static int PkgProcessFun_CmdInWatchData_1_3_4(ClientInfo *client, string content) {
     int ret = 0;
-//    Debug("client-%d ip:%s,TrafficFlow", client->sock, inet_ntoa(client->addr.sin_addr));
-    //打印下接收的内容
-//    Info("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "InWatchData_1_3_4 json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "InWatchData_1_3_4 json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     InWatchData_1_3_4 inWatchData134;
     inWatchData134.JsonUnmarshal(in);
-
-//    Debug("trafficFlow client-%d,timestamp:%f,flowData size:%d",
-//          client->sock, trafficFlow.timstamp, trafficFlow.flowData.size());
-
     //存入队列
     auto server = (FusionServer *) client->super;
-    if (!server->dataUnitInWatchData_1_3_4.pushI(inWatchData134,
-                                                 server->FindIndexInUnOrder(inWatchData134.hardCode))) {
+    if (!server->dataUnitInWatchData_1_3_4.pushI(
+            inWatchData134, server->FindIndexInUnOrder(inWatchData134.hardCode))) {
         LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,丢弃消息";
         ret = -1;
+    } else {
+        LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,存入消息,"
+                  << "hardCode:" << inWatchData134.hardCode << " crossID:" << inWatchData134.crossID
+                  << "timestamp:" << (uint64_t) inWatchData134.timestamp << " dataUnit i_vector index:"
+                  << server->FindIndexInUnOrder(inWatchData134.hardCode);
     }
     return ret;
 }
 
 static int PkgProcessFun_CmdInWatchData_2(ClientInfo *client, string content) {
     int ret = 0;
-//    Debug("client-%d ip:%s,TrafficFlow", client->sock, inet_ntoa(client->addr.sin_addr));
-    //打印下接收的内容
-//    Info("%s\n", content.c_str());
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        LOG(ERROR) << "InWatchData_2 json 解析失败:" << reader.getFormattedErrorMessages();
+        LOG(INFO) << "InWatchData_2 json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     InWatchData_2 inWatchData2;
     inWatchData2.JsonUnmarshal(in);
-
-//    Debug("trafficFlow client-%d,timestamp:%f,flowData size:%d",
-//          client->sock, trafficFlow.timstamp, trafficFlow.flowData.size());
-
     //存入队列
     auto server = (FusionServer *) client->super;
-    if (!server->dataUnitInWatchData_2.pushI(inWatchData2,
-                                             server->FindIndexInUnOrder(inWatchData2.hardCode))) {
+    if (!server->dataUnitInWatchData_2.pushI(
+            inWatchData2, server->FindIndexInUnOrder(inWatchData2.hardCode))) {
         LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,丢弃消息";
         ret = -1;
+    } else {
+        LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,存入消息,"
+                  << "hardCode:" << inWatchData2.hardCode << " crossID:" << inWatchData2.crossID
+                  << "timestamp:" << (uint64_t) inWatchData2.timestamp << " dataUnit i_vector index:"
+                  << server->FindIndexInUnOrder(inWatchData2.hardCode);
     }
     return ret;
 }
@@ -410,24 +394,22 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
         Pkg pkg;
-        if (!client->queuePkg.pop(pkg)) {
-            continue;
-        }
+        if (client->queuePkg.pop(pkg)) {
 //        Info("pkg cmd:%d", pkg.head.cmd);
-
-        //按照cmd分别处理
-        auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
-        if (iter != PkgProcessMap.end()) {
-            iter->second(client, pkg.body);
-        } else {
-            //最后没有对应的方法名
-            LOG(ERROR) << "client:" << inet_ntoa(client->addr.sin_addr)
-                       << "最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+            //按照cmd分别处理
+            auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
+            if (iter != PkgProcessMap.end()) {
+                iter->second(client, pkg.body);
+            } else {
+                //最后没有对应的方法名
+                LOG(INFO) << "client:" << inet_ntoa(client->addr.sin_addr)
+                          << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+            }
         }
     }
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
     return 0;
 }
