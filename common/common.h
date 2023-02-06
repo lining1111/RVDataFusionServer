@@ -159,6 +159,7 @@ namespace common {
         double speedY;
         double longitude;//经度
         double latitude;//维度
+        string laneCode;
     public:
         bool JsonMarshal(Json::Value &out);
 
@@ -235,6 +236,7 @@ namespace common {
         double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
         double latitude = 0.0;//维度
+        string laneCode;
         int flagNew = 0;
     public:
         bool JsonMarshal(Json::Value &out);

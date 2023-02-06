@@ -95,7 +95,7 @@ int FusionServer::Open() {
 
     int ret = TcpServer::Open();
     if (ret == 0) {
-        LOG(WARNING) << "server sock create success:" << sock;
+        LOG(INFO) << "server sock create success:" << sock;
     }
 
     return ret;
@@ -107,7 +107,7 @@ int FusionServer::Run() {
     }
     //获取matrixNo
     getMatrixNoFromDb();
-    LOG(WARNING) << "sn:" << matrixNo;
+    LOG(INFO) << "sn:" << matrixNo;
     //获取路口编号
 //    getCrossIdFromDb();
 
@@ -157,7 +157,7 @@ int FusionServer::StartLocalBusiness(void *pServer) {
         return -1;
     }
     auto server = (FusionServer *) pServer;
-    LOG(WARNING) << "server:" << server->port << " StartLocalBusiness start";
+    LOG(INFO) << "server:" << server->port << " StartLocalBusiness start";
 
 //    std::thread([server]() {
 //        while (server->isLocalBusinessRun) {
@@ -179,7 +179,7 @@ int FusionServer::StopLocalBusiness(void *pServer) {
 //    }
     server->localBusinessThreadHandle.clear();
 
-    LOG(WARNING) << "server:" << server->port << " StopLocalBusiness stop";
+    LOG(INFO) << "server:" << server->port << " StopLocalBusiness stop";
     return 0;
 }
 

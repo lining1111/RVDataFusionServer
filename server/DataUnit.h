@@ -15,11 +15,52 @@
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
 #include "os/timeTask.hpp"
+#include "glog/logging.h"
 
 using namespace common;
 
 using namespace std;
 using namespace os;
+
+//自动帧率调节 记录每次的帧率，然后每10次计算一次平均数，计入平均帧率，并影响数据集合的帧率和时间戳相差门限
+class DyFrame {
+private:
+    int *fs = nullptr;
+    int *thresholdFrame = nullptr;
+    int preFrameTimestamp = 0;//上一帧的时间戳，在未记录开始前，为0
+    atomic_int fsTotal = {0};
+    atomic_int fsCount = {0};
+    mutex mtx;
+public:
+    DyFrame(int *p_fs, int *p_thresholdFrame) {
+        this->fs = p_fs;
+        this->thresholdFrame = p_thresholdFrame;
+    }
+
+    ~DyFrame() {
+
+    }
+
+    void UpDate(int timestamp) {
+        std::unique_lock<std::mutex> lock(mtx);
+        //preFrameTimestamp 为 0 刚开始
+        if (preFrameTimestamp != 0) {
+            int fs = ::abs(timestamp - preFrameTimestamp);
+            fsTotal += fs;
+            fsCount++;
+            if (fsCount >= 10) {
+                *this->fs = (fsTotal / fsCount);
+                *this->thresholdFrame = (fsTotal / fsCount);
+                VLOG(3) << "count " << fsCount << " update fs:" << *this->fs;
+                fsTotal.store(0);
+                fsCount.store(0);
+            }
+        } else {
+            VLOG(3) << "DyFrame start";
+        }
+    }
+};
+
 
 template<typename I, typename O>
 class DataUnit {
@@ -36,6 +77,8 @@ public:
     int thresholdFrame = 10;//时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
+
+    DyFrame *dyFrame = nullptr;
 public:
     void *owner = nullptr;
 public:
@@ -66,6 +109,7 @@ public:
 
     ~DataUnit() {
         delete timerBusiness;
+        delete dyFrame;
     }
 
 public:
@@ -93,6 +137,7 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
+        dyFrame = new DyFrame(&fs_i, &threshold_ms);
     }
 
     bool frontI(I &i, int index) {
@@ -247,9 +292,9 @@ public:
 
     ~DataUnitTrafficFlowGather();
 
-    DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -269,9 +314,9 @@ public:
 
     ~DataUnitCrossTrafficJamAlarm();
 
-    DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -291,9 +336,9 @@ public:
 
     ~DataUnitFusionData();
 
-    DataUnitFusionData(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitFusionData(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -358,9 +403,9 @@ public:
 
     ~DataUnitIntersectionOverflowAlarm();
 
-    DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -379,9 +424,9 @@ public:
 
     ~DataUnitInWatchData_1_3_4();
 
-    DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -394,9 +439,9 @@ public:
 
     ~DataUnitInWatchData_2();
 
-    DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache,void *owner);
+    DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache,void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 

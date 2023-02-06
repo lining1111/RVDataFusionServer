@@ -185,7 +185,7 @@ namespace common {
         out["speedY"] = this->speedY;
         out["longitude"] = this->longitude;
         out["latitude"] = this->latitude;
-
+        out["laneCode"] = this->laneCode;
         return true;
     }
 
@@ -207,7 +207,7 @@ namespace common {
         this->speedY = in["speedY"].asDouble();
         this->longitude = in["longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
-
+        this->laneCode = in["laneCode"].asString();
         return true;
     }
 
@@ -371,6 +371,7 @@ namespace common {
         out["locationY"] = this->locationY;
         out["longitude"] = this->longitude;
         out["latitude"] = this->latitude;
+        out["laneCode"] = this->laneCode;
         out["flagNew"] = this->flagNew;
 
         Json::Value rvWayObject = Json::arrayValue;
@@ -403,6 +404,7 @@ namespace common {
         this->locationY = in["locationY"].asDouble();
         this->longitude = in["longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
+        this->laneCode = in["laneCode"].asString();
         this->flagNew = in["flagNew"].asInt();
 
         Json::Value rvWayObject = in["rvWayObject"];

@@ -153,9 +153,9 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
         string dirName1 = savePath + msgType;
         int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
         if (!isCreate1)
-            LOG(INFO) << "create path:" << dirName1;
+            VLOG(2) << "create path:" << dirName1;
         else
-            LOG(INFO) << "create path failed! error code:" << isCreate1;
+            VLOG(2) << "create path failed! error code:" << isCreate1;
 
         string fileName = savePath + msgType + "/" + to_string(timestamp) + ".txt";
         ofstream file;
@@ -175,16 +175,16 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
     for (auto &iter1:local->clientList) {
         auto cli = iter1.second;
         if (cli->isRun) {
-            LOG(INFO) << "发送到上层" << cli->server_ip << ":" << cli->server_port
+            VLOG(2) << "发送到上层" << cli->server_ip << ":" << cli->server_port
                       << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
-                LOG(INFO) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
+                VLOG(2) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;
             } else {
-                LOG(INFO) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
+                VLOG(2) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
             }
         } else {
-            LOG(INFO) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
+            VLOG(2) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
             ret = -1;
         }
     }
