@@ -56,7 +56,8 @@ public:
                 fsCount.store(0);
             }
         } else {
-            VLOG(3) << "DyFrame start";
+            preFrameTimestamp = timestamp;
+            VLOG(3) << "DyFrame start:" << preFrameTimestamp;
         }
     }
 };
@@ -117,11 +118,11 @@ public:
     Timer *timerBusiness;
     string timerBusinessName;
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner) {
+    void init(int c, int fs, int i_num, int cache, void *owner) {
         this->cap = c;
         this->numI = i_num;
-        this->thresholdFrame = threshold_ms;
-        this->fs_i = threshold_ms;
+        this->thresholdFrame = fs;
+        this->fs_i = fs;
         this->cache = cache;
         this->owner = owner;
         i_queue_vector.resize(i_num);
@@ -137,7 +138,7 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
-        dyFrame = new DyFrame(&fs_i, &threshold_ms);
+        dyFrame = new DyFrame(&this->fs_i, &this->thresholdFrame);
     }
 
     bool frontI(I &i, int index) {
