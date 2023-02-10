@@ -11,7 +11,7 @@
 #include "glog/logging.h"
 #include "common/CRC.h"
 
-#define DYFRAME 1
+#define DYFRAME 0
 
 using namespace common;
 
@@ -56,7 +56,10 @@ ClientInfo::~ClientInfo() {
         }
     }
 
-    delete[] this->pkgBuffer;
+    if (this->pkgBuffer != nullptr) {
+        delete[] this->pkgBuffer;
+        this->pkgBuffer = nullptr;
+    }
 }
 
 
@@ -151,8 +154,9 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 if (crc != pkg.crc.data) {//CRC校验失败
                     VLOG(2) << "CRC fail, 计算值:" << crc << ",包内值:%d" << pkg.crc.data;
                     client->bodyLen = 0;//获取分包头后，得到的包长度
-                    if (client->pkgBuffer) {
+                    if (client->pkgBuffer != nullptr) {
                         delete[] client->pkgBuffer;
+                        client->pkgBuffer = nullptr;
                     }
                     client->index = 0;//分包缓冲的索引
                     client->status = Start;
@@ -169,8 +173,9 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 //                    Info("pkg queue size:%d", client->queuePkg.size());
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
-                    if (client->pkgBuffer) {
+                    if (client->pkgBuffer != nullptr) {
                         delete[] client->pkgBuffer;
+                        client->pkgBuffer = nullptr;
                     }
                     client->index = 0;//分包缓冲的索引
                     client->status = Start;
@@ -180,8 +185,9 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
             default: {
                 //意外状态错乱后，回到最初
                 client->bodyLen = 0;//获取分包头后，得到的包长度
-                if (client->pkgBuffer) {
+                if (client->pkgBuffer != nullptr) {
                     delete[] client->pkgBuffer;
+                    client->pkgBuffer = nullptr;
                 }
                 client->index = 0;//分包缓冲的索引
                 client->status = Start;
