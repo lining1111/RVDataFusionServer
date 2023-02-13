@@ -4,13 +4,11 @@
 #include "glog/logging.h"
 #include <csignal>
 #include "localBussiness/localBusiness.h"
-#include "httpServer/httpServer.h"
 #include "eoc/Eoc.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <fstream>
 #include "db/DB.h"
+#include "logFileCleaner/LogFileCleaner.h"
 
 int signalIgnpipe() {
     struct sigaction act;
@@ -55,9 +53,14 @@ int main(int argc, char **argv) {
     FLAGS_log_dir = FLAGS_logDir;
     google::EnableLogCleaner(FLAGS_keep);
     FLAGS_logbufsecs = 0;//刷新日志buffer的时间，0就是立即刷新
+    FLAGS_stop_logging_if_full_disk = true; //设置是否在磁盘已满时避免日志记录到磁盘
     if (FLAGS_isSendSTDOUT) {
         FLAGS_logtostdout = true;
     }
+    //开启日志清理类
+    std::string _name = string(argv[0])+".";
+    LogFileCleaner *cleaner = new LogFileCleaner(_name,FLAGS_logDir,(60*60*24)*FLAGS_keep);
+
     uint16_t port = FLAGS_port;
     string cloudIp;
     StartEocCommon();
@@ -104,5 +107,7 @@ int main(int argc, char **argv) {
     }
 
     google::ShutdownGoogleLogging();
+    delete cleaner;
+
     return 0;
 }

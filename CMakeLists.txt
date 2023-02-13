@@ -96,7 +96,7 @@ endif ()
 link_directories(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/lib)
 set(CMAKE_CXX_FLAGS "-Wl,-rpath=lib")
 
-set(SRC_FILES)
+set(SRC_FILES logFileCleaner/LogFileCleaner.cpp logFileCleaner/LogFileCleaner.h)
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} SRC_FILES)
 endforeach (src_dir)
