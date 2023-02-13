@@ -102,4 +102,5 @@ int LogFileCleaner::run(void *p) {
         }
     }
     printf("关闭日志定时清理任务\n");
+    return 0;
 }
