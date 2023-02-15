@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <fcntl.h>
 #include "version.h"
 #include <gflags/gflags.h>
 #include "glog/logging.h"
@@ -7,10 +8,11 @@
 #include "eoc/Eoc.h"
 
 #include <fstream>
+#include <dirent.h>
 #include "db/DB.h"
 #include "logFileCleaner/LogFileCleaner.h"
 
-int signalIgnpipe() {
+int signalIgnPipe() {
     struct sigaction act;
 
     memset(&act, 0, sizeof(act));
@@ -45,10 +47,20 @@ DEFINE_string(logDir, "log", "日志的输出目录,默认log");
 #endif
 
 int main(int argc, char **argv) {
+    char curPath[512];
+    getcwd(curPath, 512);
+    printf("cur path:%s\n", curPath);
+    if (opendir(FLAGS_logDir.c_str()) == nullptr) {
+        if (mkdir(FLAGS_logDir.c_str(), 0644)) {
+            printf("create %d fail\n", FLAGS_logDir.c_str());
+        }
+    }
+
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
     google::InitGoogleLogging(argv[0]);
+    google::InstallFailureSignalHandler();
     google::InstallFailureWriter(&FatalMessageDump);
     FLAGS_log_dir = FLAGS_logDir;
     google::EnableLogCleaner(FLAGS_keep);
@@ -84,7 +96,7 @@ int main(int argc, char **argv) {
 
     bool isMerge = FLAGS_isMerge;
 
-    signalIgnpipe();
+    signalIgnPipe();
     LocalBusiness local;
     local.AddServer("server1", port, isMerge);
     local.AddServer("server2", port + 1, isMerge);
