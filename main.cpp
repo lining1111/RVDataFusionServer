@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include "version.h"
 #include <gflags/gflags.h>
-#include "glog/logging.h"
 #include <csignal>
 #include "localBussiness/localBusiness.h"
 #include "eoc/Eoc.h"
@@ -10,7 +9,7 @@
 #include <fstream>
 #include <dirent.h>
 #include "db/DB.h"
-#include "logFileCleaner/LogFileCleaner.h"
+#include "glogHelper/GlogHelper.h"
 
 int signalIgnPipe() {
     struct sigaction act;
@@ -26,14 +25,6 @@ int signalIgnPipe() {
     return 0;
 }
 
-void FatalMessageDump(const char *data, unsigned long size) {
-    std::ofstream fs("./fatal.log", std::ios::app);
-    std::string str = std::string(data, size);
-    fs << str;
-    fs.close();
-    LOG(INFO) << str;
-}
-
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "139.9.157.176", "云端ip，默认 139.9.157.176");
 DEFINE_int32(cloudPort, 3410, "云端端口号，默认3410");
@@ -43,7 +34,7 @@ DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 #ifdef aarch64
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 #else
-DEFINE_string(logDir, "log", "日志的输出目录,默认log");
+DEFINE_string(logDir, "/tmp", "日志的输出目录,默认/tmp");
 #endif
 
 int main(int argc, char **argv) {
@@ -59,19 +50,8 @@ int main(int argc, char **argv) {
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
-    google::InitGoogleLogging(argv[0]);
-    google::InstallFailureSignalHandler();
-    google::InstallFailureWriter(&FatalMessageDump);
-    FLAGS_log_dir = FLAGS_logDir;
-    google::EnableLogCleaner(FLAGS_keep);
-    FLAGS_logbufsecs = 0;//刷新日志buffer的时间，0就是立即刷新
-    FLAGS_stop_logging_if_full_disk = true; //设置是否在磁盘已满时避免日志记录到磁盘
-    if (FLAGS_isSendSTDOUT) {
-        FLAGS_logtostdout = true;
-    }
-    //开启日志清理类
-    std::string _name = string(argv[0])+".";
-    LogFileCleaner *cleaner = new LogFileCleaner(_name,FLAGS_logDir,(60*60*24)*FLAGS_keep);
+    //日志系统类
+    GlogHelper glogHelper(argv[0], FLAGS_keep, FLAGS_logDir, FLAGS_isSendSTDOUT);
 
     uint16_t port = FLAGS_port;
     string cloudIp;
@@ -117,9 +97,6 @@ int main(int argc, char **argv) {
     while (true) {
         sleep(5);
     }
-
-    google::ShutdownGoogleLogging();
-    delete cleaner;
 
     return 0;
 }
