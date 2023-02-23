@@ -4,6 +4,7 @@
 #include <vector>
 #include <sstream>
 #include <stdint.h>
+
 #include "sqlite3.h"
 #include "logger.h"
 #include "sqlite_api.h"

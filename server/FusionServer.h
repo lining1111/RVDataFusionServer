@@ -40,7 +40,7 @@ public:
     };
     vector<string> unOrder;//记录已传入的路号，方便将数据存入对应的数据集合内的输入量
     //---------------监控数据相关---------//
-    DataUnitFusionData dataUnitFusionData;
+    DataUnitFusionData dataUnitFusionData{30, 100, 4, 10, this};
     //---------------路口交通流向相关--------//
     DataUnitTrafficFlowGather dataUnitTrafficFlowGather;
     //------交叉口堵塞报警------//
