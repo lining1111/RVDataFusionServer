@@ -26,7 +26,7 @@ private:
 //    string privateKeyPath;
     SSL_CTX *ctx;
     SSL *ssl;
-
+public:
     atomic_bool isLive;
 
     RingBuffer *rb = nullptr;//接收数据缓存环形buffer
@@ -63,7 +63,7 @@ public:
 
     int Close();
 
-    int Write(char *data, int len);
+    int Write(const char *data, int len);
 
 };
 

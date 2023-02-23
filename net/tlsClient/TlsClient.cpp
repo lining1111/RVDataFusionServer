@@ -285,7 +285,7 @@ int TlsClient::Close() {
     return 0;
 }
 
-int TlsClient::Write(char *data, int len) {
+int TlsClient::Write(const char *data, int len) {
     int nleft = 0;
     int nsend = 0;
     if (sock) {
