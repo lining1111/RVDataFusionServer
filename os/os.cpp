@@ -13,23 +13,23 @@ using namespace std;
 
 namespace os {
 
-    int runCmd(const string cmd, string &out) {
-        FILE *fp = popen(cmd.c_str(), "r");
-        if (!fp) {
-            return errno == 0 ? -1 : errno;
+    int execute_command(const std::string &command, std::string *output, bool redirect_stderr) {
+        const auto &cmd = redirect_stderr ? command + " 2>&1" : command;
+        auto pipe = popen(cmd.c_str(), "r");
+        if (!pipe) {
+            //记录日志
+            return -1;
         }
-
-//        char buf[1024 * 1024];
-        char *buf = (char *) malloc(1024 * 1024);
-        while (!feof(fp)) {
-            memset(buf, 0, 1024 * 1024);
-            size_t len = fread(buf, 1, 1024 * 1024, fp);
-            if (len > 0) {
-                out.append(buf, len);
+        {
+            char buffer[1024] = {0};
+            while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+                if (output) {
+                    output->append(buffer);
+                }
+//            printf("%s",buffer);
             }
         }
-        free(buf);
-        return pclose(fp);
+        return pclose(pipe);
     }
 
     int GetVectorFromFile(vector<uint8_t> &array, string filePath) {

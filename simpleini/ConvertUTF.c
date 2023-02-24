@@ -3,7 +3,7 @@
  * 
  * Disclaimer
  * 
- * This source code is provided as is by Unicode, Inc. No claims are
+ * This source _code is provided as is by Unicode, Inc. No claims are
  * made as to fitness for any particular purpose. No warranties of any
  * kind are expressed or implied. The recipient agrees to determine
  * applicability of information provided. If this file has been
@@ -22,7 +22,7 @@
 
 /* ---------------------------------------------------------------------
 
-    Conversions between UTF32, UTF-16, and UTF-8. Source code file.
+    Conversions between UTF32, UTF-16, and UTF-8. Source _code file.
     Author: Mark E. Davis, 1994.
     Rev History: Rick McGowan, fixes & updates May 2001.
     Sept 2001: fixed const & error conditions per
@@ -204,7 +204,7 @@ static const UTF8 firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC 
 /* The interface converts a whole buffer to avoid function-call overhead.
  * Constants have been gathered. Loops & conditionals have been removed as
  * much as possible for efficiency, in favor of drop-through switches.
- * (See "Note A" at the bottom of the file for equivalent code.)
+ * (See "Note A" at the bottom of the file for equivalent _code.)
  * If your compiler supports it, the "isLegalUTF8" call can be turned
  * into an inline function.
  */
@@ -522,7 +522,7 @@ ConversionResult ConvertUTF8toUTF32 (
 /* ---------------------------------------------------------------------
 
     Note A.
-    The fall-through switches in UTF-8 reading code save a
+    The fall-through switches in UTF-8 reading _code save a
     temp variable, some decrements & conditionals.  The switches
     are equivalent to the following loop:
 	{
@@ -533,7 +533,7 @@ ConversionResult ConvertUTF8toUTF32 (
 		if (tmpBytesToRead) ch <<= 6;
 	    } while (tmpBytesToRead > 0);
 	}
-    In UTF-8 writing code, the switches on "bytesToWrite" are
+    In UTF-8 writing _code, the switches on "bytesToWrite" are
     similarly unrolled loops.
 
    --------------------------------------------------------------------- */

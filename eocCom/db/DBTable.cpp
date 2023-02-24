@@ -8,12 +8,12 @@
 #include <glog/logging.h>
 #include <sys/stat.h>
 
-Database roadeside_parking_db = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
-Database cl_parking_db = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/CLParking.db", "V_1_0_0"};
-Database factory_parking_db = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/RoadsideParking.db", "V_1_0_0"};
+DatabaseInfo eoc_configure = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
+DatabaseInfo CLParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/CLParking.db", "V_1_0_0"};
+DatabaseInfo RoadsideParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/RoadsideParking.db", "V_1_0_0"};
 
 //核心板基础配置
-static DBT_Table base_set_table[] = {
+static DBTableInfo base_set_table[] = {
         {"base_set", "DevIndex",                "INTERGE"},
         {"base_set", "City",                    "TEXT"},
         {"base_set", "IsUploadToPlatform",      "INTERGE"},
@@ -38,7 +38,7 @@ static DBT_Table base_set_table[] = {
         {"base_set", "Remarks",                 "TEXT"}};
 
 //所属路口信息
-static DBT_Table belong_intersection_table[] = {
+static DBTableInfo belong_intersection_table[] = {
         {"belong_intersection", "Guid",        "TEXT"},
         {"belong_intersection", "Name",        "TEXT"},
         {"belong_intersection", "Type",        "INTERGE"},
@@ -65,7 +65,7 @@ static DBT_Table belong_intersection_table[] = {
         {"belong_intersection", "WidthY",      "REAL"}};
 
 //融合参数设置
-static DBT_Table fusion_para_set_table[] = {
+static DBTableInfo fusion_para_set_table[] = {
         {"fusion_para_set", "IntersectionAreaPoint1X", "REAL"},
         {"fusion_para_set", "IntersectionAreaPoint1Y", "REAL"},
         {"fusion_para_set", "IntersectionAreaPoint2X", "REAL"},
@@ -76,7 +76,7 @@ static DBT_Table fusion_para_set_table[] = {
         {"fusion_para_set", "IntersectionAreaPoint4Y", "REAL"}};
 
 //关联设备
-static DBT_Table associated_equip_table[] = {
+static DBTableInfo associated_equip_table[] = {
         {"associated_equip", "EquipType", "INTERGE"},
         {"associated_equip", "EquipCode", "TEXT"}};
 
@@ -167,31 +167,31 @@ int tableInit(std::string path, std::string version) {
         }
 
         //基础配置表
-        ret = checkTable(roadeside_parking_db.path.c_str(), base_set_table, sizeof(base_set_table) / sizeof(DBT_Table));
+        ret = checkTable(eoc_configure.path.c_str(), base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:base_set_table";
             delete[] sqlStr;
             return -1;
         }
         //所属路口信息表
-        ret = checkTable(roadeside_parking_db.path.c_str(), belong_intersection_table,
-                         sizeof(belong_intersection_table) / sizeof(DBT_Table));
+        ret = checkTable(eoc_configure.path.c_str(), belong_intersection_table,
+                         sizeof(belong_intersection_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:belong_intersection_table";
             delete[] sqlStr;
             return -1;
         }
         //融合参数设置表
-        ret = checkTable(roadeside_parking_db.path.c_str(), fusion_para_set_table,
-                         sizeof(fusion_para_set_table) / sizeof(DBT_Table));
+        ret = checkTable(eoc_configure.path.c_str(), fusion_para_set_table,
+                         sizeof(fusion_para_set_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:fusion_para_set_table";
             delete[] sqlStr;
             return -1;
         }
         //关联设备表
-        ret = checkTable(roadeside_parking_db.path.c_str(), associated_equip_table,
-                         sizeof(associated_equip_table) / sizeof(DBT_Table));
+        ret = checkTable(eoc_configure.path.c_str(), associated_equip_table,
+                         sizeof(associated_equip_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:fusion_para_set_table";
             delete[] sqlStr;
@@ -202,20 +202,20 @@ int tableInit(std::string path, std::string version) {
         memset(sqlStr, 0x0, 1024);
         if (cur_version.empty()) {
             snprintf(sqlStr, 1024, "create table IF NOT EXISTS %s(id INTEGER PRIMARY KEY NOT NULL)",
-                     roadeside_parking_db.version.c_str());
+                     eoc_configure.version.c_str());
         } else {
             snprintf(sqlStr, 1024, "alter table %s rename to %s", cur_version.c_str(),
-                     roadeside_parking_db.version.c_str());
+                     eoc_configure.version.c_str());
         }
-        ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlStr, NULL, NULL);
+        ret = dbFileExecSql(eoc_configure.path.c_str(), sqlStr, NULL, NULL);
         if (ret < 0) {
             LOG(ERROR) << "db sql err:" << sqlStr;
             delete[] sqlStr;
             return -1;
         }
     } else {
-        LOG(INFO) << "check db version:" << roadeside_parking_db.version << " success, from "
-                  << roadeside_parking_db.path;
+        LOG(INFO) << "check db version:" << eoc_configure.version << " success, from "
+                  << eoc_configure.path;
     }
 
     delete[] sqlStr;
@@ -223,7 +223,7 @@ int tableInit(std::string path, std::string version) {
     return 0;
 }
 
-int checkTable(const char *db_path, const DBT_Table *table, int column_size) {
+int checkTable(const char *db_path, const DBTableInfo *table, int column_size) {
     int ret = 0;
 
     ret = mkdirFromPath(db_path);
@@ -264,7 +264,7 @@ int checkTable(const char *db_path, const DBT_Table *table, int column_size) {
     return -1;
 }
 
-int checkTableColumn(std::string tab_name, DB_Table_Configure *tab_column, int check_num) {
+int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num) {
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -278,7 +278,7 @@ int checkTableColumn(std::string tab_name, DB_Table_Configure *tab_column, int c
         memset(sqlstr, 0x0, 1024);
         sprintf(sqlstr, "select * from sqlite_master where name='%s' and sql like '%%%s%%';",
                 tab_name.c_str(), tab_column[icol].name.c_str());
-        rtn = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+        rtn = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
         if (rtn < 0) {
             LOG(ERROR) << "db sql:" << sqlstr << "fail";
             delete[] sqlstr;
@@ -289,7 +289,7 @@ int checkTableColumn(std::string tab_name, DB_Table_Configure *tab_column, int c
             memset(sqlstr, 0x0, 1024);
             sprintf(sqlstr, "alter table %s add %s %s", tab_name.c_str(), tab_column[icol].name.c_str(),
                     tab_column[icol].type.c_str());
-            rtn = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+            rtn = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
             if (rtn < 0) {
                 LOG(ERROR) << "db sql:" << sqlstr << "fail";
             } else {
@@ -309,7 +309,7 @@ int deleteVersion() {
     memset(sqlstr, 0x0, 1024);
     sprintf(sqlstr, "delete from conf_version");
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         return -1;
@@ -317,14 +317,14 @@ int deleteVersion() {
     return 0;
 }
 
-int insertVersion(DB_Conf_Data_Version &data) {
+int insertVersion(DBDataVersion &data) {
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
     snprintf(sqlstr, 1024, "insert into conf_version(version,time) values('%s','%s')",
              data.version.c_str(), data.time.c_str());
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         return -1;
@@ -341,7 +341,7 @@ int getVersion(std::string &version) {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select version from conf_version where id=(select MIN(id) from conf_version)");
-    ret = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         return -1;
@@ -366,7 +366,7 @@ int delete_base_set() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from base_set");
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -376,7 +376,7 @@ int delete_base_set() {
     return 0;
 }
 
-int insert_base_set(DB_Base_Set_T data) {
+int insert_base_set(DBBaseSet data) {
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -398,7 +398,7 @@ int insert_base_set(DB_Base_Set_T data) {
              data.FusionMainboardIp.c_str(), data.FusionMainboardPort, data.IllegalPlatformAddress.c_str(),
              data.Remarks.c_str());
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -409,7 +409,7 @@ int insert_base_set(DB_Base_Set_T data) {
     return 0;
 }
 
-int get_base_set(DB_Base_Set_T &data) {
+int get_base_set(DBBaseSet &data) {
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -423,7 +423,7 @@ int get_base_set(DB_Base_Set_T &data) {
                     "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
                     "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
                     "from base_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -471,7 +471,7 @@ int delete_belong_intersection() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from belong_intersection");
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -481,7 +481,7 @@ int delete_belong_intersection() {
     return 0;
 }
 
-int insert_belong_intersection(DB_Intersection_t data) {
+int insert_belong_intersection(DBIntersection data) {
     int ret = 0;
     char *sqlstr = new char[1024 * 2];
 
@@ -499,7 +499,7 @@ int insert_belong_intersection(DB_Intersection_t data) {
              data.DeltaXEast, data.DeltaYEast, data.DeltaXSouth, data.DeltaYSouth,
              data.DeltaXWest, data.DeltaYWest, data.DeltaXNorth, data.DeltaYNorth, data.WidthX, data.WidthY);
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -510,7 +510,7 @@ int insert_belong_intersection(DB_Intersection_t data) {
     return 0;
 }
 
-int get_belong_intersection(DB_Intersection_t &data) {
+int get_belong_intersection(DBIntersection &data) {
     int ret = 0;
     char *sqlstr = new char[1024 * 4];
     char **sqldata;
@@ -521,7 +521,7 @@ int get_belong_intersection(DB_Intersection_t &data) {
                     "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
                     "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
                     "from belong_intersection order by id desc limit 1");
-    ret = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -570,7 +570,7 @@ int delete_fusion_para_set() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from fusion_para_set");
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -580,7 +580,7 @@ int delete_fusion_para_set() {
     return 0;
 }
 
-int insert_fusion_para_set(DB_Fusion_Para_Set_T data) {
+int insert_fusion_para_set(DBFusionParaSet data) {
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -593,7 +593,7 @@ int insert_fusion_para_set(DB_Fusion_Para_Set_T data) {
              data.IntersectionAreaPoint2Y, data.IntersectionAreaPoint3X, data.IntersectionAreaPoint3Y,
              data.IntersectionAreaPoint4X, data.IntersectionAreaPoint4Y);
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -604,7 +604,7 @@ int insert_fusion_para_set(DB_Fusion_Para_Set_T data) {
     return 0;
 }
 
-int get_fusion_para_set(DB_Fusion_Para_Set_T &data) {
+int get_fusion_para_set(DBFusionParaSet &data) {
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -615,7 +615,7 @@ int get_fusion_para_set(DB_Fusion_Para_Set_T &data) {
             "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
             "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
             "from fusion_para_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -649,7 +649,7 @@ int delete_associated_equip() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from associated_equip");
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -659,7 +659,7 @@ int delete_associated_equip() {
     return 0;
 }
 
-int insert_associated_equip(DB_Associated_Equip_T data) {
+int insert_associated_equip(DBAssociatedEquip data) {
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -668,7 +668,7 @@ int insert_associated_equip(DB_Associated_Equip_T data) {
                                "EquipType,EquipCode) values (%d,'%s')",
              data.EquipType, data.EquipCode.c_str());
 
-    ret = dbFileExecSql(roadeside_parking_db.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -679,7 +679,7 @@ int insert_associated_equip(DB_Associated_Equip_T data) {
     return 0;
 }
 
-int get_associated_equip(std::vector<DB_Associated_Equip_T> &data) {
+int get_associated_equip(std::vector<DBAssociatedEquip> &data) {
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -688,7 +688,7 @@ int get_associated_equip(std::vector<DB_Associated_Equip_T> &data) {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select id,EquipType,EquipCode from associated_equip");
-    ret = dbFileExecSqlTable(roadeside_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -696,7 +696,7 @@ int get_associated_equip(std::vector<DB_Associated_Equip_T> &data) {
         return -1;
     }
     data.clear();
-    DB_Associated_Equip_T tmp_data;
+    DBAssociatedEquip tmp_data;
     for (int i = 0; i < nrow; i++) {
         int index = ncol * (i + 1);
         tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
@@ -709,9 +709,8 @@ int get_associated_equip(std::vector<DB_Associated_Equip_T> &data) {
     return 0;
 }
 
-int
-db_parking_lot_get_cloud_addr_from_factory(std::string &server_path, int &server_port, std::string &file_server_path,
-                                           int &file_server_port) {
+int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path,
+                   int &file_server_port) {
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -721,7 +720,7 @@ db_parking_lot_get_cloud_addr_from_factory(std::string &server_path, int &server
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select CloudServerPath,TransferServicePath,CloudServerPort,FileServicePort from TB_ParkingLot "
                     "where ID=(select MIN(ID) from TB_ParkingLot)");
-    rtn = dbFileExecSqlTable(factory_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    rtn = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (rtn < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -744,27 +743,7 @@ db_parking_lot_get_cloud_addr_from_factory(std::string &server_path, int &server
     return 0;
 }
 
-int bin_parking_lot_update_eocpath(const char *serverPath, int serverPort, const char *filePath, int filePort) {
-    int rtn = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0x0, 1024);
-    snprintf(sqlstr, 1024, "update TB_ParkingLot set CloudServerPath='%s',"
-                           "TransferServicePath='%s',CloudServerPort=%d,FileServicePort=%d",
-             serverPath, filePath, serverPort, filePort);
-
-    rtn = dbFileExecSql(factory_parking_db.path.c_str(), sqlstr, NULL, NULL);
-    if (rtn < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-
-    delete[] sqlstr;
-    return 0;
-}
-
-int db_factory_get_uname(std::string &uname) {
+int dbGetUname(std::string &uname) {
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -773,7 +752,7 @@ int db_factory_get_uname(std::string &uname) {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select UName from CL_ParkingArea where ID=(select max(ID) from CL_ParkingArea)");
-    rtn = dbFileExecSqlTable(cl_parking_db.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    rtn = dbFileExecSqlTable(CLParking.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
     if (rtn < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;

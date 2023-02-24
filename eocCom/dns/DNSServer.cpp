@@ -22,9 +22,10 @@
 #include <glog/logging.h>
 
 using namespace std;
+using namespace uri;
 
 /*判断字符串是不是一个有效ip地址,0非ip，1，ip地址*/
-int isIP(char *str) {
+static int isIP(char *str) {
     char temp[32];
     int a, b, c, d;
 
@@ -52,7 +53,7 @@ int isIP(char *str) {
 2）host_ip，解析出的IP
 返回值：0成功，-1失败
 */
-int dns_resolve_114(const char *dnsip, const char *host_name, char *host_ip) {
+static int dns_resolve_114(const char *dnsip, const char *host_name, char *host_ip) {
 #define BUF_SIZE 1024
 #define SRV_PORT 53
 
@@ -154,109 +155,8 @@ int dns_resolve_114(const char *dnsip, const char *host_name, char *host_ip) {
 }
 
 
-#if 0
-/*
-参数：
-1）host_name，需要解析的域名
-2）host_ip，解析出的IP
-返回值：0成功，-1失败
-*/
-int dns_resolve_114(char *dnsip,const char* host_name, char *host_ip)
-{
-#define BUF_SIZE 1024
-#define SRV_PORT 53
-
-    if(NULL == host_name || NULL == host_ip)
-    {
-        ERR("dns_resolve_114 host_name=%s host_ip=%s",host_name,host_ip);
-        return -1;
-    }
-
-    typedef unsigned short U16;
-    //const char srv_ip[] = "114.114.114.114";
-    typedef struct _DNS_HDR
-    {
-      U16 id;
-      U16 tag;
-      U16 numq;
-      U16 numa;
-      U16 numa1;
-      U16 numa2;
-    }DNS_HDR;
-    typedef struct _DNS_QER
-    {
-       U16 type;
-       U16 classes;
-    }DNS_QER;
-
-    int      clifd,len = 0,i;
-    struct   sockaddr_in servaddr;
-    char     buf[BUF_SIZE];
-    char     *ptr;
-    DNS_HDR  *dnshdr = (DNS_HDR *)buf;
-    DNS_QER  *dnsqer = (DNS_QER *)(buf + sizeof(DNS_HDR));
-    timeval tv = {10, 0};
-
-    if ((clifd  =  socket(AF_INET, SOCK_DGRAM, 0 ))  < 0)
-    {
-         ERR("dns_resolve_114 create socket error!" );
-         return -1;
-    }
-    setsockopt(clifd, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(timeval));
-
-    bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    inet_aton(dnsip, &servaddr.sin_addr);
-    servaddr.sin_port = htons(SRV_PORT);
-    memset(buf, 0, BUF_SIZE);
-    dnshdr->id = (U16)1;
-    dnshdr->tag = htons(0x0100);
-    dnshdr->numq = htons(1);
-    dnshdr->numa = 0;
-
-    strcpy(buf + sizeof(DNS_HDR) + 1, host_name);
-    ptr = buf + sizeof(DNS_HDR) + 1;
-    i = 0;
-    while (ptr < (buf + sizeof(DNS_HDR) + 1 + strlen(host_name)))
-    {
-        if ( *ptr == '.'){
-            *(ptr - i - 1) = i;
-            i = 0;
-        }
-        else{
-            i++;
-        }
-        ptr++;
-    }
-    *(ptr - i - 1) = i;
-
-    dnsqer = (DNS_QER *)(buf + sizeof(DNS_HDR) + 2 + strlen(host_name));
-    dnsqer->classes = htons(1);
-    dnsqer->type = htons(1);
-    len = sendto(clifd, buf, sizeof(DNS_HDR) + sizeof(DNS_QER) + strlen(host_name) + 2, 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
-
-    i = sizeof(struct sockaddr_in);
-    len = recvfrom(clifd, buf, BUF_SIZE, 0, (struct sockaddr *)&servaddr, (socklen_t *)&i);
-    close(clifd);
-    if (len < 0)
-    {
-          ERR("dns_resolve_114 recv error");
-          return -1;
-    }
-    if (dnshdr->numa == 0)
-    {
-          ERR("dns_resolve_114 ack error");
-          return -1;
-    }
-    ptr = buf + len -4;
-    DBG("dns_resolve_114 解析dns[%s]成功%s ==> %u.%u.%u.%u\n",dnsip,host_name, (unsigned char)*ptr, (unsigned char)*(ptr + 1), (unsigned char)*(ptr + 2), (unsigned char)*(ptr + 3));
-    sprintf(host_ip,"%u.%u.%u.%u",(unsigned char)*ptr, (unsigned char)*(ptr + 1), (unsigned char)*(ptr + 2), (unsigned char)*(ptr + 3));
-    return 0;
-}
-#endif
-
 /*解析url*/
-int uri_parse(char *sorcpath, char *urihost, char *uripath) {
+static int uri_parse(char *sorcpath, char *urihost, char *uripath) {
     struct ast_uri *uri_s = ast_uri_parse(sorcpath);
 
     if (uri_s->host != NULL) {
@@ -278,7 +178,7 @@ hoststr:域名;
 ipaddr:ip地址;
 ret = 0 成功
 */
-int url_get(std::string hoststr, std::string &ipaddr) {
+static int url_get(std::string hoststr, std::string &ipaddr) {
     struct hostent hostinfo, *phost;
     char tmpipaddr[64];
     char *buf;
@@ -342,7 +242,7 @@ url:解析url地址;
 url_ip:将域名解析成ip的地址;
 force:强制解析域名 0,不强制获取，1 强制获取 2,更新dns
 */
-static int search_DNS_ipurl(std::string url, std::string &url_ip,
+int searchDNS(std::string url, std::string &url_ip,
                             int force, std::string &host, std::string &port, std::string &ip_addr) {
     static pthread_mutex_t dns_table_lock = PTHREAD_MUTEX_INITIALIZER; /*泊位临时数据库线程锁*/
 #define DNS_NUMBER   32
@@ -457,7 +357,7 @@ static int search_DNS_ipurl(std::string url, std::string &url_ip,
 static void *dns_server_task(void *argv) {
     while (1) {
         std::string tmpurl, tmpip, tmphost, tmpport, tmp_ipaddr;
-        search_DNS_ipurl(tmpurl, tmpip, 2, tmphost, tmpport, tmp_ipaddr);
+        searchDNS(tmpurl, tmpip, 2, tmphost, tmpport, tmp_ipaddr);
         sleep(60 * 30);/*30分钟进行一次dns的更新*/
     }
     return NULL;

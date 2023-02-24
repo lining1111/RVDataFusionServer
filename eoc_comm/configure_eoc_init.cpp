@@ -61,7 +61,7 @@ int g_eoc_base_set_init(void)
 int g_eoc_intersection_init(void)
 {
     int ret = 0;
-    DB_Intersection_t data;
+    DB_Intersection_T data;
 
     ret = db_belong_intersection_get(data);
     if(0 == ret)

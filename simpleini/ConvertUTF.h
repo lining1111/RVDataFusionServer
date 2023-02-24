@@ -3,7 +3,7 @@
  * 
  * Disclaimer
  * 
- * This source code is provided as is by Unicode, Inc. No claims are
+ * This source _code is provided as is by Unicode, Inc. No claims are
  * made as to fitness for any particular purpose. No warranties of any
  * kind are expressed or implied. The recipient agrees to determine
  * applicability of information provided. If this file has been
@@ -59,7 +59,7 @@
 
     Whether the flag is strict or lenient, all illegal sequences will cause
     an error return. This includes sequences such as: <F4 90 80 80>, <C0 80>,
-    or <A0> in UTF-8, and values above 0x10FFFF in UTF-32. Conformant code
+    or <A0> in UTF-8, and values above 0x10FFFF in UTF-32. Conformant _code
     must check for illegal sequences.
 
     When the flag is set to lenient, characters over 0x10FFFF are converted

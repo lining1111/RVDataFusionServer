@@ -12,31 +12,31 @@ typedef struct {
     pthread_mutex_t db_mutex;
     std::string path;
     std::string version;
-} Database;
+} DatabaseInfo;
 
 #define HOME_PATH "/home/nvidianx"
 
-extern Database roadeside_parking_db;
-extern Database cl_parking_db;
-extern Database factory_parking_db;
+extern DatabaseInfo eoc_configure;
+extern DatabaseInfo CLParking;
+extern DatabaseInfo RoadsideParking;
 
 typedef struct {
     int id;
     std::string version;
     std::string time;
-} DB_Conf_Data_Version;
+} DBDataVersion;
 
 typedef struct {
     std::string tableName;            //数据库表名
     std::string columnName;            //列名
     std::string columnDescription;    //列描述
-} DBT_Table;
+} DBTableInfo;
 
 /****表字段检查配置******/
 typedef struct {
     std::string name;
     std::string type;
-} DB_Table_Configure;
+} DBTableColInfo;
 
 ///////////具体的表内业务////////////
 
@@ -65,7 +65,7 @@ typedef struct {
     int FusionMainboardPort;    //主控机端口号
     std::string IllegalPlatformAddress;  //违停服务器地址
     std::string Remarks;     //备注
-} DB_Base_Set_T;
+} DBBaseSet;
 
 //所属路口信息
 typedef struct {
@@ -94,7 +94,7 @@ typedef struct {
     double DeltaYNorth; // 偏移量Y-北
     double WidthX;      // 融合前去重重合车辆用偏移量X
     double WidthY;      // 融合前去重重合车辆用偏移量Y
-} DB_Intersection_t;
+} DBIntersection;
 //融合参数设置
 typedef struct {
     int id;
@@ -106,13 +106,13 @@ typedef struct {
     double IntersectionAreaPoint3Y; //路口中心区域标点3-Y
     double IntersectionAreaPoint4X; //路口中心区域标点4-X
     double IntersectionAreaPoint4Y; //路口中心区域标点4-Y
-} DB_Fusion_Para_Set_T;
+} DBFusionParaSet;
 //关联设备
 typedef struct {
     int id;
     int EquipType;  //设备类型
     std::string EquipCode;   //设备编码
-} DB_Associated_Equip_T;
+} DBAssociatedEquip;
 /**
  * 根据路径创建各级目录，最大路径长度512-1，递归创建知道最后一个'/'
  * @param path 将要递归创建的文件路径或文件夹路径
@@ -132,7 +132,7 @@ int tableInit(std::string path, std::string version);
  * @param column_size
  * @return 0 成功  -1 失败
  */
-int checkTable(const char* db_path, const DBT_Table *table, int column_size);
+int checkTable(const char* db_path, const DBTableInfo *table, int column_size);
 
 /**
  * 检查表内字段，不存在的话则添加
@@ -141,51 +141,49 @@ int checkTable(const char* db_path, const DBT_Table *table, int column_size);
  * @param check_num
  * @return
  */
-int checkTableColumn(std::string tab_name, DB_Table_Configure *tab_column, int check_num);
+int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num);
 
 
 int deleteVersion();
 
-int insertVersion(DB_Conf_Data_Version &data);
+int insertVersion(DBDataVersion &data);
 
 int getVersion(std::string &version);
 
 //基础配置信息
 int delete_base_set();
 
-int insert_base_set(DB_Base_Set_T data);
+int insert_base_set(DBBaseSet data);
 
-int get_base_set(DB_Base_Set_T &data);
+int get_base_set(DBBaseSet &data);
 
 //所属路口信息
 int delete_belong_intersection();
 
-int insert_belong_intersection(DB_Intersection_t data);
+int insert_belong_intersection(DBIntersection data);
 
-int get_belong_intersection(DB_Intersection_t &data);
+int get_belong_intersection(DBIntersection &data);
 
 //融合参数设置
 int delete_fusion_para_set();
 
-int insert_fusion_para_set(DB_Fusion_Para_Set_T data);
+int insert_fusion_para_set(DBFusionParaSet data);
 
-int get_fusion_para_set(DB_Fusion_Para_Set_T &data);
+int get_fusion_para_set(DBFusionParaSet &data);
 
 //关联设备
 int delete_associated_equip();
 
-int insert_associated_equip(DB_Associated_Equip_T data);
+int insert_associated_equip(DBAssociatedEquip data);
 
-int get_associated_equip(std::vector<DB_Associated_Equip_T> &data);
+int get_associated_equip(std::vector<DBAssociatedEquip> &data);
 
 //其他操作
-int
-db_parking_lot_get_cloud_addr_from_factory(std::string &server_path, int &server_port, std::string &file_server_path,
+int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path,
                                            int &file_server_port);
-//更新~/bin/RoadsideParking.db下eoc服务器地址和文件服务器地址
-int bin_parking_lot_update_eocpath(const char *serverPath, int serverPort, const char *filePath, int filePort);
+
 /***取id最大一条数据的用户名***/
-int db_factory_get_uname(std::string &uname);
+int dbGetUname(std::string &uname);
 
 
 #endif //DBTABLE_H

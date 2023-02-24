@@ -1,26 +1,27 @@
 #ifndef _ASTERISK_URI_H
 #define _ASTERISK_URI_H
 
+namespace uri {
 /*! \brief Opaque structure that stores uri information. */
-struct ast_uri;
+    struct ast_uri;
 
 /*! \brief Stores parsed uri information */
-struct ast_uri {
-	/*! scheme (e.g. http, https, ws, wss, etc...) */
-	char *scheme;
-	/*! username:password */
-	char *user_info;
-	/*! host name or address */
-	char *host;
-	/*! associated port */
-	char *port;
-	/*! path info following host[:port] */
-	char *path;
-	/*! query information */
-	char *query;
-	/*! storage for uri string */
-	char uri[0];
-};
+    struct ast_uri {
+        /*! scheme (e.g. http, https, ws, wss, etc...) */
+        char *scheme;
+        /*! username:password */
+        char *user_info;
+        /*! host name or address */
+        char *host;
+        /*! associated port */
+        char *port;
+        /*! path info following host[:port] */
+        char *path;
+        /*! query information */
+        char *query;
+        /*! storage for uri string */
+        char uri[0];
+    };
 
 
 /*!
@@ -36,9 +37,9 @@ struct ast_uri {
  * \return \c NULL on error
  * \since 13
  */
-struct ast_uri *ast_uri_create(const char *scheme, const char *user_info,
-			       const char *host, const char *port,
-			       const char *path, const char *query);
+    struct ast_uri *ast_uri_create(const char *scheme, const char *user_info,
+                                   const char *host, const char *port,
+                                   const char *path, const char *query);
 
 /*!
  * \brief Copy the given uri replacing any value in the new uri with
@@ -55,17 +56,18 @@ struct ast_uri *ast_uri_create(const char *scheme, const char *user_info,
  * \return \c NULL on error
  * \since 13
  */
-struct ast_uri *ast_uri_copy_replace(const struct ast_uri *uri, const char *scheme,
-				     const char *user_info, const char *host,
-				     const char *port, const char *path,
-				     const char *query);
+    struct ast_uri *ast_uri_copy_replace(const struct ast_uri *uri, const char *scheme,
+                                         const char *user_info, const char *host,
+                                         const char *port, const char *path,
+                                         const char *query);
+
 /*!
  * \brief Retrieve the uri scheme.
  *
  * \return the uri scheme.
  * \since 13
  */
-const char *ast_uri_scheme(const struct ast_uri *uri);
+    const char *ast_uri_scheme(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve the uri user information.
@@ -73,7 +75,7 @@ const char *ast_uri_scheme(const struct ast_uri *uri);
  * \return the uri user information.
  * \since 13
  */
-const char *ast_uri_user_info(const struct ast_uri *uri);
+    const char *ast_uri_user_info(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve the uri host.
@@ -81,7 +83,7 @@ const char *ast_uri_user_info(const struct ast_uri *uri);
  * \return the uri host.
  * \since 13
  */
-const char *ast_uri_host(const struct ast_uri *uri);
+    const char *ast_uri_host(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve the uri port
@@ -89,7 +91,7 @@ const char *ast_uri_host(const struct ast_uri *uri);
  * \return the uri port.
  * \since 13
  */
-const char *ast_uri_port(const struct ast_uri *uri);
+    const char *ast_uri_port(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve the uri path.
@@ -97,7 +99,7 @@ const char *ast_uri_port(const struct ast_uri *uri);
  * \return the uri path.
  * \since 13
  */
-const char *ast_uri_path(const struct ast_uri *uri);
+    const char *ast_uri_path(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve the uri query parameters.
@@ -105,7 +107,7 @@ const char *ast_uri_path(const struct ast_uri *uri);
  * \return the uri query parameters.
  * \since 13
  */
-const char *ast_uri_query(const struct ast_uri *uri);
+    const char *ast_uri_query(const struct ast_uri *uri);
 
 /*!
  * \brief Retrieve if the uri is of a secure type
@@ -116,7 +118,7 @@ const char *ast_uri_query(const struct ast_uri *uri);
  * \return True if secure, False otherwise.
  * \since 13
  */
-int ast_uri_is_secure(const struct ast_uri *uri);
+    int ast_uri_is_secure(const struct ast_uri *uri);
 
 /*!
  * \brief Parse the given uri into a structure.
@@ -129,7 +131,7 @@ int ast_uri_is_secure(const struct ast_uri *uri);
  * \return \c NULL on error
  * \since 13
  */
-struct ast_uri *ast_uri_parse(const char *uri);
+    struct ast_uri *ast_uri_parse(const char *uri);
 
 /*!
  * \brief Parse the given http uri into a structure.
@@ -146,7 +148,7 @@ struct ast_uri *ast_uri_parse(const char *uri);
  * \return \c NULL on error
  * \since 13
  */
-struct ast_uri *ast_uri_parse_http(const char *uri);
+    struct ast_uri *ast_uri_parse_http(const char *uri);
 
 /*!
  * \brief Parse the given websocket uri into a structure.
@@ -163,7 +165,7 @@ struct ast_uri *ast_uri_parse_http(const char *uri);
  * \return \c NULL on error
  * \since 13
  */
-struct ast_uri *ast_uri_parse_websocket(const char *uri);
+    struct ast_uri *ast_uri_parse_websocket(const char *uri);
 
 /*!
  * \brief Retrieve a string of the host and port.
@@ -177,7 +179,7 @@ struct ast_uri *ast_uri_parse_websocket(const char *uri);
  * \return a string value of the host and optional port.
  * \since 13
  */
-char *ast_uri_make_host_with_port(const struct ast_uri *uri);
-
+    char *ast_uri_make_host_with_port(const struct ast_uri *uri);
+}
 #endif /* _ASTERISK_URI_H */
 

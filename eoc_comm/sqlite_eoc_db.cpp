@@ -492,7 +492,7 @@ int db_belong_intersection_delete()
 
     return 0;
 }
-int db_belong_intersection_insert(DB_Intersection_t &data)
+int db_belong_intersection_insert(DB_Intersection_T &data)
 {
     int ret = 0;
     char *sqlstr;
@@ -527,7 +527,7 @@ int db_belong_intersection_insert(DB_Intersection_t &data)
     free(sqlstr);
     return 0;
 }
-int db_belong_intersection_get(DB_Intersection_t &data)
+int db_belong_intersection_get(DB_Intersection_T &data)
 {
     int ret = 0;
     char *sqlstr;

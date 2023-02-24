@@ -183,7 +183,7 @@ namespace common {
         out["directionAngle"] = this->directionAngle;
         out["speedX"] = this->speedX;
         out["speedY"] = this->speedY;
-        out["longitude"] = this->longitude;
+        out["Longitude"] = this->longitude;
         out["latitude"] = this->latitude;
         out["laneCode"] = this->laneCode;
         return true;
@@ -205,7 +205,7 @@ namespace common {
         this->directionAngle = in["directionAngle"].asDouble();
         this->speedX = in["speedX"].asDouble();
         this->speedY = in["speedY"].asDouble();
-        this->longitude = in["longitude"].asDouble();
+        this->longitude = in["Longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
         this->laneCode = in["laneCode"].asString();
         return true;
@@ -369,7 +369,7 @@ namespace common {
         out["speed"] = this->speed;
         out["locationX"] = this->locationX;
         out["locationY"] = this->locationY;
-        out["longitude"] = this->longitude;
+        out["Longitude"] = this->longitude;
         out["latitude"] = this->latitude;
         out["laneCode"] = this->laneCode;
         out["flagNew"] = this->flagNew;
@@ -402,7 +402,7 @@ namespace common {
         this->speed = in["speed"].asFloat();
         this->locationX = in["locationX"].asDouble();
         this->locationY = in["locationY"].asDouble();
-        this->longitude = in["longitude"].asDouble();
+        this->longitude = in["Longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
         this->laneCode = in["laneCode"].asString();
         this->flagNew = in["flagNew"].asInt();

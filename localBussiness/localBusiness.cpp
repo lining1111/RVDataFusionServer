@@ -61,7 +61,7 @@ void LocalBusiness::Run() {
         if (!isCreate1)
             LOG(INFO) << "create path:" << dirName1;
         else
-            LOG(INFO) << "create path failed! error code:" << isCreate1;
+            LOG(INFO) << "create path failed! error _code:" << isCreate1;
     }
 
     StartTimerTask();
@@ -155,7 +155,7 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
         if (!isCreate1)
             VLOG(2) << "create path:" << dirName1;
         else
-            VLOG(2) << "create path failed! error code:" << isCreate1;
+            VLOG(2) << "create path failed! error _code:" << isCreate1;
 
         string fileName = savePath + msgType + "/" + to_string(timestamp) + ".txt";
         ofstream file;

@@ -87,7 +87,7 @@ typedef struct
     double DeltaYNorth; // 偏移量Y-北
     double WidthX;      // 融合前去重重合车辆用偏移量X
     double WidthY;      // 融合前去重重合车辆用偏移量Y
-}DB_Intersection_t;
+}DB_Intersection_T;
 //融合参数设置
 typedef struct
 {
@@ -129,8 +129,8 @@ int db_base_set_get(DB_Base_Set_T &data);
 
 //所属路口信息
 int db_belong_intersection_delete();
-int db_belong_intersection_insert(DB_Intersection_t &data);
-int db_belong_intersection_get(DB_Intersection_t &data);
+int db_belong_intersection_insert(DB_Intersection_T &data);
+int db_belong_intersection_get(DB_Intersection_T &data);
 
 //融合参数设置
 int db_fusion_para_set_delete();

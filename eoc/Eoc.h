@@ -9,8 +9,9 @@
 #include "eoc_comm/eoc_comm.hpp"
 #include "eoc_comm/configure_eoc_init.h"
 #include "eoc_comm/utility/dns_server.h"
-#include "bakCode/EOCCom.h"
 
 int StartEocCommon();
+
+int StartEocCommon1();
 
 #endif //_EOC_H

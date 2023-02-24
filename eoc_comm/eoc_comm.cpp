@@ -891,7 +891,7 @@ static int r102_config_download_deal(tcp_client_t* client, const char *comm_guid
 {
     int ret = 0;
     DB_Base_Set_T base_set_db;
-    DB_Intersection_t intersection_db;
+    DB_Intersection_T intersection_db;
 
     cJSON *data_json = cJSON_GetObjectItem(json, "Data");
     if(data_json == NULL)
@@ -1618,7 +1618,7 @@ BLUE_TCP_STATE datacoming_callback(tcp_client_t* client, char* data, size_t data
                 ret = r107_upgrade_deal(client, get_json_string(json,"Guid").c_str(), json);
             }
             else{
-                WARNING("%s:UNKNOWN code[%s]", __FUNCTION__, code);
+                WARNING("%s:UNKNOWN _code[%s]", __FUNCTION__, code);
             }
             //最后退出
             cJSON_Delete(json);

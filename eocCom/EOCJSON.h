@@ -8,47 +8,57 @@
 #include <json/json.h>
 #include <string>
 
-struct ReqHead {
-    std::string Guid;
+class ReqHead {
     std::string Version;
     std::string Code;
-
+public:
+    std::string Guid;
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string version, std::string code);
 };
 
-struct RspHead {
-    std::string Guid;
+class RspHead {
+
     std::string Version;
     std::string Code;
     int State;
     std::string ResultMessage;
-
+public:
+    std::string Guid;
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string version, std::string code, int state, std::string resultMessage);
 };
 
 //心跳
-struct DataS100 {
+class DataS100 {
     std::string Code = "MCCS100";
-
+public:
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S100 {
+class S100 {
+public:
     ReqHead head;
     DataS100 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCS100";
 };
 
-struct DataR100 {
+class DataR100 {
     std::string Code = "MCCR100";
 
     bool JsonMarshal(Json::Value &out);
@@ -56,19 +66,26 @@ struct DataR100 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R100 {
+class R100 {
+public:
     RspHead head;
     DataS100 Data;
 
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCR100";
 };
 
 
 //登录
-struct DataS101 {
+class DataS101 {
     std::string Code = "MCCS101";
+public:
     std::string EquipNumber;
     std::string EquipIp;
     std::string EquipType;
@@ -80,17 +97,23 @@ struct DataS101 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S101 {
+class S101 {
+public:
     ReqHead head;
     DataS101 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCS101";;
 };
 
-struct DataR101 {
+class DataR101 {
     std::string Code = "MCCR101";
+public:
     int State;
     std::string Message;
 
@@ -100,17 +123,23 @@ struct DataR101 {
 
 };
 
-struct R101 {
+class R101 {
+public:
     RspHead head;
     DataR101 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCR101";
 };
 
 //配置下发接口
-struct IntersectionBaseSettingEntity {
+class IntersectionBaseSettingEntity {
+public:
     int FlagEast;
     int FlagSouth;
     int FlagWest;
@@ -133,7 +162,8 @@ struct IntersectionBaseSettingEntity {
 };
 
 
-struct IntersectionEntity {
+class IntersectionEntity {
+public:
     std::string Guid;
     std::string Name;
     int Type;
@@ -142,7 +172,7 @@ struct IntersectionEntity {
     float YLength;
     int LaneNumber;
     std::string Latitude;
-    std::string longitude;
+    std::string Longitude;
     IntersectionBaseSettingEntity IntersectionBaseSetting;
 
     bool JsonMarshal(Json::Value &out);
@@ -150,7 +180,8 @@ struct IntersectionEntity {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct BaseSettingEntity {
+class BaseSettingEntity {
+public:
     std::string City;
     int IsUploadToPlatform;
     int Is4Gmodel;
@@ -179,7 +210,8 @@ struct BaseSettingEntity {
 
 };
 
-struct FusionParaEntity {
+class FusionParaEntity {
+public:
     double IntersectionAreaPoint1X;
     double IntersectionAreaPoint1Y;
     double IntersectionAreaPoint2X;
@@ -194,7 +226,8 @@ struct FusionParaEntity {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct AssociatedEquip {
+class AssociatedEquip {
+public:
     int EquipType;
     std::string EquipCode;
 
@@ -203,8 +236,9 @@ struct AssociatedEquip {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct DataR102 {
+class DataR102 {
     std::string Code = "MCCR102";
+public:
     std::string DataVersion;
     IntersectionEntity IntersectionInfo;
     int Index;
@@ -217,17 +251,23 @@ struct DataR102 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R102 {
+class R102 {
+public:
     RspHead head;
     DataR102 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCR102";
 };
 
-struct DataS102 {
+class DataS102 {
     std::string Code = "MCCS102";
+public:
     int State;
     std::string Messsage;
 
@@ -236,18 +276,24 @@ struct DataS102 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S102 {
+class S102 {
+public:
     ReqHead head;
     DataS102 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion, std::string guuid, int state, std::string message);
+
+private:
+    std::string _code="MCCS102";
 };
 
 //设备主动获取配置
-struct DataR104 {
+class DataR104 {
     std::string Code = "MCCR104";
+public:
     std::string DataVersion;
     IntersectionEntity IntersectionInfo;
     int Index;
@@ -260,17 +306,23 @@ struct DataR104 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R104 {
+class R104 {
+public:
     RspHead head;
     DataR102 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code="MCCR104";
 };
 
-struct DataS104 {
+class DataS104 {
     std::string Code = "MCCS104";
+public:
     std::string MainboardGuid;
 
     bool JsonMarshal(Json::Value &out);
@@ -278,18 +330,24 @@ struct DataS104 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S104 {
+class S104 {
+public:
     ReqHead head;
     DataS104 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCS104";
 };
 
 //外围状态上传接口
-struct DataS105 {
+class DataS105 {
     std::string Code = "MCCS105";
+public:
     int Total;
     int Success;
 
@@ -298,17 +356,23 @@ struct DataS105 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S105 {
+class S105 {
+public:
     ReqHead head;
     DataS105 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion, int total, int success);
+
+private:
+    std::string _code="MCCS105";
 };
 
-struct DataR105 {
+class DataR105 {
     std::string Code = "MCCR105";
+public:
     int State;
     std::string Message;
 
@@ -317,17 +381,22 @@ struct DataR105 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R105 {
+class R105 {
+public:
     RspHead head;
     DataR105 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+    int get(std::string comVersion);
+
+private:
+    std::string _code = "MCCR105";
 };
 
-struct DataR106 {
+class DataR106 {
     std::string Code = "MCCR106";
+public:
     std::string FileName;
     std::string FileSize;
     std::string FileVersion;
@@ -339,17 +408,22 @@ struct DataR106 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R106 {
+class R106 {
+public:
     RspHead head;
     DataR106 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+    int get(std::string comVersion);
+
+private:
+    std::string _code="MCCR106";
 };
 
-struct DataS106 {
+class DataS106 {
     std::string Code = "MCCS106";
+public:
     int ResultType;
     int State;
     int Progress;
@@ -360,18 +434,32 @@ struct DataS106 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S106 {
+class S106 {
+public:
     ReqHead head;
     DataS106 Data;
-
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+ /**
+ * 发送下载进度
+ * @param data out
+ * @param resultType 1:开始 2：完成
+ * @param state 1：成功 0：失败
+ * @param progress 0-100
+ * @param message 进度说明
+ * @return 0:成功
+ */
+ int get(std::string comVersion, std::string guuid, int resultType, int state, int progress, std::string message);
+
+private:
+    std::string _code="MCCS106";
 };
 
 //主控机软件升级确认接口
-struct DataR107 {
+class DataR107 {
     std::string Code = "MCCR107";
+public:
     std::string FileName;
     std::string FileVersion;
     int UpgradeMode;
@@ -385,17 +473,23 @@ struct DataR107 {
 
 };
 
-struct R107 {
+class R107 {
+public:
     RspHead head;
     DataR107 Data;
 
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+    int get(std::string comVersion);
+
+private:
+    std::string _code="MCCR107";
 };
 
-struct DataS107 {
+class DataS107 {
     std::string Code = "MCCS107";
+public:
     int ResultType;
     int State;
     int Progress;
@@ -406,48 +500,64 @@ struct DataS107 {
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S107 {
+class S107 {
+public:
     ReqHead head;
     DataS107 Data;
 
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+
+    int get(std::string comVersion, std::string guuid, int result, int state, int progress, std::string message);
+
+private:
+    std::string _code="MCCS107";
 };
 
 //服务器地址推送接口
-struct DataR108 {
+class DataR108 {
     std::string Code = "MCCR108";
-
+public:
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct R108 {
+class R108 {
+public:
     RspHead head;
     DataR108 Data;
 
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+    int get(std::string comVersion);
+
+private:
+    std::string _code="MCCR108";
 };
 
-struct DataS108 {
+class DataS108 {
     std::string Code = "MCCS108";
-
+public:
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
 };
 
-struct S108 {
-    RspHead head;
-    DataR108 Data;
+class S108 {
+public:
+    ReqHead head;
+    DataS108 Data;
 
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+    int get(std::string comVersion);
+
+private:
+    std::string _code="MCCS108";
 };
 
 #endif //EOCJSON_H

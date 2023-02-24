@@ -13,7 +13,7 @@
     @section intro INTRODUCTION
 
     This component allows an INI-style configuration file to be used on both
-    Windows and Linux/Unix. It is fast, simple and source code using this
+    Windows and Linux/Unix. It is fast, simple and source _code using this
     component will compile unchanged on either OS.
 
 
@@ -204,8 +204,8 @@
 //  it with the statement if (sizeof(SI_CHAR) == sizeof(char)). This test will
 //  be optimized away in a release build.
 //  4503 'insert' : decorated name length exceeded, name was truncated
-//  4702 "unreachable code" as the MS STL header causes it in release mode.
-//  Again, the code causing the warning will be cleaned up by the compiler.
+//  4702 "unreachable _code" as the MS STL header causes it in release mode.
+//  Again, the _code causing the warning will be cleaned up by the compiler.
 //  4786 "identifier truncated to 256 characters" as this is thrown hundreds
 //  of times VC6 as soon as STL is used.
 #ifdef _MSC_VER
@@ -2638,7 +2638,7 @@ CSimpleIniTempl<SI_CHAR,SI_STRLESS,SI_CONVERTER>::DeleteValue(
 
         // done now if the section is not empty or we are not pruning away
         // the empty sections. Otherwise let it fall through into the section
-        // deletion code
+        // deletion _code
         if (!a_bRemoveEmpty || !iSection->second.empty()) {
             return true;
         }

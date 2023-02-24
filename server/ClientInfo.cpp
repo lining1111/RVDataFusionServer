@@ -38,7 +38,7 @@ ClientInfo::ClientInfo(int client_sock, struct sockaddr_in clientAddr, string na
 //    if (!isCreate)
 //        Info("create path:%s\n", dirName.c_str());
 //    else
-//        Info("create path failed! error code : %s \n", isCreate, dirName.data());
+//        Info("create path failed! error _code : %s \n", isCreate, dirName.data());
 }
 
 ClientInfo::~ClientInfo() {

@@ -14,7 +14,8 @@
 namespace os {
     using namespace std;
 
-    int runCmd(const string cmd, string &out);
+    int execute_command(const std::string &command, std::string *output = nullptr,
+                        bool redirect_stderr = false);
 
     int GetVectorFromFile(vector<uint8_t> &array, string filePath);
 

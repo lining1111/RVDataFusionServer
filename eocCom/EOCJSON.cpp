@@ -3,6 +3,53 @@
 //
 
 #include "EOCJSON.h"
+#include <sys/time.h>
+#include <glog/logging.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "db/DBTable.h"
+
+/*
+ * 函数功能：产生uuid
+ * 参数：无
+ * 返回值：uuid的string
+ * */
+static std::string random_uuid() {
+    char buf[37] = {0};
+    struct timeval tmp;
+    const char *c = "89ab";
+    char *p = buf;
+    unsigned int n, b;
+    gettimeofday(&tmp, nullptr);
+    srand(tmp.tv_usec);
+
+    for (n = 0; n < 16; ++n) {
+        b = rand() % 65536;
+        switch (n) {
+            case 6:
+                sprintf(p, "4%x", b % 15);
+                break;
+            case 8:
+                sprintf(p, "%c%x", c[rand() % strlen(c)], b % 15);
+                break;
+            default:
+                sprintf(p, "%02x", b);
+                break;
+        }
+        p += 2;
+        switch (n) {
+            case 3:
+            case 5:
+            case 7:
+            case 9:
+                *p++ = '-';
+                break;
+        }
+    }
+    *p = 0;
+    return std::string(buf);
+}
 
 bool ReqHead::JsonMarshal(Json::Value &out) {
     out["Guid"] = this->Guid;
@@ -18,6 +65,13 @@ bool ReqHead::JsonUnmarshal(Json::Value in) {
     this->Code = in["Code"].asString();
 
     return true;
+}
+
+int ReqHead::get(std::string version, std::string code) {
+    this->Guid = random_uuid();
+    this->Version = version;
+    this->Code = code;
+    return 0;
 }
 
 bool RspHead::JsonMarshal(Json::Value &out) {
@@ -37,6 +91,16 @@ bool RspHead::JsonUnmarshal(Json::Value in) {
     this->ResultMessage = in["ResultMessage"].asString();
 
     return true;
+}
+
+int RspHead::get(std::string version, std::string code, int state, std::string resultMessage) {
+    this->Guid = random_uuid();
+    this->Version = version;
+    this->Code = code;
+    this->State = state;
+    this->ResultMessage = resultMessage;
+
+    return 0;
 }
 
 bool DataS100::JsonMarshal(Json::Value &out) {
@@ -69,6 +133,12 @@ bool S100::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int S100::get(std::string comVersion) {
+    this->head.get(comVersion, this->_code);
+
+    return 0;
+}
+
 bool DataR100::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     return true;
@@ -97,6 +167,12 @@ bool R100::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int R100::get(std::string comVersion) {
+    //TODO
+//    this->head.get(comVersion,this->_code);
+    return 0;
 }
 
 bool DataS101::JsonMarshal(Json::Value &out) {
@@ -138,6 +214,81 @@ bool S101::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+/*取板卡本地ip地址和n2n地址 */
+static int getipaddr(char *ethip, char *n2nip) {
+    int ret = 0;
+    struct ifaddrs *ifAddrStruct = NULL;
+    struct ifaddrs *pifAddrStruct = NULL;
+    void *tmpAddrPtr = NULL;
+
+    getifaddrs(&ifAddrStruct);
+
+    if (ifAddrStruct != NULL) {
+        pifAddrStruct = ifAddrStruct;
+    }
+
+    while (ifAddrStruct != NULL) {
+        if (ifAddrStruct->ifa_addr == NULL) {
+            ifAddrStruct = ifAddrStruct->ifa_next;
+            LOG(ERROR) << "addr null";
+            continue;
+        }
+
+        if (ifAddrStruct->ifa_addr->sa_family == AF_INET) { // check it is IP4
+            // is a valid IP4 Address
+            tmpAddrPtr = &((struct sockaddr_in *) ifAddrStruct->ifa_addr)->sin_addr;
+            char addressBuffer[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+
+            if (strcmp(ifAddrStruct->ifa_name, "eth0") == 0) {
+                LOG(INFO) << "eth0 IP Address:" << addressBuffer;
+                sprintf(ethip, "%s", addressBuffer);
+            } else if (strcmp(ifAddrStruct->ifa_name, "n2n0") == 0) {
+                LOG(INFO) << "n2n0 IP Address:" << addressBuffer;
+                sprintf(n2nip, "%s", addressBuffer);
+            }
+        }
+
+        ifAddrStruct = ifAddrStruct->ifa_next;
+    }
+
+    if (pifAddrStruct != NULL) {
+        freeifaddrs(pifAddrStruct);
+    }
+
+    return ret;
+}
+
+int S101::get(std::string comVersion) {
+    int ret = 0;
+
+    //获取设备sn
+    ret = dbGetUname(this->Data.EquipNumber);
+    if (ret != 0) {
+        LOG(ERROR) << "get uname err";
+        return -1;
+    }
+    //获取ip信息 ip[n2n]
+    char ethip[32] = {0};
+    char n2nip[32] = {0};
+    char ipmsg[64] = {0};
+    memset(ethip, 0, 32);
+    memset(n2nip, 0, 32);
+    memset(ipmsg, 0, 64);
+    getipaddr(ethip, n2nip);
+    sprintf(ipmsg, "%s[%s]", ethip, n2nip);
+    this->Data.EquipIp = std::string(ipmsg);
+    //获取dataVersion
+    getVersion(this->Data.DataVersion);
+
+    this->Data.EquipType = "XX";
+    this->Data.SoftVersion = "V1.0.0";
+
+    this->head.get(comVersion, this->_code);
+
+    return 0;
+}
+
 bool DataR101::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["State"] = this->State;
@@ -169,6 +320,11 @@ bool R101::JsonUnmarshal(Json::Value in) {
         return false;
     }
     return true;
+}
+
+int R101::get(std::string comVersion) {
+    //TODO
+    return 0;
 }
 
 bool IntersectionBaseSettingEntity::JsonMarshal(Json::Value &out) {
@@ -217,7 +373,7 @@ bool IntersectionEntity::JsonMarshal(Json::Value &out) {
     out["YLength"] = this->YLength;
     out["LaneNumber"] = this->LaneNumber;
     out["Latitude"] = this->Latitude;
-    out["longitude"] = this->longitude;
+    out["Longitude"] = this->Longitude;
 
     Json::Value IntersectionBaseSetting = Json::objectValue;
     this->IntersectionBaseSetting.JsonMarshal(IntersectionBaseSetting);
@@ -234,7 +390,7 @@ bool IntersectionEntity::JsonUnmarshal(Json::Value in) {
     this->YLength = in["YLength"].asFloat();
     this->LaneNumber = in["LaneNumber"].asInt();
     this->Latitude = in["Latitude"].asString();
-    this->longitude = in["longitude"].asString();
+    this->Longitude = in["Longitude"].asString();
 
     Json::Value IntersectionBaseSetting = in["IntersectionBaseSetting"];
     if (IntersectionBaseSetting.isObject()) {
@@ -423,6 +579,11 @@ bool R102::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int R102::get(std::string comVersion) {
+    //TODO
+    return 0;
+}
+
 bool DataS102::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["State"] = this->State;
@@ -456,6 +617,14 @@ bool S102::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int S102::get(std::string comVersion, std::string guuid, int state, std::string message) {
+    this->Data.State = state;
+    this->Data.Messsage = message;
+    this->head.get(comVersion, this->_code);
+    this->head.Guid = guuid;
+    return 0;
 }
 
 bool DataR104::JsonMarshal(Json::Value &out) {
@@ -544,6 +713,12 @@ bool R104::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int R104::get(std::string comVersion) {
+    //TODO
+    // this->head.get(comVersion,this->_code);
+    return 0;
+}
+
 bool DataS104::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["MainboardGuid"] = this->MainboardGuid;
@@ -576,6 +751,19 @@ bool S104::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int S104::get(std::string comVersion) {
+    int ret = 0;
+    //获取设备sn
+    ret = dbGetUname(this->Data.MainboardGuid);
+    if (ret != 0) {
+        LOG(ERROR) << "get uname err";
+        return -1;
+    }
+
+    this->head.get(comVersion, this->_code);
+    return 0;
 }
 
 bool DataS105::JsonMarshal(Json::Value &out) {
@@ -614,6 +802,14 @@ bool S105::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int S105::get(std::string comVersion, int total, int success) {
+    this->Data.Total = total;
+    this->Data.Success = success;
+
+    this->head.get(comVersion, this->_code);
+    return 0;
+}
+
 bool DataR105::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["State"] = this->State;
@@ -646,6 +842,11 @@ bool R105::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int R105::get(std::string comVersion) {
+    //TODO
+    return 0;
 }
 
 bool DataR106::JsonMarshal(Json::Value &out) {
@@ -690,6 +891,11 @@ bool R106::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int R106::get(std::string comVersion) {
+    //TODO
+    return 0;
+}
+
 bool DataS106::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["ResultType"] = this->ResultType;
@@ -728,6 +934,17 @@ bool S106::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int S106::get(std::string comVersion, std::string guuid, int resultType, int state, int progress, std::string message) {
+    this->Data.ResultType = resultType;
+    this->Data.State = state;
+    this->Data.Progress = progress;
+    this->Data.Message = message;
+
+    this->head.get(comVersion, this->_code);
+    this->head.Guid = guuid;
+    return 0;
 }
 
 bool DataR107::JsonMarshal(Json::Value &out) {
@@ -774,6 +991,11 @@ bool R107::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int R107::get(std::string comVersion) {
+    //TODO
+    return 0;
+}
+
 bool DataS107::JsonMarshal(Json::Value &out) {
     out["Code"] = this->Code;
     out["ResultType"] = this->ResultType;
@@ -814,13 +1036,24 @@ bool S107::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int S107::get(std::string comVersion, std::string guuid, int result, int state, int progress, std::string message) {
+    this->Data.ResultType = result;
+    this->Data.State = state;
+    this->Data.Progress = progress;
+    this->Data.Message = message;
+
+    this->head.get(comVersion, this->_code);
+    this->head.Guid = guuid;
+    return 0;
+}
+
 bool DataR108::JsonMarshal(Json::Value &out) {
-    out["Code"]=this->Code;
+    out["Code"] = this->Code;
     return true;
 }
 
 bool DataR108::JsonUnmarshal(Json::Value in) {
-    this->Code=in["Code"].asString();
+    this->Code = in["Code"].asString();
     return true;
 }
 
@@ -844,13 +1077,19 @@ bool R108::JsonUnmarshal(Json::Value in) {
     return true;
 }
 
+int R108::get(std::string comVersion) {
+    //TODO
+    // this->head.get(comVersion, this->_code);
+    return 0;
+}
+
 bool DataS108::JsonMarshal(Json::Value &out) {
-    out["Code"]=this->Code;
+    out["Code"] = this->Code;
     return true;
 }
 
 bool DataS108::JsonUnmarshal(Json::Value in) {
-    this->Code=in["Code"].asString();
+    this->Code = in["Code"].asString();
     return true;
 }
 
@@ -872,4 +1111,10 @@ bool S108::JsonUnmarshal(Json::Value in) {
     }
 
     return true;
+}
+
+int S108::get(std::string comVersion) {
+
+    this->head.get(comVersion, this->_code);
+    return 0;
 }
