@@ -21,6 +21,9 @@
 
 
 std::string getFileMD5(std::string file);
+
+extern int downloadTotal;
+extern int downloaded;
 int downloadFile(std::string url, int timeout, std::string fileName, int fileSize, std::string fileMD5);
 int extract_file(const char *file_path);
 int start_upgrade();

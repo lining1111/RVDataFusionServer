@@ -21,7 +21,7 @@ std::string getFileMD5(std::string file) {
         char hex[3];
         for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
             memset(hex, 0, 3);
-            snprintf(hex, 2, "0x02x", buf[i]);
+            snprintf(hex, 3, "%02x", buf[i]);
             ret.append(hex);
         }
 
@@ -55,12 +55,23 @@ static ssize_t writen(int fd, const void *vptr, size_t n) {
     return (n);
 }
 
+int downloadTotal = 0;
+int downloaded = 0;
+static int countDownloadPrint = 0;
+
 static size_t download_file_callback(void *buffer, size_t size, size_t nmemb, void *userp) {
     static int count = 0;
     if (count++ % 20 == 0) {
         printf(".");
         fflush(stdout);
     }
+    countDownloadPrint++;
+    downloaded += (nmemb * size);
+    std::string printPrefix;
+    for (int i = 0; i < countDownloadPrint; i++) {
+        printPrefix.append("#");
+    }
+    LOG(INFO) << printPrefix << "..." << "download:" << downloaded << ",total:" << downloadTotal;
     return writen(*(int *) userp, buffer, nmemb * size);
 }
 
@@ -111,6 +122,9 @@ int downloadFile(std::string url, int timeout, std::string fileName, int fileSiz
         //curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 1);                       //查找次数，防止查找太深
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout);      //连接超时，这个数值如果设置太短可能导致数据请求不到就断开了
         curl_easy_setopt(curl, CURLOPT_URL, (char *) ipurl.c_str());//请求的URL
+        downloadTotal = fileSize;
+        downloaded = 0;
+        countDownloadPrint = 0;
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_file_callback);     //数据回来后的回调函数
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &fd);              //回调函数里面用到的参数
         //Todo:302重定向问题
@@ -188,24 +202,23 @@ int extract_file(const char *file_path) {
     return 0;
 }
 
-int start_upgrade()
-{
+int start_upgrade() {
     int ret = 0;
-    LOG(INFO)<<"开始升级";
+    LOG(INFO) << "开始升级";
     char cmd[256] = {0};
-    memset(cmd,0,256);
+    memset(cmd, 0, 256);
     sprintf(cmd, "chmod +x %s/%s", UPDATEUNZIPFILE, INSTALLSH);
     LOG(INFO) << "Extract file start,cmd=" << cmd;
     ret = os::execute_command(cmd);
-    if(ret < 0){
+    if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         return -1;
     }
-    memset(cmd,0,256);
+    memset(cmd, 0, 256);
     sprintf(cmd, "sh %s/%s %s", UPDATEUNZIPFILE, INSTALLSH, HOME_PATH);
     DLOG(INFO) << "Extract file start,cmd=" << cmd;
     ret = os::execute_command(cmd);
-    if(ret < 0){
+    if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         return -1;
     }

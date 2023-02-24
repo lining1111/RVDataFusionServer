@@ -37,6 +37,7 @@ static void ThreadEOCCom(std::string ip, int port) {
         eocCom->Run();
     }
     while (true){
+        sleep(60);
         if (!eocCom->isLive){
             eocCom->Close();
             if (eocCom->Open()==0){
