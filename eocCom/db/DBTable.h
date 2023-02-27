@@ -17,11 +17,12 @@ typedef struct {
 #define HOME_PATH "/home/nvidianx"
 
 extern DatabaseInfo CLParking;
+//extern DatabaseInfo RoadsideParking;
 extern DatabaseInfo eoc_configure;
 
 class DBDataVersion {
 private:
-    std::string db="./eoc_configure.db";
+    std::string db = "./eoc_configure.db";
 public:
     int id;
     std::string version;
@@ -55,6 +56,7 @@ typedef struct {
     std::string name;
     std::string type;
 } DBTableColInfo;
+
 /**
  * 检查表内字段，不存在的话则添加
  * @param tab_name
@@ -68,7 +70,7 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
 //核心板基础配置
 class DBBaseSet {
 private:
-    std::string db="./eoc_configure.db";
+    std::string db = "./eoc_configure.db";
 public:
     int id;
     int Index;      //设备序号
@@ -102,9 +104,9 @@ public:
 };
 
 //所属路口信息
-class DBIntersection{
+class DBIntersection {
 private:
-    std::string db="./eoc_configure.db";
+    std::string db = "./eoc_configure.db";
 public:
     int id;
     std::string Guid;    //guid
@@ -138,10 +140,11 @@ public:
 
     int selectFromDB();
 };
+
 //融合参数设置
-class DBFusionParaSet{
+class DBFusionParaSet {
 private:
-    std::string db="./eoc_configure.db";
+    std::string db = "./eoc_configure.db";
 public:
     int id;
     double IntersectionAreaPoint1X; //路口中心区域标点1-X
@@ -159,10 +162,11 @@ public:
 
     int selectFromDB();
 };
+
 //关联设备
-class DBAssociatedEquip{
+class DBAssociatedEquip {
 private:
-    std::string db="./eoc_configure.db";
+    std::string db = "./eoc_configure.db";
 public:
     int id;
     int EquipType;  //设备类型

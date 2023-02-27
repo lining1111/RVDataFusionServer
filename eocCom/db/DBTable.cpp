@@ -10,6 +10,7 @@
 #include <os/os.h>
 
 DatabaseInfo CLParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/CLParking.db", "V_1_0_0"};
+//DatabaseInfo RoadsideParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/RoadsideParking.db", "V1_0"};
 DatabaseInfo eoc_configure = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
 
 //核心板基础配置
@@ -390,7 +391,7 @@ int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select CloudServerPath,TransferServicePath,CloudServerPort,FileServicePort from TB_ParkingLot "
-                    "where ID=(select MIN(ID) from TB_ParkingLot)");
+                    "where ID=(select MIN(ID) from base_set)");
     rtn = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (rtn < 0) {
         LOG(ERROR) << "db fail sql:" << sqlstr;
