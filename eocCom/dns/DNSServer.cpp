@@ -15,7 +15,6 @@
 #include <string>
 #include <string.h>
 #include <map>
-#include "dns_struct.h"
 #include "uri.h"
 #include <netdb.h>
 #include <vector>
@@ -45,6 +44,135 @@ static int isIP(char *str) {
     }
 
     return 1;
+}
+
+/*
+
+01  00  ID
+81  80  flags
+00  01  问题数
+00  01  应答数
+00  00  授权资源记录数
+00  01  附加资源记录数
+查询区域：
+查询名 fs.aps.aipark.com
+02  66  73  fs
+03  61  70  73  aps
+06  61  69  70  61  72  6B  aipark
+03  63  6F  6D  com
+00  查询名结束
+00  01  查询类型
+00  01  查询类
+回答区域：
+应答资源记录（可以多条，每条都是以C0 0C 00 01 00 01开头）
+C0  0C  域名 当报文中域名重复出现的时候，该字段使用2个字节的偏移指针来表示，例子C00C(1100000000001100，12正好是头部的长度，其正好指向Queries区域的查询名字字段)
+00  01  查询类型 固定2个字节
+00  01  查询类 固定2个字节
+00  00  00  10 生存时间TTL  查询类型为1时，为4个字节
+00  04  资源数据长度 固定2个字节
+2F  5F  32  23  47.95.50.35
+授权资源记录                             c  a  i   s   h   i   k   0   u  菜市口
+09  63  61  69  73  68  69  6B  6F  75  （99 97 105 115 104 105 107 111 117）
+08  72  65  64  69  72  65  63  74  (r e d i r e c t)
+00
+附加资源记录
+00  01  查询类型
+00  01  查询类
+00  00  0E  10  生存时间TTL
+00  04  资源数据长度
+7F  00  00  01  127.0.0.1
+
+*/
+
+/*数据包头*/
+typedef struct
+{
+    unsigned char id[2];   /*会话ID---0表示请求,01 00表示接收*/
+    unsigned char flag[2]; /*标志:0x81,0x80表示接收成功*/
+    unsigned char ques_num[2];   /*询问信息个数*/
+    unsigned char ans_num[2];    /*应答信息个数*/
+}DNS_REQ_HEAD;
+
+/*数据报内容*/
+typedef struct
+{
+    unsigned char data_name[2];   /*域名:0xC0,0x0C*/
+    unsigned char data_type[2];   /*数据类型1:由域名获得IPv4地址*/
+    unsigned char data_class[2];  /*查询类CLASS 1:IN*/
+    unsigned char data_time[4];   /*生存时间（TTL）*/
+    unsigned char data_len[2];    /*数据长度*/
+    unsigned char data_buf[4];    /*ipV4的ip地址信息*/
+}DNS_REQ_DATA;
+
+
+/*dns内容信息解析*/
+static int dns_data_parse(char *dns_buf, int dns_buf_len, std::vector<std::string> &dns_ip_str_all) {
+    int ret = 0;
+    char printf_buf[1024];
+
+    memset(printf_buf, 0x0, sizeof(printf_buf));
+
+    for (int i = 0; i < dns_buf_len; i++) {
+        if (strlen(printf_buf) < sizeof(printf_buf) - 8) {
+            sprintf(printf_buf + strlen(printf_buf), "%02X ", dns_buf[i] & 0xFF);
+        }
+        char *p_dns_buf = dns_buf + i;
+        DNS_REQ_DATA *p_dns_head = (DNS_REQ_DATA *) p_dns_buf;
+        if (*(unsigned short *) p_dns_head->data_type == 0x0100 &&
+            *(unsigned short *) p_dns_head->data_class == 0x0100) {
+            if (*(unsigned short *) p_dns_head->data_len == 0x0400) {
+                char tmp_ip_buf[32];
+                memset(tmp_ip_buf, 0x0, sizeof(tmp_ip_buf));
+                sprintf(tmp_ip_buf, "%u.%u.%u.%u", p_dns_head->data_buf[0],
+                        p_dns_head->data_buf[1], p_dns_head->data_buf[2],
+                        p_dns_head->data_buf[3]);
+                dns_ip_str_all.push_back(tmp_ip_buf);
+            } else {
+                LOG(ERROR) << "数据长度错误" << *(unsigned short *) p_dns_head->data_len;
+            }
+        }
+    }
+    LOG(ERROR) << "接收数据:" << printf_buf;
+    return 0;
+}
+
+/*dns头部信息解析*/
+static int dns_head_parse(char *dns_buf, int dns_buf_len) {
+    int ret = 0;
+
+    DNS_REQ_HEAD *p_dns_head = (DNS_REQ_HEAD *) dns_buf;
+    if (*(unsigned short *) p_dns_head->id != 0x0001) {
+        LOG(ERROR) << "dns解析错误" << *(unsigned short *) p_dns_head->id;
+        return -1;
+    }
+
+    if (*(unsigned short *) p_dns_head->flag != 0x8081) {
+        LOG(ERROR) << "dns解析错误" << *(unsigned short *) p_dns_head->flag;
+        return -1;
+    }
+
+    return 0;
+}
+
+/*dns解析*/
+static int dns_parse(char *dns_buf, int dns_buf_len, std::vector<std::string> &dns_ip_str_all) {
+    int ret = 0;
+
+    /*头部信息解析*/
+    ret = dns_head_parse(dns_buf, dns_buf_len);
+    if (ret < 0) {
+        LOG(ERROR) << "dns解析失败";
+        return -1;
+    }
+
+    /*dns内容信息解析*/
+    ret = dns_data_parse(dns_buf, dns_buf_len, dns_ip_str_all);
+    if (ret < 0) {
+        LOG(ERROR) << "dns内容信息解析失败";
+        return -1;
+    }
+
+    return 0;
 }
 
 /*
@@ -243,7 +371,7 @@ url_ip:将域名解析成ip的地址;
 force:强制解析域名 0,不强制获取，1 强制获取 2,更新dns
 */
 int searchDNS(std::string url, std::string &url_ip,
-                            int force, std::string &host, std::string &port, std::string &ip_addr) {
+              int force, std::string &host, std::string &port, std::string &ip_addr) {
     static pthread_mutex_t dns_table_lock = PTHREAD_MUTEX_INITIALIZER; /*泊位临时数据库线程锁*/
 #define DNS_NUMBER   32
     static std::map<std::string, std::string> dns_table;
