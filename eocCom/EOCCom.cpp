@@ -194,41 +194,42 @@ void processR102(void *p, string content, string cmd) {
     if (r102.JsonUnmarshal(in)) {
         int result = 0;
         //核心板基础配置
-        delete_base_set();
         DBBaseSet dbBaseSet;
+        dbBaseSet.deleteFromDB();
         EOCCom::convertBaseSetS2DB(r102.Data.BaseSetting, dbBaseSet, r102.Data.Index);
-        if (insert_base_set(dbBaseSet) == 0) {
+        if (dbBaseSet.insertToDB() == 0) {
             LOG(INFO) << "核心板基础配置,写入成功";
         } else {
             LOG(INFO) << "核心板基础配置,写入失败";
             result = -1;
         }
         //所属路口信息
-        delete_belong_intersection();
         DBIntersection dbIntersection;
+        dbIntersection.deleteFromDB();
         EOCCom::convertIntersectionS2DB(r102.Data.IntersectionInfo, dbIntersection);
-        if (insert_belong_intersection(dbIntersection) == 0) {
+        if (dbIntersection.insertToDB() == 0) {
             LOG(INFO) << "所属路口信息,写入成功";
         } else {
             LOG(INFO) << "所属路口信息,写入失败";
             result = -1;
         }
         //融合参数
-        delete_fusion_para_set();
         DBFusionParaSet dbFusionParaSet;
+        dbFusionParaSet.deleteFromDB();
         EOCCom::convertFusion_Para_SetS2DB(r102.Data.FusionParaSetting, dbFusionParaSet);
-        if (insert_fusion_para_set(dbFusionParaSet) == 0) {
+        if (dbFusionParaSet.insertToDB() == 0) {
             LOG(INFO) << "融合参数,写入成功";
         } else {
             LOG(INFO) << "融合参数,写入失败";
             result = -1;
         }
         //关联设备
-        delete_associated_equip();
+        DBAssociatedEquip dbAssociatedEquip1;
+        dbAssociatedEquip1.deleteAllFromDB();
         for (auto iter: r102.Data.AssociatedEquips) {
             DBAssociatedEquip dbAssociatedEquip;
             EOCCom::convertAssociated_EquipS2DB(iter, dbAssociatedEquip);
-            if (insert_associated_equip(dbAssociatedEquip) == 0) {
+            if (dbAssociatedEquip.insertToDB() == 0) {
                 LOG(INFO) << "关联设备,写入成功" << iter.EquipCode;
             } else {
                 LOG(INFO) << "关联设备,写入失败" << iter.EquipCode;
@@ -238,9 +239,10 @@ void processR102(void *p, string content, string cmd) {
         //数据版本
         std::string version = r102.Data.DataVersion;
         if (!version.empty()) {
-            DBDataVersion dbConfDataVersion;
-            dbConfDataVersion.version = version;
-            dbConfDataVersion.id = 0;
+            DBDataVersion dbDataVersion;
+            dbDataVersion.deleteFromDB();
+            dbDataVersion.version = version;
+            dbDataVersion.id = 0;
 
             time_t now;
             struct tm timenow;
@@ -251,14 +253,14 @@ void processR102(void *p, string content, string cmd) {
                     1900 + timenow.tm_year, 1 + timenow.tm_mon, timenow.tm_mday,
                     timenow.tm_hour, timenow.tm_min, timenow.tm_sec);
 
-            dbConfDataVersion.time = std::string(time_p);
-            deleteVersion();
-            if (insertVersion(dbConfDataVersion) == 0) {
-                LOG(INFO) << "write config version success:" << dbConfDataVersion.version << " ,"
-                          << dbConfDataVersion.time;
+            dbDataVersion.time = std::string(time_p);
+
+            if (dbDataVersion.insertToDB() == 0) {
+                LOG(INFO) << "write config version success:" << dbDataVersion.version << " ,"
+                          << dbDataVersion.time;
             } else {
-                LOG(INFO) << "write config version fail:" << dbConfDataVersion.version << " ,"
-                          << dbConfDataVersion.time;
+                LOG(INFO) << "write config version fail:" << dbDataVersion.version << " ,"
+                          << dbDataVersion.time;
                 result = -1;
             }
         } else {
@@ -925,7 +927,9 @@ int EOCCom::intervalPro(void *p) {
 
             //1.获取配置
             std::string version;
-            getVersion(version);
+            DBDataVersion dbDataVersion;
+            dbDataVersion.selectFromDB();
+            version = dbDataVersion.version;
             if (version.empty()) {
                 if (now - local->last_get_config_t > 180) {
                     local->last_get_config_t = now;

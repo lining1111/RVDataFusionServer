@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(RVDataFusionServer VERSION 0.1.1)
+project(RVDataFusionServer VERSION 0.2.0)
 string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
 set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")

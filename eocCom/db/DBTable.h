@@ -20,11 +20,19 @@ extern DatabaseInfo eoc_configure;
 extern DatabaseInfo CLParking;
 extern DatabaseInfo RoadsideParking;
 
-typedef struct {
+class DBDataVersion {
+public:
     int id;
     std::string version;
     std::string time;
-} DBDataVersion;
+
+    int deleteFromDB();
+
+    int insertToDB();
+
+    int selectFromDB();
+
+};
 
 typedef struct {
     std::string tableName;            //数据库表名
@@ -32,16 +40,33 @@ typedef struct {
     std::string columnDescription;    //列描述
 } DBTableInfo;
 
+/**
+ * 校验一个数据库表，如果可能会根据描述创建一个表
+ * @param db_path
+ * @param table
+ * @param column_size
+ * @return 0 成功  -1 失败
+ */
+int checkTable(const char *db_path, const DBTableInfo *table, int column_size);
+
 /****表字段检查配置******/
 typedef struct {
     std::string name;
     std::string type;
 } DBTableColInfo;
-
+/**
+ * 检查表内字段，不存在的话则添加
+ * @param tab_name
+ * @param tab_column
+ * @param check_num
+ * @return
+ */
+int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num);
 ///////////具体的表内业务////////////
 
 //核心板基础配置
-typedef struct {
+class DBBaseSet {
+public:
     int id;
     int Index;      //设备序号
     std::string City;    //城市
@@ -65,10 +90,17 @@ typedef struct {
     int FusionMainboardPort;    //主控机端口号
     std::string IllegalPlatformAddress;  //违停服务器地址
     std::string Remarks;     //备注
-} DBBaseSet;
+
+    int deleteFromDB();
+
+    int insertToDB();
+
+    int selectFromDB();
+};
 
 //所属路口信息
-typedef struct {
+class DBIntersection{
+public:
     int id;
     std::string Guid;    //guid
     std::string Name;    //路口名称
@@ -94,9 +126,16 @@ typedef struct {
     double DeltaYNorth; // 偏移量Y-北
     double WidthX;      // 融合前去重重合车辆用偏移量X
     double WidthY;      // 融合前去重重合车辆用偏移量Y
-} DBIntersection;
+
+    int deleteFromDB();
+
+    int insertToDB();
+
+    int selectFromDB();
+};
 //融合参数设置
-typedef struct {
+class DBFusionParaSet{
+public:
     int id;
     double IntersectionAreaPoint1X; //路口中心区域标点1-X
     double IntersectionAreaPoint1Y; //路口中心区域标点1-Y
@@ -106,81 +145,43 @@ typedef struct {
     double IntersectionAreaPoint3Y; //路口中心区域标点3-Y
     double IntersectionAreaPoint4X; //路口中心区域标点4-X
     double IntersectionAreaPoint4Y; //路口中心区域标点4-Y
-} DBFusionParaSet;
+
+    int deleteFromDB();
+
+    int insertToDB();
+
+    int selectFromDB();
+};
 //关联设备
-typedef struct {
+class DBAssociatedEquip{
+public:
     int id;
     int EquipType;  //设备类型
     std::string EquipCode;   //设备编码
-} DBAssociatedEquip;
+
+    int deleteAllFromDB();
+
+    int insertToDB();
+};
+
+int getAssociatedEquips(std::vector<DBAssociatedEquip> &data);
+
 /**
  * 根据路径创建各级目录，最大路径长度512-1，递归创建知道最后一个'/'
  * @param path 将要递归创建的文件路径或文件夹路径
  * @return 0：成功 -1：失败
  */
-int mkdirFromPath(const char* path);
+int mkdirFromPath(const char *path);
 
 /**
 * eoc配置表初始化，如果表不存在则创建表
 * @return 0 成功  -1 失败
 */
 int tableInit(std::string path, std::string version);
-/**
- * 校验一个数据库表，如果可能会根据描述创建一个表
- * @param db_path
- * @param table
- * @param column_size
- * @return 0 成功  -1 失败
- */
-int checkTable(const char* db_path, const DBTableInfo *table, int column_size);
-
-/**
- * 检查表内字段，不存在的话则添加
- * @param tab_name
- * @param tab_column
- * @param check_num
- * @return
- */
-int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num);
-
-
-int deleteVersion();
-
-int insertVersion(DBDataVersion &data);
-
-int getVersion(std::string &version);
-
-//基础配置信息
-int delete_base_set();
-
-int insert_base_set(DBBaseSet data);
-
-int get_base_set(DBBaseSet &data);
-
-//所属路口信息
-int delete_belong_intersection();
-
-int insert_belong_intersection(DBIntersection data);
-
-int get_belong_intersection(DBIntersection &data);
-
-//融合参数设置
-int delete_fusion_para_set();
-
-int insert_fusion_para_set(DBFusionParaSet data);
-
-int get_fusion_para_set(DBFusionParaSet &data);
-
-//关联设备
-int delete_associated_equip();
-
-int insert_associated_equip(DBAssociatedEquip data);
-
-int get_associated_equip(std::vector<DBAssociatedEquip> &data);
 
 //其他操作
 int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path,
-                                           int &file_server_port);
+                   int &file_server_port);
 
 /***取id最大一条数据的用户名***/
 int dbGetUname(std::string &uname);

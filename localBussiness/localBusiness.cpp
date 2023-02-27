@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "glog/logging.h"
+#include "data/Data.h"
 
 static string savePath = "/mnt/mnt_hd/save/";
 static int saveCountMax = 0;
@@ -83,7 +84,7 @@ void LocalBusiness::deleteTimerTask(string name) {
 
 void LocalBusiness::StartTimerTask() {
 
-    addTimerTask("localBusiness timerKeep", 1000*3, std::bind(Task_Keep, this));
+    addTimerTask("localBusiness timerKeep", 1000 * 3, std::bind(Task_Keep, this));
 
     addTimerTask("localBusiness timerTask_FusionData", 100,
                  std::bind(Task_FusionData, this));
@@ -176,7 +177,7 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
         auto cli = iter1.second;
         if (cli->isRun) {
             VLOG(2) << "发送到上层" << cli->server_ip << ":" << cli->server_port
-                      << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
+                    << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
                 VLOG(2) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;
@@ -203,18 +204,17 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
 
     if (local->isRun) {
         string msgType = "CrossTrafficJamAlarm";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
 
-            CrossTrafficJamAlarm data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
-            }
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
+
+        CrossTrafficJamAlarm data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
         }
     }
 }
@@ -230,18 +230,17 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
 
     if (local->isRun) {
         string msgType = "IntersectionOverflowAlarm";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitIntersectionOverflowAlarm;
 
-            IntersectionOverflowAlarm data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
-            }
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitIntersectionOverflowAlarm;
+
+        IntersectionOverflowAlarm data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
         }
     }
 }
@@ -257,18 +256,17 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
 
     if (local->isRun) {
         string msgType = "TrafficFlowGather";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitTrafficFlowGather;
 
-            TrafficFlowGather data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
-            }
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
+
+        TrafficFlowGather data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
         }
     }
 }
@@ -284,18 +282,16 @@ void LocalBusiness::Task_FusionData(void *p) {
     }
     if (local->isRun) {
         string msgType = "FusionData";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitFusionData;
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitFusionData;
 
-            FusionData data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timstamp);
-            }
+        FusionData data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timstamp);
         }
     }
 }
@@ -311,18 +307,17 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
 
     if (local->isRun) {
         string msgType = "InWatchData_1_3_4";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitInWatchData_1_3_4;
 
-            InWatchData_1_3_4 data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
-            }
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitInWatchData_1_3_4;
+
+        InWatchData_1_3_4 data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
         }
     }
 }
@@ -338,18 +333,17 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
 
     if (local->isRun) {
         string msgType = "InWatchData_2";
-        for (auto &iter: local->serverList) {
-            auto server = iter.second;
-            auto dataUnit = &server->dataUnitInWatchData_2;
 
-            InWatchData_2 data;
-            if (dataUnit->popO(data)) {
-                uint32_t deviceNo = stoi(server->matrixNo.substr(0, 10));
-                Pkg pkg;
-                data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
-            }
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitInWatchData_2;
+
+        InWatchData_2 data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
         }
     }
 }
@@ -360,8 +354,8 @@ void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
     }
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
-    auto server = local->serverList.find("server1")->second;
-    auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
     CrossTrafficJamAlarm inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -388,8 +382,8 @@ void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
     }
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
-    auto server = local->serverList.find("server1")->second;
-    auto dataUnit = &server->dataUnitTrafficFlowGather;
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
     TrafficFlowGather inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(

@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include "version.h"
 #include <gflags/gflags.h>
+#include <glog/logging.h>
 #include <csignal>
 #include "localBussiness/localBusiness.h"
 #include "eoc/Eoc.h"

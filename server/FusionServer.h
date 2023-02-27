@@ -13,8 +13,6 @@
 #include <future>
 #include "server/ClientInfo.h"
 #include "net/tcpServer/TcpServer.hpp"
-#include "merge/merge.h"
-#include "DataUnit.h"
 #include "os/timeTask.hpp"
 
 using namespace std;
@@ -22,48 +20,17 @@ using namespace os;
 
 class FusionServer : public TcpServer<ClientInfo> {
 public:
-    bool isMerge = true;
     const timeval checkStatusTimeval = {3, 0};//连续3s没有收到客户端请求后，断开客户端
     const timeval heartBeatTimeval = {45, 0};
-
 public:
     typedef map<string, Timer *> TimerTasks;
-
     vector<pthread_t> localBusinessThreadHandle;
     TimerTasks timerTasks;
-
-    vector<int> roadDirection = {
-            North,//北
-            East,//东
-            South,//南
-            West,//西
-    };
-    vector<string> unOrder;//记录已传入的路号，方便将数据存入对应的数据集合内的输入量
-    //---------------监控数据相关---------//
-    DataUnitFusionData dataUnitFusionData{30, 100, 4, 10, this};
-    //---------------路口交通流向相关--------//
-    DataUnitTrafficFlowGather dataUnitTrafficFlowGather;
-    //------交叉口堵塞报警------//
-    DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm;
-    //------路口溢出报警上传-----//
-    DataUnitIntersectionOverflowAlarm dataUnitIntersectionOverflowAlarm;
-    //-----进口监控数据上传----//
-    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4;
-    DataUnitInWatchData_2 dataUnitInWatchData_2;
-
-    string db = "CLParking.db";
-    string matrixNo = "0123456789";
-    string plateId;
 
 public:
     FusionServer(int port, bool isMerge, int cliNum = 4);
 
     ~FusionServer();
-
-private:
-    int getMatrixNoFromDb();
-
-    int getPlatId();
 
 public:
     /**
@@ -83,9 +50,6 @@ public:
      * @return 0：success -1：fail
      */
     int Close();
-
-
-    int FindIndexInUnOrder(const string in);
 
 private:
 

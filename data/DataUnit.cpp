@@ -9,8 +9,8 @@
 #include <chrono>
 #include <iomanip>
 #include <future>
-#include "glog/logging.h"
-#include "FusionServer.h"
+#include <glog/logging.h>
+#include "Data.h"
 
 DataUnitTrafficFlowGather::DataUnitTrafficFlowGather() {
 
@@ -388,9 +388,10 @@ void DataUnitFusionData::task(void *local) {
     if (maxSize > dataUnit->cache) {
         //执行相应的流程
 
-        auto server = (FusionServer *) dataUnit->owner;
+        auto data = (Data *) dataUnit->owner;
+
         DataUnitFusionData::MergeType mergeType;
-        if (server->isMerge) {
+        if (data->isMerge) {
             mergeType = DataUnitFusionData::Merge;
         } else {
             mergeType = DataUnitFusionData::NotMerge;

@@ -7,8 +7,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include "server/ClientInfo.h"
-#include "server/FusionServer.h"
-#include "glog/logging.h"
+#include "data/Data.h"
+#include <glog/logging.h>
 #include "common/CRC.h"
 
 #define DYFRAME 0
@@ -228,10 +228,13 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
     //根据结构体内的方向变量设置客户端的方向
     client->direction.store(watchData.direction);
     //按照方向顺序放入
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitFusionData;
-    for (int i = 0; i < ARRAY_SIZE(server->roadDirection); i++) {
-        if (server->roadDirection[i] == client->direction) {
+//    auto server = (FusionServer *) client->super;
+
+    auto *data = Data::instance();
+
+    auto dataUnit = &data->dataUnitFusionData;
+    for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
+        if (data->roadDirection[i] == client->direction) {
             //方向相同，放入对应索引下数组
             //存入队列
             if (!dataUnit->pushI(watchData, i)) {
@@ -241,7 +244,7 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
                 VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
                         << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                         << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
-                        << server->FindIndexInUnOrder(watchData.hardCode);
+                        << data->FindIndexInUnOrder(watchData.hardCode);
 #ifdef DYFRAME
                 dataUnit->dyFrame->UpDate(watchData.timstamp);
 #endif
@@ -264,16 +267,17 @@ static int PkgProcessFun_CmdCrossTrafficJamAlarm(ClientInfo *client, string cont
     CrossTrafficJamAlarm crossTrafficJamAlarm;
     crossTrafficJamAlarm.JsonUnmarshal(in);
     //存入队列
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitCrossTrafficJamAlarm;
-    if (!dataUnit->pushI(crossTrafficJamAlarm, server->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode))) {
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitCrossTrafficJamAlarm;
+    if (!dataUnit->pushI(crossTrafficJamAlarm, data->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,存入消息,"
                 << "hardCode:" << crossTrafficJamAlarm.hardCode << " crossID:" << crossTrafficJamAlarm.crossID
                 << "timestamp:" << (uint64_t) crossTrafficJamAlarm.timestamp << " dataUnit i_vector index:"
-                << server->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
+                << data->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(crossTrafficJamAlarm.timestamp);
 #endif
@@ -292,9 +296,10 @@ static int PkgProcessFun_CmdIntersectionOverflowAlarm(ClientInfo *client, string
     IntersectionOverflowAlarm intersectionOverflowAlarm;
     intersectionOverflowAlarm.JsonUnmarshal(in);
     //存入队列
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitIntersectionOverflowAlarm;
-    if (!dataUnit->pushI(intersectionOverflowAlarm, server->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode))) {
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitIntersectionOverflowAlarm;
+    if (!dataUnit->pushI(intersectionOverflowAlarm, data->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " IntersectionOverflowAlarm,丢弃消息";
         ret = -1;
     } else {
@@ -302,7 +307,7 @@ static int PkgProcessFun_CmdIntersectionOverflowAlarm(ClientInfo *client, string
                 << "hardCode:" << intersectionOverflowAlarm.hardCode
                 << " crossID:" << intersectionOverflowAlarm.crossID
                 << "timestamp:" << (uint64_t) intersectionOverflowAlarm.timestamp << " dataUnit i_vector index:"
-                << server->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
+                << data->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(intersectionOverflowAlarm.timestamp);
 #endif
@@ -322,16 +327,17 @@ static int PkgProcessFun_CmdTrafficFlowGather(ClientInfo *client, string content
     trafficFlow.JsonUnmarshal(in);
 
     //存入队列
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitTrafficFlowGather;
-    if (!dataUnit->pushI(trafficFlow, server->FindIndexInUnOrder(trafficFlow.hardCode))) {
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitTrafficFlowGather;
+    if (!dataUnit->pushI(trafficFlow, data->FindIndexInUnOrder(trafficFlow.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlowGather,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlow,存入消息,"
                 << "hardCode:" << trafficFlow.hardCode << " crossID:" << trafficFlow.crossID
                 << "timestamp:" << (uint64_t) trafficFlow.timestamp << " dataUnit i_vector index:"
-                << server->FindIndexInUnOrder(trafficFlow.hardCode);
+                << data->FindIndexInUnOrder(trafficFlow.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(trafficFlow.timestamp);
 #endif
@@ -350,16 +356,17 @@ static int PkgProcessFun_CmdInWatchData_1_3_4(ClientInfo *client, string content
     InWatchData_1_3_4 inWatchData134;
     inWatchData134.JsonUnmarshal(in);
     //存入队列
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitInWatchData_1_3_4;
-    if (!dataUnit->pushI(inWatchData134, server->FindIndexInUnOrder(inWatchData134.hardCode))) {
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitInWatchData_1_3_4;
+    if (!dataUnit->pushI(inWatchData134, data->FindIndexInUnOrder(inWatchData134.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,存入消息,"
                 << "hardCode:" << inWatchData134.hardCode << " crossID:" << inWatchData134.crossID
                 << "timestamp:" << (uint64_t) inWatchData134.timestamp << " dataUnit i_vector index:"
-                << server->FindIndexInUnOrder(inWatchData134.hardCode);
+                << data->FindIndexInUnOrder(inWatchData134.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(inWatchData134.timestamp);
 #endif
@@ -378,16 +385,17 @@ static int PkgProcessFun_CmdInWatchData_2(ClientInfo *client, string content) {
     InWatchData_2 inWatchData2;
     inWatchData2.JsonUnmarshal(in);
     //存入队列
-    auto server = (FusionServer *) client->super;
-    auto dataUnit = &server->dataUnitInWatchData_2;
-    if (!dataUnit->pushI(inWatchData2, server->FindIndexInUnOrder(inWatchData2.hardCode))) {
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitInWatchData_2;
+    if (!dataUnit->pushI(inWatchData2, data->FindIndexInUnOrder(inWatchData2.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,存入消息,"
                 << "hardCode:" << inWatchData2.hardCode << " crossID:" << inWatchData2.crossID
                 << "timestamp:" << (uint64_t) inWatchData2.timestamp << " dataUnit i_vector index:"
-                << server->FindIndexInUnOrder(inWatchData2.hardCode);
+                << data->FindIndexInUnOrder(inWatchData2.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(inWatchData2.timestamp);
 #endif

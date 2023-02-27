@@ -12,10 +12,10 @@
 #include <iostream>
 #include <atomic>
 #include <functional>
+#include "os/timeTask.hpp"
+#include <glog/logging.h>
 #include "merge/merge.h"
 #include "merge/mergeStruct.h"
-#include "os/timeTask.hpp"
-#include "glog/logging.h"
 
 using namespace common;
 

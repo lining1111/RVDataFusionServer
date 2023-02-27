@@ -106,6 +106,7 @@ public:
         isLocalThreadRun = false;
         delete rb;
         isClose = true;
+        return 0;
     }
 
     int Run() {

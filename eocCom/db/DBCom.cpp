@@ -17,10 +17,12 @@ std::vector<DBAssociatedEquip> g_AssociatedEquips;
 int g_BaseSetInit(void) {
     int ret = 0;
     std::string db_data_version = "";
-    getVersion(db_data_version);
+    DBDataVersion dbDataVersion;
+    dbDataVersion.selectFromDB();
+    db_data_version = dbDataVersion.version;
     LOG(INFO) << "version:" << db_data_version;
 
-    ret = get_base_set(g_BaseSet);
+    ret = g_BaseSet.selectFromDB();
     if (0 == ret) {
         LOG(INFO) << "get g_BaseSet success";
     }
@@ -32,7 +34,7 @@ int g_BaseSetInit(void) {
 
 int g_IntersectionInit(void) {
     int ret = 0;
-    ret = get_belong_intersection(g_Intersection);
+    ret = g_Intersection.selectFromDB();
     if (0 == ret) {
         LOG(INFO) << "get intersection success";
     }
@@ -44,7 +46,7 @@ int g_IntersectionInit(void) {
 
 int g_FusionParaSetInit(void) {
     int ret = 0;
-    ret = get_fusion_para_set(g_FusionParaSet);
+    ret = g_FusionParaSet.selectFromDB();
     if (0 == ret) {
         LOG(INFO) << "get g_FusionParaSet success";
     }
@@ -54,7 +56,7 @@ int g_FusionParaSetInit(void) {
 
 int g_AssociatedEquipsInit(void) {
     int ret = 0;
-    ret = get_associated_equip(g_AssociatedEquips);
+    ret = getAssociatedEquips(g_AssociatedEquips);
     if (0 == ret) {
         LOG(INFO) << "get g_AssociatedEquips success";
     }
@@ -76,7 +78,9 @@ int globalConfigInit(void) {
     g_AssociatedEquipsInit();
 
     std::string version;
-    getVersion(version);
+    DBDataVersion dbDataVersion;
+    dbDataVersion.selectFromDB();
+    version = dbDataVersion.version;
     if (!version.empty()) {
         LOG(ERROR) << "get version:" << version;
         return 1;

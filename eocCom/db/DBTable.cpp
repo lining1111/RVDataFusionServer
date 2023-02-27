@@ -302,8 +302,7 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
     return 0;
 }
 
-
-int deleteVersion() {
+int DBDataVersion::deleteFromDB() {
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
@@ -317,12 +316,12 @@ int deleteVersion() {
     return 0;
 }
 
-int insertVersion(DBDataVersion &data) {
+int DBDataVersion::insertToDB() {
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
     snprintf(sqlstr, 1024, "insert into conf_version(version,time) values('%s','%s')",
-             data.version.c_str(), data.time.c_str());
+             this->version.c_str(), this->time.c_str());
 
     ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
     if (ret < 0) {
@@ -332,7 +331,7 @@ int insertVersion(DBDataVersion &data) {
     return 0;
 }
 
-int getVersion(std::string &version) {
+int DBDataVersion::selectFromDB() {
     int ret = 0;
     char sqlstr[1024] = {0};
     char **sqldata;
@@ -347,365 +346,15 @@ int getVersion(std::string &version) {
         return -1;
     }
     if (nrow == 1) {
-        version = sqldata[1] ? sqldata[1] : "";
+        this->version = sqldata[1] ? sqldata[1] : "";
     } else {
-        version = "";
+        this->version = "";
         LOG(ERROR) << "get version fail";
         dbFreeTable(sqldata);
         return 1;
     }
     dbFreeTable(sqldata);
 
-    return 0;
-}
-
-int delete_base_set() {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "delete from base_set");
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-    delete[] sqlstr;
-    return 0;
-}
-
-int insert_base_set(DBBaseSet data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0x0, 1024);
-    snprintf(sqlstr, 1024, "insert into base_set("
-                           "DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,"
-                           "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
-                           "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
-                           "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
-                           "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress,Remarks) "
-                           "values(%d,'%s',%d,%d,%d,%d,'%s',%d,'%s','%s',"
-                           "'%s',%d,'%s',%d,'%s',%d,%d,'%s','%s',%d,'%s','%s')",
-             data.Index, data.City.c_str(), data.IsUploadToPlatform, data.Is4Gmodel,
-             data.IsIllegalCapture, data.IsPrintIntersectionName,
-             data.FilesServicePath.c_str(), data.FilesServicePort, data.MainDNS.c_str(),
-             data.AlternateDNS.c_str(), data.PlatformTcpPath.c_str(), data.PlatformTcpPort,
-             data.PlatformHttpPath.c_str(), data.PlatformHttpPort, data.SignalMachinePath.c_str(),
-             data.SignalMachinePort, data.IsUseSignalMachine, data.NtpServerPath.c_str(),
-             data.FusionMainboardIp.c_str(), data.FusionMainboardPort, data.IllegalPlatformAddress.c_str(),
-             data.Remarks.c_str());
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-
-    delete[] sqlstr;
-    return 0;
-}
-
-int get_base_set(DBBaseSet &data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-    char **sqldata;
-    int nrow = 0;
-    int ncol = 0;
-
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "select id,DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,Remarks,"
-                    "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
-                    "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
-                    "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
-                    "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
-                    "from base_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return -1;
-    }
-    if (nrow == 1) {
-        data.Index = atoi(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0");
-        data.City = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
-        data.IsUploadToPlatform = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
-        data.Is4Gmodel = atoi(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0");
-        data.IsIllegalCapture = atoi(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0");
-        data.Remarks = sqldata[ncol + 6] ? sqldata[ncol + 6] : "";
-        data.IsPrintIntersectionName = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
-        data.FilesServicePath = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
-        data.FilesServicePort = atoi(sqldata[ncol + 9] ? sqldata[ncol + 9] : "0");
-        data.MainDNS = sqldata[ncol + 10] ? sqldata[ncol + 10] : "";
-        data.AlternateDNS = sqldata[ncol + 11] ? sqldata[ncol + 11] : "";
-        data.PlatformTcpPath = sqldata[ncol + 12] ? sqldata[ncol + 12] : "";
-        data.PlatformTcpPort = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
-        data.PlatformHttpPath = sqldata[ncol + 14] ? sqldata[ncol + 14] : "";
-        data.PlatformHttpPort = atoi(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0");
-        data.SignalMachinePath = sqldata[ncol + 16] ? sqldata[ncol + 16] : "";
-        data.SignalMachinePort = atoi(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0");
-        data.IsUseSignalMachine = atoi(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0");
-        data.NtpServerPath = sqldata[ncol + 19] ? sqldata[ncol + 19] : "";
-        data.FusionMainboardIp = sqldata[ncol + 20] ? sqldata[ncol + 20] : "";
-        data.FusionMainboardPort = atoi(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0");
-        data.IllegalPlatformAddress = sqldata[ncol + 22] ? sqldata[ncol + 22] : "";
-    } else {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail,select count err";
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return 1;
-    }
-    delete[] sqlstr;
-    dbFreeTable(sqldata);
-    return 0;
-}
-
-int delete_belong_intersection() {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "delete from belong_intersection");
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-    delete[] sqlstr;
-    return 0;
-}
-
-int insert_belong_intersection(DBIntersection data) {
-    int ret = 0;
-    char *sqlstr = new char[1024 * 2];
-
-    memset(sqlstr, 0x0, 2048);
-    snprintf(sqlstr, 2048, "insert into belong_intersection("
-                           "Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
-                           "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
-                           "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY) "
-                           "values('%s','%s',%d,'%s',%f,%f,%d,'%s','%s',%d,%d,%d,%d,%f,%f,%f,%f,%f,"
-                           "%f,%f,%f,%f,%f)",
-             data.Guid.c_str(), data.Name.c_str(), data.Type, data.PlatId.c_str(),
-             data.XLength, data.YLength, data.LaneNumber,
-             data.Latitude.c_str(), data.Longitude.c_str(), data.FlagEast, data.FlagSouth, data.FlagWest,
-             data.FlagNorth,
-             data.DeltaXEast, data.DeltaYEast, data.DeltaXSouth, data.DeltaYSouth,
-             data.DeltaXWest, data.DeltaYWest, data.DeltaXNorth, data.DeltaYNorth, data.WidthX, data.WidthY);
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-
-    delete[] sqlstr;
-    return 0;
-}
-
-int get_belong_intersection(DBIntersection &data) {
-    int ret = 0;
-    char *sqlstr = new char[1024 * 4];
-    char **sqldata;
-    int nrow = 0;
-    int ncol = 0;
-
-    sprintf(sqlstr, "select id,Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
-                    "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
-                    "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
-                    "from belong_intersection order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return -1;
-    }
-    if (nrow == 1) {
-        data.Guid = sqldata[ncol + 1] ? sqldata[ncol + 1] : "";
-        data.Name = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
-        data.Type = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
-        data.PlatId = sqldata[ncol + 4] ? sqldata[ncol + 4] : "0";
-        data.XLength = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
-        data.YLength = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
-        data.LaneNumber = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
-        data.Latitude = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
-        data.Longitude = sqldata[ncol + 9] ? sqldata[ncol + 9] : "";
-        data.FlagEast = atoi(sqldata[ncol + 10] ? sqldata[ncol + 10] : "0");
-        data.FlagSouth = atoi(sqldata[ncol + 11] ? sqldata[ncol + 11] : "0");
-        data.FlagWest = atoi(sqldata[ncol + 12] ? sqldata[ncol + 12] : "0");
-        data.FlagNorth = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
-        data.DeltaXEast = atof(sqldata[ncol + 14] ? sqldata[ncol + 14] : "0.0");
-        data.DeltaYEast = atof(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0.0");
-        data.DeltaXSouth = atof(sqldata[ncol + 16] ? sqldata[ncol + 16] : "0.0");
-        data.DeltaYSouth = atof(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0.0");
-        data.DeltaXWest = atof(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0.0");
-        data.DeltaYWest = atof(sqldata[ncol + 19] ? sqldata[ncol + 19] : "0.0");
-        data.DeltaXNorth = atof(sqldata[ncol + 20] ? sqldata[ncol + 20] : "0.0");
-        data.DeltaYNorth = atof(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0.0");
-        data.WidthX = atof(sqldata[ncol + 22] ? sqldata[ncol + 22] : "0.0");
-        data.WidthY = atof(sqldata[ncol + 23] ? sqldata[ncol + 23] : "0.0");
-    } else {
-        LOG(ERROR) << "db select count err:" << sqlstr;
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return 1;
-    }
-    delete[] sqlstr;
-    dbFreeTable(sqldata);
-    return 0;
-}
-
-int delete_fusion_para_set() {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "delete from fusion_para_set");
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-    delete[] sqlstr;
-    return 0;
-}
-
-int insert_fusion_para_set(DBFusionParaSet data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0x0, 1024);
-    snprintf(sqlstr, 1024, "insert into fusion_para_set("
-                           "IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
-                           "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y) "
-                           "values(%f,%f,%f,%f,%f,%f,%f,%f)",
-             data.IntersectionAreaPoint1X, data.IntersectionAreaPoint1Y, data.IntersectionAreaPoint2X,
-             data.IntersectionAreaPoint2Y, data.IntersectionAreaPoint3X, data.IntersectionAreaPoint3Y,
-             data.IntersectionAreaPoint4X, data.IntersectionAreaPoint4Y);
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-
-    delete[] sqlstr;
-    return 0;
-}
-
-int get_fusion_para_set(DBFusionParaSet &data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-    char **sqldata;
-    int nrow = 0;
-    int ncol = 0;
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr,
-            "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
-            "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
-            "from fusion_para_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return -1;
-    }
-    if (nrow == 1) {
-        data.IntersectionAreaPoint1X = atof(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0.0");
-        data.IntersectionAreaPoint1Y = atof(sqldata[ncol + 2] ? sqldata[ncol + 2] : "0.0");
-        data.IntersectionAreaPoint2X = atof(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0.0");
-        data.IntersectionAreaPoint2Y = atof(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0.0");
-        data.IntersectionAreaPoint3X = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
-        data.IntersectionAreaPoint3Y = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
-        data.IntersectionAreaPoint4X = atof(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0.0");
-        data.IntersectionAreaPoint4Y = atof(sqldata[ncol + 8] ? sqldata[ncol + 8] : "0.0");
-    } else {
-        LOG(ERROR) << "db table select count err:" << sqlstr;
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return 1;
-    }
-    delete[] sqlstr;
-    dbFreeTable(sqldata);
-    free(sqlstr);
-    return 0;
-}
-
-int delete_associated_equip() {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "delete from associated_equip");
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-    delete[] sqlstr;
-    return 0;
-}
-
-int insert_associated_equip(DBAssociatedEquip data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-
-    memset(sqlstr, 0x0, 1024);
-    snprintf(sqlstr, 1024 - 1, "insert into associated_equip("
-                               "EquipType,EquipCode) values (%d,'%s')",
-             data.EquipType, data.EquipCode.c_str());
-
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        return -1;
-    }
-
-    delete[] sqlstr;
-    return 0;
-}
-
-int get_associated_equip(std::vector<DBAssociatedEquip> &data) {
-    int ret = 0;
-    char *sqlstr = new char[1024];
-    char **sqldata;
-    int nrow = 0;
-    int ncol = 0;
-
-    memset(sqlstr, 0, 1024);
-    sprintf(sqlstr, "select id,EquipType,EquipCode from associated_equip");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
-    if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
-        return -1;
-    }
-    data.clear();
-    DBAssociatedEquip tmp_data;
-    for (int i = 0; i < nrow; i++) {
-        int index = ncol * (i + 1);
-        tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
-        tmp_data.EquipCode = sqldata[index + 2] ? sqldata[index + 2] : "";
-        data.push_back(tmp_data);
-    }
-
-    delete[] sqlstr;
-    dbFreeTable(sqldata);
     return 0;
 }
 
@@ -769,5 +418,369 @@ int dbGetUname(std::string &uname) {
     delete[] sqlstr;
     dbFreeTable(sqldata);
 
+    return 0;
+}
+
+int DBBaseSet::deleteFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "delete from base_set");
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBBaseSet::insertToDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0x0, 1024);
+    snprintf(sqlstr, 1024, "insert into base_set("
+                           "DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,"
+                           "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
+                           "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
+                           "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
+                           "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress,Remarks) "
+                           "values(%d,'%s',%d,%d,%d,%d,'%s',%d,'%s','%s',"
+                           "'%s',%d,'%s',%d,'%s',%d,%d,'%s','%s',%d,'%s','%s')",
+             this->Index,
+             this->City.c_str(),
+             this->IsUploadToPlatform,
+             this->Is4Gmodel,
+             this->IsIllegalCapture,
+             this->IsPrintIntersectionName,
+             this->FilesServicePath.c_str(),
+             this->FilesServicePort,
+             this->MainDNS.c_str(),
+             this->AlternateDNS.c_str(),
+             this->PlatformTcpPath.c_str(),
+             this->PlatformTcpPort,
+             this->PlatformHttpPath.c_str(),
+             this->PlatformHttpPort,
+             this->SignalMachinePath.c_str(),
+             this->SignalMachinePort,
+             this->IsUseSignalMachine,
+             this->NtpServerPath.c_str(),
+             this->FusionMainboardIp.c_str(),
+             this->FusionMainboardPort,
+             this->IllegalPlatformAddress.c_str(),
+             this->Remarks.c_str());
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBBaseSet::selectFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+    char **sqldata;
+    int nrow = 0;
+    int ncol = 0;
+
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "select id,DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,Remarks,"
+                    "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
+                    "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
+                    "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
+                    "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
+                    "from base_set order by id desc limit 1");
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return -1;
+    }
+    if (nrow == 1) {
+        this->Index = atoi(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0");
+        this->City = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
+        this->IsUploadToPlatform = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
+        this->Is4Gmodel = atoi(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0");
+        this->IsIllegalCapture = atoi(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0");
+        this->Remarks = sqldata[ncol + 6] ? sqldata[ncol + 6] : "";
+        this->IsPrintIntersectionName = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
+        this->FilesServicePath = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
+        this->FilesServicePort = atoi(sqldata[ncol + 9] ? sqldata[ncol + 9] : "0");
+        this->MainDNS = sqldata[ncol + 10] ? sqldata[ncol + 10] : "";
+        this->AlternateDNS = sqldata[ncol + 11] ? sqldata[ncol + 11] : "";
+        this->PlatformTcpPath = sqldata[ncol + 12] ? sqldata[ncol + 12] : "";
+        this->PlatformTcpPort = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
+        this->PlatformHttpPath = sqldata[ncol + 14] ? sqldata[ncol + 14] : "";
+        this->PlatformHttpPort = atoi(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0");
+        this->SignalMachinePath = sqldata[ncol + 16] ? sqldata[ncol + 16] : "";
+        this->SignalMachinePort = atoi(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0");
+        this->IsUseSignalMachine = atoi(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0");
+        this->NtpServerPath = sqldata[ncol + 19] ? sqldata[ncol + 19] : "";
+        this->FusionMainboardIp = sqldata[ncol + 20] ? sqldata[ncol + 20] : "";
+        this->FusionMainboardPort = atoi(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0");
+        this->IllegalPlatformAddress = sqldata[ncol + 22] ? sqldata[ncol + 22] : "";
+    } else {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail,select count err";
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return 1;
+    }
+    delete[] sqlstr;
+    dbFreeTable(sqldata);
+    return 0;
+}
+
+int DBIntersection::deleteFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "delete from belong_intersection");
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBIntersection::insertToDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024 * 2];
+
+    memset(sqlstr, 0x0, 2048);
+    snprintf(sqlstr, 2048, "insert into belong_intersection("
+                           "Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
+                           "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
+                           "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY) "
+                           "values('%s','%s',%d,'%s',%f,%f,%d,'%s','%s',%d,%d,%d,%d,%f,%f,%f,%f,%f,"
+                           "%f,%f,%f,%f,%f)",
+             this->Guid.c_str(), this->Name.c_str(), this->Type, this->PlatId.c_str(),
+             this->XLength, this->YLength, this->LaneNumber,
+             this->Latitude.c_str(), this->Longitude.c_str(), this->FlagEast, this->FlagSouth, this->FlagWest,
+             this->FlagNorth,
+             this->DeltaXEast, this->DeltaYEast, this->DeltaXSouth, this->DeltaYSouth,
+             this->DeltaXWest, this->DeltaYWest, this->DeltaXNorth, this->DeltaYNorth, this->WidthX, this->WidthY);
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBIntersection::selectFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024 * 4];
+    char **sqldata;
+    int nrow = 0;
+    int ncol = 0;
+
+    sprintf(sqlstr, "select id,Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
+                    "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
+                    "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
+                    "from belong_intersection order by id desc limit 1");
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return -1;
+    }
+    if (nrow == 1) {
+        this->Guid = sqldata[ncol + 1] ? sqldata[ncol + 1] : "";
+        this->Name = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
+        this->Type = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
+        this->PlatId = sqldata[ncol + 4] ? sqldata[ncol + 4] : "0";
+        this->XLength = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
+        this->YLength = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
+        this->LaneNumber = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
+        this->Latitude = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
+        this->Longitude = sqldata[ncol + 9] ? sqldata[ncol + 9] : "";
+        this->FlagEast = atoi(sqldata[ncol + 10] ? sqldata[ncol + 10] : "0");
+        this->FlagSouth = atoi(sqldata[ncol + 11] ? sqldata[ncol + 11] : "0");
+        this->FlagWest = atoi(sqldata[ncol + 12] ? sqldata[ncol + 12] : "0");
+        this->FlagNorth = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
+        this->DeltaXEast = atof(sqldata[ncol + 14] ? sqldata[ncol + 14] : "0.0");
+        this->DeltaYEast = atof(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0.0");
+        this->DeltaXSouth = atof(sqldata[ncol + 16] ? sqldata[ncol + 16] : "0.0");
+        this->DeltaYSouth = atof(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0.0");
+        this->DeltaXWest = atof(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0.0");
+        this->DeltaYWest = atof(sqldata[ncol + 19] ? sqldata[ncol + 19] : "0.0");
+        this->DeltaXNorth = atof(sqldata[ncol + 20] ? sqldata[ncol + 20] : "0.0");
+        this->DeltaYNorth = atof(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0.0");
+        this->WidthX = atof(sqldata[ncol + 22] ? sqldata[ncol + 22] : "0.0");
+        this->WidthY = atof(sqldata[ncol + 23] ? sqldata[ncol + 23] : "0.0");
+    } else {
+        LOG(ERROR) << "db select count err:" << sqlstr;
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return 1;
+    }
+    delete[] sqlstr;
+    dbFreeTable(sqldata);
+    return 0;
+}
+
+int DBFusionParaSet::deleteFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "delete from fusion_para_set");
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBFusionParaSet::insertToDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0x0, 1024);
+    snprintf(sqlstr, 1024, "insert into fusion_para_set("
+                           "IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
+                           "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y) "
+                           "values(%f,%f,%f,%f,%f,%f,%f,%f)",
+             this->IntersectionAreaPoint1X, this->IntersectionAreaPoint1Y, this->IntersectionAreaPoint2X,
+             this->IntersectionAreaPoint2Y, this->IntersectionAreaPoint3X, this->IntersectionAreaPoint3Y,
+             this->IntersectionAreaPoint4X, this->IntersectionAreaPoint4Y);
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBFusionParaSet::selectFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+    char **sqldata;
+    int nrow = 0;
+    int ncol = 0;
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr,
+            "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
+            "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
+            "from fusion_para_set order by id desc limit 1");
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return -1;
+    }
+    if (nrow == 1) {
+        this->IntersectionAreaPoint1X = atof(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0.0");
+        this->IntersectionAreaPoint1Y = atof(sqldata[ncol + 2] ? sqldata[ncol + 2] : "0.0");
+        this->IntersectionAreaPoint2X = atof(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0.0");
+        this->IntersectionAreaPoint2Y = atof(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0.0");
+        this->IntersectionAreaPoint3X = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
+        this->IntersectionAreaPoint3Y = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
+        this->IntersectionAreaPoint4X = atof(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0.0");
+        this->IntersectionAreaPoint4Y = atof(sqldata[ncol + 8] ? sqldata[ncol + 8] : "0.0");
+    } else {
+        LOG(ERROR) << "db table select count err:" << sqlstr;
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return 1;
+    }
+    delete[] sqlstr;
+    dbFreeTable(sqldata);
+    free(sqlstr);
+    return 0;
+}
+
+int DBAssociatedEquip::deleteAllFromDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "delete from associated_equip");
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+    delete[] sqlstr;
+    return 0;
+}
+
+int DBAssociatedEquip::insertToDB() {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+
+    memset(sqlstr, 0x0, 1024);
+    snprintf(sqlstr, 1024 - 1, "insert into associated_equip("
+                               "EquipType,EquipCode) values (%d,'%s')",
+             this->EquipType, this->EquipCode.c_str());
+
+    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        return -1;
+    }
+
+    delete[] sqlstr;
+    return 0;
+}
+
+int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
+    int ret = 0;
+    char *sqlstr = new char[1024];
+    char **sqldata;
+    int nrow = 0;
+    int ncol = 0;
+
+    memset(sqlstr, 0, 1024);
+    sprintf(sqlstr, "select id,EquipType,EquipCode from associated_equip");
+    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    if (ret < 0) {
+        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        delete[] sqlstr;
+        dbFreeTable(sqldata);
+        return -1;
+    }
+    data.clear();
+    DBAssociatedEquip tmp_data;
+    for (int i = 0; i < nrow; i++) {
+        int index = ncol * (i + 1);
+        tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
+        tmp_data.EquipCode = sqldata[index + 2] ? sqldata[index + 2] : "";
+        data.push_back(tmp_data);
+    }
+
+    delete[] sqlstr;
+    dbFreeTable(sqldata);
     return 0;
 }

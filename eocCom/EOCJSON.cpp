@@ -279,7 +279,9 @@ int S101::get(std::string comVersion) {
     sprintf(ipmsg, "%s[%s]", ethip, n2nip);
     this->Data.EquipIp = std::string(ipmsg);
     //获取dataVersion
-    getVersion(this->Data.DataVersion);
+    DBDataVersion dbDataVersion;
+    dbDataVersion.selectFromDB();
+    this->Data.DataVersion = dbDataVersion.version;
 
     this->Data.EquipType = "XX";
     this->Data.SoftVersion = "V1.0.0";
