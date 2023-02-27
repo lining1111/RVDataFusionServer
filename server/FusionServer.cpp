@@ -18,8 +18,8 @@
 
 using namespace os;
 
-FusionServer::FusionServer(int port, bool isMerge, int cliNum) : TcpServer<ClientInfo>(port, "FusionServer-" +
-                                                                                             to_string(port)) {
+FusionServer::FusionServer(int port) :
+        TcpServer<ClientInfo>(port, "FusionServer-" + to_string(port)) {
 }
 
 FusionServer::~FusionServer() {

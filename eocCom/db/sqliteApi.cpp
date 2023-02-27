@@ -12,17 +12,6 @@ static int callback_db(void *ptr, int count) {
     return 1;    //回调函数返回值为1，则将不断尝试操作数据库。
 }
 
-
-int openDatabase(const char *addr, sqlite3 **db) {
-    int result;
-    result = sqlite3_open(addr, db);
-    if (result != SQLITE_OK) {
-        LOG(ERROR) << "can not open db path:" << addr;
-        return -1;
-    }
-    return 0;
-}
-
 int closeDatabase(sqlite3 *db) {
     if (db == nullptr) {
         return -1;
@@ -61,12 +50,13 @@ int execGetTable(sqlite3 *db, char *sql_string, char ***data, int *row, int *col
     return ret;
 }
 
-int dbExecSql(const char *addr, char *sql_string, SQLITE3_CALLBACK sql_callback, void *param) {
+int dbFileExecSql(std::string dbFile, char *sql_string, SQLITE3_CALLBACK sql_callback, void *param) {
     int ret = 0;
     sqlite3 *db;
 
-    ret = openDatabase(addr, &db);
-    if (ret) {
+    ret = sqlite3_open(dbFile.c_str(), &db);
+    if (ret != SQLITE_OK) {
+        LOG(ERROR) << "open database fail:" << dbFile;
         return -1;
     }
 
@@ -79,55 +69,18 @@ int dbExecSql(const char *addr, char *sql_string, SQLITE3_CALLBACK sql_callback,
     return ret;
 }
 
-int dbFileExecSql(const char *sql_file, char *sql_string, SQLITE3_CALLBACK sql_callback, void *param) {
+int dbFileExecSqlTable(std::string dbFile, char *sql_string, char ***data, int *row, int *col) {
     int ret = 0;
     sqlite3 *db;
-
-    ret = sqlite3_open(sql_file, &db);
+    ret = sqlite3_open(dbFile.c_str(), &db);
     if (ret != SQLITE_OK) {
-        LOG(ERROR) << "open database " << sql_file << "fail";
-        return -1;
-    }
-
-    sqlite3_busy_handler(db, callback_db, (void *) db);
-
-    ret = execSql(db, sql_string, sql_callback, param);
-
-    closeDatabase(db);
-
-    return ret;
-}
-
-int dbExecSqlTable(const char *addr, char *sql_string, char ***data, int *row, int *col) {
-    int ret = 0;
-    sqlite3 *db;
-
-    ret = openDatabase(addr, &db);
-    if (ret) {
-        return -1;
-    }
-
-    sqlite3_busy_handler(db, callback_db, (void *) db);
-
-    ret = execGetTable(db, sql_string, data, row, col);
-
-    closeDatabase(db);
-
-    return ret;
-}
-
-int dbFileExecSqlTable(const char *db_file, char *sql_string, char ***data, int *row, int *col) {
-    int ret = 0;
-    sqlite3 *db;
-    ret = sqlite3_open(db_file, &db);
-    if (ret != SQLITE_OK) {
-        LOG(ERROR) << "can not open db file:" << db_file;
+        LOG(ERROR) << "can not open db file:" << dbFile;
         return -1;
     }
     sqlite3_busy_handler(db, callback_db, db);
     ret = execGetTable(db, sql_string, data, row, col);
     closeDatabase(db);
-    return 0;
+    return ret;
 }
 
 void dbFreeTable(char **result) {
@@ -136,12 +89,12 @@ void dbFreeTable(char **result) {
     }
 }
 
-int dbCheckORAddTable(const char *db_path, const char *table_name) {
+int dbCheckORAddTable(std::string dbFile, std::string tableName) {
     char *estr = new char[1024];
     int ret = 0;
 
-    snprintf(estr, 1024, "create table IF NOT EXISTS %s(id INTEGER PRIMARY KEY NOT NULL)", table_name);
-    ret = dbFileExecSql((char *) db_path, estr, NULL, NULL);
+    snprintf(estr, 1024, "create table IF NOT EXISTS %s(id INTEGER PRIMARY KEY NOT NULL)", tableName.c_str());
+    ret = dbFileExecSql(dbFile, estr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "sql exec fail:" << estr;
         delete[] estr;
@@ -151,31 +104,31 @@ int dbCheckORAddTable(const char *db_path, const char *table_name) {
     return 0;
 }
 
-int dbCheckOrAddColumn(const char *db_path, const char *table_name, int column_index, const char *column_name,
-                       const char *column_description) {
+int dbCheckOrAddColumn(std::string dbFile, std::string tableName,
+                       int column_index, std::string columnName, std::string columnDescription) {
     char *estr = new char[1024];
     int ret = 0;
     int row = 0;
     int col = 0;
-    char **sqdata;
+    char **sqldata;
     int index_real = -1;
 
     //获取表中所有column的名称
     memset(estr, 0, 1024);
-    snprintf(estr, 1024, "pragma table_info('%s');", table_name);
-    ret = dbFileExecSqlTable((char *) db_path, estr, &sqdata, &row, &col);
+    snprintf(estr, 1024, "pragma table_info('%s');", tableName.c_str());
+    ret = dbFileExecSqlTable(dbFile, estr, &sqldata, &row, &col);
     if (ret == -1) {
         LOG(ERROR) << "sql exec fail:" << estr;
         delete[] estr;
-        sqlite3_free_table(sqdata);
+        sqlite3_free_table(sqldata);
         return -1;
     }
     bool need_alter = true;
     if (ret == 0) {
         for (int temp = 0; temp < row; temp++) {
             int n_index = col * (temp + 1);
-//            DBG("%s:%s table %s column[%d] name = %s", __FUNCTION__, db_path, table_name, temp, sqdata[n_index + 1]);
-            if (strcmp(column_name, sqdata[n_index + 1]) == 0) {
+//            DBG("%s:%s table %s column[%d] name = %s", __FUNCTION__, db_path, table_name, temp, sqldata[n_index + 1]);
+            if (columnName.compare(sqldata[n_index + 1]) == 0) {
                 need_alter = false;
                 index_real = temp;
                 break;
@@ -184,39 +137,41 @@ int dbCheckOrAddColumn(const char *db_path, const char *table_name, int column_i
 
         if (need_alter) {
             //添加一列
-            sqlite3_free_table(sqdata);
+            sqlite3_free_table(sqldata);
             memset(estr, 0, 1024);
-            snprintf(estr, 1024, "alter table %s add %s %s;", table_name, column_name, column_description);
+            snprintf(estr, 1024, "alter table %s add %s %s;",
+                     tableName.c_str(),
+                     columnName.c_str(),
+                     columnDescription.c_str());
             LOG(INFO) << "sql exec:" << estr;
-            ret = dbFileExecSqlTable((char *) db_path, estr, &sqdata, &row, &col);
+            ret = dbFileExecSqlTable(dbFile, estr, &sqldata, &row, &col);
             if (ret == -1) {
                 LOG(ERROR) << "db sql exec fail" << estr;
-                sqlite3_free_table(sqdata);
+                sqlite3_free_table(sqldata);
                 return -1;
             }
         }
     }
 
-    sqlite3_free_table(sqdata);
+    sqlite3_free_table(sqldata);
     if (need_alter) {
         return 0;
     }
     if (index_real == column_index) {
         return 0;
     }
-    LOG(ERROR) << "column " << column_name << "index is" << column_index << "but index real is" << index_real
-               << ",err";
+    LOG(ERROR) << "column " << columnName << "index is" << column_index << "but index real is" << index_real << ",err";
 
     return -1;
 }
 
-int dbDeleteTable(const char *db_path, const char *table_name) {
-    LOG(INFO) << "delete table,db:" << db_path << ",table:" << table_name;
+int dbDeleteTable(std::string dbFile, const char *table_name) {
+    LOG(INFO) << "delete table,db:" << dbFile << ",table:" << table_name;
     char *estr = new char[1024];
     int ret = 0;
 
     snprintf(estr, 1024, "drop table %s", table_name);
-    ret = dbFileExecSql((char *) db_path, estr, NULL, NULL);
+    ret = dbFileExecSql(dbFile, estr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "sql exec fail:" << estr;
         delete[] estr;

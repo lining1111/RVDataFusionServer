@@ -66,6 +66,7 @@ int g_AssociatedEquipsInit(void) {
 
 int globalConfigInit(void) {
     int ret = 0;
+
     //1.初始化数据库表
     if (tableInit(eoc_configure.path, eoc_configure.version) != 0) {
         LOG(ERROR) << "eoc db table init err";

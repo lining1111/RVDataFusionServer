@@ -718,7 +718,7 @@ void processR107(void *p, string content, string cmd) {
         //校验完成开始升级
         LOG(INFO) << "校验完成开始升级";
         //4 执行升级文件
-        if (extract_file(UPDATEFILE)!=0){
+        if (extractFile(UPDATEFILE) != 0){
             LOG(ERROR)<<"解压缩失败:"<<UPDATEFILE;
             S107 s107_3;
             s107_3.get(COMVersion, r107.head.Guid, 2, 0, 0, "解压缩失败");
@@ -759,7 +759,7 @@ void processR107(void *p, string content, string cmd) {
             }
         }
         //开始升级
-        start_upgrade();
+        startUpgrade();
 
         EOCCom::EocUpgradeDev eocUpgradeDev;
         eocUpgradeDev.sw_version = r107.Data.FileVersion;

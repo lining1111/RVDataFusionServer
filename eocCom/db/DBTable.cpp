@@ -7,10 +7,10 @@
 #include "sqliteApi.h"
 #include <glog/logging.h>
 #include <sys/stat.h>
+#include <os/os.h>
 
-DatabaseInfo eoc_configure = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
 DatabaseInfo CLParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/CLParking.db", "V_1_0_0"};
-DatabaseInfo RoadsideParking = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/RoadsideParking.db", "V_1_0_0"};
+DatabaseInfo eoc_configure = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
 
 //核心板基础配置
 static DBTableInfo base_set_table[] = {
@@ -80,14 +80,14 @@ static DBTableInfo associated_equip_table[] = {
         {"associated_equip", "EquipType", "INTERGE"},
         {"associated_equip", "EquipCode", "TEXT"}};
 
-int mkdirFromPath(const char *path) {
+int mkdirFromPath(std::string path) {
     char path_tmp[512] = {0};
-    int len = strlen(path);
+    int len = path.size();
     if (len >= 512) {
         LOG(ERROR) << "path:" << path << "is too long to mkdir";
         return -1;
     }
-    sprintf(path_tmp, "%s", path);
+    sprintf(path_tmp, "%s", path.c_str());
 
     for (int i = 1; i < len; i++) {
         if (path_tmp[i] == '/') {
@@ -109,6 +109,7 @@ int mkdirFromPath(const char *path) {
 int tableInit(std::string path, std::string version) {
     int ret = 0;
     LOG(INFO) << "using database file path:" << path << ",version:" << version;
+    LOG(INFO) << "config db file:" << path;
     int count = 1;
     bool isFindVersion = false;
     char *sqlStr = new char[1024 * 2];
@@ -120,9 +121,9 @@ int tableInit(std::string path, std::string version) {
     //查看表结构
     memset(sqlStr, 0, 1024 * 2);
     snprintf(sqlStr, 1024 * 2 - 1, "select tbl_name from sqlite_master where type='table'");
-    ret = dbFileExecSqlTable(path.c_str(), sqlStr, &sqlData, &nRow, &nCol);
+    ret = dbFileExecSqlTable(path, sqlStr, &sqlData, &nRow, &nCol);
     if (ret < 0) {
-        LOG(ERROR) << "db sql table" << sqlStr << "fail";
+        LOG(ERROR) << "db fail,sql:" << sqlStr;
         delete[] sqlStr;
         return -1;
     }
@@ -150,16 +151,16 @@ int tableInit(std::string path, std::string version) {
                                        "Id INTEGER PRIMARY KEY NOT NULL,"
                                        "version TEXT NOT NULL,"
                                        "time       TEXT NOT NULL)");
-        ret = dbFileExecSql(path.c_str(), sqlStr, nullptr, nullptr);
+        ret = dbFileExecSql(path, sqlStr, nullptr, nullptr);
         if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlStr << "fail";
+            LOG(ERROR) << "db fail,sql:" << sqlStr;
             delete[] sqlStr;
             return -1;
         }
         //删除数据版本,登录成功后会主动要一次配置
         memset(sqlStr, 0, 1024 * 2);
         snprintf(sqlStr, 1024 * 2 - 1, "delete from conf_version");
-        ret = dbFileExecSql(path.c_str(), sqlStr, nullptr, nullptr);
+        ret = dbFileExecSql(path, sqlStr, nullptr, nullptr);
         if (ret < 0) {
             LOG(ERROR) << "db sql:" << sqlStr << "fail";
             delete[] sqlStr;
@@ -167,14 +168,14 @@ int tableInit(std::string path, std::string version) {
         }
 
         //基础配置表
-        ret = checkTable(eoc_configure.path.c_str(), base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
+        ret = checkTable(eoc_configure.path, base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:base_set_table";
             delete[] sqlStr;
             return -1;
         }
         //所属路口信息表
-        ret = checkTable(eoc_configure.path.c_str(), belong_intersection_table,
+        ret = checkTable(eoc_configure.path, belong_intersection_table,
                          sizeof(belong_intersection_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:belong_intersection_table";
@@ -182,7 +183,7 @@ int tableInit(std::string path, std::string version) {
             return -1;
         }
         //融合参数设置表
-        ret = checkTable(eoc_configure.path.c_str(), fusion_para_set_table,
+        ret = checkTable(eoc_configure.path, fusion_para_set_table,
                          sizeof(fusion_para_set_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:fusion_para_set_table";
@@ -190,7 +191,7 @@ int tableInit(std::string path, std::string version) {
             return -1;
         }
         //关联设备表
-        ret = checkTable(eoc_configure.path.c_str(), associated_equip_table,
+        ret = checkTable(eoc_configure.path, associated_equip_table,
                          sizeof(associated_equip_table) / sizeof(DBTableInfo));
         if (ret != 0) {
             LOG(ERROR) << "checkTable fail:fusion_para_set_table";
@@ -204,18 +205,18 @@ int tableInit(std::string path, std::string version) {
             snprintf(sqlStr, 1024, "create table IF NOT EXISTS %s(id INTEGER PRIMARY KEY NOT NULL)",
                      eoc_configure.version.c_str());
         } else {
-            snprintf(sqlStr, 1024, "alter table %s rename to %s", cur_version.c_str(),
+            snprintf(sqlStr, 1024, "alter table %s rename to %s",
+                     cur_version.c_str(),
                      eoc_configure.version.c_str());
         }
-        ret = dbFileExecSql(eoc_configure.path.c_str(), sqlStr, NULL, NULL);
+        ret = dbFileExecSql(eoc_configure.path, sqlStr, NULL, NULL);
         if (ret < 0) {
-            LOG(ERROR) << "db sql err:" << sqlStr;
+            LOG(ERROR) << "db fail,sql:" << sqlStr;
             delete[] sqlStr;
             return -1;
         }
     } else {
-        LOG(INFO) << "check db version:" << eoc_configure.version << " success, from "
-                  << eoc_configure.path;
+        LOG(INFO) << "check db version:" << eoc_configure.version << " success, from " << eoc_configure.path;
     }
 
     delete[] sqlStr;
@@ -223,13 +224,28 @@ int tableInit(std::string path, std::string version) {
     return 0;
 }
 
-int checkTable(const char *db_path, const DBTableInfo *table, int column_size) {
+int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     int ret = 0;
-
-    ret = mkdirFromPath(db_path);
+    LOG(INFO) << "config db file:" << dbFile;
+    ret = mkdirFromPath(dbFile);
     if (ret != 0) {
-        LOG(ERROR) << "mkdir err from path:" << db_path;
+        LOG(ERROR) << "mkdir err from path:" << dbFile;
         return -1;
+    }
+    //检查数据库文件是否存在
+    if (access(dbFile.c_str(), R_OK | W_OK | F_OK) != 0) {
+        LOG(ERROR) << "db file not exsit:" << dbFile;
+        char *cmd = new char[512];
+        memset(cmd, 0, 512);
+        sprintf(cmd, "sqlite3 %s", dbFile.c_str());
+        LOG(INFO) << "create db file,cmd=" << cmd;
+        int result = os::execute_command(cmd);
+        if (result < 0) {
+            LOG(ERROR) << "exec cmd err" << cmd;
+            delete[] cmd;
+            return -1;
+        }
+        delete[] cmd;
     }
 
     if (column_size <= 0) {
@@ -239,19 +255,21 @@ int checkTable(const char *db_path, const DBTableInfo *table, int column_size) {
 
     for (int i = 0; i < column_size; i++) {
         bool check_succeed = true;
-        ret = dbCheckORAddTable(db_path, table[0].tableName.c_str());
+        //先检查table
+        ret = dbCheckORAddTable(dbFile, table[0].tableName);
         if (ret != 0) {
             LOG(ERROR) << "dbCheckORAddTable err";
             return -1;
         }
         for (int c_index = 0; c_index < column_size; c_index++) {
-            ret = dbCheckOrAddColumn(db_path, table[0].tableName.c_str(), c_index + 1,
-                                     table[c_index].columnName.c_str(),
-                                     table[c_index].columnDescription.c_str());
+            ret = dbCheckOrAddColumn(dbFile, table[0].tableName,
+                                     c_index + 1,
+                                     table[c_index].columnName,
+                                     table[c_index].columnDescription);
             if (ret != 0) {
                 check_succeed = false;
                 LOG(ERROR) << "dbCheckOrAddColumn err delete table and retry";
-                dbDeleteTable(db_path, table[0].tableName.c_str());
+                dbDeleteTable(dbFile, table[0].tableName.c_str());
                 break;
             }
         }
@@ -265,6 +283,7 @@ int checkTable(const char *db_path, const DBTableInfo *table, int column_size) {
 }
 
 int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num) {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -278,7 +297,7 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
         memset(sqlstr, 0x0, 1024);
         sprintf(sqlstr, "select * from sqlite_master where name='%s' and sql like '%%%s%%';",
                 tab_name.c_str(), tab_column[icol].name.c_str());
-        rtn = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+        rtn = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
         if (rtn < 0) {
             LOG(ERROR) << "db sql:" << sqlstr << "fail";
             delete[] sqlstr;
@@ -289,9 +308,9 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
             memset(sqlstr, 0x0, 1024);
             sprintf(sqlstr, "alter table %s add %s %s", tab_name.c_str(), tab_column[icol].name.c_str(),
                     tab_column[icol].type.c_str());
-            rtn = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+            rtn = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
             if (rtn < 0) {
-                LOG(ERROR) << "db sql:" << sqlstr << "fail";
+                LOG(ERROR) << "db fail,sql:" << sqlstr;
             } else {
                 LOG(INFO) << "add column ok,sql:" << sqlstr;
             }
@@ -303,35 +322,38 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
 }
 
 int DBDataVersion::deleteFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
     sprintf(sqlstr, "delete from conf_version");
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        LOG(ERROR) << "db fail,sql:" << sqlstr;
         return -1;
     }
     return 0;
 }
 
 int DBDataVersion::insertToDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
     snprintf(sqlstr, 1024, "insert into conf_version(version,time) values('%s','%s')",
              this->version.c_str(), this->time.c_str());
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        LOG(ERROR) << "db fail,sql:" << sqlstr;
         return -1;
     }
     return 0;
 }
 
 int DBDataVersion::selectFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     char **sqldata;
@@ -340,9 +362,9 @@ int DBDataVersion::selectFromDB() {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select version from conf_version where id=(select MIN(id) from conf_version)");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        LOG(ERROR) << "db fail,sql:" << sqlstr;
         return -1;
     }
     if (nrow == 1) {
@@ -358,8 +380,8 @@ int DBDataVersion::selectFromDB() {
     return 0;
 }
 
-int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path,
-                   int &file_server_port) {
+int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path, int &file_server_port) {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -369,9 +391,9 @@ int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select CloudServerPath,TransferServicePath,CloudServerPort,FileServicePort from TB_ParkingLot "
                     "where ID=(select MIN(ID) from TB_ParkingLot)");
-    rtn = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    rtn = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (rtn < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        LOG(ERROR) << "db fail sql:" << sqlstr;
         delete[] sqlstr;
         return -1;
     }
@@ -381,7 +403,7 @@ int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file
         server_port = atoi(sqldata[ncol + 2] ? sqldata[ncol + 2] : "0");
         file_server_port = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
     } else {
-        LOG(ERROR) << "db table select count err sql:" << sqlstr;
+        LOG(ERROR) << "db select count err,sql:" << sqlstr;
         delete[] sqlstr;
         dbFreeTable(sqldata);
         return 1;
@@ -393,6 +415,7 @@ int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file
 }
 
 int dbGetUname(std::string &uname) {
+    LOG(INFO) << "config db file:" << CLParking.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -401,16 +424,16 @@ int dbGetUname(std::string &uname) {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select UName from CL_ParkingArea where ID=(select max(ID) from CL_ParkingArea)");
-    rtn = dbFileExecSqlTable(CLParking.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    rtn = dbFileExecSqlTable(CLParking.path, sqlstr, &sqldata, &nrow, &ncol);
     if (rtn < 0) {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail";
+        LOG(ERROR) << "db fail,sql:" << sqlstr;
         delete[] sqlstr;
         return -1;
     }
     if (nrow == 1) {
         uname = sqldata[1] ? sqldata[1] : "";
     } else {
-        LOG(ERROR) << "db table select count err sql:" << sqlstr;
+        LOG(ERROR) << "db select count err,sql:" << sqlstr;
         delete[] sqlstr;
         dbFreeTable(sqldata);
         return 1;
@@ -422,13 +445,14 @@ int dbGetUname(std::string &uname) {
 }
 
 int DBBaseSet::deleteFromDB() {
+    LOG(INFO) << "config db file:" << this->db;
     int ret = 0;
     char *sqlstr = new char[1024];
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from base_set");
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(this->db, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -439,6 +463,7 @@ int DBBaseSet::deleteFromDB() {
 }
 
 int DBBaseSet::insertToDB() {
+    LOG(INFO) << "config db file:" << this->db;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -474,7 +499,7 @@ int DBBaseSet::insertToDB() {
              this->IllegalPlatformAddress.c_str(),
              this->Remarks.c_str());
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(this->db, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -486,6 +511,7 @@ int DBBaseSet::insertToDB() {
 }
 
 int DBBaseSet::selectFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -499,7 +525,7 @@ int DBBaseSet::selectFromDB() {
                     "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
                     "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
                     "from base_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -530,7 +556,7 @@ int DBBaseSet::selectFromDB() {
         this->FusionMainboardPort = atoi(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0");
         this->IllegalPlatformAddress = sqldata[ncol + 22] ? sqldata[ncol + 22] : "";
     } else {
-        LOG(ERROR) << "db sql:" << sqlstr << "fail,select count err";
+        LOG(ERROR) << "db select count err,sql:" << sqlstr << "fail";
         delete[] sqlstr;
         dbFreeTable(sqldata);
         return 1;
@@ -541,13 +567,14 @@ int DBBaseSet::selectFromDB() {
 }
 
 int DBIntersection::deleteFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from belong_intersection");
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -558,6 +585,7 @@ int DBIntersection::deleteFromDB() {
 }
 
 int DBIntersection::insertToDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024 * 2];
 
@@ -568,14 +596,31 @@ int DBIntersection::insertToDB() {
                            "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY) "
                            "values('%s','%s',%d,'%s',%f,%f,%d,'%s','%s',%d,%d,%d,%d,%f,%f,%f,%f,%f,"
                            "%f,%f,%f,%f,%f)",
-             this->Guid.c_str(), this->Name.c_str(), this->Type, this->PlatId.c_str(),
-             this->XLength, this->YLength, this->LaneNumber,
-             this->Latitude.c_str(), this->Longitude.c_str(), this->FlagEast, this->FlagSouth, this->FlagWest,
+             this->Guid.c_str(),
+             this->Name.c_str(),
+             this->Type,
+             this->PlatId.c_str(),
+             this->XLength,
+             this->YLength,
+             this->LaneNumber,
+             this->Latitude.c_str(),
+             this->Longitude.c_str(),
+             this->FlagEast,
+             this->FlagSouth,
+             this->FlagWest,
              this->FlagNorth,
-             this->DeltaXEast, this->DeltaYEast, this->DeltaXSouth, this->DeltaYSouth,
-             this->DeltaXWest, this->DeltaYWest, this->DeltaXNorth, this->DeltaYNorth, this->WidthX, this->WidthY);
+             this->DeltaXEast,
+             this->DeltaYEast,
+             this->DeltaXSouth,
+             this->DeltaYSouth,
+             this->DeltaXWest,
+             this->DeltaYWest,
+             this->DeltaXNorth,
+             this->DeltaYNorth,
+             this->WidthX,
+             this->WidthY);
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -587,6 +632,7 @@ int DBIntersection::insertToDB() {
 }
 
 int DBIntersection::selectFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024 * 4];
     char **sqldata;
@@ -597,7 +643,7 @@ int DBIntersection::selectFromDB() {
                     "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
                     "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
                     "from belong_intersection order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -629,7 +675,7 @@ int DBIntersection::selectFromDB() {
         this->WidthX = atof(sqldata[ncol + 22] ? sqldata[ncol + 22] : "0.0");
         this->WidthY = atof(sqldata[ncol + 23] ? sqldata[ncol + 23] : "0.0");
     } else {
-        LOG(ERROR) << "db select count err:" << sqlstr;
+        LOG(ERROR) << "db select count err,sql:" << sqlstr;
         delete[] sqlstr;
         dbFreeTable(sqldata);
         return 1;
@@ -640,13 +686,14 @@ int DBIntersection::selectFromDB() {
 }
 
 int DBFusionParaSet::deleteFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from fusion_para_set");
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -657,6 +704,7 @@ int DBFusionParaSet::deleteFromDB() {
 }
 
 int DBFusionParaSet::insertToDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -665,11 +713,16 @@ int DBFusionParaSet::insertToDB() {
                            "IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
                            "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y) "
                            "values(%f,%f,%f,%f,%f,%f,%f,%f)",
-             this->IntersectionAreaPoint1X, this->IntersectionAreaPoint1Y, this->IntersectionAreaPoint2X,
-             this->IntersectionAreaPoint2Y, this->IntersectionAreaPoint3X, this->IntersectionAreaPoint3Y,
-             this->IntersectionAreaPoint4X, this->IntersectionAreaPoint4Y);
+             this->IntersectionAreaPoint1X,
+             this->IntersectionAreaPoint1Y,
+             this->IntersectionAreaPoint2X,
+             this->IntersectionAreaPoint2Y,
+             this->IntersectionAreaPoint3X,
+             this->IntersectionAreaPoint3Y,
+             this->IntersectionAreaPoint4X,
+             this->IntersectionAreaPoint4Y);
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -681,6 +734,7 @@ int DBFusionParaSet::insertToDB() {
 }
 
 int DBFusionParaSet::selectFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -691,7 +745,7 @@ int DBFusionParaSet::selectFromDB() {
             "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
             "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
             "from fusion_para_set order by id desc limit 1");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -708,7 +762,7 @@ int DBFusionParaSet::selectFromDB() {
         this->IntersectionAreaPoint4X = atof(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0.0");
         this->IntersectionAreaPoint4Y = atof(sqldata[ncol + 8] ? sqldata[ncol + 8] : "0.0");
     } else {
-        LOG(ERROR) << "db table select count err:" << sqlstr;
+        LOG(ERROR) << "db select count err,sql:" << sqlstr;
         delete[] sqlstr;
         dbFreeTable(sqldata);
         return 1;
@@ -720,12 +774,13 @@ int DBFusionParaSet::selectFromDB() {
 }
 
 int DBAssociatedEquip::deleteAllFromDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from associated_equip");
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -736,6 +791,7 @@ int DBAssociatedEquip::deleteAllFromDB() {
 }
 
 int DBAssociatedEquip::insertToDB() {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -744,7 +800,7 @@ int DBAssociatedEquip::insertToDB() {
                                "EquipType,EquipCode) values (%d,'%s')",
              this->EquipType, this->EquipCode.c_str());
 
-    ret = dbFileExecSql(eoc_configure.path.c_str(), sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -756,6 +812,7 @@ int DBAssociatedEquip::insertToDB() {
 }
 
 int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
+    LOG(INFO) << "config db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -764,7 +821,7 @@ int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
 
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "select id,EquipType,EquipCode from associated_equip");
-    ret = dbFileExecSqlTable(eoc_configure.path.c_str(), sqlstr, &sqldata, &nrow, &ncol);
+    ret = dbFileExecSqlTable(eoc_configure.path, sqlstr, &sqldata, &nrow, &ncol);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -772,12 +829,16 @@ int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
         return -1;
     }
     data.clear();
-    DBAssociatedEquip tmp_data;
-    for (int i = 0; i < nrow; i++) {
-        int index = ncol * (i + 1);
-        tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
-        tmp_data.EquipCode = sqldata[index + 2] ? sqldata[index + 2] : "";
-        data.push_back(tmp_data);
+    if (nrow <= 0) {
+        LOG(ERROR) << "db select count err.sql:" << sqlstr << "fail";
+    } else {
+        DBAssociatedEquip tmp_data;
+        for (int i = 0; i < nrow; i++) {
+            int index = ncol * (i + 1);
+            tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
+            tmp_data.EquipCode = sqldata[index + 2] ? sqldata[index + 2] : "";
+            data.push_back(tmp_data);
+        }
     }
 
     delete[] sqlstr;

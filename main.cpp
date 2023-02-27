@@ -5,10 +5,15 @@
 #include <glog/logging.h>
 #include <csignal>
 #include "localBussiness/localBusiness.h"
+
 #include "eoc/Eoc.h"
+#include "eocCom/EOCCom.h"
+#include "eocCom/db/DBCom.h"
+#include "data/Data.h"
 
 #include <fstream>
 #include <dirent.h>
+#include <sys/stat.h>
 #include "db/DB.h"
 #include "glogHelper/GlogHelper.h"
 
@@ -56,37 +61,57 @@ int main(int argc, char **argv) {
 
     uint16_t port = FLAGS_port;
     string cloudIp;
-    StartEocCommon();
-    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
-        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
+    uint16_t cloudPort;
+
+    //初始化本地数据和数据库
+    auto dataLocal = Data::instance();
+    dataLocal->isMerge = FLAGS_isMerge;
+    LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
+    LOG(INFO)<<"开启eoc通信，同时读取本地数据库到缓存";
+//    StartEocCommon();
+//    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
+//        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
+//        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
+//    } else {
+//        cloudIp = FLAGS_cloudIp;
+//        LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
+//    }
+//
+//    if (g_eoc_base_set.PlatformTcpPort != 0) {
+//        cloudPort = g_eoc_base_set.PlatformTcpPort;
+//        LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
+//    } else {
+//        cloudPort = FLAGS_cloudPort;
+//        LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
+//    }
+
+    StartEocCommon1();
+    if (!string(g_BaseSet.PlatformTcpPath).empty()) {
+        cloudIp = string(g_BaseSet.PlatformTcpPath);
         LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
     } else {
         cloudIp = FLAGS_cloudIp;
         LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
     }
 
-    uint16_t cloudPort;
-
-    if (g_eoc_base_set.PlatformTcpPort != 0) {
-        cloudPort = g_eoc_base_set.PlatformTcpPort;
+    if (g_BaseSet.PlatformTcpPort != 0) {
+        cloudPort = g_BaseSet.PlatformTcpPort;
         LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
     } else {
         cloudPort = FLAGS_cloudPort;
         LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
     }
 
-    bool isMerge = FLAGS_isMerge;
-
+    LOG(INFO)<<"开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
     LocalBusiness local;
-    local.AddServer("server1", port, isMerge);
-    local.AddServer("server2", port + 1, isMerge);
-    local.AddClient("client1", cloudIp, cloudPort, nullptr);
-
+    local.AddServer("server1", port);
+    local.AddServer("server2", port + 1);
+    local.AddClient("client1", cloudIp, cloudPort);
     //开启本地业务
     local.Run();
 
-//    FusionServer *server = new FusionServer(port, isMerge);
+//    FusionServer *server = new FusionServer(port);
 //    if (server->Open() == 0) {
 //        server->Run();
 //    }

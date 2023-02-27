@@ -11,7 +11,6 @@ Data *Data::instance() {
         m_pInstance = new Data();
 
         std::unique_lock<std::mutex> lck(m_pInstance->mtx);
-        lck.lock();
         //1读取本地属性
         m_pInstance->getMatrixNo();
         m_pInstance->getPlatId();

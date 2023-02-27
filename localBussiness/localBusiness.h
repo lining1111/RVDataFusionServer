@@ -24,9 +24,9 @@ public:
 
     ~LocalBusiness();
 
-    void AddServer(string name, int port, bool isMerge);
+    void AddServer(string name, int port);
 
-    void AddClient(string name, string cloudIp, int cloudPort, void *super);
+    void AddClient(string name, string cloudIp, int cloudPort);
 
     void Run();
 

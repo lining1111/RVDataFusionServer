@@ -28,7 +28,7 @@ public:
     TimerTasks timerTasks;
 
 public:
-    FusionServer(int port, bool isMerge, int cliNum = 4);
+    FusionServer(int port);
 
     ~FusionServer();
 

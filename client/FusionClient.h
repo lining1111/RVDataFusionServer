@@ -22,7 +22,6 @@ using namespace os;
 
 class FusionClient {
 public:
-    void *super;
     string server_ip;
     unsigned int server_port;
     int sockfd = 0;
@@ -60,7 +59,7 @@ public:
     TimerTasks timerTasks;
 public:
 
-    FusionClient(string server_ip, unsigned int server_port, void *super);
+    FusionClient(string server_ip, unsigned int server_port);
 
     ~FusionClient();
 

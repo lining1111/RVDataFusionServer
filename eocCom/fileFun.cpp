@@ -165,50 +165,56 @@ int downloadFile(std::string url, int timeout, std::string fileName, int fileSiz
 
 }
 
-int extract_file(const char *file_path) {
+int extractFile(std::string filePath) {
     int ret = 0;
-    char cmd[256] = {0};
-    memset(cmd, 0, 256);
+    LOG(INFO) << "开始解压文件到指定目录";
+    char *cmd = new char[512];
+    memset(cmd, 0, 512);
     sprintf(cmd, "rm -rf %s", UPDATEUNZIPFILE);
-    LOG(INFO) << "Extract file start,cmd=" << cmd;
+    LOG(INFO) << "删除临时目录,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
+        delete[] cmd;
         return -1;
     }
-    memset(cmd, 0, 256);
+    memset(cmd, 0, 512);
     sprintf(cmd, "mkdir -p %s", UPDATEUNZIPFILE);
-    LOG(INFO) << "Extract file start,cmd=" << cmd;
+    LOG(INFO) << "新建临时目录,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret != 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
+        delete[] cmd;
         return -1;
     }
-    memset(cmd, 0, 256);
-    sprintf(cmd, "tar -zxf %s -C %s", file_path, UPDATEUNZIPFILE);
-    LOG(INFO) << "Extract file start,cmd=" << cmd;
+    memset(cmd, 0, 512);
+    sprintf(cmd, "unzip %s -d %s", filePath.c_str(), UPDATEUNZIPFILE);
+    LOG(INFO) << "解压到指定目录,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
+        delete[] cmd;
+        return -1;
+    }
+    LOG(INFO) << "删除原始压缩文件";
+    if (remove(filePath.c_str()) != 0) {
+        LOG(ERROR) << "remove err:" << filePath;
+        delete[] cmd;
         return -1;
     }
 
-    if (remove(file_path) != 0) {
-        LOG(ERROR) << "remove err:" << file_path;
-        return -1;
-    }
-
-    LOG(INFO) << "Extract file succeed";
+    LOG(INFO) << "解压文件成功";
+    delete[] cmd;
     return 0;
 }
 
-int start_upgrade() {
+int startUpgrade() {
     int ret = 0;
     LOG(INFO) << "开始升级";
     char cmd[256] = {0};
     memset(cmd, 0, 256);
     sprintf(cmd, "chmod +x %s/%s", UPDATEUNZIPFILE, INSTALLSH);
-    LOG(INFO) << "Extract file start,cmd=" << cmd;
+    LOG(INFO) << "修改权限,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
@@ -216,13 +222,13 @@ int start_upgrade() {
     }
     memset(cmd, 0, 256);
     sprintf(cmd, "sh %s/%s %s", UPDATEUNZIPFILE, INSTALLSH, HOME_PATH);
-    DLOG(INFO) << "Extract file start,cmd=" << cmd;
+    LOG(INFO) << "执行脚本,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {
-        LOG(ERROR) << "exec cmd err" << cmd;
+        LOG(ERROR) << "升级失败，exec cmd err" << cmd;
         return -1;
     }
-    LOG(INFO) << "upgrade succeed";
+    LOG(INFO) << "升级成功";
     return 0;
 }
 

@@ -17,10 +17,9 @@
 
 using namespace common;
 
-FusionClient::FusionClient(string server_ip, unsigned int server_port, void *super) {
+FusionClient::FusionClient(string server_ip, unsigned int server_port) {
     this->server_ip = server_ip;
     this->server_port = server_port;
-    this->super = super;
 }
 
 FusionClient::~FusionClient() {

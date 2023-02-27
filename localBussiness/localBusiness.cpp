@@ -33,14 +33,14 @@ LocalBusiness::~LocalBusiness() {
     }
 }
 
-void LocalBusiness::AddServer(string name, int port, bool isMerge) {
-    FusionServer *server = new FusionServer(port, isMerge, 4);
+void LocalBusiness::AddServer(string name, int port) {
+    FusionServer *server = new FusionServer(port);
     server->port = port;
     serverList.insert(make_pair(name, server));
 }
 
-void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort, void *super) {
-    FusionClient *client = new FusionClient(cloudIp, cloudPort, super);//端口号和ip依实际情况而变
+void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort) {
+    FusionClient *client = new FusionClient(cloudIp, cloudPort);//端口号和ip依实际情况而变
     clientList.insert(make_pair(name, client));
 }
 
