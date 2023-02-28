@@ -271,10 +271,10 @@ int S101::get(std::string comVersion) {
     //获取ip信息 ip[n2n]
     char ethip[32] = {0};
     char n2nip[32] = {0};
-    char ipmsg[64] = {0};
+    char ipmsg[128] = {0};
     memset(ethip, 0, 32);
     memset(n2nip, 0, 32);
-    memset(ipmsg, 0, 64);
+    memset(ipmsg, 0, 128);
     getipaddr(ethip, n2nip);
     sprintf(ipmsg, "%s[%s]", ethip, n2nip);
     this->Data.EquipIp = std::string(ipmsg);

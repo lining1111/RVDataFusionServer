@@ -51,8 +51,9 @@ string GetData::getCameraTimestamp(string in) {
     int end = in.find("_rt");
     if (begin != in.npos && end != in.npos) {
         return in.substr(begin + 3, (end - (begin + 3)));
+    } else {
+        return "";
     }
-
 }
 
 bool GetData::compareTimestamp(string a, string b) {

@@ -79,6 +79,9 @@ int UdpServer::createSock() {
 }
 
 int UdpServer::ThreadGetRecv(void *p) {
+    if (p== nullptr){
+        return -1;
+    }
     UdpServer *server = (UdpServer *) p;
     socklen_t sockaddrLen = sizeof(struct sockaddr_in);
     uint8_t *msg = new uint8_t[1024 * 1024];
@@ -90,6 +93,7 @@ int UdpServer::ThreadGetRecv(void *p) {
         }
     }
     delete[] msg;
+    return 0;
 }
 
 int UdpServer::Send(uint8_t *data, uint32_t len, struct sockaddr_in addr) {

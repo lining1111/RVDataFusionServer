@@ -111,7 +111,6 @@ int tableInit(std::string path, std::string version) {
     int ret = 0;
     LOG(INFO) << "using database file path:" << path << ",version:" << version;
     LOG(INFO) << "config db file:" << path;
-    int count = 1;
     bool isFindVersion = false;
     char *sqlStr = new char[1024 * 2];
     char **sqlData;
@@ -135,7 +134,6 @@ int tableInit(std::string path, std::string version) {
         if (strstr(sqlData[i + 1], "V_")) {
             cur_version = std::string(sqlData[i + 1]);
             if (cur_version == version) {
-                count = 0;
                 isFindVersion = true;
             }
             break;
@@ -210,7 +208,7 @@ int tableInit(std::string path, std::string version) {
                      cur_version.c_str(),
                      eoc_configure.version.c_str());
         }
-        ret = dbFileExecSql(eoc_configure.path, sqlStr, NULL, NULL);
+        ret = dbFileExecSql(eoc_configure.path, sqlStr, nullptr, nullptr);
         if (ret < 0) {
             LOG(ERROR) << "db fail,sql:" << sqlStr;
             delete[] sqlStr;
@@ -309,7 +307,7 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
             memset(sqlstr, 0x0, 1024);
             sprintf(sqlstr, "alter table %s add %s %s", tab_name.c_str(), tab_column[icol].name.c_str(),
                     tab_column[icol].type.c_str());
-            rtn = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+            rtn = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
             if (rtn < 0) {
                 LOG(ERROR) << "db fail,sql:" << sqlstr;
             } else {
@@ -329,7 +327,7 @@ int DBDataVersion::deleteFromDB() {
     memset(sqlstr, 0x0, 1024);
     sprintf(sqlstr, "delete from conf_version");
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db fail,sql:" << sqlstr;
         return -1;
@@ -345,7 +343,7 @@ int DBDataVersion::insertToDB() {
     snprintf(sqlstr, 1024, "insert into conf_version(version,time) values('%s','%s')",
              this->version.c_str(), this->time.c_str());
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db fail,sql:" << sqlstr;
         return -1;
@@ -453,7 +451,7 @@ int DBBaseSet::deleteFromDB() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from base_set");
 
-    ret = dbFileExecSql(this->db, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -500,7 +498,7 @@ int DBBaseSet::insertToDB() {
              this->IllegalPlatformAddress.c_str(),
              this->Remarks.c_str());
 
-    ret = dbFileExecSql(this->db, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -575,7 +573,7 @@ int DBIntersection::deleteFromDB() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from belong_intersection");
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -621,7 +619,7 @@ int DBIntersection::insertToDB() {
              this->WidthX,
              this->WidthY);
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -694,7 +692,7 @@ int DBFusionParaSet::deleteFromDB() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from fusion_para_set");
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -723,7 +721,7 @@ int DBFusionParaSet::insertToDB() {
              this->IntersectionAreaPoint4X,
              this->IntersectionAreaPoint4Y);
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -781,7 +779,7 @@ int DBAssociatedEquip::deleteAllFromDB() {
     memset(sqlstr, 0, 1024);
     sprintf(sqlstr, "delete from associated_equip");
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;
@@ -799,9 +797,10 @@ int DBAssociatedEquip::insertToDB() {
     memset(sqlstr, 0x0, 1024);
     snprintf(sqlstr, 1024 - 1, "insert into associated_equip("
                                "EquipType,EquipCode) values (%d,'%s')",
-             this->EquipType, this->EquipCode.c_str());
+             this->EquipType,
+             this->EquipCode.c_str());
 
-    ret = dbFileExecSql(eoc_configure.path, sqlstr, NULL, NULL);
+    ret = dbFileExecSql(eoc_configure.path, sqlstr, nullptr, nullptr);
     if (ret < 0) {
         LOG(ERROR) << "db sql:" << sqlstr << "fail";
         delete[] sqlstr;

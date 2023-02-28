@@ -75,4 +75,5 @@ int StartEocCommon1() {
     eoc_host = "ehctest.eoc.aipark.com";
 //    url_get(eoc_host,ipaddr);
     std::thread(ThreadEOCCom, ipaddr, 6524, "./eoc.pem").detach();
+    return 0;
 }

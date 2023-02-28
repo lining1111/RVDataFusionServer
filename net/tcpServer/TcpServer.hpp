@@ -247,6 +247,7 @@ public:
 
             pthread_mutex_unlock(&lockClients);
         }
+        return 0;
     }
 
 

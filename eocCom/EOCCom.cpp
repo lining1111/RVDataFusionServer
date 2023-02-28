@@ -29,6 +29,7 @@ int EOCCom::Run() {
     future_proPkgs = std::async(std::launch::async, proPkgs, this);
 
     future_interval = std::async(std::launch::async, intervalPro, this);
+    return ret;
 }
 
 int EOCCom::Close() {
@@ -54,6 +55,7 @@ int EOCCom::Close() {
         }
     }
     businessStart = false;
+    return ret;
 }
 
 int EOCCom::getPkgs(void *p) {
@@ -435,7 +437,10 @@ void processS106(void *p, string content, string cmd) {
     }
 }
 
-static void *ThreadDownload(EOCCom *local, std::string url) {
+static void ThreadDownload(EOCCom *local, std::string url) {
+    if (local == nullptr) {
+        return;
+    }
     LOG(INFO) << "download thread,url:" << url << "start";
     std::string updateFileName;
     auto msgDownload = &local->eocCloudData.downloads_msg;
@@ -613,7 +618,7 @@ void processR106(void *p, string content, string cmd) {
                 local->eocCloudData.downloads_msg.push_back(rcv_download_msg);
                 //创建一个下载的子线程
                 LOG(INFO) << "添加下载子线程 detach";
-                std::thread downloadThread = std::thread();
+                std::thread downloadThread = std::thread(ThreadDownload, local, rcv_download_msg.download_url);
                 local->eocCloudData.downloads_msg.back().download_thread_id = downloadThread.get_id();
                 downloadThread.detach();
             }
@@ -718,8 +723,8 @@ void processR107(void *p, string content, string cmd) {
         //校验完成开始升级
         LOG(INFO) << "校验完成开始升级";
         //4 执行升级文件
-        if (extractFile(UPDATEFILE) != 0){
-            LOG(ERROR)<<"解压缩失败:"<<UPDATEFILE;
+        if (extractFile(UPDATEFILE) != 0) {
+            LOG(ERROR) << "解压缩失败:" << UPDATEFILE;
             S107 s107_3;
             s107_3.get(COMVersion, r107.head.Guid, 2, 0, 0, "解压缩失败");
             //组json

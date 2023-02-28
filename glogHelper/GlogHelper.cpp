@@ -99,7 +99,7 @@ int GlogHelper::cleaner(void *p) {
                             char bufInfo[512];
                             memset(bufInfo, 0, 512);
                             sprintf(bufInfo, "log file:%s create time:%s,now:%s,keepSeconds:%d s,delete",
-                                    asctime(localtime(&buf.st_ctime)), asctime(localtime(&now)), keepSeconds);
+                                    fulPath.c_str(),asctime(localtime(&buf.st_ctime)), asctime(localtime(&now)), keepSeconds);
                             LOG(INFO) << bufInfo;
                         }
                     }

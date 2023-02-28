@@ -23,7 +23,7 @@ int g_BaseSetInit(void) {
     LOG(INFO) << "version:" << db_data_version;
 
     ret = g_BaseSet.selectFromDB();
-    if (0 == ret) {
+    if (ret == 0) {
         LOG(INFO) << "get g_BaseSet success";
     }
 
@@ -35,7 +35,7 @@ int g_BaseSetInit(void) {
 int g_IntersectionInit(void) {
     int ret = 0;
     ret = g_Intersection.selectFromDB();
-    if (0 == ret) {
+    if (ret == 0) {
         LOG(INFO) << "get intersection success";
     }
 
@@ -47,7 +47,7 @@ int g_IntersectionInit(void) {
 int g_FusionParaSetInit(void) {
     int ret = 0;
     ret = g_FusionParaSet.selectFromDB();
-    if (0 == ret) {
+    if (ret == 0) {
         LOG(INFO) << "get g_FusionParaSet success";
     }
 
@@ -57,7 +57,7 @@ int g_FusionParaSetInit(void) {
 int g_AssociatedEquipsInit(void) {
     int ret = 0;
     ret = getAssociatedEquips(g_AssociatedEquips);
-    if (0 == ret) {
+    if (ret == 0) {
         LOG(INFO) << "get g_AssociatedEquips success";
     }
 

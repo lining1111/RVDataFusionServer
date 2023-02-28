@@ -73,7 +73,7 @@ int HttpServerInit(int port, LocalBusiness *local) {
 //    svr.listen("0.0.0.0", port);
     thread mThread = thread(MThread, &svr, port);
     mThread.detach();
-
+    return 0;
 }
 
 bool ServerClientInfo::JsonMarshal(Json::Value &out) {

@@ -14,7 +14,6 @@
 #include <fstream>
 #include <dirent.h>
 #include <sys/stat.h>
-#include "db/DB.h"
 #include "glogHelper/GlogHelper.h"
 
 int signalIgnPipe() {
@@ -49,7 +48,7 @@ int main(int argc, char **argv) {
     printf("cur path:%s\n", curPath);
     if (opendir(FLAGS_logDir.c_str()) == nullptr) {
         if (mkdir(FLAGS_logDir.c_str(), 0644)) {
-            printf("create %d fail\n", FLAGS_logDir.c_str());
+            printf("create %s fail\n", FLAGS_logDir.c_str());
         }
     }
 

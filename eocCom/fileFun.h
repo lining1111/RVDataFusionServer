@@ -26,6 +26,8 @@ extern int downloadTotal;
 extern int downloaded;
 int downloadFile(std::string url, int timeout, std::string fileName, int fileSize, std::string fileMD5);
 int extractFile(std::string filePath);
+
+extern std::string exePath;
 int startUpgrade();
 
 #endif //FILEFUN_H

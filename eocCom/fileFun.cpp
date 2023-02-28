@@ -208,6 +208,8 @@ int extractFile(std::string filePath) {
     return 0;
 }
 
+std::string exePath;
+
 int startUpgrade() {
     int ret = 0;
     LOG(INFO) << "开始升级";
@@ -220,8 +222,14 @@ int startUpgrade() {
         LOG(ERROR) << "exec cmd err" << cmd;
         return -1;
     }
+    //获取当前工作目录
+    char curPath[512];
+    getcwd(curPath, 512);
+    printf("cur path:%s\n", curPath);
+    exePath = std::string(curPath);
+
     memset(cmd, 0, 256);
-    sprintf(cmd, "sh %s/%s %s", UPDATEUNZIPFILE, INSTALLSH, HOME_PATH);
+    sprintf(cmd, "sh %s/%s %s", UPDATEUNZIPFILE, INSTALLSH, exePath.c_str());
     LOG(INFO) << "执行脚本,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {

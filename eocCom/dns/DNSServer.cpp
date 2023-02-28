@@ -499,7 +499,9 @@ int DNSServerStart() {
     ret = pthread_create(&tid, NULL, dns_server_task, NULL);
     if (ret != 0) {
         LOG(ERROR) << "Can't create dns_server_start()";
+        return -1;
     } else {
         LOG(INFO) << "Create dns_server_start() succeed";
+        return 0;
     }
 }

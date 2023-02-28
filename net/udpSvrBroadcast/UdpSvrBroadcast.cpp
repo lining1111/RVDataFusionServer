@@ -92,6 +92,9 @@ int UdpSvrBroadcast::createSock() {
 }
 
 int UdpSvrBroadcast::ThreadBroadcast(void *p) {
+    if (p == nullptr) {
+        return -1;
+    }
     UdpSvrBroadcast *server = (UdpSvrBroadcast *) p;
     socklen_t sockaddrLen = sizeof(struct sockaddr_in);
     while (server->isRun) {
@@ -104,4 +107,5 @@ int UdpSvrBroadcast::ThreadBroadcast(void *p) {
         }
         sleep(server->interval);
     }
+    return 0;
 }
