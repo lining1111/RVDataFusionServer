@@ -43,6 +43,9 @@ public:
     DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4{30, 1000, 4, 0, this};
     DataUnitHistory dataUnitHistoryInWatchData_2;
     DataUnitInWatchData_2 dataUnitInWatchData_2{30, 1000, 4, 0, this};
+    //-----停止线过车数据----//
+    DataUnitHistory dataUnitHistoryStopLinePassData;
+    DataUnitStopLinePassData dataUnitStopLinePassData{30, 1000, 4, 0, this};
 public:
     //本地参数
     //FusionData相关

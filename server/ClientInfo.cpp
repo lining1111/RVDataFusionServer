@@ -403,6 +403,35 @@ static int PkgProcessFun_CmdInWatchData_2(ClientInfo *client, string content) {
     return ret;
 }
 
+static int PkgProcessFun_StopLinePassData(ClientInfo *client, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "InWatchData_2 json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    StopLinePassData stopLinePassData;
+    stopLinePassData.JsonUnmarshal(in);
+    //存入队列
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitStopLinePassData;
+    if (!dataUnit->pushI(stopLinePassData, data->FindIndexInUnOrder(stopLinePassData.hardCode))) {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,存入消息,"
+                << "hardCode:" << stopLinePassData.hardCode << " crossID:" << stopLinePassData.crossID
+                << "timestamp:" << (uint64_t) stopLinePassData.timestamp << " dataUnit i_vector index:"
+                << data->FindIndexInUnOrder(stopLinePassData.hardCode);
+#ifdef DYFRAME
+        dataUnit->dyFrame->UpDate(stopLinePassData.timestamp);
+#endif
+    }
+    return ret;
+}
+
 
 typedef int (*PkgProcessFun)(ClientInfo *client, string content);
 
@@ -416,6 +445,7 @@ static map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdTrafficFlowGather, PkgProcessFun_CmdTrafficFlowGather),
         make_pair(CmdInWatchData_1_3_4, PkgProcessFun_CmdInWatchData_1_3_4),
         make_pair(CmdInWatchData_2, PkgProcessFun_CmdInWatchData_2),
+        make_pair(CmdStopLinePassData, PkgProcessFun_StopLinePassData),
 };
 
 

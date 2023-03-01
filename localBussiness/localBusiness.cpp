@@ -99,6 +99,9 @@ void LocalBusiness::StartTimerTask() {
     addTimerTask("localBusiness timerTask_InWatchData_2", 1000,
                  std::bind(Task_InWatchData_2, this));
 
+    addTimerTask("localBusiness timerTask_StopLinePassData", 1000,
+                 std::bind(Task_StopLinePassData, this));
+
     //开启伪造数据线程
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
 //    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
@@ -338,6 +341,32 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
         auto dataUnit = &dataLocal->dataUnitInWatchData_2;
 
         InWatchData_2 data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+        }
+    }
+}
+
+void LocalBusiness::Task_StopLinePassData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+
+    if (local->isRun) {
+        string msgType = "StopLinePassData";
+
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitStopLinePassData;
+
+        StopLinePassData data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;

@@ -55,6 +55,7 @@ namespace common {
 //        CmdCarTrackGather = 0x08,//车辆轨迹
         CmdInWatchData_1_3_4 = 0x08,//进口监控数据（1）（3）（4）触发式上报
         CmdInWatchData_2 = 0x09,//进口监控数据（2）周期上报
+        CmdStopLinePassData = 0x0a,//停止线过车数据
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -437,7 +438,39 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-//    int PkgInWatchData_2WithoutCRC(InWatchData_2 inWatchData2, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
+    //停止线过车数据
+    class StopLinePassData_vehicleListItem{
+    public:
+        string laneCode;//车道编号
+        int laneDirection;//车道方向 1=东，2=南，3=西，4=北 同EOC一致
+        int flowDirection;//流向方向
+        string vehiclePlate;//车牌号
+        string vehiclePlateColor;//车牌颜色
+        int vehicleType;//车辆类型
+        int vehicleSpeed;//车辆速度
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+
+    class StopLinePassData: public PkgClass{
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        vector<StopLinePassData_vehicleListItem> vehicleList;
+    public:
+        StopLinePassData(){
+            this->cmdType = CmdInWatchData_2;
+        }
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
 }
 
 #endif //_COMMON_H

@@ -920,34 +920,72 @@ namespace common {
         return true;
     }
 
-//    int PkgInWatchData_2WithoutCRC(InWatchData_2 inWatchData2, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdInWatchData_2;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        inWatchData2.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
+    bool StopLinePassData_vehicleListItem::JsonMarshal(Json::Value &out) {
+        out["laneCode"] = this->laneCode;
+        out["laneDirection"] = this->laneDirection;
+        out["flowDirection"] = this->flowDirection;
+        out["vehiclePlate"] = this->vehiclePlate;
+        out["vehiclePlateColor"] = this->vehiclePlateColor;
+        out["vehicleType"] = this->vehicleType;
+        out["vehicleSpeed"] = this->vehicleSpeed;
+
+        return true;
+    }
+
+    bool StopLinePassData_vehicleListItem::JsonUnmarshal(Json::Value in) {
+        this->laneCode = in["laneCode"].asString();
+        this->laneDirection = in["laneDirection"].asInt();
+        this->flowDirection = in["flowDirection"].asInt();
+        this->vehiclePlate = in["vehiclePlate"].asString();
+        this->vehiclePlateColor = in["vehiclePlateColor"].asString();
+        this->vehicleType = in["vehicleType"].asInt();
+        this->vehicleSpeed = in["vehicleSpeed"].asInt();
+
+        return true;
+    }
+
+    bool StopLinePassData::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        Json::Value vehicleList = Json::arrayValue;
+        if (!this->vehicleList.empty()) {
+            for (auto iter:this->vehicleList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                vehicleList.append(item);
+            }
+        } else {
+            vehicleList.resize(0);
+        }
+
+        out["vehicleList"] = vehicleList;
 
 
+        return true;
+    }
+
+    bool StopLinePassData::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        Json::Value vehicleList = in["vehicleList"];
+        if (vehicleList.isArray()) {
+            for (auto iter:vehicleList) {
+                StopLinePassData_vehicleListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->vehicleList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
 }
 

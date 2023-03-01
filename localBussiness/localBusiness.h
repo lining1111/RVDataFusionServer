@@ -60,6 +60,8 @@ private:
 
     static void Task_InWatchData_2(void *p);
 
+    static void Task_StopLinePassData(void *p);
+
     //造数据的线程
     static void Task_CreateCrossTrafficJamAlarm(void *p);
 

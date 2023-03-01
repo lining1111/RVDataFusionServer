@@ -38,6 +38,9 @@ Data *Data::instance() {
 
         m_pInstance->dataUnitHistoryInWatchData_2.in.resize(cliNum);
         m_pInstance->dataUnitInWatchData_2.init(30, 1000, cliNum, 0, m_pInstance);
+        m_pInstance->dataUnitHistoryStopLinePassData.in.resize(cliNum);
+        m_pInstance->dataUnitStopLinePassData.init(30, 1000, cliNum, 0, m_pInstance);
+
 
         //开启数据时间戳历史监听线程
         m_pInstance->isRun = true;
@@ -596,6 +599,80 @@ static void dataUnitHistoryPrint_InWatchData_2(Data *local, int interval) {
     }
 }
 
+static void dataUnitHistoryPrint_StopLinePassData(Data *local, int interval) {
+    std::string prefix = "history StopLinePassData";
+    auto dataUnitHistory = &local->dataUnitHistoryStopLinePassData;
+    auto dataUnitLocal = &local->dataUnitStopLinePassData;
+    //in
+    for (int i = 0; i < dataUnitHistory->in.size(); i++) {
+        auto iter = dataUnitHistory->in.at(i);
+        if (iter.last == 0) {
+            LOG(INFO) << prefix << " in start at index:" << i;
+
+            StopLinePassData item;
+            if (dataUnitLocal->frontI(item, i)) {
+                //取头部时间戳到last
+                iter.last = item.timestamp;
+            } else {
+                LOG(INFO) << prefix << " in empty at index:" << i;
+            }
+        } else {
+            StopLinePassData item;
+            if (dataUnitLocal->frontI(item, i)) {
+                //取头部时间戳到now，同时判断下last和now的情况
+                iter.now = item.timestamp;
+                if (iter.now <= iter.last) {
+                    LOG(ERROR) << prefix << " in timestamp pass through at index:" << i;//时间先后顺序出现穿越现象
+                } else {
+                    uint64_t dValue = iter.now - iter.last;
+                    LOG(INFO) << prefix << " in timestamp at index:" << i << " dValue:" << dValue << " through:"
+                              << interval;
+                    //可利用差值和（帧率×（interval/period））值做对比，看下是否有丢帧现象
+                    //允许丢1帧
+                    if (dValue < (interval - dataUnitLocal->fs_i)) {
+                        LOG(INFO) << prefix << "in 出现丢帧现象 at index:" << i;
+                    }
+                }
+            } else {
+                LOG(INFO) << prefix << " in empty at index:" << i;
+            }
+        }
+    }
+    //out
+    auto iter = dataUnitHistory->out;
+    if (iter.last == 0) {
+        LOG(INFO) << prefix << " out start";
+
+        StopLinePassData item;
+        if (dataUnitLocal->frontO(item)) {
+            //取头部时间戳到last
+            iter.last = item.timestamp;
+        } else {
+            LOG(INFO) << prefix << " out empty";
+        }
+    } else {
+        StopLinePassData item;
+        if (dataUnitLocal->frontO(item)) {
+            //取头部时间戳到now，同时判断下last和now的情况
+            iter.now = item.timestamp;
+            if (iter.now <= iter.last) {
+                LOG(ERROR) << prefix << " out timestamp pass through";//时间先后顺序出现穿越现象
+            } else {
+                uint64_t dValue = iter.now - iter.last;
+                LOG(INFO) << prefix << " out timestamp" << " dValue:" << dValue << " through:" << interval;
+                //可利用差值和（帧率×（interval/period））值做对比，看下是否有丢帧现象
+                //允许丢1帧
+                if (dValue < (interval - dataUnitLocal->fs_i)) {
+                    LOG(INFO) << prefix << "out 出现丢帧现象";
+                }
+            }
+        } else {
+            LOG(INFO) << prefix << " out empty at index:";
+        }
+    }
+}
+
+
 int Data::startDataUnitHistoryPrint(Data *local, int interval) {
 
     if (local == nullptr) {
@@ -622,6 +699,9 @@ int Data::startDataUnitHistoryPrint(Data *local, int interval) {
 
         //dataUnitHistoryInWatchData_2
         std::thread(dataUnitHistoryPrint_InWatchData_2, local, interval).detach();
+
+        //dataUnitHistoryStopLinePassData
+        std::thread(dataUnitHistoryPrint_StopLinePassData, local, interval).detach();
 
     }
     LOG(INFO) << __FUNCTION__ << "exit";

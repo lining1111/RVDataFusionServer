@@ -289,9 +289,13 @@ public:
 class DataUnitTrafficFlowGather : public DataUnit<TrafficFlow, TrafficFlowGather> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitTrafficFlowGather();
+    DataUnitTrafficFlowGather() {
 
-    ~DataUnitTrafficFlowGather();
+    }
+
+    ~DataUnitTrafficFlowGather() {
+
+    }
 
     DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -311,9 +315,13 @@ public:
 class DataUnitCrossTrafficJamAlarm : public DataUnit<CrossTrafficJamAlarm, CrossTrafficJamAlarm> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitCrossTrafficJamAlarm();
+    DataUnitCrossTrafficJamAlarm() {
 
-    ~DataUnitCrossTrafficJamAlarm();
+    }
+
+    ~DataUnitCrossTrafficJamAlarm() {
+
+    }
 
     DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -333,9 +341,13 @@ public:
 class DataUnitFusionData : public DataUnit<WatchData, FusionData> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitFusionData();
+    DataUnitFusionData() {
 
-    ~DataUnitFusionData();
+    }
+
+    ~DataUnitFusionData() {
+
+    }
 
     DataUnitFusionData(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -400,9 +412,13 @@ public:
 class DataUnitIntersectionOverflowAlarm : public DataUnit<IntersectionOverflowAlarm, IntersectionOverflowAlarm> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitIntersectionOverflowAlarm();
+    DataUnitIntersectionOverflowAlarm() {
 
-    ~DataUnitIntersectionOverflowAlarm();
+    }
+
+    ~DataUnitIntersectionOverflowAlarm() {
+
+    }
 
     DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -421,9 +437,13 @@ public:
 class DataUnitInWatchData_1_3_4 : public DataUnit<InWatchData_1_3_4, InWatchData_1_3_4> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitInWatchData_1_3_4();
+    DataUnitInWatchData_1_3_4() {
 
-    ~DataUnitInWatchData_1_3_4();
+    }
+
+    ~DataUnitInWatchData_1_3_4() {
+
+    }
 
     DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -436,9 +456,13 @@ public:
 class DataUnitInWatchData_2 : public DataUnit<InWatchData_2, InWatchData_2> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitInWatchData_2();
+    DataUnitInWatchData_2() {
 
-    ~DataUnitInWatchData_2();
+    }
+
+    ~DataUnitInWatchData_2() {
+
+    }
 
     DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache, void *owner);
 
@@ -448,5 +472,22 @@ public:
 
 };
 
+class DataUnitStopLinePassData : public DataUnit<StopLinePassData, StopLinePassData> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitStopLinePassData() {
+
+    }
+
+    ~DataUnitStopLinePassData() {
+
+    }
+
+    DataUnitStopLinePassData(int c, int threshold_ms, int i_num, int cache, void *owner);
+
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+
+    static void task(void *local);
+};
 
 #endif //_DATAUNIT_H
