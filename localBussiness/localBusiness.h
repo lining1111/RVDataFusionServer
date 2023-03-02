@@ -13,12 +13,9 @@
 
 class LocalBusiness {
 public:
-    typedef map<string, Timer *> TimerTasks;
-public:
     bool isRun = false;
     std::map<string, FusionServer *> serverList;
     std::map<string, FusionClient *> clientList;
-    TimerTasks timerTasks;
 public:
     LocalBusiness();
 
@@ -31,9 +28,14 @@ public:
     void Run();
 
 public:
-    void addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task);
-
-    void deleteTimerTask(string name);
+    Timer timerKeep;
+    Timer timerFusionData;
+    Timer timerTrafficFlowGather;
+    Timer timerCrossTrafficJamAlarm;
+    Timer timerIntersectionOverflowAlarm;
+    Timer timerInWatchData_1_3_4;
+    Timer timerInWatchData_2;
+    Timer timerStopLinePassData;
 
     void StartTimerTask();
 

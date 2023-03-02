@@ -68,39 +68,15 @@ void LocalBusiness::Run() {
     StartTimerTask();
 }
 
-void LocalBusiness::addTimerTask(string name, uint64_t timeval_ms, std::function<void()> task) {
-    Timer *timer = new Timer(name);
-    timer->start(timeval_ms, task);
-    timerTasks.insert(make_pair(name, timer));
-}
-
-void LocalBusiness::deleteTimerTask(string name) {
-    auto timerTask = timerTasks.find(name);
-    if (timerTask != timerTasks.end()) {
-        delete timerTask->second;
-        timerTasks.erase(timerTask++);
-    }
-}
-
 void LocalBusiness::StartTimerTask() {
-
-    addTimerTask("localBusiness timerKeep", 1000 * 3, std::bind(Task_Keep, this));
-
-    addTimerTask("localBusiness timerTask_FusionData", 100,
-                 std::bind(Task_FusionData, this));
-    addTimerTask("localBusiness timerTask_TrafficFlowGather", 1000,
-                 std::bind(Task_TrafficFlowGather, this));
-    addTimerTask("localBusiness timerTask_CrossTrafficJamAlarm", 1000,
-                 std::bind(Task_CrossTrafficJamAlarm, this));
-    addTimerTask("localBusiness timerTask_IntersectionOverflowAlarm", 1000,
-                 std::bind(Task_IntersectionOverflowAlarm, this));
-    addTimerTask("localBusiness timerTask_InWatchData_1_3_4", 1000,
-                 std::bind(Task_InWatchData_1_3_4, this));
-    addTimerTask("localBusiness timerTask_InWatchData_2", 1000,
-                 std::bind(Task_InWatchData_2, this));
-
-    addTimerTask("localBusiness timerTask_StopLinePassData", 1000,
-                 std::bind(Task_StopLinePassData, this));
+    timerKeep.start(1000*3,std::bind(Task_Keep, this));
+    timerFusionData.start(100, std::bind(Task_FusionData, this));
+    timerTrafficFlowGather.start(1000, std::bind(Task_TrafficFlowGather, this));
+    timerCrossTrafficJamAlarm.start(1000, std::bind(Task_CrossTrafficJamAlarm, this));
+    timerIntersectionOverflowAlarm.start(1000, std::bind(Task_IntersectionOverflowAlarm, this));
+    timerInWatchData_1_3_4.start(1000, std::bind(Task_InWatchData_1_3_4, this));
+    timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
+    timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
 
     //开启伪造数据线程
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
@@ -110,18 +86,21 @@ void LocalBusiness::StartTimerTask() {
 
 
 void LocalBusiness::StopTimerTaskAll() {
-    auto iter = timerTasks.begin();
-    while (iter != timerTasks.end()) {
-        delete iter->second;
-        iter = timerTasks.erase(iter);
-    }
+    timerKeep.stop();
+    timerFusionData.stop();
+    timerTrafficFlowGather.stop();
+    timerCrossTrafficJamAlarm.stop();
+    timerIntersectionOverflowAlarm.stop();
+    timerInWatchData_1_3_4.stop();
+    timerInWatchData_2.stop();
+    timerStopLinePassData.stop();
 }
 
 void LocalBusiness::Task_Keep(void *p) {
     if (p == nullptr) {
         return;
     }
-
+    LOG(ERROR)<<__FUNCTION__ <<" START";
     auto local = (LocalBusiness *) p;
 
     if (local->serverList.empty() || local->clientList.empty()) {
@@ -279,7 +258,7 @@ void LocalBusiness::Task_FusionData(void *p) {
         return;
     }
     auto local = (LocalBusiness *) p;
-
+    LOG(ERROR)<<__FUNCTION__ <<" START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }

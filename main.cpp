@@ -117,8 +117,6 @@ int main(int argc, char **argv) {
 //    sleep(1);
 //    delete server;
 
-//    HttpServerInit(10000, &local);
-
     while (true) {
         sleep(5);
     }
