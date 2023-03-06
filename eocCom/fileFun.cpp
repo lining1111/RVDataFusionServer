@@ -9,9 +9,9 @@ std::string getFileMD5(std::string file) {
     if (inStream.is_open()) {
         MD5_CTX ctx;
         MD5_Init(&ctx);
-        char *buf = new char[1024];
+        unsigned char *buf = new unsigned char[1024];
         while (!inStream.eof()) {
-            inStream.read(buf, 1024);
+            inStream.read((char*)buf, 1024);
             std::streamsize num = inStream.gcount();
             MD5_Update(&ctx, buf, num);
         }

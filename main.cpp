@@ -41,8 +41,9 @@ DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 #else
 DEFINE_string(logDir, "/tmp", "日志的输出目录,默认/tmp");
 #endif
-
+#include "eocCom/fileFun.h"
 int main(int argc, char **argv) {
+
     char curPath[512];
     getcwd(curPath, 512);
     printf("cur path:%s\n", curPath);
