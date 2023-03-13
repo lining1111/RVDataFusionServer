@@ -485,6 +485,26 @@
    "False"
   ],
   [
+   "protobuf:debug_suffix",
+   "True"
+  ],
+  [
+   "protobuf:fPIC",
+   "True"
+  ],
+  [
+   "protobuf:lite",
+   "False"
+  ],
+  [
+   "protobuf:shared",
+   "False"
+  ],
+  [
+   "protobuf:with_zlib",
+   "True"
+  ],
+  [
    "sqlite3:build_executable",
    "True"
   ],

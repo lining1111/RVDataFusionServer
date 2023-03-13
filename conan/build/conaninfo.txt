@@ -14,7 +14,9 @@
     libcurl/7.Y.Z
     libuuid/1.Y.Z
     openssl/1.Y.Z
+    protobuf/3.Y.Z
     sqlite3/3.Y.Z
+    zlib/1.Y.Z
 
 [options]
 
@@ -36,6 +38,7 @@
     libunwind/1.6.2:7ba7dcd533dadad363771bd6cbd521bd39886171
     libuuid/1.0.3:c10a1a185befd155ccf9af892387d3946f445cf6
     openssl/1.1.1s:c10a1a185befd155ccf9af892387d3946f445cf6
+    protobuf/3.12.4:a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345
     sqlite3/3.40.1:cb16f4e0ce9f858cd81da2bc2c11b479c83fa462
     xz_utils/5.2.5:c10a1a185befd155ccf9af892387d3946f445cf6
     zlib/1.2.13:c10a1a185befd155ccf9af892387d3946f445cf6
@@ -162,6 +165,11 @@
     openssl:no_whirlpool=False
     openssl:openssldir=None
     openssl:shared=False
+    protobuf:debug_suffix=True
+    protobuf:fPIC=True
+    protobuf:lite=False
+    protobuf:shared=False
+    protobuf:with_zlib=True
     sqlite3:build_executable=True
     sqlite3:disable_gethostuuid=False
     sqlite3:enable_column_metadata=True

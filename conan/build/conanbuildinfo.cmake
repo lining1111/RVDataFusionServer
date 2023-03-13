@@ -268,6 +268,47 @@ set(CONAN_LIBS_GLOG ${CONAN_PKG_LIBS_GLOG} ${CONAN_SYSTEM_LIBS_GLOG} ${CONAN_FRA
 
 
 #################
+###  PROTOBUF
+#################
+set(CONAN_PROTOBUF_ROOT "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345")
+set(CONAN_INCLUDE_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/include")
+set(CONAN_LIB_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib")
+set(CONAN_BIN_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/bin")
+set(CONAN_RES_DIRS_PROTOBUF )
+set(CONAN_SRC_DIRS_PROTOBUF )
+set(CONAN_BUILD_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf")
+set(CONAN_FRAMEWORK_DIRS_PROTOBUF )
+set(CONAN_LIBS_PROTOBUF protoc protobuf)
+set(CONAN_PKG_LIBS_PROTOBUF protoc protobuf)
+set(CONAN_SYSTEM_LIBS_PROTOBUF pthread)
+set(CONAN_FRAMEWORKS_PROTOBUF )
+set(CONAN_FRAMEWORKS_FOUND_PROTOBUF "")  # Will be filled later
+set(CONAN_DEFINES_PROTOBUF )
+set(CONAN_BUILD_MODULES_PATHS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-generate.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-module.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-options.cmake")
+# COMPILE_DEFINITIONS are equal to CONAN_DEFINES without -D, for targets
+set(CONAN_COMPILE_DEFINITIONS_PROTOBUF )
+
+set(CONAN_C_FLAGS_PROTOBUF "")
+set(CONAN_CXX_FLAGS_PROTOBUF "")
+set(CONAN_SHARED_LINKER_FLAGS_PROTOBUF "")
+set(CONAN_EXE_LINKER_FLAGS_PROTOBUF "")
+
+# For modern cmake targets we use the list variables (separated with ;)
+set(CONAN_C_FLAGS_PROTOBUF_LIST "")
+set(CONAN_CXX_FLAGS_PROTOBUF_LIST "")
+set(CONAN_SHARED_LINKER_FLAGS_PROTOBUF_LIST "")
+set(CONAN_EXE_LINKER_FLAGS_PROTOBUF_LIST "")
+
+# Apple Frameworks
+conan_find_apple_frameworks(CONAN_FRAMEWORKS_FOUND_PROTOBUF "${CONAN_FRAMEWORKS_PROTOBUF}" "_PROTOBUF" "")
+# Append to aggregated values variable
+set(CONAN_LIBS_PROTOBUF ${CONAN_PKG_LIBS_PROTOBUF} ${CONAN_SYSTEM_LIBS_PROTOBUF} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF})
+
+
+#################
 ###  GFLAGS
 #################
 set(CONAN_GFLAGS_ROOT "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486")
@@ -469,7 +510,7 @@ set(CONAN_SETTINGS_COMPILER_LIBCXX "libstdc++11")
 set(CONAN_SETTINGS_COMPILER_VERSION "11.3")
 set(CONAN_SETTINGS_OS "Linux")
 
-set(CONAN_DEPENDENCIES jsoncpp sqlite3 libcurl cpp-httplib libuuid glog gflags openssl libunwind zlib xz_utils)
+set(CONAN_DEPENDENCIES jsoncpp sqlite3 libcurl cpp-httplib libuuid glog protobuf gflags openssl libunwind zlib xz_utils)
 # Storing original command line args (CMake helper) flags
 set(CONAN_CMD_CXX_FLAGS ${CONAN_CXX_FLAGS})
 
@@ -485,6 +526,7 @@ set(CONAN_INCLUDE_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee23
 			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
 			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include/uuid"
 			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/include"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/include"
 			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/include"
 			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
 			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/include"
@@ -495,6 +537,7 @@ set(CONAN_LIB_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385
 			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/lib"
 			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib"
 			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/lib"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib"
 			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/lib"
 			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib"
 			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/lib"
@@ -502,13 +545,14 @@ set(CONAN_LIB_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385
 			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib" ${CONAN_LIB_DIRS})
 set(CONAN_BIN_DIRS "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/bin"
 			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/bin"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/bin"
 			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/bin"
 			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin"
 			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin" ${CONAN_BIN_DIRS})
 set(CONAN_RES_DIRS "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/res" ${CONAN_RES_DIRS})
 set(CONAN_FRAMEWORK_DIRS  ${CONAN_FRAMEWORK_DIRS})
-set(CONAN_LIBS jsoncpp sqlite3 curl uuid glog gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_LIBS})
-set(CONAN_PKG_LIBS jsoncpp sqlite3 curl uuid glog gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_PKG_LIBS})
+set(CONAN_LIBS jsoncpp sqlite3 curl uuid glog protoc protobuf gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_LIBS})
+set(CONAN_PKG_LIBS jsoncpp sqlite3 curl uuid glog protoc protobuf gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_PKG_LIBS})
 set(CONAN_SYSTEM_LIBS m dl rt pthread ${CONAN_SYSTEM_LIBS})
 set(CONAN_FRAMEWORKS  ${CONAN_FRAMEWORKS})
 set(CONAN_FRAMEWORKS_FOUND "")  # Will be filled later
@@ -516,11 +560,15 @@ set(CONAN_DEFINES "-DLZMA_API_STATIC"
 			"-DGFLAGS_DLL_DECLARE_FLAG="
 			"-DGFLAGS_DLL_DEFINE_FLAG="
 			"-DCURL_STATICLIB=1" ${CONAN_DEFINES})
-set(CONAN_BUILD_MODULES_PATHS  ${CONAN_BUILD_MODULES_PATHS})
+set(CONAN_BUILD_MODULES_PATHS "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-generate.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-module.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-options.cmake" ${CONAN_BUILD_MODULES_PATHS})
 set(CONAN_CMAKE_MODULE_PATH "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/"
 			"/home/lining/.conan/data/cpp-httplib/0.11.4/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/"
 			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/"
 			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf"
 			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/"
 			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/"
 			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/" ${CONAN_CMAKE_MODULE_PATH})
@@ -967,6 +1015,76 @@ macro(conan_define_targets)
                                                                   $<$<CONFIG:Debug>:${CONAN_C_FLAGS_GLOG_DEBUG_LIST}  ${CONAN_CXX_FLAGS_GLOG_DEBUG_LIST}>)
 
 
+    set(_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES "${CONAN_SYSTEM_LIBS_PROTOBUF} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF} CONAN_PKG::zlib")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_PROTOBUF}" "${CONAN_LIB_DIRS_PROTOBUF}"
+                                  CONAN_PACKAGE_TARGETS_PROTOBUF "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES}"
+                                  "" protobuf)
+    set(_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_DEBUG "${CONAN_SYSTEM_LIBS_PROTOBUF_DEBUG} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF_DEBUG} CONAN_PKG::zlib")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_DEBUG "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_DEBUG}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_PROTOBUF_DEBUG}" "${CONAN_LIB_DIRS_PROTOBUF_DEBUG}"
+                                  CONAN_PACKAGE_TARGETS_PROTOBUF_DEBUG "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_DEBUG}"
+                                  "debug" protobuf)
+    set(_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELEASE "${CONAN_SYSTEM_LIBS_PROTOBUF_RELEASE} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF_RELEASE} CONAN_PKG::zlib")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELEASE "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELEASE}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_PROTOBUF_RELEASE}" "${CONAN_LIB_DIRS_PROTOBUF_RELEASE}"
+                                  CONAN_PACKAGE_TARGETS_PROTOBUF_RELEASE "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELEASE}"
+                                  "release" protobuf)
+    set(_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELWITHDEBINFO "${CONAN_SYSTEM_LIBS_PROTOBUF_RELWITHDEBINFO} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF_RELWITHDEBINFO} CONAN_PKG::zlib")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELWITHDEBINFO "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELWITHDEBINFO}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_PROTOBUF_RELWITHDEBINFO}" "${CONAN_LIB_DIRS_PROTOBUF_RELWITHDEBINFO}"
+                                  CONAN_PACKAGE_TARGETS_PROTOBUF_RELWITHDEBINFO "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELWITHDEBINFO}"
+                                  "relwithdebinfo" protobuf)
+    set(_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_MINSIZEREL "${CONAN_SYSTEM_LIBS_PROTOBUF_MINSIZEREL} ${CONAN_FRAMEWORKS_FOUND_PROTOBUF_MINSIZEREL} CONAN_PKG::zlib")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_MINSIZEREL "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_MINSIZEREL}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_PROTOBUF_MINSIZEREL}" "${CONAN_LIB_DIRS_PROTOBUF_MINSIZEREL}"
+                                  CONAN_PACKAGE_TARGETS_PROTOBUF_MINSIZEREL "${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_MINSIZEREL}"
+                                  "minsizerel" protobuf)
+
+    add_library(CONAN_PKG::protobuf INTERFACE IMPORTED)
+
+    # Property INTERFACE_LINK_FLAGS do not work, necessary to add to INTERFACE_LINK_LIBRARIES
+    set_property(TARGET CONAN_PKG::protobuf PROPERTY INTERFACE_LINK_LIBRARIES ${CONAN_PACKAGE_TARGETS_PROTOBUF} ${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_PROTOBUF_LIST}>
+
+                                                                 $<$<CONFIG:Release>:${CONAN_PACKAGE_TARGETS_PROTOBUF_RELEASE} ${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELEASE}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_RELEASE_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_RELEASE_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_PROTOBUF_RELEASE_LIST}>>
+
+                                                                 $<$<CONFIG:RelWithDebInfo>:${CONAN_PACKAGE_TARGETS_PROTOBUF_RELWITHDEBINFO} ${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_RELWITHDEBINFO}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_RELWITHDEBINFO_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_RELWITHDEBINFO_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_PROTOBUF_RELWITHDEBINFO_LIST}>>
+
+                                                                 $<$<CONFIG:MinSizeRel>:${CONAN_PACKAGE_TARGETS_PROTOBUF_MINSIZEREL} ${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_MINSIZEREL}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_MINSIZEREL_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_MINSIZEREL_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_PROTOBUF_MINSIZEREL_LIST}>>
+
+                                                                 $<$<CONFIG:Debug>:${CONAN_PACKAGE_TARGETS_PROTOBUF_DEBUG} ${_CONAN_PKG_LIBS_PROTOBUF_DEPENDENCIES_DEBUG}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_DEBUG_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_PROTOBUF_DEBUG_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_PROTOBUF_DEBUG_LIST}>>)
+    set_property(TARGET CONAN_PKG::protobuf PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${CONAN_INCLUDE_DIRS_PROTOBUF}
+                                                                      $<$<CONFIG:Release>:${CONAN_INCLUDE_DIRS_PROTOBUF_RELEASE}>
+                                                                      $<$<CONFIG:RelWithDebInfo>:${CONAN_INCLUDE_DIRS_PROTOBUF_RELWITHDEBINFO}>
+                                                                      $<$<CONFIG:MinSizeRel>:${CONAN_INCLUDE_DIRS_PROTOBUF_MINSIZEREL}>
+                                                                      $<$<CONFIG:Debug>:${CONAN_INCLUDE_DIRS_PROTOBUF_DEBUG}>)
+    set_property(TARGET CONAN_PKG::protobuf PROPERTY INTERFACE_COMPILE_DEFINITIONS ${CONAN_COMPILE_DEFINITIONS_PROTOBUF}
+                                                                      $<$<CONFIG:Release>:${CONAN_COMPILE_DEFINITIONS_PROTOBUF_RELEASE}>
+                                                                      $<$<CONFIG:RelWithDebInfo>:${CONAN_COMPILE_DEFINITIONS_PROTOBUF_RELWITHDEBINFO}>
+                                                                      $<$<CONFIG:MinSizeRel>:${CONAN_COMPILE_DEFINITIONS_PROTOBUF_MINSIZEREL}>
+                                                                      $<$<CONFIG:Debug>:${CONAN_COMPILE_DEFINITIONS_PROTOBUF_DEBUG}>)
+    set_property(TARGET CONAN_PKG::protobuf PROPERTY INTERFACE_COMPILE_OPTIONS ${CONAN_C_FLAGS_PROTOBUF_LIST} ${CONAN_CXX_FLAGS_PROTOBUF_LIST}
+                                                                  $<$<CONFIG:Release>:${CONAN_C_FLAGS_PROTOBUF_RELEASE_LIST} ${CONAN_CXX_FLAGS_PROTOBUF_RELEASE_LIST}>
+                                                                  $<$<CONFIG:RelWithDebInfo>:${CONAN_C_FLAGS_PROTOBUF_RELWITHDEBINFO_LIST} ${CONAN_CXX_FLAGS_PROTOBUF_RELWITHDEBINFO_LIST}>
+                                                                  $<$<CONFIG:MinSizeRel>:${CONAN_C_FLAGS_PROTOBUF_MINSIZEREL_LIST} ${CONAN_CXX_FLAGS_PROTOBUF_MINSIZEREL_LIST}>
+                                                                  $<$<CONFIG:Debug>:${CONAN_C_FLAGS_PROTOBUF_DEBUG_LIST}  ${CONAN_CXX_FLAGS_PROTOBUF_DEBUG_LIST}>)
+
+
     set(_CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES "${CONAN_SYSTEM_LIBS_GFLAGS} ${CONAN_FRAMEWORKS_FOUND_GFLAGS} ")
     string(REPLACE " " ";" _CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES "${_CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES}")
     conan_package_library_targets("${CONAN_PKG_LIBS_GFLAGS}" "${CONAN_LIB_DIRS_GFLAGS}"
@@ -1316,7 +1434,7 @@ macro(conan_define_targets)
                                                                   $<$<CONFIG:MinSizeRel>:${CONAN_C_FLAGS_XZ_UTILS_MINSIZEREL_LIST} ${CONAN_CXX_FLAGS_XZ_UTILS_MINSIZEREL_LIST}>
                                                                   $<$<CONFIG:Debug>:${CONAN_C_FLAGS_XZ_UTILS_DEBUG_LIST}  ${CONAN_CXX_FLAGS_XZ_UTILS_DEBUG_LIST}>)
 
-    set(CONAN_TARGETS CONAN_PKG::jsoncpp CONAN_PKG::sqlite3 CONAN_PKG::libcurl CONAN_PKG::cpp-httplib CONAN_PKG::libuuid CONAN_PKG::glog CONAN_PKG::gflags CONAN_PKG::openssl CONAN_PKG::libunwind CONAN_PKG::zlib CONAN_PKG::xz_utils)
+    set(CONAN_TARGETS CONAN_PKG::jsoncpp CONAN_PKG::sqlite3 CONAN_PKG::libcurl CONAN_PKG::cpp-httplib CONAN_PKG::libuuid CONAN_PKG::glog CONAN_PKG::protobuf CONAN_PKG::gflags CONAN_PKG::openssl CONAN_PKG::libunwind CONAN_PKG::zlib CONAN_PKG::xz_utils)
 
 endmacro()
 
