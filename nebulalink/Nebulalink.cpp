@@ -72,7 +72,9 @@ namespace Nebulalink {
         while (local->isRun) {
             usleep(1000 * 10);
             if (local->sock > 0 && local->rb != nullptr) {
-                int len = recvfrom(local->sock, msg, (1024 * 1024), 0, (struct sockaddr *) &local->server_addr,
+                int readLen = (1024 * 1024 < local->rb->GetWriteLen() ? (1024 * 1024) : local->rb->GetWriteLen());
+
+                int len = recvfrom(local->sock, msg, readLen, 0, (struct sockaddr *) &local->server_addr,
                                    &sockaddrLen);
                 if (len > 0) {
                     local->rb->Write(msg, len);
@@ -84,6 +86,27 @@ namespace Nebulalink {
         return 0;
     }
 
+    static bool isTag(std::vector<uint8_t> data) {
+        if (data.size() < TagLen) {
+            return false;
+        }
+
+        if ((data.at(0) == 0xda) && (data.at(1) == 0xdb) && (data.at(2) == 0xdc) && (data.at(3) == 0xdd)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void tagForward(std::vector<uint8_t> &data) {
+        std::vector<uint8_t> tmp;
+        for (int i = 1; i < data.size(); i++) {
+            tmp.push_back(data.at(i));
+        }
+        data.assign(tmp.begin(), tmp.end());
+    }
+
+
     int RSU::ThreadPRecv(void *p) {
         if (p == nullptr) {
             LOG(ERROR) << "p null";
@@ -91,8 +114,63 @@ namespace Nebulalink {
         RSU *local = (RSU *) p;
         socklen_t sockaddrLen = sizeof(struct sockaddr_in);
         LOG(INFO) << "thread precv start";
-        while (local->isRun) {
+        while (local->isRun && local->rb != nullptr) {
+            usleep(1000 * 10);
+            switch (local->recvState) {
+                case SStart: {
+                    //找到tag
+                    if (local->rb->GetReadLen() > 1) {
+                        uint8_t val;
+                        if (local->rb->Read(&val, 1)) {
+                            local->tag.push_back(val);
+                        }
 
+                        if (local->tag.size() >= TagLen) {
+                            //判断是否全对
+                            if (isTag(local->tag)) {
+                                for (int i = 0; i < TagLen; i++) {
+                                    local->frametmp.head.head[i] = local->tag.at(i);
+                                }
+                                local->tag.clear();
+                                local->recvState = SHead;
+                            } else {
+                                tagForward(local->tag);
+                            }
+                        }
+                    }
+                }
+                    break;
+                case SHead: {
+                    //找到全部头
+                    if (local->rb->GetReadLen() > (sizeof(RSUCom::Head) - TagLen)) {
+                        uint8_t *left = new uint8_t[sizeof(RSUCom::Head) - TagLen];
+                        if (local->rb->Read(left, sizeof(RSUCom::Head) - TagLen)) {
+                            memcpy(&local->frametmp.head.frameType, left, (sizeof(RSUCom::Head) - TagLen));
+                            local->recvState = SData;
+                        }
+                        delete[] left;
+                    }
+                }
+                    break;
+                case SData: {
+                    //找到全部数据
+                    if (local->rb->GetReadLen() > local->frametmp.head.length) {
+                        for (int i = 0; i < local->frametmp.head.length; i++) {
+                            uint8_t val;
+                            if (local->rb->Read(&val, 1)) {
+                                local->frametmp.data.push_back(val);
+                            }
+                        }
+                        local->recvState = SEnd;
+                    }
+                }
+                    break;
+                case SEnd: {
+                    local->frames.push(local->frametmp);
+                    local->recvState = SStart;
+                }
+                    break;
+            }
         }
 
         LOG(INFO) << "thread precv end";
@@ -107,6 +185,7 @@ namespace Nebulalink {
             this->isRun = true;
             futureRecv = std::async(ThreadRecv, this);
             futurePRecv = std::async(ThreadPRecv, this);
+            frames.setMax(30);
         }
     }
 
@@ -125,6 +204,100 @@ namespace Nebulalink {
 
     bool RSU::IsRun() {
         return this->isRun;
+    }
+
+    static int PFrameUnknown(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameRSU(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameV2XBroadcast(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameCamera(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameMRadar(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameMC(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameLRadar(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    static int PFrameMEC(RSU *local, std::vector<uint8_t> data) {
+        if (local == nullptr) {
+            return -1;
+        }
+        return 0;
+    }
+
+    typedef int (*PFrameFun)(RSU *local, std::vector<uint8_t> data);
+
+    static std::map<RSUCom::PerceptionType, PFrameFun> PFrameMap = {
+            make_pair(RSUCom::PerceptionType_Unknown, PFrameUnknown),
+            make_pair(RSUCom::PerceptionType_RSU, PFrameRSU),
+            make_pair(RSUCom::PerceptionType_V2XBroadcast, PFrameV2XBroadcast),
+            make_pair(RSUCom::PerceptionType_Camera, PFrameCamera),
+            make_pair(RSUCom::PerceptionType_MRadar, PFrameMRadar),
+            make_pair(RSUCom::PerceptionType_MC, PFrameMC),
+            make_pair(RSUCom::PerceptionType_LRadar, PFrameLRadar),
+            make_pair(RSUCom::PerceptionType_MEC, PFrameMEC),
+    };
+
+
+    int RSU::ThreadPFrame(void *p) {
+        if (p == nullptr) {
+            LOG(ERROR) << "p null";
+        }
+        RSU *local = (RSU *) p;
+        LOG(INFO) << "thread pframe start";
+        while (local->isRun) {
+            RSUCom::Frame frame;
+            if (local->frames.pop(frame)) {
+                //按照cmd分别处理
+                auto iter = PFrameMap.find(RSUCom::PerceptionType(frame.head.perceptionType));
+                if (iter != PFrameMap.end()) {
+                    iter->second(local, frame.data);
+                } else {
+                    //最后没有对应的方法名
+                    VLOG(2) << "client:" << inet_ntoa(local->server_addr.sin_addr)
+                            << " 最后没有对应的方法名:" << frame.head.perceptionType;
+                }
+            }
+        }
+        LOG(INFO) << "thread pframe end";
+        return 0;
     }
 
     int RSUCom::Frame::Pack(std::vector<uint8_t> &data) {
