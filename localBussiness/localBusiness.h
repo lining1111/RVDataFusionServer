@@ -37,6 +37,8 @@ public:
     Timer timerInWatchData_2;
     Timer timerStopLinePassData;
 
+//    Timer timerCreateFusionData;
+
     void StartTimerTask();
 
     void StopTimerTaskAll();
@@ -65,6 +67,7 @@ private:
     static void Task_StopLinePassData(void *p);
 
     //造数据的线程
+    static void Task_CreateFusionData(void *p);
     static void Task_CreateCrossTrafficJamAlarm(void *p);
 
     static void Task_CreateTrafficFlowGather(void *p);

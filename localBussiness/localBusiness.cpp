@@ -48,12 +48,14 @@ void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort) {
 void LocalBusiness::Run() {
     isRun = true;
     for (auto &iter:serverList) {
-        iter.second->Open();
-        iter.second->Run();
+        if (iter.second->Open() == 0) {
+            iter.second->Run();
+        }
     }
     for (auto &iter:clientList) {
-        iter.second->Open();
-        iter.second->Run();
+        if (iter.second->Open() == 0) {
+            iter.second->Run();
+        }
 
     }
     if (0) {
@@ -69,7 +71,7 @@ void LocalBusiness::Run() {
 }
 
 void LocalBusiness::StartTimerTask() {
-    timerKeep.start(1000*3,std::bind(Task_Keep, this));
+    timerKeep.start(1000 * 3, std::bind(Task_Keep, this));
     timerFusionData.start(100, std::bind(Task_FusionData, this));
     timerTrafficFlowGather.start(1000, std::bind(Task_TrafficFlowGather, this));
     timerCrossTrafficJamAlarm.start(1000, std::bind(Task_CrossTrafficJamAlarm, this));
@@ -79,6 +81,7 @@ void LocalBusiness::StartTimerTask() {
     timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
 
     //开启伪造数据线程
+//    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
 //    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
 //    addTimerTask("localBusiness timerCreateTrafficFlowGather",1000,std::bind(Task_CreateTrafficFlowGather,this));
@@ -100,7 +103,7 @@ void LocalBusiness::Task_Keep(void *p) {
     if (p == nullptr) {
         return;
     }
-    LOG(ERROR)<<__FUNCTION__ <<" START";
+    LOG(INFO) << __FUNCTION__ << " START";
     auto local = (LocalBusiness *) p;
 
     if (local->serverList.empty() || local->clientList.empty()) {
@@ -114,6 +117,8 @@ void LocalBusiness::Task_Keep(void *p) {
                 if (iter.second->Open() == 0) {
                     LOG(WARNING) << "服务端:" << iter.first << " 重启";
                     iter.second->Run();
+                } else {
+                    LOG(WARNING) << "服务端:" << iter.first << " 重启失败";
                 }
             }
         }
@@ -124,6 +129,8 @@ void LocalBusiness::Task_Keep(void *p) {
                 if (iter.second->Open() == 0) {
                     LOG(WARNING) << "客户端:" << iter.first << " 重启";
                     iter.second->Run();
+                } else {
+                    LOG(WARNING) << "客户端:" << iter.first << " 重启失败";
                 }
             }
         }
@@ -158,16 +165,16 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
     for (auto &iter1:local->clientList) {
         auto cli = iter1.second;
         if (cli->isRun) {
-            VLOG(2) << "发送到上层" << cli->server_ip << ":" << cli->server_port
+            VLOG(3) << "发送到上层" << cli->server_ip << ":" << cli->server_port
                     << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
-                VLOG(2) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
+                VLOG(3) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;
             } else {
-                VLOG(2) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
+                VLOG(3) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
             }
         } else {
-            VLOG(2) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
+            VLOG(3) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
             ret = -1;
         }
     }
@@ -258,7 +265,7 @@ void LocalBusiness::Task_FusionData(void *p) {
         return;
     }
     auto local = (LocalBusiness *) p;
-    LOG(ERROR)<<__FUNCTION__ <<" START";
+    LOG(INFO) << __FUNCTION__ << " START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }
@@ -269,6 +276,8 @@ void LocalBusiness::Task_FusionData(void *p) {
 
         FusionData data;
         if (dataUnit->popO(data)) {
+            printf("-----fusiondata crossid:%s,lstobjTarget size:%d,lstVideos size:%d\n",
+                   data.crossID.c_str(),data.lstObjTarget.size(),data.lstVideos.size());
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -355,6 +364,27 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
         }
     }
 }
+
+void LocalBusiness::Task_CreateFusionData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitFusionData;
+    FusionData inData;
+    inData.oprNum = random_uuid();
+    inData.timstamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 CrossFusionData 插入成功\n");
+    } else {
+        printf("伪造数据 CrossFusionData 插入失败\n");
+    }
+}
+
 
 void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
     if (p == nullptr) {

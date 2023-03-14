@@ -31,9 +31,8 @@ int FusionClient::Open() {
         LOG(ERROR) << "server ip empty" << std::endl;
         return -1;
     }
-    //先ping下远端开是否可以连接
-    auto result = icmplib::Ping(server_ip, 3).response;
-    if (result != icmplib::PingResponseType::Success) {
+    //先ping下远端开是否可以连接必须在root权限下使用
+    if (icmplib::Ping(server_ip,5).response != icmplib::PingResponseType::Success) {
 //        LOG(ERROR) << "client not connect:" << server_ip;
         return -1;
     }

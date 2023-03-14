@@ -67,7 +67,6 @@ template<typename I, typename O>
 class DataUnit {
 public:
     int sn = 0;
-    string crossID;
     vector<Queue<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
     int cache = 0;

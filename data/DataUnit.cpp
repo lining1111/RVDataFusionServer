@@ -151,10 +151,12 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
 }
 
 int DataUnitTrafficFlowGather::TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit) {
+    auto data = (Data *) dataUnit->owner;
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
-    item.crossID = dataUnit->crossID;
+    item.crossID = data->plateId;
+
 
     for (auto iter:dataUnit->oneFrame) {
         if (!iter.flowData.empty()) {
@@ -271,12 +273,16 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
             isFind = true;
         } else {
             IType refer;
-
             if (dataUnit->frontI(refer, index)) {
+                auto data = (Data *) dataUnit->owner;
+                if (data->plateId.empty()) {
+                    data->plateId = refer.crossID;
+                }
+
 
                 cur.oprNum = random_uuid();
                 cur.timestamp = curTimestamp;
-                cur.crossID = dataUnit->crossID;
+                cur.crossID = data->plateId;
                 cur.hardCode = refer.hardCode;
                 cur.alarmType = 0;
                 cur.alarmStatus = 0;
@@ -308,10 +314,11 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
 
 
 int DataUnitCrossTrafficJamAlarm::TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit) {
+    auto data = (Data *) dataUnit->owner;
     OType item;
     item.oprNum = random_uuid();
     item.timestamp = dataUnit->curTimestamp;
-    item.crossID = dataUnit->crossID;
+    item.crossID = data->plateId;
     item.alarmType = 0;
     item.alarmStatus = 0;
     auto tp = std::chrono::system_clock::now();
@@ -444,6 +451,11 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
         } else {
             IType refer;
             if (dataUnit->frontI(refer, index)) {
+                auto data = (Data*)dataUnit->owner;
+                if (data->plateId.empty()){
+                    data->plateId = refer.matrixNo;
+                }
+
                 if (uint64_t(refer.timstamp) < leftTimestamp) {
                     //在左值外
                     if (dataUnit->sizeI(index) == 1) {
@@ -795,10 +807,11 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
 
 int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     const int INF = 0x7FFFFFFF;
+    auto data = (Data *) this->owner;
     OType fusionData;
     fusionData.oprNum = random_uuid();
     fusionData.timstamp = mergeData.timestamp;
-    fusionData.crossID = this->crossID;
+    fusionData.crossID = data->plateId;
     VLOG(3) << "算法输出量到FusionData---算法输出量数组大小:" << mergeData.objOutput.size();
     //算法输出量到FusionData.lstObjTarget
     for (auto iter:mergeData.objOutput) {
@@ -982,10 +995,14 @@ int DataUnitIntersectionOverflowAlarm::ThreadGetDataInRange(DataUnitIntersection
             IType refer;
 
             if (dataUnit->frontI(refer, index)) {
+                auto data = (Data *) dataUnit->owner;
+                if (data->plateId.empty()){
+                    data->plateId = refer.crossID;
+                }
 
                 cur.oprNum = random_uuid();
                 cur.timestamp = curTimestamp;
-                cur.crossID = dataUnit->crossID;
+                cur.crossID = data->plateId;
                 cur.hardCode = refer.hardCode;
                 cur.alarmType = 0;
                 cur.alarmStatus = 0;

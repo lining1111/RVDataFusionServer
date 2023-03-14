@@ -131,7 +131,8 @@ int tableInit(std::string path, std::string version) {
     //分析结果
     //寻找版本号
     for (int i = 0; i < nRow; i++) {
-        if (strstr(sqlData[i + 1], "V_")) {
+        std::string name = std::string(sqlData[i + 1]);
+        if (name.rfind("V_", 0) == 0) {
             cur_version = std::string(sqlData[i + 1]);
             if (cur_version == version) {
                 isFindVersion = true;
