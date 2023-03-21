@@ -18,7 +18,7 @@ private:
     std::string logDir;
     bool isSendSTDOUT;
 public:
-    GlogHelper(char *_program, uint _keep, std::string _logDir, bool _isSendSTDOUT);
+    GlogHelper(std::string _program, uint _keep, std::string _logDir, bool _isSendSTDOUT);
     ~GlogHelper();
 
 private:

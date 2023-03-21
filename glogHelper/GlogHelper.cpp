@@ -8,7 +8,7 @@
 #include <fstream>
 #include <dirent.h>
 
-GlogHelper::GlogHelper(char *_program, uint _keep, std::string _logDir, bool _isSendSTDOUT) :
+GlogHelper::GlogHelper(std::string _program, uint _keep, std::string _logDir, bool _isSendSTDOUT) :
         program(_program), keepDays(_keep), logDir(_logDir), isSendSTDOUT(_isSendSTDOUT) {
     google::InitGoogleLogging(program.data());
     google::InstallFailureSignalHandler();
@@ -95,11 +95,13 @@ int GlogHelper::cleaner(void *p) {
                 std::string fulPath = local->logDir + "/" + iter;
                 if (stat(fulPath.c_str(), &buf) == 0) {
                     if ((now - buf.st_ctime) > keepSeconds) {
+                        LOG(INFO) << "准备删除文件 " << fulPath;
                         if (remove(fulPath.c_str()) == 0) {
                             char bufInfo[512];
                             memset(bufInfo, 0, 512);
                             sprintf(bufInfo, "log file:%s create time:%s,now:%s,keepSeconds:%d s,delete",
-                                    fulPath.c_str(),asctime(localtime(&buf.st_ctime)), asctime(localtime(&now)), keepSeconds);
+                                    fulPath.c_str(), asctime(localtime(&buf.st_ctime)), asctime(localtime(&now)),
+                                    keepSeconds);
                             LOG(INFO) << bufInfo;
                         }
                     }

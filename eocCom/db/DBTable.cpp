@@ -769,7 +769,6 @@ int DBFusionParaSet::selectFromDB() {
     }
     delete[] sqlstr;
     dbFreeTable(sqldata);
-    free(sqlstr);
     return 0;
 }
 

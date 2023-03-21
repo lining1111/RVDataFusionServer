@@ -225,9 +225,9 @@ namespace common {
     public:
         int objID = 0;//目标ID
         vector<OneRvWayObject> rvWayObject;
-        int objType = 0;//目标类型0.汽车1.人2.摩托3.自行车4.三轮
+        int objType = 0;//目标类型 0.汽车1.人2.摩托3.自行车4.三轮
         int objColor = 0;//目标颜色
-        int carType = 0;//0.非汽车1.大型车2.中型车3.小型车4.货车5.公交车算法暂时识别不出来默认填0
+        int carType = 0;//车辆类型 0.非汽车1.大型车2.中型车3.小型车4.货车5.公交车算法暂时识别不出来默认填0
         string plates;//车牌号
         string plateColor;//车牌颜色
         float distance;//距离
@@ -236,8 +236,8 @@ namespace common {
         double locationX = 0.0;//平面X位置
         double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
-        double latitude = 0.0;//维度
-        string laneCode;
+        double latitude = 0.0;//纬度
+        string laneCode;//车道号
         int flagNew = 0;
     public:
         bool JsonMarshal(Json::Value &out);
@@ -276,14 +276,14 @@ namespace common {
     //车流量统计
     class OneFlowData {
     public:
-        string laneCode;
+        string laneCode;//车道编号
         int laneDirection;//车道方向
         int flowDirection;
-        int inCars;
+        int inCars;//进入数量
         double inAverageSpeed;//入口平均速度
-        int outCars;
+        int outCars;//驶出数量
         double outAverageSpeed;//出口平均速度
-        int queueLen;
+        int queueLen;//排队长度
         int queueCars;
     public:
         bool JsonMarshal(Json::Value &out);

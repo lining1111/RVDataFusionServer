@@ -31,8 +31,8 @@ int signalIgnPipe() {
 }
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
-DEFINE_string(cloudIp, "10.100.24.8", "云端ip，默认 10.100.24.8");
-DEFINE_int32(cloudPort, 9999, "云端端口号，默认9999");
+DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
+DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 DEFINE_int32(keep, 1, "日志清理周期 单位day，默认1");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
@@ -55,9 +55,11 @@ int main(int argc, char **argv) {
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
+    std::string proFul = std::string(argv[0]);
+    std::string pro = os::g_getFileName(proFul);
 
     //日志系统类
-    GlogHelper glogHelper(argv[0], FLAGS_keep, FLAGS_logDir, FLAGS_isSendSTDOUT);
+    GlogHelper glogHelper(pro, FLAGS_keep, FLAGS_logDir, FLAGS_isSendSTDOUT);
 
     uint16_t port = FLAGS_port;
     string cloudIp;

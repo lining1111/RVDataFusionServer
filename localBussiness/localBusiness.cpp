@@ -103,7 +103,7 @@ void LocalBusiness::Task_Keep(void *p) {
     if (p == nullptr) {
         return;
     }
-    LOG(INFO) << __FUNCTION__ << " START";
+//    LOG(INFO) << __FUNCTION__ << " START";
     auto local = (LocalBusiness *) p;
 
     if (local->serverList.empty() || local->clientList.empty()) {
@@ -265,7 +265,7 @@ void LocalBusiness::Task_FusionData(void *p) {
         return;
     }
     auto local = (LocalBusiness *) p;
-    LOG(INFO) << __FUNCTION__ << " START";
+//    LOG(INFO) << __FUNCTION__ << " START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }

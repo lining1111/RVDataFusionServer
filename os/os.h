@@ -17,6 +17,21 @@ namespace os {
     int execute_command(const std::string &command, std::string *output = nullptr,
                         bool redirect_stderr = false);
 
+    // 取文件夹名字 无后缀
+    string g_getFolderPath(string str);
+
+    // 取后缀
+    string g_getFileSuffix(string str);
+
+    // 取文件名字 不包括后缀
+    string g_getFileName(string str);
+
+    // 去掉后缀
+    string g_getRemoveSuffix(string str);
+
+    // 取文件名字 包括后缀
+    string g_getFileNameAll(string str);
+
     int GetVectorFromFile(vector<uint8_t> &array, string filePath);
 
     int GetFileFromVector(vector<uint8_t> &array, string filePath);

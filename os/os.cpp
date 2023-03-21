@@ -32,6 +32,43 @@ namespace os {
         return pclose(pipe);
     }
 
+
+    // 取文件夹名字 无后缀
+     string g_getFolderPath(string str) {
+        string::size_type idx = str.rfind('/', str.length());
+        string folder = str.substr(0, idx);
+        return folder;
+    }
+
+    // 取后缀
+     string g_getFileSuffix(string str) {
+        string::size_type idx = str.rfind('.', str.length());
+        string suffix = str.substr(idx + 1, str.length());
+        return suffix;
+    }
+
+    // 取文件名字 不包括后缀
+     string g_getFileName(string str) {
+        string::size_type idx = str.rfind('/', str.length());
+        string::size_type pidx = str.rfind('.', str.length());
+        string filename = str.substr(idx + 1, pidx - (idx + 1));
+        return filename;
+    }
+
+    // 去掉后缀
+     string g_getRemoveSuffix(string str) {
+        string::size_type idx = str.rfind('.', str.length());
+        string filename = str.substr(0, idx);
+        return filename;
+    }
+
+    // 取文件名字 包括后缀
+     string g_getFileNameAll(string str) {
+        string::size_type idx = str.rfind('/', str.length());
+        string name_all = str.substr(idx + 1, str.length());
+        return name_all;
+    }
+
     int GetVectorFromFile(vector<uint8_t> &array, string filePath) {
         ifstream fout;
         fout.open(filePath.c_str(), ios::in | ios::binary);
