@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     dataLocal->isMerge = FLAGS_isMerge;
     LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
     LOG(INFO)<<"开启eoc通信，同时读取本地数据库到缓存";
-//    StartEocCommon();
+    StartEocCommon();
 //    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
 //        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
 //        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
 //        LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
 //    }
 
-    StartEocCommon1();
+//    StartEocCommon1();
     if (!string(g_BaseSet.PlatformTcpPath).empty()) {
         cloudIp = string(g_BaseSet.PlatformTcpPath);
         LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;

@@ -186,6 +186,8 @@ namespace common {
         out["longitude"] = this->longitude;
         out["latitude"] = this->latitude;
         out["laneCode"] = this->laneCode;
+        out["carLength"] = this->carLength;
+        out["carFeaturePic"] = this->carFeaturePic;
         return true;
     }
 
@@ -208,6 +210,9 @@ namespace common {
         this->longitude = in["longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
         this->laneCode = in["laneCode"].asString();
+        this->carLength = in["carLength"].asDouble();
+        this->carFeaturePic = in["carFeaturePic"].asString();
+
         return true;
     }
 
@@ -372,6 +377,8 @@ namespace common {
         out["longitude"] = this->longitude;
         out["latitude"] = this->latitude;
         out["laneCode"] = this->laneCode;
+        out["carLength"] = this->carLength;
+        out["carFeaturePic"] = this->carFeaturePic;
         out["flagNew"] = this->flagNew;
 
         Json::Value rvWayObject = Json::arrayValue;
@@ -405,6 +412,9 @@ namespace common {
         this->longitude = in["longitude"].asDouble();
         this->latitude = in["latitude"].asDouble();
         this->laneCode = in["laneCode"].asString();
+        this->carLength = in["carLength"].asDouble();
+        this->carFeaturePic = in["carFeaturePic"].asString();
+
         this->flagNew = in["flagNew"].asInt();
 
         Json::Value rvWayObject = in["rvWayObject"];

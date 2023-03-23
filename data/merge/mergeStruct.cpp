@@ -61,6 +61,8 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
     objectInfoT.longitude = objTarget.longitude;
     objectInfoT.latitude = objTarget.latitude;
+//    objectInfoT.carLength = objTarget.carLength;
+//    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
 
 }
 
@@ -88,7 +90,9 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
 
     memcpy(objectInfoNew.distance, objectInfoT.distance, sizeof(objectInfoNew.distance));
     objectInfoNew.directionAngle = objectInfoT.directionAngle;
-    objectInfoNew.speed = sqrt(objectInfoT.speedX*objectInfoT.speedX+objectInfoT.speedY*objectInfoT.speedY);
+    objectInfoNew.speed = sqrt(objectInfoT.speedX * objectInfoT.speedX + objectInfoT.speedY * objectInfoT.speedY);
     objectInfoNew.longitude = objectInfoT.longitude;
     objectInfoNew.latitude = objectInfoT.latitude;
+//    objectInfoNew.carLength = objectInfoT.carLength;
+//    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
 }

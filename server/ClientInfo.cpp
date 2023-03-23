@@ -81,7 +81,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
         usleep(100);
         if (client->rb == nullptr) {
@@ -195,7 +195,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
                 break;
         }
     }
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
     return 0;
 }
 
@@ -461,7 +461,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     auto client = (ClientInfo *) pClientInfo;
 
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
         Pkg pkg;
         if (client->queuePkg.pop(pkg)) {
@@ -477,6 +477,6 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             }
         }
     }
-    LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
+    LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
     return 0;
 }

@@ -32,6 +32,8 @@ typedef struct {
     double speedY;
     double longitude;//经度
     double latitude;//纬度
+//    double carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+//    std::string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
     //斜路口再用
 //    double dmerge_left_up_x;
 //    double dmerge_left_up_y;
@@ -67,6 +69,8 @@ typedef struct {
     double speed;
     double longitude;//经度
     double latitude;//纬度
+//    double carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+//    std::string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
     int flag_new;//判断当前目标id是否第一次出现
     //斜路口再用
 //    double dmerge_left_up_x;

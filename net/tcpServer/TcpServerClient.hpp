@@ -43,7 +43,7 @@ public:
         string name = client->name;
         cout << name << " " << __FUNCTION__ << " run" << endl;
         char *buf = new char[1024 * 1024];
-        while (client->isConnect) {
+        while (client->isConnect /*&& client->rb != nullptr*/) {
             if (client->isAsynReceive) {
                 bzero(buf, 1024 * 1024);
                 int recvLen = (client->rb->GetWriteLen() < (1024 * 1024)) ? client->rb->GetWriteLen() : (1024 * 1024);
@@ -105,6 +105,7 @@ public:
         }
         isLocalThreadRun = false;
         delete rb;
+        rb = nullptr;
         isClose = true;
         return 0;
     }

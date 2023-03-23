@@ -409,7 +409,7 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheC
         dataUnit->curTimestamp = (uint64_t) refer.timstamp;
     }
     VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp;
-    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
+//    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
     uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
     uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 

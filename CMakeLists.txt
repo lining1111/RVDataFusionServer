@@ -24,7 +24,7 @@ include(CPM)
 
 set(LIBS m pthread ${CONAN_LIBS})
 
-set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test eoc_comm)
+set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test)
 SUBDIRLISTINCLUDE(SRC_DIRS ${CMAKE_SOURCE_DIR} 2 ${filtration_dirlist})
 message(STATUS "3.7 SRC_DIRS : ${SRC_DIRS}")
 include_directories(.)
