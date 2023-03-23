@@ -23,11 +23,11 @@ using namespace std;
 using namespace os;
 
 //自动帧率调节 记录每次的帧率，然后每10次计算一次平均数，计入平均帧率，并影响数据集合的帧率和时间戳相差门限
-class DyFrame {
+/*class DyFrame {
 private:
     int *fs = nullptr;
     int *thresholdFrame = nullptr;
-    int preFrameTimestamp = 0;//上一帧的时间戳，在未记录开始前，为0
+    uint64_t preFrameTimestamp = 0;//上一帧的时间戳，在未记录开始前，为0
     atomic_int fsTotal = {0};
     atomic_int fsCount = {0};
     mutex mtx;
@@ -41,11 +41,14 @@ public:
 
     }
 
-    void UpDate(int timestamp) {
+    void UpDate(uint64_t timestamp) {
         std::unique_lock<std::mutex> lock(mtx);
         //preFrameTimestamp 为 0 刚开始
         if (preFrameTimestamp != 0) {
-            int fs = ::abs(timestamp - preFrameTimestamp);
+            int64_t fs = timestamp - preFrameTimestamp;
+            if (fs < 0) {
+                fs = -fs;
+            }
             fsTotal += fs;
             fsCount++;
             if (fsCount >= 10) {
@@ -61,7 +64,7 @@ public:
         }
     }
 };
-
+*/
 
 template<typename I, typename O>
 class DataUnit {
@@ -78,7 +81,7 @@ public:
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
 
-    DyFrame *dyFrame = nullptr;
+//    DyFrame *dyFrame = nullptr;
 public:
     void *owner = nullptr;
 public:
@@ -109,7 +112,7 @@ public:
 
     ~DataUnit() {
         delete timerBusiness;
-        delete dyFrame;
+//        delete dyFrame;
     }
 
 public:
@@ -137,7 +140,7 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
-        dyFrame = new DyFrame(&this->fs_i, &this->thresholdFrame);
+//        dyFrame = new DyFrame(&this->fs_i, &this->thresholdFrame);
     }
 
     bool frontI(I &i, int index) {

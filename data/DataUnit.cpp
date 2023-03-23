@@ -353,6 +353,7 @@ DataUnitFusionData::DataUnitFusionData(int c, int threshold_ms, int i_num, int c
 
 void DataUnitFusionData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
     DataUnit::init(c, threshold_ms, i_num, cache, owner);
+    printf("DataUnitFusionData thresholdFrame:%d\n",this->thresholdFrame);
     timerBusinessName = "DataUnitFusionData";
     timerBusiness = new Timer(timerBusinessName);
     timerBusiness->start(fs_i, std::bind(task, this));
@@ -408,6 +409,7 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheC
         dataUnit->curTimestamp = (uint64_t) refer.timstamp;
     }
     VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp;
+    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
     uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
     uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
@@ -443,6 +445,7 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                                              int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
     //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
 //    Debug("第%d路 左值%lu 右值%lu", index, leftTimestamp, rightTimestamp);
+    VLOG(3) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp;
     bool isFind = false;
     do {
         if (dataUnit->emptyI(index)) {
@@ -451,8 +454,8 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
         } else {
             IType refer;
             if (dataUnit->frontI(refer, index)) {
-                auto data = (Data*)dataUnit->owner;
-                if (data->plateId.empty()){
+                auto data = (Data *) dataUnit->owner;
+                if (data->plateId.empty()) {
                     data->plateId = refer.matrixNo;
                 }
 
@@ -996,7 +999,7 @@ int DataUnitIntersectionOverflowAlarm::ThreadGetDataInRange(DataUnitIntersection
 
             if (dataUnit->frontI(refer, index)) {
                 auto data = (Data *) dataUnit->owner;
-                if (data->plateId.empty()){
+                if (data->plateId.empty()) {
                     data->plateId = refer.crossID;
                 }
 

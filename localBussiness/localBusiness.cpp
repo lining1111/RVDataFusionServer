@@ -276,8 +276,9 @@ void LocalBusiness::Task_FusionData(void *p) {
 
         FusionData data;
         if (dataUnit->popO(data)) {
-            printf("-----fusiondata crossid:%s,lstobjTarget size:%d,lstVideos size:%d\n",
-                   data.crossID.c_str(),data.lstObjTarget.size(),data.lstVideos.size());
+            LOG(INFO) << "fusionData crossID:" << data.crossID << ",timestamp:" << uint64_t(data.timstamp)
+                      << ",lstObjTarget size:" << data.lstObjTarget.size()
+                      << ",lstVideos size:" << data.lstVideos.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);

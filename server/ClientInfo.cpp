@@ -11,7 +11,7 @@
 #include <glog/logging.h>
 #include "common/CRC.h"
 
-#define DYFRAME 0
+//#define DYFRAME 0
 
 using namespace common;
 
@@ -245,6 +245,11 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
                         << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                         << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
                         << data->FindIndexInUnOrder(watchData.hardCode);
+                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
+                          << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
+                          << "timestamp:" << (uint64_t) watchData.timstamp << " lstObjTarget size:"
+                          << watchData.lstObjTarget.size() << " dataUnit i_vector index:"
+                          << data->FindIndexInUnOrder(watchData.hardCode);
 #ifdef DYFRAME
                 dataUnit->dyFrame->UpDate(watchData.timstamp);
 #endif
