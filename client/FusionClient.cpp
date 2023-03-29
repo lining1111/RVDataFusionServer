@@ -32,7 +32,7 @@ int FusionClient::Open() {
         return -1;
     }
     //先ping下远端开是否可以连接必须在root权限下使用
-    if (icmplib::Ping(server_ip,5).response != icmplib::PingResponseType::Success) {
+    if (icmplib::Ping(server_ip, 5).response != icmplib::PingResponseType::Success) {
 //        LOG(ERROR) << "client not connect:" << server_ip;
         return -1;
     }
@@ -151,7 +151,10 @@ int FusionClient::Close() {
         }
     }
 
-    delete rb;
+    if (rb != nullptr) {
+        delete rb;
+        rb = nullptr;
+    }
 
     delete[] pkgBuffer;
 

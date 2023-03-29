@@ -80,6 +80,7 @@ void LocalBusiness::StartTimerTask() {
     timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
     timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
 
+    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
@@ -97,6 +98,8 @@ void LocalBusiness::StopTimerTaskAll() {
     timerInWatchData_1_3_4.stop();
     timerInWatchData_2.stop();
     timerStopLinePassData.stop();
+
+    timerCreateFusionData.stop();
 }
 
 void LocalBusiness::Task_Keep(void *p) {
@@ -276,9 +279,9 @@ void LocalBusiness::Task_FusionData(void *p) {
 
         FusionData data;
         if (dataUnit->popO(data)) {
-            LOG(INFO) << "fusionData crossID:" << data.crossID << ",timestamp:" << uint64_t(data.timstamp)
-                      << ",lstObjTarget size:" << data.lstObjTarget.size()
-                      << ",lstVideos size:" << data.lstVideos.size();
+//            LOG(INFO) << "fusionData crossID:" << data.crossID << ",timestamp:" << uint64_t(data.timstamp)
+//                      << ",lstObjTarget size:" << data.lstObjTarget.size()
+//                      << ",lstVideos size:" << data.lstVideos.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);

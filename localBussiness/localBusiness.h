@@ -37,7 +37,7 @@ public:
     Timer timerInWatchData_2;
     Timer timerStopLinePassData;
 
-//    Timer timerCreateFusionData;
+    Timer timerCreateFusionData;
 
     void StartTimerTask();
 

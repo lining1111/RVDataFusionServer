@@ -9,6 +9,8 @@
 #include <vector>
 #include <future>
 #include <sys/epoll.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <iostream>
 #include "TcpServerClient.hpp"
 
@@ -134,6 +136,8 @@ private:
     */
     void cbConnect(int clientSock, struct sockaddr_in clientSockAddr) {
         string name = "serverClient " + to_string(clientSock);
+        //将客户端设置为nonblock
+        fcntl(clientSock, F_SETFL, O_NONBLOCK);
         TcpServerClient *client = new TcpServerClient(clientSock, clientSockAddr, name, this);
         printf("client %s connect", inet_ntoa(client->addr.sin_addr));
         pthread_mutex_lock(&lockClients);

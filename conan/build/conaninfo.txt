@@ -1,12 +1,10 @@
 [settings]
-    arch=armv8
-    arch_target=armv8
+    arch=x86_64
     build_type=Release
     compiler=gcc
     compiler.libcxx=libstdc++11
-    compiler.version=7.5
+    compiler.version=11.3
     os=Linux
-    os_target=Linux
 
 [requires]
     cpp-httplib/0.11.4
@@ -24,30 +22,26 @@
 
 
 [full_settings]
-    arch=armv8
-    arch_build=x86_64
-    arch_target=armv8
+    arch=x86_64
     build_type=Release
     compiler=gcc
     compiler.libcxx=libstdc++11
-    compiler.version=7.5
+    compiler.version=11.3
     os=Linux
-    os_build=Linux
-    os_target=Linux
 
 [full_requires]
     cpp-httplib/0.11.4:5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9
-    gflags/2.2.2:7809af96123795daecc8e40824218dcf31bfb47f
-    glog/0.6.0:8f07dd17ca803e448d9805e01b194c606e906f20
-    jsoncpp/1.9.5:8548d8fca6ceb9b52730acbcd1a582e65b4e2949
-    libcurl/7.87.0:ec07ffc6b9a13e2918f79000a98371cd6062b944
-    libunwind/1.6.2:7df535d32c9d20f58dd3d2efb0316281ba963910
-    libuuid/1.0.3:102fbb51a697085959ad9971131b6f4f0653f9b8
-    openssl/1.1.1s:102fbb51a697085959ad9971131b6f4f0653f9b8
-    protobuf/3.12.4:7b13204d0685a8cde926de2d623a10e4d6c122bf
-    sqlite3/3.40.1:9711f9335dc87fa5d3794c3f2ec44ccb97a6e454
-    xz_utils/5.2.5:102fbb51a697085959ad9971131b6f4f0653f9b8
-    zlib/1.2.13:102fbb51a697085959ad9971131b6f4f0653f9b8
+    gflags/2.2.2:8276fc35cb766ca9deed0a4af77288a667018486
+    glog/0.6.0:f08f9718beef686141a316524763731ab799cd47
+    jsoncpp/1.9.5:4ee234385446b17e6b660b359445a070922ea8e1
+    libcurl/7.87.0:fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d
+    libunwind/1.6.2:7ba7dcd533dadad363771bd6cbd521bd39886171
+    libuuid/1.0.3:c10a1a185befd155ccf9af892387d3946f445cf6
+    openssl/1.1.1s:c10a1a185befd155ccf9af892387d3946f445cf6
+    protobuf/3.12.4:a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345
+    sqlite3/3.40.1:cb16f4e0ce9f858cd81da2bc2c11b479c83fa462
+    xz_utils/5.2.5:c10a1a185befd155ccf9af892387d3946f445cf6
+    zlib/1.2.13:c10a1a185befd155ccf9af892387d3946f445cf6
 
 [full_options]
     cpp-httplib:with_brotli=False
@@ -212,19 +206,5 @@
 
 
 [env]
-    AR=aarch64-linux-gnu-ar
-    AS=aarch64-linux-gnu-as
-    CC=aarch64-linux-gnu-gcc
-    CFLAGS=-fPIE -fPIC -Wl,-rpath=./:./lib
-    CHOST=aarch64-linux-gnu
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
-    CONAN_CMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
-    CXX=aarch64-linux-gnu-g++
-    CXXFLAGS=-fPIE -fPIC -Wl,-rpath=./:./lib
-    LD=aarch64-linux-gnu-ld
-    PATH=[/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin]
-    RANLIB=aarch64-linux-gnu-ranlib
-    STRIP=aarch64-linux-gnu-strip
-    env_var=value
-    host_alias=aarch64-linux-gnu
+    CFLAGS=-Wl,-rpath=./:./lib
+    CXXFLAGS=-Wl,-rpath=./:./lib

@@ -24,7 +24,7 @@ class TcpServerClient {
 public:
     void *super;
     string name;
-    int sock;
+    int sock = 0;
     struct sockaddr_in addr;
     bool isLocalThreadRun = false;
     std::shared_future<int> futureDump;
@@ -67,7 +67,6 @@ public:
     }
 
     bool isConnect = false;
-    bool isClose = false;
 public:
     TcpServerClient(int sock, struct sockaddr_in addr, string name, void *super,
                     int recvMax = (1024 * 1024), timeval *readTimeout = nullptr) :
@@ -87,7 +86,7 @@ public:
 
 public:
     int Close() {
-        if (isClose) {
+        if (!isConnect) {
             return 0;
         }
         isConnect = false;
@@ -104,9 +103,10 @@ public:
             }
         }
         isLocalThreadRun = false;
-        delete rb;
-        rb = nullptr;
-        isClose = true;
+        if (rb != nullptr) {
+            delete rb;
+            rb = nullptr;
+        }
         return 0;
     }
 
