@@ -98,7 +98,7 @@ public:
             printf("epoll create fail\n");
             return -1;
         }
-        ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET;
+        ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
         ev.data.fd = sock;
         // 向epoll注册server_sockfd监听事件
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, sock, &ev) == -1) {
@@ -111,7 +111,7 @@ public:
 
 
     int EpollAdd(int client_fd) {
-        this->ev.events = EPOLLHUP | EPOLLET | EPOLLERR | EPOLLRDHUP;
+        this->ev.events = EPOLLHUP | EPOLLERR | EPOLLRDHUP;
         this->ev.data.fd = client_fd;
         if (epoll_ctl(this->epoll_fd, EPOLL_CTL_ADD, client_fd, &this->ev) == -1) {
             printf("epoll add:%d fail,%s\n", client_fd, strerror(errno));
