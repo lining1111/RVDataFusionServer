@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.10)
 project(RVDataFusionServer VERSION 0.2.0)
 string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
 set(build_time ${COMPILE_TIME})
@@ -53,5 +53,5 @@ add_executable(RVDataFusionServer main.cpp ${SRC_FILES})
 target_link_libraries(RVDataFusionServer ${LIBS})
 redefine_file_macro(RVDataFusionServer)
 
-add_subdirectory(test)
-add_custom_command(TARGET RVDataFusionServer POST_BUILD COMMAND echo ${COMPILE_TIME}>${CMAKE_BINARY_DIR}/version)
+#add_subdirectory(test)
+#add_custom_command(TARGET RVDataFusionServer POST_BUILD COMMAND echo ${COMPILE_TIME}>${CMAKE_BINARY_DIR}/version)

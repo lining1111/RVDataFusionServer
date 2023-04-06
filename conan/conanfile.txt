@@ -9,6 +9,7 @@ libuuid/1.0.3
 glog/0.6.0
 protobuf/3.12.4
 zlib/1.2.13
+eigen/3.4.0
 [options]
 [generators]
 cmake

@@ -14,8 +14,8 @@
 #include <functional>
 #include "os/timeTask.hpp"
 #include <glog/logging.h>
-#include "merge/merge.h"
 #include "merge/mergeStruct.h"
+
 
 using namespace common;
 
@@ -401,6 +401,15 @@ public:
 //    bool time_flag = true;
     int angle_value = -1000;
 
+
+        // 新版多路融合数据输入！
+    int GateContinueNum = 6;//连续6次都匹配上，转为稳定航迹
+    int GateFailNum = 3;//连续3次都失配，删除航迹
+    double  gate = 8;
+    bool time_flag=false;
+    vector<double> FixTheta={0,0,0};
+    vector<double> RoadTheta={0.0,90.0 / 180 * 3.1415926,-90.0 / 180 * 3.1415926};
+    
 
     int TaskNotMerge(RoadDataInSet roadDataInSet);
 

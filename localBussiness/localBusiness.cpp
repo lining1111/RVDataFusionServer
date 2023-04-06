@@ -80,7 +80,7 @@ void LocalBusiness::StartTimerTask() {
     timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
     timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
 
-    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
+//    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));

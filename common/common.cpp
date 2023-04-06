@@ -997,5 +997,78 @@ namespace common {
 
         return true;
     }
+
+    bool Camera3516Alarm_areaListItem::JsonMarshal(Json::Value &out) {
+        out["p0x"] = this->p0x;
+        out["p0y"] = this->p0y;
+        out["p1x"] = this->p1x;
+        out["p1y"] = this->p1y;
+        out["p2x"] = this->p2x;
+        out["p2y"] = this->p2y;
+        out["p3x"] = this->p3x;
+        out["p3y"] = this->p3y;
+        out["humanNum"] = this->humanNum;
+        out["humanType"] = this->humanType;
+        out["bicycleNum"] = this->bicycleNum;
+
+        return true;
+    }
+
+    bool Camera3516Alarm_areaListItem::JsonUnmarshal(Json::Value in) {
+        this->p0x = in["p0x"].asInt();
+        this->p0y = in["p0y"].asInt();
+        this->p1x = in["p1x"].asInt();
+        this->p1y = in["p1y"].asInt();
+        this->p2x = in["p2x"].asInt();
+        this->p2y = in["p2y"].asInt();
+        this->p3x = in["p3x"].asInt();
+        this->p3y = in["p3y"].asInt();
+        this->humanNum = in["humanNum"].asInt();
+        this->humanType = in["humanType"].asInt();
+        this->bicycleNum = in["bicycleNum"].asInt();
+        return true;
+    }
+
+    bool Camera3516Alarm::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        Json::Value areaList = Json::arrayValue;
+        if (!this->areaList.empty()) {
+            for (auto iter:this->areaList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                areaList.append(item);
+            }
+        } else {
+            areaList.resize(0);
+        }
+
+        out["areaList"] = areaList;
+        return true;
+    }
+
+    bool Camera3516Alarm::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        Json::Value areaList = in["areaList"];
+        if (areaList.isArray()) {
+            for (auto iter:areaList) {
+                Camera3516Alarm_areaListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->areaList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
 }
 

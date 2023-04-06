@@ -13,6 +13,10 @@
    "False"
   ],
   [
+   "eigen:MPL2_only",
+   "False"
+  ],
+  [
    "gflags:fPIC",
    "True"
   ],

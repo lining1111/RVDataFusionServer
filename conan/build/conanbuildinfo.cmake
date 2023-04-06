@@ -38,13 +38,13 @@ endmacro()
 #################
 ###  JSONCPP
 #################
-set(CONAN_JSONCPP_ROOT "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1")
-set(CONAN_INCLUDE_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/include")
-set(CONAN_LIB_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/lib")
+set(CONAN_JSONCPP_ROOT "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949")
+set(CONAN_INCLUDE_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/include")
+set(CONAN_LIB_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/lib")
 set(CONAN_BIN_DIRS_JSONCPP )
 set(CONAN_RES_DIRS_JSONCPP )
 set(CONAN_SRC_DIRS_JSONCPP )
-set(CONAN_BUILD_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/")
+set(CONAN_BUILD_DIRS_JSONCPP "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/")
 set(CONAN_FRAMEWORK_DIRS_JSONCPP )
 set(CONAN_LIBS_JSONCPP jsoncpp)
 set(CONAN_PKG_LIBS_JSONCPP jsoncpp)
@@ -76,10 +76,10 @@ set(CONAN_LIBS_JSONCPP ${CONAN_PKG_LIBS_JSONCPP} ${CONAN_SYSTEM_LIBS_JSONCPP} ${
 #################
 ###  SQLITE3
 #################
-set(CONAN_SQLITE3_ROOT "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462")
-set(CONAN_INCLUDE_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/include")
-set(CONAN_LIB_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/lib")
-set(CONAN_BIN_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/bin")
+set(CONAN_SQLITE3_ROOT "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454")
+set(CONAN_INCLUDE_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/include")
+set(CONAN_LIB_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/lib")
+set(CONAN_BIN_DIRS_SQLITE3 "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/bin")
 set(CONAN_RES_DIRS_SQLITE3 )
 set(CONAN_SRC_DIRS_SQLITE3 )
 set(CONAN_BUILD_DIRS_SQLITE3 )
@@ -114,11 +114,11 @@ set(CONAN_LIBS_SQLITE3 ${CONAN_PKG_LIBS_SQLITE3} ${CONAN_SYSTEM_LIBS_SQLITE3} ${
 #################
 ###  LIBCURL
 #################
-set(CONAN_LIBCURL_ROOT "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d")
-set(CONAN_INCLUDE_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/include")
-set(CONAN_LIB_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/lib")
-set(CONAN_BIN_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/bin")
-set(CONAN_RES_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/res")
+set(CONAN_LIBCURL_ROOT "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944")
+set(CONAN_INCLUDE_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/include")
+set(CONAN_LIB_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/lib")
+set(CONAN_BIN_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/bin")
+set(CONAN_RES_DIRS_LIBCURL "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/res")
 set(CONAN_SRC_DIRS_LIBCURL )
 set(CONAN_BUILD_DIRS_LIBCURL )
 set(CONAN_FRAMEWORK_DIRS_LIBCURL )
@@ -191,14 +191,14 @@ set(CONAN_LIBS_CPP-HTTPLIB ${CONAN_PKG_LIBS_CPP-HTTPLIB} ${CONAN_SYSTEM_LIBS_CPP
 #################
 ###  LIBUUID
 #################
-set(CONAN_LIBUUID_ROOT "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6")
-set(CONAN_INCLUDE_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
-			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include/uuid")
-set(CONAN_LIB_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib")
+set(CONAN_LIBUUID_ROOT "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8")
+set(CONAN_INCLUDE_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include"
+			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include/uuid")
+set(CONAN_LIB_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib")
 set(CONAN_BIN_DIRS_LIBUUID )
 set(CONAN_RES_DIRS_LIBUUID )
 set(CONAN_SRC_DIRS_LIBUUID )
-set(CONAN_BUILD_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/")
+set(CONAN_BUILD_DIRS_LIBUUID "/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/")
 set(CONAN_FRAMEWORK_DIRS_LIBUUID )
 set(CONAN_LIBS_LIBUUID uuid)
 set(CONAN_PKG_LIBS_LIBUUID uuid)
@@ -230,13 +230,13 @@ set(CONAN_LIBS_LIBUUID ${CONAN_PKG_LIBS_LIBUUID} ${CONAN_SYSTEM_LIBS_LIBUUID} ${
 #################
 ###  GLOG
 #################
-set(CONAN_GLOG_ROOT "/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47")
-set(CONAN_INCLUDE_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/include")
-set(CONAN_LIB_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/lib")
+set(CONAN_GLOG_ROOT "/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20")
+set(CONAN_INCLUDE_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/include")
+set(CONAN_LIB_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/lib")
 set(CONAN_BIN_DIRS_GLOG )
 set(CONAN_RES_DIRS_GLOG )
 set(CONAN_SRC_DIRS_GLOG )
-set(CONAN_BUILD_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/")
+set(CONAN_BUILD_DIRS_GLOG "/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/")
 set(CONAN_FRAMEWORK_DIRS_GLOG )
 set(CONAN_LIBS_GLOG glog)
 set(CONAN_PKG_LIBS_GLOG glog)
@@ -270,24 +270,24 @@ set(CONAN_LIBS_GLOG ${CONAN_PKG_LIBS_GLOG} ${CONAN_SYSTEM_LIBS_GLOG} ${CONAN_FRA
 #################
 ###  PROTOBUF
 #################
-set(CONAN_PROTOBUF_ROOT "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345")
-set(CONAN_INCLUDE_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/include")
-set(CONAN_LIB_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib")
-set(CONAN_BIN_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/bin")
+set(CONAN_PROTOBUF_ROOT "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf")
+set(CONAN_INCLUDE_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/include")
+set(CONAN_LIB_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib")
+set(CONAN_BIN_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/bin")
 set(CONAN_RES_DIRS_PROTOBUF )
 set(CONAN_SRC_DIRS_PROTOBUF )
-set(CONAN_BUILD_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf")
+set(CONAN_BUILD_DIRS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf")
 set(CONAN_FRAMEWORK_DIRS_PROTOBUF )
 set(CONAN_LIBS_PROTOBUF protoc protobuf)
 set(CONAN_PKG_LIBS_PROTOBUF protoc protobuf)
-set(CONAN_SYSTEM_LIBS_PROTOBUF pthread)
+set(CONAN_SYSTEM_LIBS_PROTOBUF pthread atomic)
 set(CONAN_FRAMEWORKS_PROTOBUF )
 set(CONAN_FRAMEWORKS_FOUND_PROTOBUF "")  # Will be filled later
 set(CONAN_DEFINES_PROTOBUF )
-set(CONAN_BUILD_MODULES_PATHS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-generate.cmake"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-module.cmake"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-options.cmake")
+set(CONAN_BUILD_MODULES_PATHS_PROTOBUF "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-generate.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-module.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-options.cmake")
 # COMPILE_DEFINITIONS are equal to CONAN_DEFINES without -D, for targets
 set(CONAN_COMPILE_DEFINITIONS_PROTOBUF )
 
@@ -309,15 +309,53 @@ set(CONAN_LIBS_PROTOBUF ${CONAN_PKG_LIBS_PROTOBUF} ${CONAN_SYSTEM_LIBS_PROTOBUF}
 
 
 #################
+###  EIGEN
+#################
+set(CONAN_EIGEN_ROOT "/home/lining/.conan/data/eigen/3.4.0/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9")
+set(CONAN_INCLUDE_DIRS_EIGEN "/home/lining/.conan/data/eigen/3.4.0/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include/eigen3")
+set(CONAN_LIB_DIRS_EIGEN )
+set(CONAN_BIN_DIRS_EIGEN )
+set(CONAN_RES_DIRS_EIGEN )
+set(CONAN_SRC_DIRS_EIGEN )
+set(CONAN_BUILD_DIRS_EIGEN )
+set(CONAN_FRAMEWORK_DIRS_EIGEN )
+set(CONAN_LIBS_EIGEN )
+set(CONAN_PKG_LIBS_EIGEN )
+set(CONAN_SYSTEM_LIBS_EIGEN m)
+set(CONAN_FRAMEWORKS_EIGEN )
+set(CONAN_FRAMEWORKS_FOUND_EIGEN "")  # Will be filled later
+set(CONAN_DEFINES_EIGEN )
+set(CONAN_BUILD_MODULES_PATHS_EIGEN )
+# COMPILE_DEFINITIONS are equal to CONAN_DEFINES without -D, for targets
+set(CONAN_COMPILE_DEFINITIONS_EIGEN )
+
+set(CONAN_C_FLAGS_EIGEN "")
+set(CONAN_CXX_FLAGS_EIGEN "")
+set(CONAN_SHARED_LINKER_FLAGS_EIGEN "")
+set(CONAN_EXE_LINKER_FLAGS_EIGEN "")
+
+# For modern cmake targets we use the list variables (separated with ;)
+set(CONAN_C_FLAGS_EIGEN_LIST "")
+set(CONAN_CXX_FLAGS_EIGEN_LIST "")
+set(CONAN_SHARED_LINKER_FLAGS_EIGEN_LIST "")
+set(CONAN_EXE_LINKER_FLAGS_EIGEN_LIST "")
+
+# Apple Frameworks
+conan_find_apple_frameworks(CONAN_FRAMEWORKS_FOUND_EIGEN "${CONAN_FRAMEWORKS_EIGEN}" "_EIGEN" "")
+# Append to aggregated values variable
+set(CONAN_LIBS_EIGEN ${CONAN_PKG_LIBS_EIGEN} ${CONAN_SYSTEM_LIBS_EIGEN} ${CONAN_FRAMEWORKS_FOUND_EIGEN})
+
+
+#################
 ###  GFLAGS
 #################
-set(CONAN_GFLAGS_ROOT "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486")
-set(CONAN_INCLUDE_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/include")
-set(CONAN_LIB_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/lib")
-set(CONAN_BIN_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/bin")
+set(CONAN_GFLAGS_ROOT "/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f")
+set(CONAN_INCLUDE_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/include")
+set(CONAN_LIB_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/lib")
+set(CONAN_BIN_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/bin")
 set(CONAN_RES_DIRS_GFLAGS )
 set(CONAN_SRC_DIRS_GFLAGS )
-set(CONAN_BUILD_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/")
+set(CONAN_BUILD_DIRS_GFLAGS "/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/")
 set(CONAN_FRAMEWORK_DIRS_GFLAGS )
 set(CONAN_LIBS_GFLAGS gflags_nothreads)
 set(CONAN_PKG_LIBS_GFLAGS gflags_nothreads)
@@ -349,10 +387,10 @@ set(CONAN_LIBS_GFLAGS ${CONAN_PKG_LIBS_GFLAGS} ${CONAN_SYSTEM_LIBS_GFLAGS} ${CON
 #################
 ###  OPENSSL
 #################
-set(CONAN_OPENSSL_ROOT "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6")
-set(CONAN_INCLUDE_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include")
-set(CONAN_LIB_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib")
-set(CONAN_BIN_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin")
+set(CONAN_OPENSSL_ROOT "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8")
+set(CONAN_INCLUDE_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include")
+set(CONAN_LIB_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib")
+set(CONAN_BIN_DIRS_OPENSSL "/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/bin")
 set(CONAN_RES_DIRS_OPENSSL )
 set(CONAN_SRC_DIRS_OPENSSL )
 set(CONAN_BUILD_DIRS_OPENSSL )
@@ -387,9 +425,9 @@ set(CONAN_LIBS_OPENSSL ${CONAN_PKG_LIBS_OPENSSL} ${CONAN_SYSTEM_LIBS_OPENSSL} ${
 #################
 ###  LIBUNWIND
 #################
-set(CONAN_LIBUNWIND_ROOT "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171")
-set(CONAN_INCLUDE_DIRS_LIBUNWIND "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/include")
-set(CONAN_LIB_DIRS_LIBUNWIND "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/lib")
+set(CONAN_LIBUNWIND_ROOT "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7df535d32c9d20f58dd3d2efb0316281ba963910")
+set(CONAN_INCLUDE_DIRS_LIBUNWIND "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7df535d32c9d20f58dd3d2efb0316281ba963910/include")
+set(CONAN_LIB_DIRS_LIBUNWIND "/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7df535d32c9d20f58dd3d2efb0316281ba963910/lib")
 set(CONAN_BIN_DIRS_LIBUNWIND )
 set(CONAN_RES_DIRS_LIBUNWIND )
 set(CONAN_SRC_DIRS_LIBUNWIND )
@@ -425,13 +463,13 @@ set(CONAN_LIBS_LIBUNWIND ${CONAN_PKG_LIBS_LIBUNWIND} ${CONAN_SYSTEM_LIBS_LIBUNWI
 #################
 ###  ZLIB
 #################
-set(CONAN_ZLIB_ROOT "/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6")
-set(CONAN_INCLUDE_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include")
-set(CONAN_LIB_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib")
+set(CONAN_ZLIB_ROOT "/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8")
+set(CONAN_INCLUDE_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include")
+set(CONAN_LIB_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib")
 set(CONAN_BIN_DIRS_ZLIB )
 set(CONAN_RES_DIRS_ZLIB )
 set(CONAN_SRC_DIRS_ZLIB )
-set(CONAN_BUILD_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/")
+set(CONAN_BUILD_DIRS_ZLIB "/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/")
 set(CONAN_FRAMEWORK_DIRS_ZLIB )
 set(CONAN_LIBS_ZLIB z)
 set(CONAN_PKG_LIBS_ZLIB z)
@@ -463,13 +501,13 @@ set(CONAN_LIBS_ZLIB ${CONAN_PKG_LIBS_ZLIB} ${CONAN_SYSTEM_LIBS_ZLIB} ${CONAN_FRA
 #################
 ###  XZ_UTILS
 #################
-set(CONAN_XZ_UTILS_ROOT "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6")
-set(CONAN_INCLUDE_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include")
-set(CONAN_LIB_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib")
-set(CONAN_BIN_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin")
+set(CONAN_XZ_UTILS_ROOT "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8")
+set(CONAN_INCLUDE_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include")
+set(CONAN_LIB_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib")
+set(CONAN_BIN_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/bin")
 set(CONAN_RES_DIRS_XZ_UTILS )
 set(CONAN_SRC_DIRS_XZ_UTILS )
-set(CONAN_BUILD_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/")
+set(CONAN_BUILD_DIRS_XZ_UTILS "/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/")
 set(CONAN_FRAMEWORK_DIRS_XZ_UTILS )
 set(CONAN_LIBS_XZ_UTILS lzma)
 set(CONAN_PKG_LIBS_XZ_UTILS lzma)
@@ -503,14 +541,18 @@ set(CONAN_LIBS_XZ_UTILS ${CONAN_PKG_LIBS_XZ_UTILS} ${CONAN_SYSTEM_LIBS_XZ_UTILS}
 set(CONAN_PACKAGE_NAME None)
 set(CONAN_PACKAGE_VERSION None)
 
-set(CONAN_SETTINGS_ARCH "x86_64")
+set(CONAN_SETTINGS_ARCH "armv8")
+set(CONAN_SETTINGS_ARCH_BUILD "x86_64")
+set(CONAN_SETTINGS_ARCH_TARGET "armv8")
 set(CONAN_SETTINGS_BUILD_TYPE "Release")
 set(CONAN_SETTINGS_COMPILER "gcc")
 set(CONAN_SETTINGS_COMPILER_LIBCXX "libstdc++11")
-set(CONAN_SETTINGS_COMPILER_VERSION "11.3")
+set(CONAN_SETTINGS_COMPILER_VERSION "7.5")
 set(CONAN_SETTINGS_OS "Linux")
+set(CONAN_SETTINGS_OS_BUILD "Linux")
+set(CONAN_SETTINGS_OS_TARGET "Linux")
 
-set(CONAN_DEPENDENCIES jsoncpp sqlite3 libcurl cpp-httplib libuuid glog protobuf gflags openssl libunwind zlib xz_utils)
+set(CONAN_DEPENDENCIES jsoncpp sqlite3 libcurl cpp-httplib libuuid glog protobuf eigen gflags openssl libunwind zlib xz_utils)
 # Storing original command line args (CMake helper) flags
 set(CONAN_CMD_CXX_FLAGS ${CONAN_CXX_FLAGS})
 
@@ -518,60 +560,61 @@ set(CONAN_CMD_SHARED_LINKER_FLAGS ${CONAN_SHARED_LINKER_FLAGS})
 set(CONAN_CMD_C_FLAGS ${CONAN_C_FLAGS})
 # Defining accumulated conan variables for all deps
 
-set(CONAN_INCLUDE_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/include"
-			"/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/include"
-			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/include"
+set(CONAN_INCLUDE_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/include"
+			"/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/include"
+			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/include"
 			"/home/lining/.conan/data/cpp-httplib/0.11.4/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include"
 			"/home/lining/.conan/data/cpp-httplib/0.11.4/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include/httplib"
-			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
-			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include/uuid"
-			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/include"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/include"
-			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/include"
-			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
-			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/include"
-			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include"
-			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/include" ${CONAN_INCLUDE_DIRS})
-set(CONAN_LIB_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/lib"
-			"/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/lib"
-			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/lib"
-			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib"
-			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/lib"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib"
-			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/lib"
-			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib"
-			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7ba7dcd533dadad363771bd6cbd521bd39886171/lib"
-			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib"
-			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/lib" ${CONAN_LIB_DIRS})
-set(CONAN_BIN_DIRS "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/cb16f4e0ce9f858cd81da2bc2c11b479c83fa462/bin"
-			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/bin"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/bin"
-			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/bin"
-			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin"
-			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/bin" ${CONAN_BIN_DIRS})
-set(CONAN_RES_DIRS "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/fc1cbc81c9e5f2ed363ee576ce8c75f483bc2b9d/res" ${CONAN_RES_DIRS})
+			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include"
+			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include/uuid"
+			"/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/include"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/include"
+			"/home/lining/.conan/data/eigen/3.4.0/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/include/eigen3"
+			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/include"
+			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include"
+			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7df535d32c9d20f58dd3d2efb0316281ba963910/include"
+			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include"
+			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/include" ${CONAN_INCLUDE_DIRS})
+set(CONAN_LIB_DIRS "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/lib"
+			"/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/lib"
+			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/lib"
+			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib"
+			"/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/lib"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib"
+			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/lib"
+			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib"
+			"/home/lining/.conan/data/libunwind/1.6.2/_/_/package/7df535d32c9d20f58dd3d2efb0316281ba963910/lib"
+			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib"
+			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/lib" ${CONAN_LIB_DIRS})
+set(CONAN_BIN_DIRS "/home/lining/.conan/data/sqlite3/3.40.1/_/_/package/9711f9335dc87fa5d3794c3f2ec44ccb97a6e454/bin"
+			"/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/bin"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/bin"
+			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/bin"
+			"/home/lining/.conan/data/openssl/1.1.1s/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/bin"
+			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/bin" ${CONAN_BIN_DIRS})
+set(CONAN_RES_DIRS "/home/lining/.conan/data/libcurl/7.87.0/_/_/package/ec07ffc6b9a13e2918f79000a98371cd6062b944/res" ${CONAN_RES_DIRS})
 set(CONAN_FRAMEWORK_DIRS  ${CONAN_FRAMEWORK_DIRS})
 set(CONAN_LIBS jsoncpp sqlite3 curl uuid glog protoc protobuf gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_LIBS})
 set(CONAN_PKG_LIBS jsoncpp sqlite3 curl uuid glog protoc protobuf gflags_nothreads ssl crypto unwind-ptrace unwind-setjmp unwind-coredump unwind-generic unwind z lzma ${CONAN_PKG_LIBS})
-set(CONAN_SYSTEM_LIBS m dl rt pthread ${CONAN_SYSTEM_LIBS})
+set(CONAN_SYSTEM_LIBS atomic m dl rt pthread ${CONAN_SYSTEM_LIBS})
 set(CONAN_FRAMEWORKS  ${CONAN_FRAMEWORKS})
 set(CONAN_FRAMEWORKS_FOUND "")  # Will be filled later
 set(CONAN_DEFINES "-DLZMA_API_STATIC"
 			"-DGFLAGS_DLL_DECLARE_FLAG="
 			"-DGFLAGS_DLL_DEFINE_FLAG="
 			"-DCURL_STATICLIB=1" ${CONAN_DEFINES})
-set(CONAN_BUILD_MODULES_PATHS "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-generate.cmake"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-module.cmake"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf/protobuf-options.cmake" ${CONAN_BUILD_MODULES_PATHS})
-set(CONAN_CMAKE_MODULE_PATH "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/4ee234385446b17e6b660b359445a070922ea8e1/"
+set(CONAN_BUILD_MODULES_PATHS "/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-generate.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-module.cmake"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf/protobuf-options.cmake" ${CONAN_BUILD_MODULES_PATHS})
+set(CONAN_CMAKE_MODULE_PATH "/home/lining/.conan/data/jsoncpp/1.9.5/_/_/package/8548d8fca6ceb9b52730acbcd1a582e65b4e2949/"
 			"/home/lining/.conan/data/cpp-httplib/0.11.4/_/_/package/5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9/"
-			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/"
-			"/home/lining/.conan/data/glog/0.6.0/_/_/package/f08f9718beef686141a316524763731ab799cd47/"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/"
-			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/a5f05e84ed3c1ed101d59e6d7a1d5316a69a0345/lib/cmake/protobuf"
-			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/8276fc35cb766ca9deed0a4af77288a667018486/"
-			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/"
-			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/c10a1a185befd155ccf9af892387d3946f445cf6/" ${CONAN_CMAKE_MODULE_PATH})
+			"/home/lining/.conan/data/libuuid/1.0.3/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/"
+			"/home/lining/.conan/data/glog/0.6.0/_/_/package/8f07dd17ca803e448d9805e01b194c606e906f20/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/"
+			"/home/lining/.conan/data/protobuf/3.12.4/_/_/package/7b13204d0685a8cde926de2d623a10e4d6c122bf/lib/cmake/protobuf"
+			"/home/lining/.conan/data/gflags/2.2.2/_/_/package/7809af96123795daecc8e40824218dcf31bfb47f/"
+			"/home/lining/.conan/data/zlib/1.2.13/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/"
+			"/home/lining/.conan/data/xz_utils/5.2.5/_/_/package/102fbb51a697085959ad9971131b6f4f0653f9b8/" ${CONAN_CMAKE_MODULE_PATH})
 
 set(CONAN_CXX_FLAGS " ${CONAN_CXX_FLAGS}")
 set(CONAN_SHARED_LINKER_FLAGS " ${CONAN_SHARED_LINKER_FLAGS}")
@@ -1085,6 +1128,76 @@ macro(conan_define_targets)
                                                                   $<$<CONFIG:Debug>:${CONAN_C_FLAGS_PROTOBUF_DEBUG_LIST}  ${CONAN_CXX_FLAGS_PROTOBUF_DEBUG_LIST}>)
 
 
+    set(_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES "${CONAN_SYSTEM_LIBS_EIGEN} ${CONAN_FRAMEWORKS_FOUND_EIGEN} ")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_EIGEN_DEPENDENCIES "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_EIGEN}" "${CONAN_LIB_DIRS_EIGEN}"
+                                  CONAN_PACKAGE_TARGETS_EIGEN "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES}"
+                                  "" eigen)
+    set(_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_DEBUG "${CONAN_SYSTEM_LIBS_EIGEN_DEBUG} ${CONAN_FRAMEWORKS_FOUND_EIGEN_DEBUG} ")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_DEBUG "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_DEBUG}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_EIGEN_DEBUG}" "${CONAN_LIB_DIRS_EIGEN_DEBUG}"
+                                  CONAN_PACKAGE_TARGETS_EIGEN_DEBUG "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_DEBUG}"
+                                  "debug" eigen)
+    set(_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELEASE "${CONAN_SYSTEM_LIBS_EIGEN_RELEASE} ${CONAN_FRAMEWORKS_FOUND_EIGEN_RELEASE} ")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELEASE "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELEASE}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_EIGEN_RELEASE}" "${CONAN_LIB_DIRS_EIGEN_RELEASE}"
+                                  CONAN_PACKAGE_TARGETS_EIGEN_RELEASE "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELEASE}"
+                                  "release" eigen)
+    set(_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELWITHDEBINFO "${CONAN_SYSTEM_LIBS_EIGEN_RELWITHDEBINFO} ${CONAN_FRAMEWORKS_FOUND_EIGEN_RELWITHDEBINFO} ")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELWITHDEBINFO "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELWITHDEBINFO}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_EIGEN_RELWITHDEBINFO}" "${CONAN_LIB_DIRS_EIGEN_RELWITHDEBINFO}"
+                                  CONAN_PACKAGE_TARGETS_EIGEN_RELWITHDEBINFO "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELWITHDEBINFO}"
+                                  "relwithdebinfo" eigen)
+    set(_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_MINSIZEREL "${CONAN_SYSTEM_LIBS_EIGEN_MINSIZEREL} ${CONAN_FRAMEWORKS_FOUND_EIGEN_MINSIZEREL} ")
+    string(REPLACE " " ";" _CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_MINSIZEREL "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_MINSIZEREL}")
+    conan_package_library_targets("${CONAN_PKG_LIBS_EIGEN_MINSIZEREL}" "${CONAN_LIB_DIRS_EIGEN_MINSIZEREL}"
+                                  CONAN_PACKAGE_TARGETS_EIGEN_MINSIZEREL "${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_MINSIZEREL}"
+                                  "minsizerel" eigen)
+
+    add_library(CONAN_PKG::eigen INTERFACE IMPORTED)
+
+    # Property INTERFACE_LINK_FLAGS do not work, necessary to add to INTERFACE_LINK_LIBRARIES
+    set_property(TARGET CONAN_PKG::eigen PROPERTY INTERFACE_LINK_LIBRARIES ${CONAN_PACKAGE_TARGETS_EIGEN} ${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_EIGEN_LIST}>
+
+                                                                 $<$<CONFIG:Release>:${CONAN_PACKAGE_TARGETS_EIGEN_RELEASE} ${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELEASE}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_RELEASE_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_RELEASE_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_EIGEN_RELEASE_LIST}>>
+
+                                                                 $<$<CONFIG:RelWithDebInfo>:${CONAN_PACKAGE_TARGETS_EIGEN_RELWITHDEBINFO} ${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_RELWITHDEBINFO}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_RELWITHDEBINFO_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_RELWITHDEBINFO_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_EIGEN_RELWITHDEBINFO_LIST}>>
+
+                                                                 $<$<CONFIG:MinSizeRel>:${CONAN_PACKAGE_TARGETS_EIGEN_MINSIZEREL} ${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_MINSIZEREL}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_MINSIZEREL_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_MINSIZEREL_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_EIGEN_MINSIZEREL_LIST}>>
+
+                                                                 $<$<CONFIG:Debug>:${CONAN_PACKAGE_TARGETS_EIGEN_DEBUG} ${_CONAN_PKG_LIBS_EIGEN_DEPENDENCIES_DEBUG}
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_DEBUG_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>:${CONAN_SHARED_LINKER_FLAGS_EIGEN_DEBUG_LIST}>
+                                                                 $<$<STREQUAL:$<TARGET_PROPERTY:TYPE>,EXECUTABLE>:${CONAN_EXE_LINKER_FLAGS_EIGEN_DEBUG_LIST}>>)
+    set_property(TARGET CONAN_PKG::eigen PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${CONAN_INCLUDE_DIRS_EIGEN}
+                                                                      $<$<CONFIG:Release>:${CONAN_INCLUDE_DIRS_EIGEN_RELEASE}>
+                                                                      $<$<CONFIG:RelWithDebInfo>:${CONAN_INCLUDE_DIRS_EIGEN_RELWITHDEBINFO}>
+                                                                      $<$<CONFIG:MinSizeRel>:${CONAN_INCLUDE_DIRS_EIGEN_MINSIZEREL}>
+                                                                      $<$<CONFIG:Debug>:${CONAN_INCLUDE_DIRS_EIGEN_DEBUG}>)
+    set_property(TARGET CONAN_PKG::eigen PROPERTY INTERFACE_COMPILE_DEFINITIONS ${CONAN_COMPILE_DEFINITIONS_EIGEN}
+                                                                      $<$<CONFIG:Release>:${CONAN_COMPILE_DEFINITIONS_EIGEN_RELEASE}>
+                                                                      $<$<CONFIG:RelWithDebInfo>:${CONAN_COMPILE_DEFINITIONS_EIGEN_RELWITHDEBINFO}>
+                                                                      $<$<CONFIG:MinSizeRel>:${CONAN_COMPILE_DEFINITIONS_EIGEN_MINSIZEREL}>
+                                                                      $<$<CONFIG:Debug>:${CONAN_COMPILE_DEFINITIONS_EIGEN_DEBUG}>)
+    set_property(TARGET CONAN_PKG::eigen PROPERTY INTERFACE_COMPILE_OPTIONS ${CONAN_C_FLAGS_EIGEN_LIST} ${CONAN_CXX_FLAGS_EIGEN_LIST}
+                                                                  $<$<CONFIG:Release>:${CONAN_C_FLAGS_EIGEN_RELEASE_LIST} ${CONAN_CXX_FLAGS_EIGEN_RELEASE_LIST}>
+                                                                  $<$<CONFIG:RelWithDebInfo>:${CONAN_C_FLAGS_EIGEN_RELWITHDEBINFO_LIST} ${CONAN_CXX_FLAGS_EIGEN_RELWITHDEBINFO_LIST}>
+                                                                  $<$<CONFIG:MinSizeRel>:${CONAN_C_FLAGS_EIGEN_MINSIZEREL_LIST} ${CONAN_CXX_FLAGS_EIGEN_MINSIZEREL_LIST}>
+                                                                  $<$<CONFIG:Debug>:${CONAN_C_FLAGS_EIGEN_DEBUG_LIST}  ${CONAN_CXX_FLAGS_EIGEN_DEBUG_LIST}>)
+
+
     set(_CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES "${CONAN_SYSTEM_LIBS_GFLAGS} ${CONAN_FRAMEWORKS_FOUND_GFLAGS} ")
     string(REPLACE " " ";" _CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES "${_CONAN_PKG_LIBS_GFLAGS_DEPENDENCIES}")
     conan_package_library_targets("${CONAN_PKG_LIBS_GFLAGS}" "${CONAN_LIB_DIRS_GFLAGS}"
@@ -1434,7 +1547,7 @@ macro(conan_define_targets)
                                                                   $<$<CONFIG:MinSizeRel>:${CONAN_C_FLAGS_XZ_UTILS_MINSIZEREL_LIST} ${CONAN_CXX_FLAGS_XZ_UTILS_MINSIZEREL_LIST}>
                                                                   $<$<CONFIG:Debug>:${CONAN_C_FLAGS_XZ_UTILS_DEBUG_LIST}  ${CONAN_CXX_FLAGS_XZ_UTILS_DEBUG_LIST}>)
 
-    set(CONAN_TARGETS CONAN_PKG::jsoncpp CONAN_PKG::sqlite3 CONAN_PKG::libcurl CONAN_PKG::cpp-httplib CONAN_PKG::libuuid CONAN_PKG::glog CONAN_PKG::protobuf CONAN_PKG::gflags CONAN_PKG::openssl CONAN_PKG::libunwind CONAN_PKG::zlib CONAN_PKG::xz_utils)
+    set(CONAN_TARGETS CONAN_PKG::jsoncpp CONAN_PKG::sqlite3 CONAN_PKG::libcurl CONAN_PKG::cpp-httplib CONAN_PKG::libuuid CONAN_PKG::glog CONAN_PKG::protobuf CONAN_PKG::eigen CONAN_PKG::gflags CONAN_PKG::openssl CONAN_PKG::libunwind CONAN_PKG::zlib CONAN_PKG::xz_utils)
 
 endmacro()
 

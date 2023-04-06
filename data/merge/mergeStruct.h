@@ -5,7 +5,10 @@
 #ifndef _MERGESTRUCT_H
 #define _MERGESTRUCT_H
 
+#include "common/common.h"
+#include "StructDefine.h"
 
+using namespace common;
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget);
 
 void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT);

@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <future>
 #include <glog/logging.h>
+#include <data/merge/roadmerge_kalman.h>
 #include "Data.h"
 
 DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache, void *owner) :
@@ -353,7 +354,7 @@ DataUnitFusionData::DataUnitFusionData(int c, int threshold_ms, int i_num, int c
 
 void DataUnitFusionData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
     DataUnit::init(c, threshold_ms, i_num, cache, owner);
-    printf("DataUnitFusionData thresholdFrame:%d\n",this->thresholdFrame);
+    printf("DataUnitFusionData thresholdFrame:%d\n", this->thresholdFrame);
     timerBusinessName = "DataUnitFusionData";
     timerBusiness = new Timer(timerBusinessName);
     timerBusiness->start(fs_i, std::bind(task, this));
@@ -558,56 +559,56 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
             switch (i) {
                 case 0: {
                     //North
-                    item.objID1 = iter1.objID;
-                    item.cameraID1 = iter1.cameraID;
-                    item.objID2 = -INF;
-                    item.cameraID2 = -INF;
-                    item.objID3 = -INF;
-                    item.cameraID3 = -INF;
-                    item.objID4 = -INF;
-                    item.cameraID4 = -INF;
+                    item.objID.push_back(iter1.objID);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.cameraID.push_back(iter1.cameraID);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
 
                     item.showID = iter1.objID + 10000;
                 }
                     break;
                 case 1: {
                     //East
-                    item.objID1 = -INF;
-                    item.cameraID1 = -INF;
-                    item.objID2 = iter1.objID;
-                    item.cameraID2 = iter1.cameraID;
-                    item.objID3 = -INF;
-                    item.cameraID3 = -INF;
-                    item.objID4 = -INF;
-                    item.cameraID4 = -INF;
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(iter1.objID);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(iter1.cameraID);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
 
                     item.showID = iter1.objID + 20000;
                 }
                     break;
                 case 2: {
                     //South
-                    item.objID1 = -INF;
-                    item.cameraID1 = -INF;
-                    item.objID2 = -INF;
-                    item.cameraID2 = -INF;
-                    item.objID3 = iter1.objID;
-                    item.cameraID3 = iter1.cameraID;
-                    item.objID4 = -INF;
-                    item.cameraID4 = -INF;
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(iter1.objID);
+                    item.objID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(iter1.cameraID);
+                    item.cameraID.push_back(-INF);
 
                     item.showID = iter1.objID + 30000;
                 }
                     break;
                 case 3: {
                     //West
-                    item.objID1 = -INF;
-                    item.cameraID1 = -INF;
-                    item.objID2 = -INF;
-                    item.cameraID2 = -INF;
-                    item.objID3 = -INF;
-                    item.cameraID3 = -INF;
-                    item.objID4 = iter1.objID;
-                    item.cameraID4 = iter1.cameraID;
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(-INF);
+                    item.objID.push_back(iter1.objID);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(-INF);
+                    item.cameraID.push_back(iter1.cameraID);
 
                     item.showID = iter1.objID + 40000;
                 }
@@ -624,7 +625,8 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
             item.locationY = iter1.locationY;
             memcpy(item.distance, iter1.distance, sizeof(iter1.distance));
             item.directionAngle = iter1.directionAngle;
-            item.speed = sqrt(iter1.speedX * iter1.speedX + iter1.speedY * iter1.speedY);
+            item.speedX = iter1.speedX;
+            item.speedY = iter1.speedY;
             item.latitude = iter1.latitude;
             item.longitude = iter1.longitude;
             item.flag_new = 0;
@@ -652,6 +654,7 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
             haveOneRoadDataCount++;
         }
     }
+
     VLOG(3) << "融合算法细节---有数据的路数:" << haveOneRoadDataCount;
     //存输入数据到文件
     if (0) {
@@ -719,8 +722,7 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
             break;
         default : {
             VLOG(3) << "融合算法细节---多于1路有数据,走融合";
-            OBJECT_INFO_NEW dataOut[1000];
-            memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
+            vector<OBJECT_INFO_NEW> dataOut;
             bool isFirstFrame = true;//如果算法缓存内有数则为假
             if (!cacheAlgorithmMerge.empty()) {
                 isFirstFrame = false;
@@ -747,17 +749,55 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
                         break;
                 }
             }
-            int num = merge_total(repateX, widthX, widthY, Xmax, Ymax, gatetx, gatety, gatex, gatey, isFirstFrame,
-                                  mergeData.objInput.roadDataList.at(0).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(0).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(1).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(1).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(2).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(2).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(3).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(3).listObjs.size(),
-                                  l1_obj.data(), l1_obj.size(), l2_obj.data(), l2_obj.size(),
-                                  dataOut, angle_value);
+            LOG(INFO)<<"==========2";
+            // 新版多路融合输入数据
+            vector<vector<OBJECT_INFO_T>> data_input;
+            vector<OBJECT_INFO_T> data_input_item;
+            data_input_item.clear();
+            data_input_item.assign(mergeData.objInput.roadDataList.at(0).listObjs.begin(),
+                                   mergeData.objInput.roadDataList.at(0).listObjs.end());
+            data_input.push_back(data_input_item);
+
+            data_input_item.clear();
+            data_input_item.assign(mergeData.objInput.roadDataList.at(1).listObjs.begin(),
+                                   mergeData.objInput.roadDataList.at(1).listObjs.end());
+            data_input.push_back(data_input_item);
+            data_input_item.clear();
+            data_input_item.assign(mergeData.objInput.roadDataList.at(2).listObjs.begin(),
+                                   mergeData.objInput.roadDataList.at(2).listObjs.end());
+            data_input.push_back(data_input_item);
+
+
+            int num = merge_total(GateContinueNum, GateFailNum, gate, isFirstFrame, FixTheta, RoadTheta,
+                                  data_input, l1_obj, dataOut);
+
+
+
+
+
+            // 旧版雷达接口备份
+            // int num = merge_total(repateX, widthX, widthY, Xmax, Ymax, gatetx, gatety, gatex, gatey, isFirstFrame,
+            //                         mergeData.objInput.roadDataList.at(0).listObjs.data(),
+            //                         mergeData.objInput.roadDataList.at(0).listObjs.size(),
+            //                         mergeData.objInput.roadDataList.at(1).listObjs.data(),
+            //                         mergeData.objInput.roadDataList.at(1).listObjs.size(),
+            //                         mergeData.objInput.roadDataList.at(2).listObjs.data(),
+            //                         mergeData.objInput.roadDataList.at(2).listObjs.size(),
+            //                         mergeData.objInput.roadDataList.at(3).listObjs.data(),
+            //                         mergeData.objInput.roadDataList.at(3).listObjs.size(),
+            //                         l1_obj.data(), l1_obj.size(), l2_obj.data(), l2_obj.size(),
+            //                         dataOut, angle_value);
+
+
+            // int num = merge_total(
+            //         mergeData.objInput.roadDataList.at(0).listObjs.data(), mergeData.objInput.roadDataList.at(0).listObjs.size(),
+            //         mergeData.objInput.roadDataList.at(1).listObjs.data(), mergeData.objInput.roadDataList.at(1).listObjs.size(),
+            //         mergeData.objInput.roadDataList.at(2).listObjs.data(), mergeData.objInput.roadDataList.at(2).listObjs.size(),
+            //         mergeData.objInput.roadDataList.at(3).listObjs.data(), mergeData.objInput.roadDataList.at(3).listObjs.size(),
+            //         //server->l1_obj.data(), server->l1_obj.size(), server->l2_obj.data(),
+            //         // server->l2_obj.size(),
+            //         dataOut);
+
             //将输出存入缓存
             vector<OBJECT_INFO_NEW> out;
             for (int i = 0; i < num; i++) {
@@ -781,18 +821,18 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         for (int j = 0; j < mergeData.objOutput.size(); j++) {
             string split = ",";
             auto iter = mergeData.objOutput.at(j);
-            contentO.append(to_string(iter.objID1) + split +
-                            to_string(iter.objID2) + split +
-                            to_string(iter.objID3) + split +
-                            to_string(iter.objID4) + split +
+            contentO.append(to_string(iter.objID.at(0)) + split +
+                            to_string(iter.objID.at(1)) + split +
+                            to_string(iter.objID.at(2)) + split +
+                            to_string(iter.objID.at(3)) + split +
                             to_string(iter.showID) + split +
-                            to_string(iter.cameraID1) + split +
-                            to_string(iter.cameraID2) + split +
-                            to_string(iter.cameraID3) + split +
-                            to_string(iter.cameraID4) + split +
+                            to_string(iter.cameraID.at(0)) + split +
+                            to_string(iter.cameraID.at(1)) + split +
+                            to_string(iter.cameraID.at(2)) + split +
+                            to_string(iter.cameraID.at(3)) + split +
                             to_string(iter.locationX) + split +
                             to_string(iter.locationY) + split +
-                            to_string(iter.speed) + split +
+                            to_string(iter.speedX) + split +
                             to_string(iter.flag_new));
             contentO.append("\n");
         }
@@ -820,41 +860,54 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     for (auto iter:mergeData.objOutput) {
         ObjMix objMix;
         objMix.objID = iter.showID;
-        if (iter.objID1 != -INF) {
-            OneRvWayObject rvWayObject;
-            rvWayObject.wayNo = North;
-            rvWayObject.roID = iter.objID1;
-            rvWayObject.voID = iter.cameraID1;
-            objMix.rvWayObject.push_back(rvWayObject);
+
+        Direction dirs[4] = {North, East, South, West};
+        for (int i = 0; i < iter.objID.size(); i++) {
+            if (iter.objID.at(i) != -INF) {
+                OneRvWayObject rvWayObject;
+                rvWayObject.wayNo = dirs[i];
+                rvWayObject.roID = iter.objID.at(i);
+                rvWayObject.voID = iter.cameraID.at(i);
+                objMix.rvWayObject.push_back(rvWayObject);
+            }
         }
-        if (iter.objID2 != -INF) {
-            OneRvWayObject rvWayObject;
-            rvWayObject.wayNo = East;
-            rvWayObject.roID = iter.objID2;
-            rvWayObject.voID = iter.cameraID2;
-            objMix.rvWayObject.push_back(rvWayObject);
-        }
-        if (iter.objID3 != -INF) {
-            OneRvWayObject rvWayObject;
-            rvWayObject.wayNo = South;
-            rvWayObject.roID = iter.objID3;
-            rvWayObject.voID = iter.cameraID3;
-            objMix.rvWayObject.push_back(rvWayObject);
-        }
-        if (iter.objID4 != -INF) {
-            OneRvWayObject rvWayObject;
-            rvWayObject.wayNo = West;
-            rvWayObject.roID = iter.objID4;
-            rvWayObject.voID = iter.cameraID4;
-            objMix.rvWayObject.push_back(rvWayObject);
-        }
+
+
+//        if (iter.objID.at(0) != -INF) {
+//            OneRvWayObject rvWayObject;
+//            rvWayObject.wayNo = North;
+//            rvWayObject.roID = iter.objID.at(0);
+//            rvWayObject.voID = iter.cameraID.at(0);
+//            objMix.rvWayObject.push_back(rvWayObject);
+//        }
+//        if (iter.objID.at(1) != -INF) {
+//            OneRvWayObject rvWayObject;
+//            rvWayObject.wayNo = East;
+//            rvWayObject.roID = iter.objID.at(1);
+//            rvWayObject.voID = iter.cameraID.at(1);
+//            objMix.rvWayObject.push_back(rvWayObject);
+//        }
+//        if (iter.objID.at(2) != -INF) {
+//            OneRvWayObject rvWayObject;
+//            rvWayObject.wayNo = South;
+//            rvWayObject.roID = iter.objID.at(2);
+//            rvWayObject.voID = iter.cameraID.at(2);
+//            objMix.rvWayObject.push_back(rvWayObject);
+//        }
+//        if (iter.objID.at(3) != -INF) {
+//            OneRvWayObject rvWayObject;
+//            rvWayObject.wayNo = West;
+//            rvWayObject.roID = iter.objID.at(3);
+//            rvWayObject.voID = iter.cameraID.at(3);
+//            objMix.rvWayObject.push_back(rvWayObject);
+//        }
         objMix.objType = iter.objType;
         objMix.objColor = 0;
         objMix.plates = string(iter.plate_number);
         objMix.plateColor = string(iter.plate_color);
         objMix.distance = atof(string(iter.distance).c_str());
         objMix.angle = iter.directionAngle;
-        objMix.speed = iter.speed;
+        objMix.speed = sqrt(iter.speedX * iter.speedX + iter.speedY * iter.speedY);
         objMix.locationX = iter.locationX;
         objMix.locationY = iter.locationY;
         objMix.longitude = iter.longitude;
@@ -1053,7 +1106,11 @@ int DataUnitIntersectionOverflowAlarm::TaskProcessOneFrame(DataUnitIntersectionO
     return ret;
 }
 
-DataUnitInWatchData_1_3_4::DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache, void *owner) :
+DataUnitInWatchData_1_3_4::DataUnitInWatchData_1_3_4(int
+                                                     c, int
+                                                     threshold_ms, int
+                                                     i_num, int
+                                                     cache, void *owner) :
         DataUnit(c, threshold_ms, i_num, cache, owner) {
 
 }
@@ -1095,7 +1152,11 @@ void DataUnitInWatchData_1_3_4::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitInWatchData_2::DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache, void *owner) :
+DataUnitInWatchData_2::DataUnitInWatchData_2(int
+                                             c, int
+                                             threshold_ms, int
+                                             i_num, int
+                                             cache, void *owner) :
         DataUnit(c, threshold_ms, i_num, cache, owner) {
 
 }
@@ -1136,7 +1197,11 @@ void DataUnitInWatchData_2::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitStopLinePassData::DataUnitStopLinePassData(int c, int threshold_ms, int i_num, int cache, void *owner)
+DataUnitStopLinePassData::DataUnitStopLinePassData(int
+                                                   c, int
+                                                   threshold_ms, int
+                                                   i_num, int
+                                                   cache, void *owner)
         : DataUnit(c, threshold_ms, i_num, cache, owner) {
 
 }

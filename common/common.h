@@ -56,6 +56,7 @@ namespace common {
         CmdInWatchData_1_3_4 = 0x08,//进口监控数据（1）（3）（4）触发式上报
         CmdInWatchData_2 = 0x09,//进口监控数据（2）周期上报
         CmdStopLinePassData = 0x0a,//停止线过车数据
+        CmdCamera3516Alarm = 0xf0,//3516相机预警信息
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -377,7 +378,7 @@ namespace common {
 //                                               uint32_t deviceNO, Pkg &pkg);
 
     //透传类型
-    class InWatchData_1_3_4: public PkgClass{
+    class InWatchData_1_3_4 : public PkgClass {
     public:
         string oprNum;
         double timestamp;
@@ -391,9 +392,10 @@ namespace common {
         int vehicleType;//车辆类型
         int vehicleSpeed;//车辆速度
     public:
-        InWatchData_1_3_4(){
+        InWatchData_1_3_4() {
             this->cmdType = CmdInWatchData_1_3_4;
         }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
@@ -425,7 +427,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class InWatchData_2: public PkgClass{
+    class InWatchData_2 : public PkgClass {
     public:
         string oprNum;
         double timestamp;
@@ -434,16 +436,17 @@ namespace common {
         int recordLaneSum;//记录上报车道数量
         vector<InWatchData_2_trafficFlowListItem> trafficFlowList;//
     public:
-        InWatchData_2(){
+        InWatchData_2() {
             this->cmdType = CmdInWatchData_2;
         }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
     };
 
     //停止线过车数据
-    class StopLinePassData_vehicleListItem{
+    class StopLinePassData_vehicleListItem {
     public:
         string laneCode;//车道编号
         int laneDirection;//车道方向 1=东，2=南，3=西，4=北 同EOC一致
@@ -459,7 +462,7 @@ namespace common {
     };
 
 
-    class StopLinePassData: public PkgClass{
+    class StopLinePassData : public PkgClass {
     public:
         string oprNum;
         double timestamp;
@@ -467,9 +470,50 @@ namespace common {
         string hardCode;
         vector<StopLinePassData_vehicleListItem> vehicleList;
     public:
-        StopLinePassData(){
+        StopLinePassData() {
             this->cmdType = CmdInWatchData_2;
         }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class Camera3516Alarm_areaListItem {
+    public:
+        int p0x;
+        int p0y;
+        int p1x;
+        int p1y;
+        int p2x;
+        int p2y;
+        int p3x;
+        int p3y;
+
+        int humanNum;
+        int humanType;
+        int bicycleNum;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+
+    class Camera3516Alarm : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        int location;
+        int direction;
+        vector<Camera3516Alarm_areaListItem> areaList;
+    public:
+        Camera3516Alarm() {
+            this->cmdType = CmdCamera3516Alarm;
+        };
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
