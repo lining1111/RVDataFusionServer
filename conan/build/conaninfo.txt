@@ -10,6 +10,7 @@
 
 [requires]
     cpp-httplib/0.11.4
+    eigen/3.Y.Z
     gflags/2.Y.Z
     glog/0.6.0
     jsoncpp/1.Y.Z
@@ -37,6 +38,7 @@
 
 [full_requires]
     cpp-httplib/0.11.4:5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9
+    eigen/3.4.0:5ab84d6acfe1f23c4fae0ab88f26e3a396351ac9
     gflags/2.2.2:7809af96123795daecc8e40824218dcf31bfb47f
     glog/0.6.0:8f07dd17ca803e448d9805e01b194c606e906f20
     jsoncpp/1.9.5:8548d8fca6ceb9b52730acbcd1a582e65b4e2949
@@ -53,6 +55,7 @@
     cpp-httplib:with_brotli=False
     cpp-httplib:with_openssl=False
     cpp-httplib:with_zlib=False
+    eigen:MPL2_only=False
     gflags:fPIC=True
     gflags:namespace=gflags
     gflags:nothreads=True

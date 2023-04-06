@@ -3,7 +3,7 @@
 //
 
 #include <valarray>
-#include <string>
+#include "merge.h"
 #include "mergeStruct.h"
 
 const int INF = 0x7FFFFFFF;
@@ -61,19 +61,20 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
     objectInfoT.longitude = objTarget.longitude;
     objectInfoT.latitude = objTarget.latitude;
+//    objectInfoT.carLength = objTarget.carLength;
+//    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
 
 }
 
 void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &objectInfoNew) {
-    objectInfoNew.objID.push_back(objectInfoT.objID);
-    objectInfoNew.objID.push_back(-INF);
-    objectInfoNew.objID.push_back(-INF);
-    objectInfoNew.objID.push_back(-INF);
-    objectInfoNew.cameraID.push_back(objectInfoT.cameraID);
-    objectInfoNew.cameraID.push_back(-INF);
-    objectInfoNew.cameraID.push_back(-INF);
-    objectInfoNew.cameraID.push_back(-INF);
-    objectInfoNew.cameraID.push_back(-INF);
+    objectInfoNew.objID1 = objectInfoT.objID;
+    objectInfoNew.objID2 = -INF;
+    objectInfoNew.objID3 = -INF;
+    objectInfoNew.objID4 = -INF;
+    objectInfoNew.cameraID1 = objectInfoT.cameraID;
+    objectInfoNew.cameraID2 = -INF;
+    objectInfoNew.cameraID3 = -INF;
+    objectInfoNew.cameraID4 = -INF;
     objectInfoNew.showID = objectInfoT.objID;
     objectInfoNew.objType = objectInfoT.objType;
 
@@ -89,8 +90,9 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
 
     memcpy(objectInfoNew.distance, objectInfoT.distance, sizeof(objectInfoNew.distance));
     objectInfoNew.directionAngle = objectInfoT.directionAngle;
-    objectInfoNew.speedX = objectInfoT.speedX;
-    objectInfoNew.speedY = objectInfoT.speedY;
+    objectInfoNew.speed = sqrt(objectInfoT.speedX * objectInfoT.speedX + objectInfoT.speedY * objectInfoT.speedY);
     objectInfoNew.longitude = objectInfoT.longitude;
     objectInfoNew.latitude = objectInfoT.latitude;
+//    objectInfoNew.carLength = objectInfoT.carLength;
+//    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
 }
