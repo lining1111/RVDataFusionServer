@@ -36,6 +36,7 @@ public:
     Timer timerInWatchData_1_3_4;
     Timer timerInWatchData_2;
     Timer timerStopLinePassData;
+    Timer timerCamera3516Alarm;
 
     Timer timerCreateFusionData;
 
@@ -66,8 +67,11 @@ private:
 
     static void Task_StopLinePassData(void *p);
 
+    static void Task_Camera3516Alarm(void *p);
+
     //造数据的线程
     static void Task_CreateFusionData(void *p);
+
     static void Task_CreateCrossTrafficJamAlarm(void *p);
 
     static void Task_CreateTrafficFlowGather(void *p);

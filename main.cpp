@@ -31,8 +31,8 @@ int signalIgnPipe() {
 }
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
-DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
-DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
+DEFINE_string(cloudIp, "58.48.187.234", "云端ip，默认 58.48.187.234");
+DEFINE_int32(cloudPort, 9966, "云端端口号，默认9966");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 DEFINE_int32(keep, 1, "日志清理周期 单位day，默认1");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");

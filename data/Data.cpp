@@ -28,7 +28,7 @@ Data *Data::instance() {
         m_pInstance->dataUnitInWatchData_1_3_4.init(30, 1000, cliNum, 0, m_pInstance);
         m_pInstance->dataUnitInWatchData_2.init(30, 1000, cliNum, 0, m_pInstance);
         m_pInstance->dataUnitStopLinePassData.init(30, 1000, cliNum, 0, m_pInstance);
-
+        m_pInstance->dataUnitCamera3516Alarm.init(30, 1000, cliNum, 0, m_pInstance);//这个cliNum待定
 
         //开启数据时间戳历史监听线程
         m_pInstance->isRun = true;

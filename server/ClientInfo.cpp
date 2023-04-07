@@ -437,6 +437,34 @@ static int PkgProcessFun_StopLinePassData(ClientInfo *client, string content) {
     return ret;
 }
 
+static int PkgProcessFun_Camera3516Alarm(ClientInfo *client, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "Camera3516Alarm json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    Camera3516Alarm camera3516Alarm;
+    camera3516Alarm.JsonUnmarshal(in);
+    //存入队列
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitCamera3516Alarm;
+    if (!dataUnit->pushI(camera3516Alarm, data->FindIndexInUnOrder(camera3516Alarm.hardCode))) {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " Camera3516Alarm,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " Camera3516Alarm,存入消息,"
+                << "hardCode:" << camera3516Alarm.hardCode << " crossID:" << camera3516Alarm.crossID
+                << "timestamp:" << (uint64_t) camera3516Alarm.timestamp << " dataUnit i_vector index:"
+                << data->FindIndexInUnOrder(camera3516Alarm.hardCode);
+#ifdef DYFRAME
+        dataUnit->dyFrame->UpDate(camera3516Alarm.timestamp);
+#endif
+    }
+    return ret;
+}
 
 typedef int (*PkgProcessFun)(ClientInfo *client, string content);
 
@@ -451,6 +479,7 @@ static map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdInWatchData_1_3_4, PkgProcessFun_CmdInWatchData_1_3_4),
         make_pair(CmdInWatchData_2, PkgProcessFun_CmdInWatchData_2),
         make_pair(CmdStopLinePassData, PkgProcessFun_StopLinePassData),
+        make_pair(CmdCamera3516Alarm, PkgProcessFun_Camera3516Alarm),
 };
 
 

@@ -30,6 +30,8 @@ public:
     DataUnitInWatchData_2 dataUnitInWatchData_2{30, 1000, 4, 0, this};
     //-----停止线过车数据----//
     DataUnitStopLinePassData dataUnitStopLinePassData{30, 1000, 4, 0, this};
+    //-----3516相机警报数据----//
+    DataUnitCamera3516Alarm dataUnitCamera3516Alarm{30, 1000, 4, 0, this};
 public:
     //本地参数
     //FusionData相关

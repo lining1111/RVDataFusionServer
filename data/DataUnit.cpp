@@ -1176,3 +1176,44 @@ void DataUnitStopLinePassData::task(void *local) {
 
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
+
+DataUnitCamera3516Alarm::DataUnitCamera3516Alarm(int c, int threshold_ms, int i_num, int cache, void *owner) : DataUnit(
+        c, threshold_ms, i_num, cache, owner) {
+
+}
+
+void DataUnitCamera3516Alarm::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
+    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+    timerBusinessName = "DataUnitCamera3516Alarm";
+    timerBusiness = new Timer(timerBusinessName);
+    timerBusiness->start(fs_i, std::bind(task, this));
+}
+
+void DataUnitCamera3516Alarm::task(void *local) {
+    auto dataUnit = (DataUnitCamera3516Alarm *) local;
+    pthread_mutex_lock(&dataUnit->oneFrameMutex);
+    int maxSize = 0;
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        if (dataUnit->i_queue_vector.at(i).size() > maxSize) {
+            maxSize = dataUnit->i_queue_vector.at(i).size();
+            dataUnit->i_maxSizeIndex = i;
+        }
+    }
+    if (maxSize > dataUnit->cache) {
+        //执行相应的流程
+        for (auto &iter:dataUnit->i_queue_vector) {
+            while (!iter.empty()) {
+                IType cur;
+                iter.pop(cur);
+                OType item = cur;
+                if (!dataUnit->pushO(item)) {
+                    VLOG(3) << "DataUnitCamera3516Alarm 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                } else {
+                    VLOG(3) << "DataUnitCamera3516Alarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                }
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&dataUnit->oneFrameMutex);
+}

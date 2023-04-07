@@ -79,7 +79,7 @@ void LocalBusiness::StartTimerTask() {
     timerInWatchData_1_3_4.start(1000, std::bind(Task_InWatchData_1_3_4, this));
     timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
     timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
-
+    timerCamera3516Alarm.start(1000, std::bind(Task_Camera3516Alarm, this));
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
@@ -172,9 +172,11 @@ int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, 
                     << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
             if (cli->SendBase(pkg) == -1) {
                 VLOG(3) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
+                LOG(INFO) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
                 ret = -1;
             } else {
                 VLOG(3) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
+                LOG(INFO) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
             }
         } else {
             VLOG(3) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
@@ -268,7 +270,7 @@ void LocalBusiness::Task_FusionData(void *p) {
         return;
     }
     auto local = (LocalBusiness *) p;
-//    LOG(INFO) << __FUNCTION__ << " START";
+    LOG(INFO) << __FUNCTION__ << " START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }
@@ -369,6 +371,33 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
     }
 }
 
+void LocalBusiness::Task_Camera3516Alarm(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+
+    if (local->isRun) {
+        string msgType = "Camera3516Alarm";
+
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitCamera3516Alarm;
+
+        Camera3516Alarm data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+        }
+    }
+}
+
+
 void LocalBusiness::Task_CreateFusionData(void *p) {
     if (p == nullptr) {
         return;
@@ -388,7 +417,6 @@ void LocalBusiness::Task_CreateFusionData(void *p) {
         printf("伪造数据 CrossFusionData 插入失败\n");
     }
 }
-
 
 void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
     if (p == nullptr) {

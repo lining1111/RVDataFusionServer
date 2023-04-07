@@ -501,4 +501,21 @@ public:
     static void task(void *local);
 };
 
+//camera3516警报信息
+class DataUnitCamera3516Alarm:public DataUnit<Camera3516Alarm,Camera3516Alarm>{
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitCamera3516Alarm(){
+
+    }
+    ~DataUnitCamera3516Alarm(){
+
+    }
+    DataUnitCamera3516Alarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+
+    static void task(void *local);
+};
+
+
 #endif //_DATAUNIT_H
