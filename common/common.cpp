@@ -170,6 +170,8 @@ namespace common {
     bool ObjTarget::JsonMarshal(Json::Value &out) {
         out["objID"] = this->objID;
         out["objCameraID"] = this->objCameraID;
+        out["objRadarID"] = this->objRadarID;
+        out["objSourceType"] = this->objSourceType;
         out["objType"] = this->objType;
         out["plates"] = this->plates;
         out["plateColor"] = this->plateColor;
@@ -194,6 +196,8 @@ namespace common {
     bool ObjTarget::JsonUnmarshal(Json::Value in) {
         this->objID = in["objID"].asInt();
         this->objCameraID = in["objCameraID"].asInt();
+        this->objRadarID = in["objRadarID"].asInt();
+        this->objSourceType = in["objSourceType"].asInt();
         this->objType = in["objType"].asInt();
         this->plates = in["plates"].asString();
         this->plateColor = in["plateColor"].asString();

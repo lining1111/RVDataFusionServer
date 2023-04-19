@@ -21,7 +21,7 @@ Data *Data::instance() {
         int cliNum = 4;
         m_pInstance->unOrder.resize(cliNum);
 
-        m_pInstance->dataUnitFusionData.init(30, 100, cliNum, 10, m_pInstance);//100ms一帧
+        m_pInstance->dataUnitFusionData.init(30, 80, cliNum, 10, m_pInstance);//80ms一帧
         m_pInstance->dataUnitTrafficFlowGather.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
         m_pInstance->dataUnitIntersectionOverflowAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧

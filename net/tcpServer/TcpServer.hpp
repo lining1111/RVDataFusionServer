@@ -152,16 +152,20 @@ private:
      * @param clientSockAddr
      */
     void cbDisconnect(int clientSock) {
+        TcpServerClient *client = nullptr;
         pthread_mutex_lock(&lockClients);
         for (int i = 0; i < clients.size(); i++) {
             auto iter = clients.at(i);
             if (iter->sock == clientSock) {
-                delete iter;
+                client = iter;
                 clients.erase(clients.begin() + i);
             }
         }
         clients.shrink_to_fit();
         pthread_mutex_unlock(&lockClients);
+        if (client != nullptr) {
+            delete client;
+        }
     }
 
 

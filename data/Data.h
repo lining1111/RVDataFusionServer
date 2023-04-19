@@ -18,7 +18,7 @@ public:
 
     //各个数据
     //---------------监控数据相关---------//
-    DataUnitFusionData dataUnitFusionData{30, 100, 4, 10, this};//100ms一帧
+    DataUnitFusionData dataUnitFusionData{30, 80, 4, 10, this};//80ms一帧
     //---------------路口交通流向相关--------//
     DataUnitTrafficFlowGather dataUnitTrafficFlowGather{30, 1000, 4, 10, this};//1000ms一帧
     //------交叉口堵塞报警------//

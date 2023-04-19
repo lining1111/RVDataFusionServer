@@ -146,6 +146,8 @@ namespace common {
     public:
         int objID = 0;//目标ID
         int objCameraID = 0;//摄像头目标ID
+        int objRadarID = 0;//雷达目标ID
+        int objSourceType = 0;//0:相机 1：雷达 2：多目
         int objType = 0;//目标类型
         string plates;//车牌号
         string plateColor;//车牌颜色
