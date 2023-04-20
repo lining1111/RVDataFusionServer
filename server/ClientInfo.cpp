@@ -244,12 +244,12 @@ static int PkgProcessFun_CmdFusionData(ClientInfo *client, string content) {
                 VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
                         << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                         << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
-                        << data->FindIndexInUnOrder(watchData.hardCode);
+                        << i;
 //                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
 //                          << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
 //                          << "timestamp:" << (uint64_t) watchData.timstamp << " lstObjTarget size:"
 //                          << watchData.lstObjTarget.size() << " dataUnit i_vector index:"
-//                          << data->FindIndexInUnOrder(watchData.hardCode);
+//                          << i;
 #ifdef DYFRAME
                 dataUnit->dyFrame->UpDate(watchData.timstamp);
 #endif
@@ -275,14 +275,14 @@ static int PkgProcessFun_CmdCrossTrafficJamAlarm(ClientInfo *client, string cont
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitCrossTrafficJamAlarm;
-    if (!dataUnit->pushI(crossTrafficJamAlarm, data->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode))) {
+    if (!dataUnit->pushI(crossTrafficJamAlarm, dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " CrossTrafficJamAlarm,存入消息,"
                 << "hardCode:" << crossTrafficJamAlarm.hardCode << " crossID:" << crossTrafficJamAlarm.crossID
                 << "timestamp:" << (uint64_t) crossTrafficJamAlarm.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
+                << dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(crossTrafficJamAlarm.timestamp);
 #endif
@@ -304,7 +304,7 @@ static int PkgProcessFun_CmdIntersectionOverflowAlarm(ClientInfo *client, string
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitIntersectionOverflowAlarm;
-    if (!dataUnit->pushI(intersectionOverflowAlarm, data->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode))) {
+    if (!dataUnit->pushI(intersectionOverflowAlarm, dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " IntersectionOverflowAlarm,丢弃消息";
         ret = -1;
     } else {
@@ -312,7 +312,7 @@ static int PkgProcessFun_CmdIntersectionOverflowAlarm(ClientInfo *client, string
                 << "hardCode:" << intersectionOverflowAlarm.hardCode
                 << " crossID:" << intersectionOverflowAlarm.crossID
                 << "timestamp:" << (uint64_t) intersectionOverflowAlarm.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
+                << dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(intersectionOverflowAlarm.timestamp);
 #endif
@@ -335,14 +335,17 @@ static int PkgProcessFun_CmdTrafficFlowGather(ClientInfo *client, string content
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitTrafficFlowGather;
-    if (!dataUnit->pushI(trafficFlow, data->FindIndexInUnOrder(trafficFlow.hardCode))) {
+    VLOG(2) << "TrafficFlowGather, vector index:"
+            << dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
+
+    if (!dataUnit->pushI(trafficFlow, dataUnit->FindIndexInUnOrder(trafficFlow.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlowGather,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " TrafficFlow,存入消息,"
                 << "hardCode:" << trafficFlow.hardCode << " crossID:" << trafficFlow.crossID
                 << "timestamp:" << (uint64_t) trafficFlow.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(trafficFlow.hardCode);
+                << dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(trafficFlow.timestamp);
 #endif
@@ -364,14 +367,14 @@ static int PkgProcessFun_CmdInWatchData_1_3_4(ClientInfo *client, string content
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitInWatchData_1_3_4;
-    if (!dataUnit->pushI(inWatchData134, data->FindIndexInUnOrder(inWatchData134.hardCode))) {
+    if (!dataUnit->pushI(inWatchData134, dataUnit->FindIndexInUnOrder(inWatchData134.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_1_3_4,存入消息,"
                 << "hardCode:" << inWatchData134.hardCode << " crossID:" << inWatchData134.crossID
                 << "timestamp:" << (uint64_t) inWatchData134.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(inWatchData134.hardCode);
+                << dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(inWatchData134.timestamp);
 #endif
@@ -393,14 +396,14 @@ static int PkgProcessFun_CmdInWatchData_2(ClientInfo *client, string content) {
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitInWatchData_2;
-    if (!dataUnit->pushI(inWatchData2, data->FindIndexInUnOrder(inWatchData2.hardCode))) {
+    if (!dataUnit->pushI(inWatchData2, dataUnit->FindIndexInUnOrder(inWatchData2.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,存入消息,"
                 << "hardCode:" << inWatchData2.hardCode << " crossID:" << inWatchData2.crossID
                 << "timestamp:" << (uint64_t) inWatchData2.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(inWatchData2.hardCode);
+                << dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(inWatchData2.timestamp);
 #endif
@@ -422,14 +425,14 @@ static int PkgProcessFun_StopLinePassData(ClientInfo *client, string content) {
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitStopLinePassData;
-    if (!dataUnit->pushI(stopLinePassData, data->FindIndexInUnOrder(stopLinePassData.hardCode))) {
+    if (!dataUnit->pushI(stopLinePassData, dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " InWatchData_2,存入消息,"
                 << "hardCode:" << stopLinePassData.hardCode << " crossID:" << stopLinePassData.crossID
                 << "timestamp:" << (uint64_t) stopLinePassData.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(stopLinePassData.hardCode);
+                << dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(stopLinePassData.timestamp);
 #endif
@@ -451,14 +454,14 @@ static int PkgProcessFun_Camera3516Alarm(ClientInfo *client, string content) {
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitCamera3516Alarm;
-    if (!dataUnit->pushI(camera3516Alarm, data->FindIndexInUnOrder(camera3516Alarm.hardCode))) {
+    if (!dataUnit->pushI(camera3516Alarm, dataUnit->FindIndexInUnOrder(camera3516Alarm.hardCode))) {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " Camera3516Alarm,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " Camera3516Alarm,存入消息,"
                 << "hardCode:" << camera3516Alarm.hardCode << " crossID:" << camera3516Alarm.crossID
                 << "timestamp:" << (uint64_t) camera3516Alarm.timestamp << " dataUnit i_vector index:"
-                << data->FindIndexInUnOrder(camera3516Alarm.hardCode);
+                << dataUnit->FindIndexInUnOrder(camera3516Alarm.hardCode);
 #ifdef DYFRAME
         dataUnit->dyFrame->UpDate(camera3516Alarm.timestamp);
 #endif

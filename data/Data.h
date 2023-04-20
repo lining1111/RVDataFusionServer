@@ -43,7 +43,6 @@ public:
             West,//西
     };
     //无特定顺序存入的数据
-    vector<string> unOrder;//记录已传入的路号，方便将数据存入对应的数据集合内的输入量
     //本地属性
     string db = "CLParking.db";
     string matrixNo = "0123456789";
@@ -54,8 +53,6 @@ public:
     ~Data() {
         isRun = false;
     }
-
-    int FindIndexInUnOrder(const string in);
 
 private:
     int getMatrixNo();

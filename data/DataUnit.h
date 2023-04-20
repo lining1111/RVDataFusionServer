@@ -89,6 +89,9 @@ public:
     typedef O OType;
     vector<I> oneFrame;//寻找同一时间戳的数据集
     pthread_mutex_t oneFrameMutex = PTHREAD_MUTEX_INITIALIZER;
+    //预先不知道顺序插入队列时使用的
+    vector<string> unOrder;
+
 public:
     DataUnit() : cap(30), thresholdFrame(100), fs_i(100), numI(4), cache(3) {
         i_queue_vector.resize(numI);
@@ -104,6 +107,7 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
+        unOrder.resize(numI);
     }
 
     DataUnit(int c, int threshold_ms, int i_num, int i_cache, void *owner) {
@@ -249,6 +253,37 @@ public:
             cout << __FUNCTION__ << e.what() << endl;
             return true;
         }
+    }
+    int FindIndexInUnOrder(const string in){
+        printf("in :%s\n", in.c_str());
+        int index = -1;
+        //首先遍历是否已经存在
+        int alreadyExistIndex = -1;
+        for (int i = 0; i < unOrder.size(); i++) {
+            auto &iter = unOrder.at(i);
+            printf("iter :%s\n", iter.c_str());
+            if (iter == in) {
+                alreadyExistIndex = i;
+                break;
+            }
+        }
+        printf("alreadyExistIndex:%d\n", alreadyExistIndex);
+        if (alreadyExistIndex >= 0) {
+            index = alreadyExistIndex;
+        } else {
+            //不存在就新加
+            for (int i = 0; i < unOrder.size(); i++) {
+                auto &iter = unOrder.at(i);
+                if (iter.empty()) {
+                    iter = in;
+                    printf("iter1 :%s\n", iter.c_str());
+                    index = i;
+                    break;
+                }
+            }
+        }
+
+        return index;
     }
 
     void runTask(std::function<void()> task) {
