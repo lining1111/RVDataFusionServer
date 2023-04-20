@@ -4,6 +4,7 @@
 
 #include <sqlite3.h>
 #include "Data.h"
+#include <algorithm>
 
 Data *Data::m_pInstance = nullptr;
 
@@ -70,7 +71,7 @@ int Data::getMatrixNo() {
         }
     }
     //处理下sn字符串中间可能带-的情况
-
+    matrixNo.erase(std::remove(matrixNo.begin(), matrixNo.end(),'-'),matrixNo.end());
 
     LOG(INFO) << "sn:" << matrixNo;
     sqlite3_free_table(result);
