@@ -72,7 +72,7 @@ void LocalBusiness::Run() {
 
 void LocalBusiness::StartTimerTask() {
     timerKeep.start(1000 * 3, std::bind(Task_Keep, this));
-    timerFusionData.start(100, std::bind(Task_FusionData, this));
+    timerFusionData.start(80, std::bind(Task_FusionData, this));
     timerTrafficFlowGather.start(1000, std::bind(Task_TrafficFlowGather, this));
     timerCrossTrafficJamAlarm.start(1000, std::bind(Task_CrossTrafficJamAlarm, this));
     timerIntersectionOverflowAlarm.start(1000, std::bind(Task_IntersectionOverflowAlarm, this));
