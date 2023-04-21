@@ -440,7 +440,67 @@ static int PkgProcessFun_StopLinePassData(ClientInfo *client, string content) {
     return ret;
 }
 
-static int PkgProcessFun_Camera3516Alarm(ClientInfo *client, string content) {
+static int PkgProcessFun_AbnormalStopData(ClientInfo *client, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "AbnormalStopData json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    AbnormalStopData abnormalStopData;
+    abnormalStopData.JsonUnmarshal(in);
+    //存入队列
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitAbnormalStopData;
+    if (!dataUnit->pushI(abnormalStopData, dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode))) {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " AbnormalStopData,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " AbnormalStopData,存入消息,"
+                << "hardCode:" << abnormalStopData.hardCode << " crossID:" << abnormalStopData.crossID
+                << "timestamp:" << (uint64_t) abnormalStopData.timestamp << " dataUnit i_vector index:"
+                << dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
+#ifdef DYFRAME
+        dataUnit->dyFrame->UpDate(camera3516Alarm.timestamp);
+#endif
+    }
+    return ret;
+}
+
+static int PkgProcessFun_LongDistanceOnSolidLineAlarm(ClientInfo *client, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "LongDistanceOnSolidLineAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    LongDistanceOnSolidLineAlarm longDistanceOnSolidLineAlarm;
+    longDistanceOnSolidLineAlarm.JsonUnmarshal(in);
+    //存入队列
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitLongDistanceOnSolidLineAlarm;
+    if (!dataUnit->pushI(longDistanceOnSolidLineAlarm,
+                         dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode))) {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " LongDistanceOnSolidLineAlarm,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " LongDistanceOnSolidLineAlarm,存入消息,"
+                << "hardCode:" << longDistanceOnSolidLineAlarm.hardCode << " crossID:"
+                << longDistanceOnSolidLineAlarm.crossID
+                << "timestamp:" << (uint64_t) longDistanceOnSolidLineAlarm.timestamp << " dataUnit i_vector index:"
+                << dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
+#ifdef DYFRAME
+        dataUnit->dyFrame->UpDate(camera3516Alarm.timestamp);
+#endif
+    }
+    return ret;
+}
+
+static int PkgProcessFun_HumanData(ClientInfo *client, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -482,7 +542,9 @@ static map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdInWatchData_1_3_4, PkgProcessFun_CmdInWatchData_1_3_4),
         make_pair(CmdInWatchData_2, PkgProcessFun_CmdInWatchData_2),
         make_pair(CmdStopLinePassData, PkgProcessFun_StopLinePassData),
-        make_pair(CmdHumanData, PkgProcessFun_Camera3516Alarm),
+        make_pair(CmdAbnormalStopData, PkgProcessFun_AbnormalStopData),
+        make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_LongDistanceOnSolidLineAlarm),
+        make_pair(CmdHumanData, PkgProcessFun_HumanData),
 };
 
 

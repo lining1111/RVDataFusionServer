@@ -79,7 +79,9 @@ void LocalBusiness::StartTimerTask() {
     timerInWatchData_1_3_4.start(1000, std::bind(Task_InWatchData_1_3_4, this));
     timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
     timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
-    timerCamera3516Alarm.start(1000, std::bind(Task_Camera3516Alarm, this));
+    timerAbnormalStopData.start(1000, std::bind(Task_AbnormalStopData, this));
+    timerLongDistanceOnSolidLineAlarm.start(1000, std::bind(Task_LongDistanceOnSolidLineAlarm, this));
+    timerHumanData.start(1000, std::bind(Task_HumanData, this));
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
@@ -371,7 +373,7 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
     }
 }
 
-void LocalBusiness::Task_Camera3516Alarm(void *p) {
+void LocalBusiness::Task_HumanData(void *p) {
     if (p == nullptr) {
         return;
     }
@@ -397,6 +399,57 @@ void LocalBusiness::Task_Camera3516Alarm(void *p) {
     }
 }
 
+void LocalBusiness::Task_AbnormalStopData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+
+    if (local->isRun) {
+        string msgType = "AbnormalStopData";
+
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
+
+        AbnormalStopData data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+        }
+    }
+}
+
+void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+
+    if (local->isRun) {
+        string msgType = "LongDistanceOnSolidLineAlarm";
+
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
+
+        LongDistanceOnSolidLineAlarm data;
+        if (dataUnit->popO(data)) {
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+        }
+    }
+}
 
 void LocalBusiness::Task_CreateFusionData(void *p) {
     if (p == nullptr) {
@@ -482,3 +535,5 @@ void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
         printf("伪造数据 TrafficFlowGather 插入失败\n");
     }
 }
+
+
