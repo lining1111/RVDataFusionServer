@@ -1002,15 +1002,31 @@ namespace common {
         return true;
     }
 
-    bool Camera3516Alarm_areaListItem::JsonMarshal(Json::Value &out) {
-        out["p0x"] = this->p0x;
-        out["p0y"] = this->p0y;
-        out["p1x"] = this->p1x;
-        out["p1y"] = this->p1y;
-        out["p2x"] = this->p2x;
-        out["p2y"] = this->p2y;
-        out["p3x"] = this->p3x;
-        out["p3y"] = this->p3y;
+    bool HumanData_areaListItem_pointListItem::JsonMarshal(Json::Value &out) {
+        out["x"] = this->x;
+        out["y"] = this->y;
+        return true;
+    }
+
+    bool HumanData_areaListItem_pointListItem::JsonUnmarshal(Json::Value in) {
+        this->x = in["x"].asInt();
+        this->y = in["y"].asInt();
+        return true;
+    }
+
+    bool HumanData_areaListItem::JsonMarshal(Json::Value &out) {
+        Json::Value pointList = Json::arrayValue;
+        if (!this->pointList.empty()) {
+            for (auto iter:this->pointList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                pointList.append(item);
+            }
+        } else {
+            pointList.resize(0);
+        }
+        out["pointList"] = pointList;
+
         out["humanNum"] = this->humanNum;
         out["humanType"] = this->humanType;
         out["bicycleNum"] = this->bicycleNum;
@@ -1018,26 +1034,31 @@ namespace common {
         return true;
     }
 
-    bool Camera3516Alarm_areaListItem::JsonUnmarshal(Json::Value in) {
-        this->p0x = in["p0x"].asInt();
-        this->p0y = in["p0y"].asInt();
-        this->p1x = in["p1x"].asInt();
-        this->p1y = in["p1y"].asInt();
-        this->p2x = in["p2x"].asInt();
-        this->p2y = in["p2y"].asInt();
-        this->p3x = in["p3x"].asInt();
-        this->p3y = in["p3y"].asInt();
+    bool HumanData_areaListItem::JsonUnmarshal(Json::Value in) {
+        Json::Value pointList = in["pointList"];
+        if (pointList.isArray()) {
+            for (auto iter:pointList) {
+                HumanData_areaListItem_pointListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->pointList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
         this->humanNum = in["humanNum"].asInt();
         this->humanType = in["humanType"].asInt();
         this->bicycleNum = in["bicycleNum"].asInt();
         return true;
     }
 
-    bool Camera3516Alarm::JsonMarshal(Json::Value &out) {
+    bool HumanData::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
+        out["location"] = this->location;
+        out["direction"] = this->direction;
 
         Json::Value areaList = Json::arrayValue;
         if (!this->areaList.empty()) {
@@ -1054,18 +1075,136 @@ namespace common {
         return true;
     }
 
-    bool Camera3516Alarm::JsonUnmarshal(Json::Value in) {
+    bool HumanData::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->location = in["location"].asInt();
+        this->direction = in["direction"].asInt();
+
+        Json::Value areaList = in["areaList"];
+        if (areaList.isArray()) {
+            for (auto iter:areaList) {
+                HumanData_areaListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->areaList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
+
+
+    bool AbnormalStopData::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        out["laneCode"] = this->laneCode;
+        out["alarmType"] = this->alarmType;
+        out["alarmStatus"] = this->alarmStatus;
+        out["alarmTime"] = this->alarmTime;
+
+        return true;
+    }
+
+    bool AbnormalStopData::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->laneCode = in["laneCode"].asString();
+        this->alarmType = in["alarmType"].asInt();
+        this->alarmStatus = in["alarmStatus"].asInt();
+        this->alarmTime = in["alarmTime"].asString();
+
+        return true;
+    }
+
+    bool LongDistanceOnSolidLineAlarm::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        out["laneCode"] = this->laneCode;
+        out["longitude"] = this->longitude;
+        out["latitude"] = this->latitude;
+        out["alarmType"] = this->alarmType;
+        out["alarmStatus"] = this->alarmStatus;
+        out["alarmTime"] = this->alarmTime;
+
+        return true;
+    }
+
+    bool LongDistanceOnSolidLineAlarm::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+        this->laneCode = in["laneCode"].asString();
+        this->longitude = in["longitude"].asDouble();
+        this->latitude = in["latitude"].asDouble();
+        this->alarmType = in["alarmType"].asInt();
+        this->alarmStatus = in["alarmStatus"].asInt();
+        this->alarmTime = in["alarmTime"].asString();
+
+        return true;
+    }
+
+    bool HumanDataGather_deviceListItem::JsonMarshal(Json::Value &out) {
+        out["detectDirection"] = this->detectDirection;
+        out["direction"] = this->direction;
+        out["humanNum"] = this->humanNum;
+        out["humanType"] = this->humanType;
+        out["bicycleNum"] = this->bicycleNum;
+        return true;
+    }
+
+    bool HumanDataGather_deviceListItem::JsonUnmarshal(Json::Value in) {
+        this->detectDirection = in["detectDirection"].asInt();
+        this->direction = in["direction"].asInt();
+        this->humanNum = in["humanNum"].asInt();
+        this->humanType = in["humanType"].asInt();
+        this->bicycleNum = in["bicycleNum"].asInt();
+        return true;
+    }
+
+    bool HumanDataGather::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        Json::Value deviceList = Json::arrayValue;
+        if (!this->deviceList.empty()) {
+            for (auto iter:this->deviceList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                deviceList.append(item);
+            }
+        } else {
+            deviceList.resize(0);
+        }
+
+        out["deviceList"] = deviceList;
+        return true;
+    }
+
+    bool HumanDataGather::JsonUnmarshal(Json::Value in) {
         this->oprNum = in["oprNum"].asString();
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
 
-        Json::Value areaList = in["areaList"];
-        if (areaList.isArray()) {
-            for (auto iter:areaList) {
-                Camera3516Alarm_areaListItem item;
+        Json::Value deviceList = in["deviceList"];
+        if (deviceList.isArray()) {
+            for (auto iter:deviceList) {
+                HumanDataGather_deviceListItem item;
                 if (item.JsonUnmarshal(iter)) {
-                    this->areaList.push_back(item);
+                    this->deviceList.push_back(item);
                 }
             }
         } else {

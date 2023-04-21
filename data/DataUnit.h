@@ -144,6 +144,7 @@ public:
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
+        unOrder.resize(i_num);
 //        dyFrame = new DyFrame(&this->fs_i, &this->thresholdFrame);
     }
 
@@ -536,17 +537,49 @@ public:
     static void task(void *local);
 };
 
-//camera3516警报信息
-class DataUnitCamera3516Alarm:public DataUnit<Camera3516Alarm,Camera3516Alarm>{
+//异常停车报警
+class DataUnitAbnormalStopData: public DataUnit<AbnormalStopData,AbnormalStopData>{
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitCamera3516Alarm(){
+    DataUnitAbnormalStopData(){
 
     }
-    ~DataUnitCamera3516Alarm(){
+    ~DataUnitAbnormalStopData(){
 
     }
-    DataUnitCamera3516Alarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitAbnormalStopData(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+
+    static void task(void *local);
+};
+
+//长距离压实线报警
+class DataUnitLongDistanceOnSolidLineAlarm: public DataUnit<LongDistanceOnSolidLineAlarm,LongDistanceOnSolidLineAlarm>{
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitLongDistanceOnSolidLineAlarm(){
+
+    }
+    ~DataUnitLongDistanceOnSolidLineAlarm(){
+
+    }
+    DataUnitLongDistanceOnSolidLineAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+
+    static void task(void *local);
+};
+
+//行人数据
+class DataUnitHumanData: public DataUnit<HumanData,HumanData>{
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitHumanData(){
+
+    }
+    ~DataUnitHumanData(){
+
+    }
+    DataUnitHumanData(int c, int threshold_ms, int i_num, int cache, void *owner);
     void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);

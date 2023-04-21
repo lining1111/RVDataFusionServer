@@ -18,20 +18,24 @@ public:
 
     //各个数据
     //---------------监控数据相关---------//
-    DataUnitFusionData dataUnitFusionData{30, 80, 4, 10, this};//80ms一帧
+    DataUnitFusionData dataUnitFusionData;
     //---------------路口交通流向相关--------//
-    DataUnitTrafficFlowGather dataUnitTrafficFlowGather{30, 1000, 4, 10, this};//1000ms一帧
+    DataUnitTrafficFlowGather dataUnitTrafficFlowGather;//1000ms一帧
     //------交叉口堵塞报警------//
-    DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm{30, 1000, 4, 10, this};//1000ms一帧
+    DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm;//1000ms一帧
     //------路口溢出报警上传-----//
-    DataUnitIntersectionOverflowAlarm dataUnitIntersectionOverflowAlarm{30, 1000, 4, 10, this};//1000ms一帧
+    DataUnitIntersectionOverflowAlarm dataUnitIntersectionOverflowAlarm;//1000ms一帧
     //-----进口监控数据上传----//
-    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4{30, 1000, 4, 0, this};
-    DataUnitInWatchData_2 dataUnitInWatchData_2{30, 1000, 4, 0, this};
+    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4;
+    DataUnitInWatchData_2 dataUnitInWatchData_2;
     //-----停止线过车数据----//
-    DataUnitStopLinePassData dataUnitStopLinePassData{30, 1000, 4, 0, this};
-    //-----3516相机警报数据----//
-    DataUnitCamera3516Alarm dataUnitCamera3516Alarm{30, 1000, 4, 0, this};
+    DataUnitStopLinePassData dataUnitStopLinePassData;
+    //-----异常停车数据-----//
+    DataUnitAbnormalStopData dataUnitAbnormalStopData;
+    //-----长距离压实线报警----//
+    DataUnitLongDistanceOnSolidLineAlarm dataUnitLongDistanceOnSolidLineAlarm;
+    //-----行人数据----//
+    DataUnitHumanData dataUnitHumanData;
 public:
     //本地参数
     //FusionData相关

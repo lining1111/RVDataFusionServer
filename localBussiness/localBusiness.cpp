@@ -381,12 +381,12 @@ void LocalBusiness::Task_Camera3516Alarm(void *p) {
     }
 
     if (local->isRun) {
-        string msgType = "Camera3516Alarm";
+        string msgType = "HumanData";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitCamera3516Alarm;
+        auto dataUnit = &dataLocal->dataUnitHumanData;
 
-        Camera3516Alarm data;
+        HumanData data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;

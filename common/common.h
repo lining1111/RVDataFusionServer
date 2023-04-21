@@ -49,14 +49,14 @@ namespace common {
         CmdHeartBeat = 0x02,//心跳
         CmdFusionData = 0x03,//监控实时数据
         CmdCrossTrafficJamAlarm = 0x04,//交叉路口堵塞报警
-//        CmdLineupInfoGather = 0x05,//排队长度等信息
+        CmdAbnormalStopData = 0x05,//异常停车数据
         CmdIntersectionOverflowAlarm = 0x06,//路口溢出报警
         CmdTrafficFlowGather = 0x07,//车流量统计
-//        CmdCarTrackGather = 0x08,//车辆轨迹
         CmdInWatchData_1_3_4 = 0x08,//进口监控数据（1）（3）（4）触发式上报
         CmdInWatchData_2 = 0x09,//进口监控数据（2）周期上报
         CmdStopLinePassData = 0x0a,//停止线过车数据
-        CmdCamera3516Alarm = 0xf0,//3516相机预警信息
+        CmdLongDistanceOnSolidLineAlarm = 0x0b,//长距离压实线报警
+        CmdHumanData = 0x0c,//3516相机预警信息 行人感知
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -172,7 +172,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };//目标属性
 
-    class WatchData {
+    class WatchData : public PkgClass {
     public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
@@ -186,6 +186,10 @@ namespace common {
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     public:
+        WatchData() {
+            this->cmdType = CmdFusionData;
+        }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
@@ -298,7 +302,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class TrafficFlow {
+    class TrafficFlow : public PkgClass {
     public:
         string oprNum;// `json "oprNum"`
         string crossID;
@@ -306,6 +310,10 @@ namespace common {
         double timestamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         vector<OneFlowData> flowData;
     public:
+        TrafficFlow() {
+            this->cmdType = CmdTrafficFlowGather;
+        }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
@@ -473,7 +481,7 @@ namespace common {
         vector<StopLinePassData_vehicleListItem> vehicleList;
     public:
         StopLinePassData() {
-            this->cmdType = CmdInWatchData_2;
+            this->cmdType = CmdStopLinePassData;
         }
 
         bool JsonMarshal(Json::Value &out);
@@ -481,17 +489,63 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class Camera3516Alarm_areaListItem {
+    //异常停车报警
+    class AbnormalStopData : public PkgClass {
     public:
-        int p0x;
-        int p0y;
-        int p1x;
-        int p1y;
-        int p2x;
-        int p2y;
-        int p3x;
-        int p3y;
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        string laneCode;
+        int alarmType;
+        int alarmStatus;
+        string alarmTime;
+    public:
+        AbnormalStopData() {
+            this->cmdType = CmdAbnormalStopData;
+        }
 
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //长距离压实线报警上传
+    class LongDistanceOnSolidLineAlarm : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        string laneCode;
+        double longitude;
+        double latitude;
+        int alarmType;
+        int alarmStatus;
+        string alarmTime;
+    public:
+        LongDistanceOnSolidLineAlarm() {
+            this->cmdType = CmdLongDistanceOnSolidLineAlarm;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //行人数据
+    class HumanData_areaListItem_pointListItem {
+        int x;
+        int y;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class HumanData_areaListItem {
+    public:
+        vector<HumanData_areaListItem_pointListItem> pointList;
         int humanNum;
         int humanType;
         int bicycleNum;
@@ -502,7 +556,7 @@ namespace common {
     };
 
 
-    class Camera3516Alarm : public PkgClass {
+    class HumanData : public PkgClass {
     public:
         string oprNum;
         double timestamp;
@@ -510,12 +564,42 @@ namespace common {
         string hardCode;
         int location;
         int direction;
-        vector<Camera3516Alarm_areaListItem> areaList;
+        vector<HumanData_areaListItem> areaList;
     public:
-        Camera3516Alarm() {
-            this->cmdType = CmdCamera3516Alarm;
+        HumanData() {
+            this->cmdType = CmdHumanData;
         };
 
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class HumanDataGather_deviceListItem{
+    public:
+        string deviceCode;
+        int detectDirection;
+        int direction;
+        int humanNum;
+        int humanType;
+        int bicycleNum;
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class HumanDataGather : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        vector<HumanDataGather_deviceListItem> deviceList;
+    public:
+        HumanDataGather(){
+            this->cmdType=CmdHumanData;
+        }
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
