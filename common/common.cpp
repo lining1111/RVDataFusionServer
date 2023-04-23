@@ -149,6 +149,21 @@ namespace common {
         }
     }
 
+    bool Control::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["isSendVideoInfo"] = this->isSendVideoInfo;
+        out["videoType"] = this->videoType;
+        return true;
+    }
+
+    bool Control::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->isSendVideoInfo = in["isSendVideoInfo"].asInt();
+        this->videoType = in["videoType"].asInt();
+        return true;
+    }
 
     bool AnnuciatorInfo::JsonMarshal(Json::Value &out) {
 
@@ -1213,5 +1228,7 @@ namespace common {
 
         return true;
     }
+
+
 }
 

@@ -53,7 +53,7 @@ private:
     */
     static void Task_Keep(void *p);
 
-    static int SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, uint64_t timestamp, bool isSave = false);
+    static int SendDataUnitO(FusionClient *client, string msgType, Pkg pkg);
 
     static void Task_CrossTrafficJamAlarm(void *p);
 

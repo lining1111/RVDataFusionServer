@@ -255,20 +255,21 @@ public:
             return true;
         }
     }
-    int FindIndexInUnOrder(const string in){
-        printf("in :%s\n", in.c_str());
+
+    int FindIndexInUnOrder(const string in) {
+//        printf("in :%s\n", in.c_str());
         int index = -1;
         //首先遍历是否已经存在
         int alreadyExistIndex = -1;
         for (int i = 0; i < unOrder.size(); i++) {
             auto &iter = unOrder.at(i);
-            printf("iter :%s\n", iter.c_str());
+//            printf("iter :%s\n", iter.c_str());
             if (iter == in) {
                 alreadyExistIndex = i;
                 break;
             }
         }
-        printf("alreadyExistIndex:%d\n", alreadyExistIndex);
+//        printf("alreadyExistIndex:%d\n", alreadyExistIndex);
         if (alreadyExistIndex >= 0) {
             index = alreadyExistIndex;
         } else {
@@ -277,7 +278,7 @@ public:
                 auto &iter = unOrder.at(i);
                 if (iter.empty()) {
                     iter = in;
-                    printf("iter1 :%s\n", iter.c_str());
+//                    printf("iter1 :%s\n", iter.c_str());
                     index = i;
                     break;
                 }
@@ -438,14 +439,14 @@ public:
     int angle_value = -1000;
 
 
-        // 新版多路融合数据输入！
+    // 新版多路融合数据输入！
     int GateContinueNum = 6;//连续6次都匹配上，转为稳定航迹
     int GateFailNum = 3;//连续3次都失配，删除航迹
-    double  gate = 8;
-    bool time_flag=false;
-    vector<double> FixTheta={0,0,0};
-    vector<double> RoadTheta={0.0,90.0 / 180 * 3.1415926,-90.0 / 180 * 3.1415926};
-    
+    double gate = 8;
+    bool time_flag = false;
+    vector<double> FixTheta = {0, 0, 0};
+    vector<double> RoadTheta = {0.0, 90.0 / 180 * 3.1415926, -90.0 / 180 * 3.1415926};
+
 
     int TaskNotMerge(RoadDataInSet roadDataInSet);
 
@@ -538,48 +539,58 @@ public:
 };
 
 //异常停车报警
-class DataUnitAbnormalStopData: public DataUnit<AbnormalStopData,AbnormalStopData>{
+class DataUnitAbnormalStopData : public DataUnit<AbnormalStopData, AbnormalStopData> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitAbnormalStopData(){
+    DataUnitAbnormalStopData() {
 
     }
-    ~DataUnitAbnormalStopData(){
+
+    ~DataUnitAbnormalStopData() {
 
     }
+
     DataUnitAbnormalStopData(int c, int threshold_ms, int i_num, int cache, void *owner);
+
     void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };
 
 //长距离压实线报警
-class DataUnitLongDistanceOnSolidLineAlarm: public DataUnit<LongDistanceOnSolidLineAlarm,LongDistanceOnSolidLineAlarm>{
+class DataUnitLongDistanceOnSolidLineAlarm
+        : public DataUnit<LongDistanceOnSolidLineAlarm, LongDistanceOnSolidLineAlarm> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitLongDistanceOnSolidLineAlarm(){
+    DataUnitLongDistanceOnSolidLineAlarm() {
 
     }
-    ~DataUnitLongDistanceOnSolidLineAlarm(){
+
+    ~DataUnitLongDistanceOnSolidLineAlarm() {
 
     }
+
     DataUnitLongDistanceOnSolidLineAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+
     void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };
 
 //行人数据
-class DataUnitHumanData: public DataUnit<HumanData,HumanData>{
+class DataUnitHumanData : public DataUnit<HumanData, HumanData> {
 public:
     int saveCount = 0;// 测试存包用
-    DataUnitHumanData(){
+    DataUnitHumanData() {
 
     }
-    ~DataUnitHumanData(){
+
+    ~DataUnitHumanData() {
 
     }
+
     DataUnitHumanData(int c, int threshold_ms, int i_num, int cache, void *owner);
+
     void init(int c, int threshold_ms, int i_num, int cache, void *owner);
 
     static void task(void *local);

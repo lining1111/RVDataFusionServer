@@ -12,6 +12,7 @@
 #include "client/FusionClient.h"
 #include "common/common.h"
 #include "common/CRC.h"
+#include "common/proc.h"
 #include <glog/logging.h>
 #include "net/cpp-icmplib.h"
 
@@ -89,6 +90,7 @@ int FusionClient::Run() {
     //start pthread
     futureDump = std::async(std::launch::async, ThreadDump, this);
     futureProcessRev = std::async(std::launch::async, ThreadProcessRecv, this);
+    futureGetPkgContent = std::async(std::launch::async, ThreadGetPkgContent, this);
     futureProcessSend = std::async(std::launch::async, ThreadProcessSend, this);
     //因为上层不会回复，所以不检查状态
 //    thread_checkStatus = thread(ThreadCheckStatus, this);
@@ -141,6 +143,11 @@ int FusionClient::Close() {
         }
         try {
             futureProcessRev.wait();
+        } catch (std::future_error e) {
+            LOG(ERROR) << e.what();
+        }
+        try {
+            futureGetPkgContent.wait();
         } catch (std::future_error e) {
             LOG(ERROR) << e.what();
         }
@@ -207,7 +214,6 @@ int FusionClient::ThreadProcessRecv(void *p) {
 
     LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
     while (client->isRun) {
-        usleep(100);
         if (client->rb == nullptr) {
             //数据缓存区不存在
             continue;
@@ -315,6 +321,34 @@ int FusionClient::ThreadProcessRecv(void *p) {
             }
                 break;
         }
+        usleep(10);
+    }
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
+    return 0;
+}
+
+int FusionClient::ThreadGetPkgContent(void *p) {
+    if (p == nullptr) {
+        return -1;
+    }
+    auto client = (FusionClient *) p;
+
+    LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " run";
+    while (client->isRun) {
+        Pkg pkg;
+        if (client->queuePkg.pop(pkg)) {
+//        Info("pkg cmd:%d", pkg.head.cmd);
+            //按照cmd分别处理
+            auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
+            if (iter != PkgProcessMap.end()) {
+                iter->second(client->server_ip,client->server_port, pkg.body);
+            } else {
+                //最后没有对应的方法名
+                VLOG(2) << "server:" << client->server_ip
+                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+            }
+        }
+//        usleep(10);
     }
     LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;
@@ -357,6 +391,7 @@ int FusionClient::ThreadProcessSend(void *p) {
             ptr += nsend;
         }
         pthread_mutex_unlock(&client->lock_sock);
+        usleep(10);
     }
     delete[] buf_send;
     LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
@@ -404,4 +439,3 @@ int FusionClient::SendBase(Pkg pkg) {
     pthread_mutex_unlock(&lock_sock);
     return ret;
 }
-

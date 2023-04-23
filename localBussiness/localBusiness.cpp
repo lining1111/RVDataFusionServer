@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include "glog/logging.h"
 #include "data/Data.h"
+#include "common/config.h"
 
 static string savePath = "/mnt/mnt_hd/save/";
 static int saveCountMax = 0;
@@ -82,7 +83,8 @@ void LocalBusiness::StartTimerTask() {
     timerAbnormalStopData.start(1000, std::bind(Task_AbnormalStopData, this));
     timerLongDistanceOnSolidLineAlarm.start(1000, std::bind(Task_LongDistanceOnSolidLineAlarm, this));
     timerHumanData.start(1000, std::bind(Task_HumanData, this));
-//    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
+
+
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
@@ -142,49 +144,24 @@ void LocalBusiness::Task_Keep(void *p) {
     }
 }
 
-int LocalBusiness::SendDataUnitO(LocalBusiness *local, string msgType, Pkg pkg, uint64_t timestamp, bool isSave) {
-    //存发送
-    if (isSave) {
-        string dirName1 = savePath + msgType;
-        int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-        if (!isCreate1)
-            VLOG(2) << "create path:" << dirName1;
-        else
-            VLOG(2) << "create path failed! error _code:" << isCreate1;
+int LocalBusiness::SendDataUnitO(FusionClient *client, string msgType, Pkg pkg) {
 
-        string fileName = savePath + msgType + "/" + to_string(timestamp) + ".txt";
-        ofstream file;
-        file.open(fileName);
-        if (file.is_open()) {
-            file.write(pkg.body.data(), pkg.body.size());
-            file.flush();
-            file.close();
-        }
-    }
-
-    if (local->clientList.empty()) {
-        LOG(ERROR) << "client list empty";
-        return -1;
-    }
     int ret = 0;
-    for (auto &iter1:local->clientList) {
-        auto cli = iter1.second;
-        if (cli->isRun) {
-            VLOG(3) << "发送到上层" << cli->server_ip << ":" << cli->server_port
-                    << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
-            if (cli->SendBase(pkg) == -1) {
-                VLOG(3) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
-                LOG(INFO) << msgType << " 发送失败:" << cli->server_ip << ":" << cli->server_port;
-                ret = -1;
-            } else {
-                VLOG(3) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
-                LOG(INFO) << msgType << " 发送成功:" << cli->server_ip << ":" << cli->server_port;
-            }
-        } else {
-            VLOG(3) << "未连接上层:" << cli->server_ip << ":" << cli->server_port;
+
+    if (client->isRun) {
+//        VLOG(3) << "发送到上层" << client->server_ip << ":" << client->server_port
+//                << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
+        if (client->SendBase(pkg) == -1) {
+            VLOG(2) << msgType << " 发送失败:" << client->server_ip << ":" << client->server_port;
             ret = -1;
+        } else {
+            VLOG(2) << msgType << " 发送成功:" << client->server_ip << ":" << client->server_port;
         }
+    } else {
+        VLOG(2) << "未连接上层:" << client->server_ip << ":" << client->server_port;
+        ret = -1;
     }
+
     return ret;
 }
 
@@ -210,7 +187,32 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -236,7 +238,31 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -262,7 +288,31 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -272,7 +322,7 @@ void LocalBusiness::Task_FusionData(void *p) {
         return;
     }
     auto local = (LocalBusiness *) p;
-    LOG(INFO) << __FUNCTION__ << " START";
+//    LOG(INFO) << __FUNCTION__ << " START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }
@@ -286,11 +336,59 @@ void LocalBusiness::Task_FusionData(void *p) {
 //            LOG(INFO) << "fusionData crossID:" << data.crossID << ",timestamp:" << uint64_t(data.timstamp)
 //                      << ",lstObjTarget size:" << data.lstObjTarget.size()
 //                      << ",lstVideos size:" << data.lstVideos.size();
-            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
-            Pkg pkg;
-            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-            dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timstamp);
+
+//            printf("101经纬度:%0.12f %.12f\n", data.lstObjTarget.at(0).latitude, data.lstObjTarget.at(0).longitude);
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                FusionData dataSend = data;
+                //是否需要剔除图片
+                bool isSendPIC = true;
+                for (auto iter1:localConfig.isSendPIC) {
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t)iter.second->server_port)) {
+                        isSendPIC = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (!isSendPIC){
+                    dataSend.isHasImage = 0;
+                    for (auto &iter2:dataSend.lstVideos) {
+                        iter2.imageData.clear();
+                    }
+
+                    for (auto &iter3:dataSend.lstObjTarget) {
+                        iter3.carFeaturePic.clear();
+                    }
+                }
+
+                uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+                Pkg pkg;
+                dataSend.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
+                //存发送
+                if (0) {
+                    string dirName1 = savePath + msgType + "/" + iter.second->server_ip + ":" +
+                                      to_string(iter.second->server_port);
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        VLOG(2) << "create path:" << dirName1;
+                    else
+                        VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                    string fileName = savePath + msgType + "/" + to_string(data.timstamp) + ".txt";
+                    ofstream file;
+                    file.open(fileName);
+                    if (file.is_open()) {
+                        file.write(pkg.body.data(), pkg.body.size());
+                        file.flush();
+                        file.close();
+                    }
+                }
+
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -316,7 +414,31 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -342,7 +464,31 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -368,7 +514,31 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -394,7 +564,31 @@ void LocalBusiness::Task_HumanData(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -420,7 +614,31 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }
@@ -446,7 +664,31 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
-            SendDataUnitO(local, msgType, pkg, (uint64_t) data.timestamp);
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter:local->clientList) {
+                SendDataUnitO(iter.second, msgType, pkg);
+            }
         }
     }
 }

@@ -279,21 +279,23 @@ int DataUnitCrossTrafficJamAlarm::ThreadGetDataInRange(DataUnitCrossTrafficJamAl
                     data->plateId = refer.crossID;
                 }
 
-
                 cur.oprNum = random_uuid();
                 cur.timestamp = curTimestamp;
                 cur.crossID = data->plateId;
                 cur.hardCode = refer.hardCode;
                 cur.alarmType = 0;
                 cur.alarmStatus = 0;
-                if (uint64_t(refer.timestamp) < curTimestamp) {
+//                VLOG(3) << "DataUnitCrossTrafficJamAlarm第" << index << "路取到的时间戳" << (uint64_t) refer.timestamp
+//                        << ",标定时间戳" << (uint64_t) curTimestamp;
+
+                if (uint64_t(refer.timestamp) <= curTimestamp) {
                     isFrameExist = true;
                     if (refer.alarmType == 1) {
                         cur.alarmType = refer.alarmType;
                         cur.alarmStatus = refer.alarmStatus;
                         cur.alarmTime = refer.alarmTime;
                     }
-
+                    dataUnit->popI(refer, index);
                 } else if (uint64_t(refer.timestamp) > curTimestamp) {
                     //在右值外
                     VLOG(3) << "DataUnitCrossTrafficJamAlarm第" << index << "路时间戳较新，保留:"
@@ -469,12 +471,13 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                             dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timstamp;
                             //将当前路的所有信息缓存入对应的索引
                             dataUnit->oneFrame[index] = cur;
-                            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较旧但只有1帧，保留:"
+                            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较旧但只有1帧，取出来:"
                                     << (uint64_t) refer.timstamp;
                             isFind = true;
                         }
                     } else {
-                        dataUnit->popI(refer, index);
+                        IType cur;
+                        dataUnit->popI(cur, index);
                         VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较旧，舍弃:"
                                 << (uint64_t) refer.timstamp;
                     }
@@ -512,6 +515,7 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
     roadDataInSet.timestamp = dataUnit->curTimestamp;
     for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
         auto iter = dataUnit->oneFrame.at(i);
+
         DataUnitFusionData::RoadData item;
         item.hardCode = iter.hardCode;
         item.imageData = iter.imageData;
@@ -1009,14 +1013,14 @@ int DataUnitIntersectionOverflowAlarm::ThreadGetDataInRange(DataUnitIntersection
                 cur.hardCode = refer.hardCode;
                 cur.alarmType = 0;
                 cur.alarmStatus = 0;
-                if (uint64_t(refer.timestamp) < curTimestamp) {
+                if (uint64_t(refer.timestamp) <= curTimestamp) {
                     isFrameExist = true;
                     if (refer.alarmType == 1) {
                         cur.alarmType = refer.alarmType;
                         cur.alarmStatus = refer.alarmStatus;
                         cur.alarmTime = refer.alarmTime;
                     }
-
+                    dataUnit->popI(refer, index);
                 } else if (uint64_t(refer.timestamp) > curTimestamp) {
                     //在右值外
                     VLOG(3) << "DataUnitIntersectionOverflowAlarm第" << index << "路时间戳较新，保留:"
@@ -1290,7 +1294,8 @@ void DataUnitLongDistanceOnSolidLineAlarm::task(void *local) {
                 iter.pop(cur);
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
+                            << (uint64_t) item.timestamp;
                 } else {
                     VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }

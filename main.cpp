@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include "glogHelper/GlogHelper.h"
+#include "common/config.h"
 
 int signalIgnPipe() {
     struct sigaction act;
@@ -31,10 +32,11 @@ int signalIgnPipe() {
 }
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
-DEFINE_string(cloudIp, "58.48.187.234", "云端ip，默认 58.48.187.234");
-DEFINE_int32(cloudPort, 9966, "云端端口号，默认9966");
+DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
+DEFINE_int32(cloudPort, 9988, "云端端口号，默认9966");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 DEFINE_int32(keep, 1, "日志清理周期 单位day，默认1");
+DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 #ifdef aarch64
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
@@ -103,6 +105,9 @@ int main(int argc, char **argv) {
         cloudPort = FLAGS_cloudPort;
         LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
     }
+
+    //将配置写入
+    localConfig.isSendPIC.push_back(ConfigEnable{cloudIp,cloudPort,FLAGS_isSendPIC});
 
     LOG(INFO)<<"开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();

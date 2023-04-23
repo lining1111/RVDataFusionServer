@@ -45,7 +45,7 @@ namespace common {
 
     enum CmdType {
         CmdResponse = 0x00,//应答指令
-        CmdLogin = 0x01,//设备登录
+        CmdControl = 0x01,//设备控制指令--视频数据回传
         CmdHeartBeat = 0x02,//心跳
         CmdFusionData = 0x03,//监控实时数据
         CmdCrossTrafficJamAlarm = 0x04,//交叉路口堵塞报警
@@ -129,6 +129,22 @@ namespace common {
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
     } Beats;//心跳帧 "Beats"
+
+    class Control :public PkgClass{
+    public:
+        string oprNum;// `json "oprNum"` uuid()
+        double timestamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
+        int isSendVideoInfo;//0 不回传 1 回传
+        int videoType;
+    public:
+        Control(){
+            this->cmdType = CmdControl;
+        }
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
 
     //实时数据
     class AnnuciatorInfo {

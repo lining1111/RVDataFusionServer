@@ -35,6 +35,7 @@ public:
     bool isLocalThreadRun = false;
     std::shared_future<int> futureDump;
     std::shared_future<int> futureProcessRev;
+    std::shared_future<int> futureGetPkgContent;
     std::shared_future<int> futureProcessSend;
     long checkStatus_timeval = 5;
     long heartBeatTimeval = 5/*30*/;//应该和server端保持一致
@@ -83,6 +84,8 @@ private:
     static int ThreadDump(void *p);
 
     static int ThreadProcessRecv(void *p);
+
+    static int ThreadGetPkgContent(void *p);
 
     static int ThreadProcessSend(void *p);
 
