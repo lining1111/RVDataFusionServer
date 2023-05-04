@@ -1209,7 +1209,26 @@ void DataUnitHumanData::task(void *local) {
             while (!iter.empty()) {
                 IType cur;
                 iter.pop(cur);
-                OType item = cur;
+                OType item;
+                item.oprNum = cur.oprNum;
+                item.timestamp = cur.timestamp;
+                item.crossID = cur.crossID;
+                item.hardCode = cur.hardCode;
+
+                HumanDataGather_deviceListItem item1;
+                item1.direction = cur.direction;
+                item1.detectDirection - cur.direction;
+                item1.deviceCode = "";
+                item1.humanType = 0;
+                item1.humanNum = 0;
+                item1.bicycleNum = 0;
+                for (auto iter:cur.areaList) {
+                    item1.humanNum +=iter.humanNum;
+                    item1.bicycleNum +=iter.bicycleNum;
+                    item1.humanType = iter.humanType;
+                }
+                item.deviceList.push_back(item1);
+
                 if (!dataUnit->pushO(item)) {
                     VLOG(3) << "DataUnitHumanData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {

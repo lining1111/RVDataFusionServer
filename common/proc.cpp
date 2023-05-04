@@ -24,6 +24,7 @@ int PkgProcessFun_CmdControl(string ip, uint16_t port, string content) {
     }
     Control control;
     control.JsonUnmarshal(in);
+    LOG(INFO) << "control:" << content << "," << control.isSendVideoInfo;
     //处理控制命令
     for (auto &iter:localConfig.isSendPIC) {
         if ((iter.ip == ip) && (iter.port == port)) {

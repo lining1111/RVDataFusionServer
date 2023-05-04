@@ -578,7 +578,7 @@ public:
 };
 
 //行人数据
-class DataUnitHumanData : public DataUnit<HumanData, HumanData> {
+class DataUnitHumanData : public DataUnit<HumanData, HumanDataGather> {
 public:
     int saveCount = 0;// 测试存包用
     DataUnitHumanData() {

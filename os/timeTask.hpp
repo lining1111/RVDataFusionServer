@@ -4,6 +4,7 @@
 
 #ifndef _TIMETASK_H
 #define _TIMETASK_H
+
 #include <functional>
 #include <chrono>
 #include <thread>
@@ -11,13 +12,15 @@
 #include <memory>
 #include <mutex>
 #include <condition_variable>
+
 namespace os {
     class Timer {
     public:
         Timer() : _expired(true), _try_to_expire(false) {
 
         }
-        Timer(std::string name): _name(name), _expired(true), _try_to_expire(false){
+
+        Timer(std::string name) : _name(name), _expired(true), _try_to_expire(false) {
         }
 
         Timer(const Timer &timer) {
@@ -42,7 +45,9 @@ namespace os {
                     // sleep every interval and do the task again and again until times up
                     auto start = std::chrono::high_resolution_clock::now();
                     task();
-                    std::this_thread::sleep_until(start + std::chrono::milliseconds (interval_ms));
+                    auto end = std::chrono::high_resolution_clock::now();
+                    long count = ((end - start) / std::chrono::milliseconds(interval_ms)) + 1;
+                    std::this_thread::sleep_until(start + count * std::chrono::milliseconds(interval_ms));
                 }
 
                 {
@@ -58,7 +63,7 @@ namespace os {
             std::thread([delay_ms, task]() {
                 auto start = std::chrono::high_resolution_clock::now();
                 task();
-                std::this_thread::sleep_until(start + std::chrono::milliseconds (delay_ms));
+                std::this_thread::sleep_until(start + std::chrono::milliseconds(delay_ms));
             }).detach();
         }
 
@@ -73,7 +78,7 @@ namespace os {
             // wait until timer
             _try_to_expire = true; // change this bool value to make timer while loop stop
             {
-                std::unique_lock <std::mutex> locker(_mutex);
+                std::unique_lock<std::mutex> locker(_mutex);
                 _expired_cond.wait(locker, [this] { return _expired == true; });
 
                 // reset the timer
@@ -81,6 +86,7 @@ namespace os {
                     _try_to_expire = false;
             }
         }
+
         void setName(std::string name) {
             _name = name;
         }

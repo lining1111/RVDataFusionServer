@@ -90,6 +90,10 @@ void LocalBusiness::StartTimerTask() {
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
 //    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
 //    addTimerTask("localBusiness timerCreateTrafficFlowGather",1000,std::bind(Task_CreateTrafficFlowGather,this));
+
+//    timerCreateAbnormalStopData.start(1000,std::bind(Task_CreateAbnormalStopData,this));
+//    timerCreateLongDistanceOnSolidLineAlarm.start(1000,std::bind(Task_CreateLongDistanceOnSolidLineAlarm,this));
+//    timerCreateHumanData.start(1000,std::bind(Task_CreateHumanData,this));
 }
 
 
@@ -104,6 +108,10 @@ void LocalBusiness::StopTimerTaskAll() {
     timerStopLinePassData.stop();
 
     timerCreateFusionData.stop();
+
+    timerCreateAbnormalStopData.stop();
+    timerCreateLongDistanceOnSolidLineAlarm.stop();
+    timerCreateHumanData.stop();
 }
 
 void LocalBusiness::Task_Keep(void *p) {
@@ -347,12 +355,14 @@ void LocalBusiness::Task_FusionData(void *p) {
                 //是否需要剔除图片
                 bool isSendPIC = true;
                 for (auto iter1:localConfig.isSendPIC) {
-                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t)iter.second->server_port)) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
                         isSendPIC = iter1.isEnable;
                         break;
                     }
                 }
-                if (!isSendPIC){
+                if (!isSendPIC) {
                     dataSend.isHasImage = 0;
                     for (auto &iter2:dataSend.lstVideos) {
                         iter2.imageData.clear();
@@ -558,7 +568,7 @@ void LocalBusiness::Task_HumanData(void *p) {
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitHumanData;
 
-        HumanData data;
+        HumanDataGather data;
         if (dataUnit->popO(data)) {
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
@@ -775,6 +785,98 @@ void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
         printf("伪造数据 TrafficFlowGather 插入成功\n");
     } else {
         printf("伪造数据 TrafficFlowGather 插入失败\n");
+    }
+}
+
+void LocalBusiness::Task_CreateAbnormalStopData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
+    AbnormalStopData inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    inData.hardCode = "hardCode";
+    inData.laneCode = "laneCode";
+    std::time_t t = std::time(nullptr);
+    std::tm *tm = std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%F %T");
+    inData.alarmTime = ss.str();
+    inData.alarmStatus = 1;
+    inData.alarmType = 2;
+
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 AbnormalStopData 插入成功\n");
+    } else {
+        printf("伪造数据 AbnormalStopData 插入失败\n");
+    }
+}
+
+void LocalBusiness::Task_CreateLongDistanceOnSolidLineAlarm(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
+    LongDistanceOnSolidLineAlarm inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    inData.hardCode = "hardCode";
+    inData.laneCode = "laneCode";
+    std::time_t t = std::time(nullptr);
+    std::tm *tm = std::localtime(&t);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%F %T");
+    inData.alarmTime = ss.str();
+    inData.alarmStatus = 3;
+    inData.alarmType = 4;
+    inData.latitude = 123.456789;
+    inData.longitude = 987.654321;
+
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 LongDistanceOnSolidLineAlarm 插入成功\n");
+    } else {
+        printf("伪造数据 LongDistanceOnSolidLineAlarm 插入失败\n");
+    }
+}
+
+void LocalBusiness::Task_CreateHumanData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    //只往第1个server放数据
+    auto dataLocal = Data::instance();
+    auto dataUnit = &dataLocal->dataUnitHumanData;
+    HumanDataGather inData;
+    inData.oprNum = random_uuid();
+    inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    inData.crossID = "crossID";
+    inData.hardCode = "hardCode";
+    HumanDataGather_deviceListItem item;
+    item.deviceCode = "deviceCode";
+    item.direction = 5;
+    item.detectDirection = 6;
+    item.bicycleNum = 100;
+    item.humanType = 101;
+    item.humanNum = 102;
+    inData.deviceList.push_back(item);
+
+    if (dataUnit->pushO(inData)) {
+        printf("伪造数据 HumanData 插入成功\n");
+    } else {
+        printf("伪造数据 HumanData 插入失败\n");
     }
 }
 

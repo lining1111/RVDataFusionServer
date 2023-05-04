@@ -85,10 +85,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string>
+#include <iostream>
+#include <sys/time.h>
+#include "common/common.h"
 
 
-#define SERVER_PORT 9001
+#define SERVER_PORT 9002
 #define MAX_SERVERS 10
+
+using namespace std;
 
 int main(int argc, char **argv) {
     int fd_socket = 0;
@@ -128,16 +134,63 @@ int main(int argc, char **argv) {
         if (fd_client != -1) {
             client_num++;
             printf("Get connection from client %d: %s\n", client_num, inet_ntoa(sock_server_addr.sin_addr));
-            if (!fork()) {
-                while (1) {
-                    recv_len = recv(fd_client, recv_buffer, sizeof(recv_buffer) - 1, 0);
-                    if (recv_len <= 0) {
-                        close(fd_socket);
-                        return -1;
-                    } else {
-//                        recv_buffer[recv_len] = '\0';
-                        printf("Got message from client %d: len:%d\n", client_num, recv_len);
-                    }
+//            if (!fork()) {
+//                while (1) {
+//                    recv_len = recv(fd_client, recv_buffer, sizeof(recv_buffer) - 1, 0);
+//                    if (recv_len <= 0) {
+//                        close(fd_socket);
+//                        return -1;
+//                    } else {
+////                        recv_buffer[recv_len] = '\0';
+//                        printf("Got message from client %d: len:%d\n", client_num, recv_len);
+//                    }
+//                }
+//            }
+            bool isexit = false;
+            while (!isexit) {
+                string user;
+
+                cout << "please enter(q:quit):" << endl;
+                cin >> user;
+
+                if (user == "q") {
+                    return 0;
+                }
+
+                uint8_t msg[1024 * 256];
+                uint32_t msg_len = 1024 * 256;
+
+                for (int i = 0; i < 256 * 1024; i++) {
+                    msg[i] = i;
+                }
+
+                bzero(msg, 256 * 1024);
+                timeval tv;
+                gettimeofday(&tv, nullptr);
+                common::Pkg pkg;
+                if (user == "1") {
+                    //send control
+                    common::Control control;
+
+                    control.oprNum = common::random_uuid().data();
+                    control.timestamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+                    control.isSendVideoInfo = 0;
+
+                    control.PkgWithoutCRC(1, 123456789, pkg);
+                    common::Pack(pkg, msg, &msg_len);
+                    send(fd_client, msg, msg_len, 0);
+
+                } else if (user == "2") {
+                    //send control
+                    common::Control control;
+
+                    control.oprNum = common::random_uuid().data();
+                    control.timestamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
+                    control.isSendVideoInfo = 1;
+
+                    control.PkgWithoutCRC(2, 123456789, pkg);
+                    common::Pack(pkg, msg, &msg_len);
+                    send(fd_client, msg, msg_len, 0);
                 }
             }
         }

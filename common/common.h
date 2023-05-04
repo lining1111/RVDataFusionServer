@@ -479,6 +479,7 @@ namespace common {
         int flowDirection;//流向方向
         string vehiclePlate;//车牌号
         string vehiclePlateColor;//车牌颜色
+        int vehicleID;//车辆ID
         int vehicleType;//车辆类型
         int vehicleSpeed;//车辆速度
 

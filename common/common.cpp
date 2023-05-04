@@ -955,6 +955,7 @@ namespace common {
         out["flowDirection"] = this->flowDirection;
         out["vehiclePlate"] = this->vehiclePlate;
         out["vehiclePlateColor"] = this->vehiclePlateColor;
+        out["vehicleID"] = this->vehicleID;
         out["vehicleType"] = this->vehicleType;
         out["vehicleSpeed"] = this->vehicleSpeed;
 
@@ -967,6 +968,7 @@ namespace common {
         this->flowDirection = in["flowDirection"].asInt();
         this->vehiclePlate = in["vehiclePlate"].asString();
         this->vehiclePlateColor = in["vehiclePlateColor"].asString();
+        this->vehicleID = in["vehicleID"].asInt();
         this->vehicleType = in["vehicleType"].asInt();
         this->vehicleSpeed = in["vehicleSpeed"].asInt();
 
@@ -1171,6 +1173,7 @@ namespace common {
     }
 
     bool HumanDataGather_deviceListItem::JsonMarshal(Json::Value &out) {
+        out["deviceCode"] = this->deviceCode;
         out["detectDirection"] = this->detectDirection;
         out["direction"] = this->direction;
         out["humanNum"] = this->humanNum;
@@ -1180,6 +1183,7 @@ namespace common {
     }
 
     bool HumanDataGather_deviceListItem::JsonUnmarshal(Json::Value in) {
+        this->deviceCode = in["deviceCode"].asString();
         this->detectDirection = in["detectDirection"].asInt();
         this->direction = in["direction"].asInt();
         this->humanNum = in["humanNum"].asInt();

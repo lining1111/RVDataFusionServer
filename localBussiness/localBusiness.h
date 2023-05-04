@@ -42,6 +42,10 @@ public:
 
     Timer timerCreateFusionData;
 
+    Timer timerCreateAbnormalStopData;
+    Timer timerCreateLongDistanceOnSolidLineAlarm;
+    Timer timerCreateHumanData;
+
     void StartTimerTask();
 
     void StopTimerTaskAll();
@@ -81,6 +85,11 @@ private:
     static void Task_CreateCrossTrafficJamAlarm(void *p);
 
     static void Task_CreateTrafficFlowGather(void *p);
+
+    static void Task_CreateAbnormalStopData(void *p);
+    static void Task_CreateLongDistanceOnSolidLineAlarm(void *p);
+
+    static void Task_CreateHumanData(void *p);
 };
 
 

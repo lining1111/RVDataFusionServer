@@ -296,7 +296,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
 
                     //存入分包队列
                     if (!client->queuePkg.push(pkg)) {
-//                        Info("client:%d 分包队列已满，丢弃此包:%d-%s", client->sockfd, pkg.head.cmd, pkg.body.c_str());
+                        LOG(INFO)<<"分包队列已满，丢弃此包:"<<pkg.body;
                     }
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
@@ -342,13 +342,16 @@ int FusionClient::ThreadGetPkgContent(void *p) {
             auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
             if (iter != PkgProcessMap.end()) {
                 iter->second(client->server_ip,client->server_port, pkg.body);
+                LOG(INFO)<<"server,content:"<<pkg.body<<" exe over";
             } else {
                 //最后没有对应的方法名
                 VLOG(2) << "server:" << client->server_ip
                         << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+                LOG(INFO) << "server:" << client->server_ip
+                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
             }
         }
-//        usleep(10);
+        usleep(10);
     }
     LOG(INFO) << "FusionClient," << client->server_ip << ":" << client->server_port << " " << __FUNCTION__ << " exit";
     return 0;

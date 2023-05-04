@@ -53,7 +53,7 @@ private:
     uint8_t *pkgBuffer = nullptr;//分包缓冲
     int index = 0;//分包缓冲的索引
 public:
-    Queue<Pkg> queuePkg = Queue<Pkg>(1000);;//包消息队列
+    Queue<Pkg> queuePkg = Queue<Pkg>(30);//包消息队列
     Queue<Pkg> queue_send = Queue<Pkg>(1000);
 public:
     typedef map<string, Timer *> TimerTasks;
