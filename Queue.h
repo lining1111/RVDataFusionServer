@@ -60,6 +60,7 @@ public:
         if (q.empty()) {
             // 挂起状态，释放锁
             struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
 //            struct timeval now;
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
@@ -85,6 +86,7 @@ public:
         if (q.empty()) {
             // 挂起状态，释放锁
             struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
 //            struct timeval now;
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
@@ -108,6 +110,7 @@ public:
         if (q.empty()) {
             //挂起状态，释放锁
             struct timespec ts;
+            clock_gettime(CLOCK_REALTIME, &ts);
 //            struct timeval now;
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
