@@ -86,6 +86,7 @@ namespace os {
     string validIPAddress(string IP);
 
     void GetDirFiles(string path, vector<string> &array);
+
 };
 
 

@@ -160,13 +160,15 @@ namespace common {
 
     class ObjTarget {
     public:
-        int objID = 0;//目标ID
+        string objID;//目标ID
         int objCameraID = 0;//摄像头目标ID
         int objRadarID = 0;//雷达目标ID
         int objSourceType = 0;//0:相机 1：雷达 2：多目
         int objType = 0;//目标类型
         string plates;//车牌号
         string plateColor;//车牌颜色
+
+        int carType = 0;
         int left = 0;//坐标 左
         int top = 0;//坐标 上
         int right = 0;// 坐标 右
@@ -240,6 +242,7 @@ namespace common {
         string rvHardCode;
         vector<VideoTargets> lstVideoTargets;
         string imageData;//图像数据
+        int direction;
     public:
         bool JsonMarshal(Json::Value &out);
 
@@ -248,7 +251,7 @@ namespace common {
 
     class ObjMix {
     public:
-        int objID = 0;//目标ID
+        string objID;//目标ID
         vector<OneRvWayObject> rvWayObject;
         int objType = 0;//目标类型 0.汽车1.人2.摩托3.自行车4.三轮
         int objColor = 0;//目标颜色
@@ -323,7 +326,7 @@ namespace common {
         string oprNum;// `json "oprNum"`
         string crossID;
         string hardCode;
-        double timestamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        double timestamp;// `json "timestamp"`自1970.1.1 00:00:00到当前的毫秒数
         vector<OneFlowData> flowData;
     public:
         TrafficFlow() {

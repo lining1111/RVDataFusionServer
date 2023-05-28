@@ -7,6 +7,7 @@
 
 #include "os/nonCopyable.hpp"
 #include "DataUnit.h"
+#include "DataUnitFusionData.h"
 #include <mutex>
 
 class Data : public NonCopyable {
@@ -18,9 +19,9 @@ public:
 
     //各个数据
     //---------------监控数据相关---------//
-    DataUnitFusionData dataUnitFusionData{30, 80, 4, 10, m_pInstance};
+    DataUnitFusionData dataUnitFusionData{10, 80, 4, 10, m_pInstance};
     //---------------路口交通流向相关--------//
-    DataUnitTrafficFlowGather dataUnitTrafficFlowGather{30, 1000, 4, 10, m_pInstance};//1000ms一帧
+    DataUnitTrafficFlowGather dataUnitTrafficFlowGather{10, 500, 4, 3, m_pInstance};//1000ms一帧
     //------交叉口堵塞报警------//
     DataUnitCrossTrafficJamAlarm dataUnitCrossTrafficJamAlarm{30, 1000, 4, 10, m_pInstance};//1000ms一帧
     //------路口溢出报警上传-----//

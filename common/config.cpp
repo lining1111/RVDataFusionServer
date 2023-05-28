@@ -5,3 +5,4 @@
 #include "config.h"
 
 LocalConfig localConfig;
+int fixrPort = 9977;

@@ -65,7 +65,7 @@ public:
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
 //            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
-            ts.tv_sec = ts.tv_sec+1;//
+            ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {
@@ -91,7 +91,7 @@ public:
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
 //            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
-            ts.tv_sec = ts.tv_sec+1;//
+            ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {
@@ -115,7 +115,7 @@ public:
 //            long timeout_ms = 3000;//wait time 100ms
 //            gettimeofday(&now, nullptr);
 //            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
-            ts.tv_sec = ts.tv_sec+1;//
+            ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {
@@ -140,6 +140,11 @@ public:
 
     bool empty() {
         return q.empty();
+    }
+
+    void clear() {
+        queue<T> q1;
+        swap(q, q1);
     }
 
 private:

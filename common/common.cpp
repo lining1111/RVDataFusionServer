@@ -190,6 +190,7 @@ namespace common {
         out["objType"] = this->objType;
         out["plates"] = this->plates;
         out["plateColor"] = this->plateColor;
+        out["carType"] = this->carType;
         out["left"] = this->left;
         out["top"] = this->top;
         out["right"] = this->right;
@@ -209,13 +210,14 @@ namespace common {
     }
 
     bool ObjTarget::JsonUnmarshal(Json::Value in) {
-        this->objID = in["objID"].asInt();
+        this->objID = in["objID"].asString();
         this->objCameraID = in["objCameraID"].asInt();
         this->objRadarID = in["objRadarID"].asInt();
         this->objSourceType = in["objSourceType"].asInt();
         this->objType = in["objType"].asInt();
         this->plates = in["plates"].asString();
         this->plateColor = in["plateColor"].asString();
+        this->carType = in["carType"].asInt();
         this->left = in["left"].asInt();
         this->top = in["top"].asInt();
         this->right = in["right"].asInt();
@@ -249,7 +251,7 @@ namespace common {
 
         Json::Value listAnnuciatorInfo = Json::arrayValue;
         if (!this->listAnnuciatorInfo.empty()) {
-            for (auto iter:this->listAnnuciatorInfo) {
+            for (auto iter: this->listAnnuciatorInfo) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     listAnnuciatorInfo.append(item);
@@ -262,7 +264,7 @@ namespace common {
 
         Json::Value lstObjTarget = Json::arrayValue;
         if (!this->lstObjTarget.empty()) {
-            for (auto iter:this->lstObjTarget) {
+            for (auto iter: this->lstObjTarget) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     lstObjTarget.append(item);
@@ -290,7 +292,7 @@ namespace common {
 
         Json::Value listAnnuciatorInfo = in["listAnnuciatorInfo"];
         if (listAnnuciatorInfo.isArray()) {
-            for (auto iter:listAnnuciatorInfo) {
+            for (auto iter: listAnnuciatorInfo) {
                 AnnuciatorInfo item;
                 if (item.JsonUnmarshal(iter)) {
                     this->listAnnuciatorInfo.push_back(item);
@@ -300,7 +302,7 @@ namespace common {
 
         Json::Value lstObjTarget = in["lstObjTarget"];
         if (lstObjTarget.isArray()) {
-            for (auto iter:lstObjTarget) {
+            for (auto iter: lstObjTarget) {
                 ObjTarget item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstObjTarget.push_back(item);
@@ -349,9 +351,11 @@ namespace common {
         //imageData
         out["imageData"] = this->imageData;
 
+        out["direction"] = this->direction;
+
         Json::Value lstVideoTargets = Json::arrayValue;
         if (!this->lstVideoTargets.empty()) {
-            for (auto iter:this->lstVideoTargets) {
+            for (auto iter: this->lstVideoTargets) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     lstVideoTargets.append(item);
@@ -368,10 +372,11 @@ namespace common {
     bool VideoData::JsonUnmarshal(Json::Value in) {
         this->rvHardCode = in["rvHardCode"].asString();
         this->imageData = in["imageData"].asString();
+        this->direction = in["direction"].asInt();
 
         Json::Value lstVideoTargets = in["lstVideoTargets"];
         if (lstVideoTargets.isArray()) {
-            for (auto iter:lstVideoTargets) {
+            for (auto iter: lstVideoTargets) {
                 VideoTargets item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstVideoTargets.push_back(item);
@@ -402,7 +407,7 @@ namespace common {
 
         Json::Value rvWayObject = Json::arrayValue;
         if (!this->rvWayObject.empty()) {
-            for (auto iter:this->rvWayObject) {
+            for (auto iter: this->rvWayObject) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     rvWayObject.append(item);
@@ -417,7 +422,7 @@ namespace common {
     }
 
     bool ObjMix::JsonUnmarshal(Json::Value in) {
-        this->objID = in["objID"].asInt();
+        this->objID = in["objID"].asString();
         this->objType = in["objType"].asInt();
         this->objColor = in["objColor"].asInt();
         this->carType = in["catType"].asInt();
@@ -438,7 +443,7 @@ namespace common {
 
         Json::Value rvWayObject = in["rvWayObject"];
         if (rvWayObject.isArray()) {
-            for (auto iter:rvWayObject) {
+            for (auto iter: rvWayObject) {
                 OneRvWayObject item;
                 if (item.JsonUnmarshal(iter)) {
                     this->rvWayObject.push_back(item);
@@ -457,7 +462,7 @@ namespace common {
 
         Json::Value lstObjTarget = Json::arrayValue;
         if (!this->lstObjTarget.empty()) {
-            for (auto iter:this->lstObjTarget) {
+            for (auto iter: this->lstObjTarget) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     lstObjTarget.append(item);
@@ -470,7 +475,7 @@ namespace common {
 
         Json::Value lstVideos = Json::arrayValue;
         if (!this->lstVideos.empty()) {
-            for (auto iter:this->lstVideos) {
+            for (auto iter: this->lstVideos) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     lstVideos.append(item);
@@ -493,7 +498,7 @@ namespace common {
 
         Json::Value lstObjTarget = in["lstObjTarget"];
         if (lstObjTarget.isArray()) {
-            for (auto iter:lstObjTarget) {
+            for (auto iter: lstObjTarget) {
                 ObjMix item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstObjTarget.push_back(item);
@@ -503,7 +508,7 @@ namespace common {
 
         Json::Value lstVideos = in["lstVideos"];
         if (lstVideos.isArray()) {
-            for (auto iter:lstVideos) {
+            for (auto iter: lstVideos) {
                 VideoData item;
                 if (item.JsonUnmarshal(iter)) {
                     this->lstVideos.push_back(item);
@@ -576,7 +581,7 @@ namespace common {
 
         Json::Value flowData = Json::arrayValue;
         if (!this->flowData.empty()) {
-            for (auto iter:this->flowData) {
+            for (auto iter: this->flowData) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     flowData.append(item);
@@ -599,7 +604,7 @@ namespace common {
 
         if (in["flowData"].isArray()) {
             Json::Value flowData = in["flowData"];
-            for (auto iter:flowData) {
+            for (auto iter: flowData) {
                 OneFlowData item;
                 if (item.JsonUnmarshal(iter)) {
                     this->flowData.push_back(item);
@@ -618,7 +623,7 @@ namespace common {
 
         Json::Value trafficFlow = Json::arrayValue;
         if (!this->trafficFlow.empty()) {
-            for (auto iter:this->trafficFlow) {
+            for (auto iter: this->trafficFlow) {
                 Json::Value item;
                 if (iter.JsonMarshal(item)) {
                     trafficFlow.append(item);
@@ -641,7 +646,7 @@ namespace common {
 
         if (in["trafficFlow"].isArray()) {
             Json::Value trafficFlow = in["trafficFlow"];
-            for (auto iter:trafficFlow) {
+            for (auto iter: trafficFlow) {
                 OneFlowData item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlow.push_back(item);
@@ -869,7 +874,7 @@ namespace common {
 
         Json::Value vehicleIDList = Json::arrayValue;
         if (!this->vehicleIDList.empty()) {
-            for (auto iter:this->vehicleIDList) {
+            for (auto iter: this->vehicleIDList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 vehicleIDList.append(item);
@@ -890,7 +895,7 @@ namespace common {
 
         Json::Value vehicleIDList = in["vehicleIDList"];
         if (vehicleIDList.isArray()) {
-            for (auto iter:vehicleIDList) {
+            for (auto iter: vehicleIDList) {
                 InWatchData_2_trafficFlowListItem_vehicleIDListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->vehicleIDList.push_back(item);
@@ -912,7 +917,7 @@ namespace common {
 
         Json::Value trafficFlowList = Json::arrayValue;
         if (!this->trafficFlowList.empty()) {
-            for (auto iter:this->trafficFlowList) {
+            for (auto iter: this->trafficFlowList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 trafficFlowList.append(item);
@@ -936,7 +941,7 @@ namespace common {
 
         Json::Value trafficFlowList = in["trafficFlowList"];
         if (trafficFlowList.isArray()) {
-            for (auto iter:trafficFlowList) {
+            for (auto iter: trafficFlowList) {
                 InWatchData_2_trafficFlowListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->trafficFlowList.push_back(item);
@@ -983,7 +988,7 @@ namespace common {
 
         Json::Value vehicleList = Json::arrayValue;
         if (!this->vehicleList.empty()) {
-            for (auto iter:this->vehicleList) {
+            for (auto iter: this->vehicleList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 vehicleList.append(item);
@@ -1006,7 +1011,7 @@ namespace common {
 
         Json::Value vehicleList = in["vehicleList"];
         if (vehicleList.isArray()) {
-            for (auto iter:vehicleList) {
+            for (auto iter: vehicleList) {
                 StopLinePassData_vehicleListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->vehicleList.push_back(item);
@@ -1034,7 +1039,7 @@ namespace common {
     bool HumanData_areaListItem::JsonMarshal(Json::Value &out) {
         Json::Value pointList = Json::arrayValue;
         if (!this->pointList.empty()) {
-            for (auto iter:this->pointList) {
+            for (auto iter: this->pointList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 pointList.append(item);
@@ -1054,7 +1059,7 @@ namespace common {
     bool HumanData_areaListItem::JsonUnmarshal(Json::Value in) {
         Json::Value pointList = in["pointList"];
         if (pointList.isArray()) {
-            for (auto iter:pointList) {
+            for (auto iter: pointList) {
                 HumanData_areaListItem_pointListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->pointList.push_back(item);
@@ -1079,7 +1084,7 @@ namespace common {
 
         Json::Value areaList = Json::arrayValue;
         if (!this->areaList.empty()) {
-            for (auto iter:this->areaList) {
+            for (auto iter: this->areaList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 areaList.append(item);
@@ -1102,7 +1107,7 @@ namespace common {
 
         Json::Value areaList = in["areaList"];
         if (areaList.isArray()) {
-            for (auto iter:areaList) {
+            for (auto iter: areaList) {
                 HumanData_areaListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->areaList.push_back(item);
@@ -1199,7 +1204,7 @@ namespace common {
         out["hardCode"] = this->hardCode;
         Json::Value deviceList = Json::arrayValue;
         if (!this->deviceList.empty()) {
-            for (auto iter:this->deviceList) {
+            for (auto iter: this->deviceList) {
                 Json::Value item;
                 iter.JsonMarshal(item);
                 deviceList.append(item);
@@ -1220,7 +1225,7 @@ namespace common {
 
         Json::Value deviceList = in["deviceList"];
         if (deviceList.isArray()) {
-            for (auto iter:deviceList) {
+            for (auto iter: deviceList) {
                 HumanDataGather_deviceListItem item;
                 if (item.JsonUnmarshal(iter)) {
                     this->deviceList.push_back(item);

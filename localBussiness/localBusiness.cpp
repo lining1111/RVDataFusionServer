@@ -48,12 +48,12 @@ void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort) {
 
 void LocalBusiness::Run() {
     isRun = true;
-    for (auto &iter:serverList) {
+    for (auto &iter: serverList) {
         if (iter.second->Open() == 0) {
             iter.second->Run();
         }
     }
-    for (auto &iter:clientList) {
+    for (auto &iter: clientList) {
         if (iter.second->Open() == 0) {
             iter.second->Run();
         }
@@ -73,8 +73,8 @@ void LocalBusiness::Run() {
 
 void LocalBusiness::StartTimerTask() {
     timerKeep.start(1000 * 3, std::bind(Task_Keep, this));
-    timerFusionData.start(80, std::bind(Task_FusionData, this));
-    timerTrafficFlowGather.start(1000, std::bind(Task_TrafficFlowGather, this));
+    timerFusionData.start(1, std::bind(Task_FusionData, this));
+    timerTrafficFlowGather.start(1, std::bind(Task_TrafficFlowGather, this));
     timerCrossTrafficJamAlarm.start(1000, std::bind(Task_CrossTrafficJamAlarm, this));
     timerIntersectionOverflowAlarm.start(1000, std::bind(Task_IntersectionOverflowAlarm, this));
     timerInWatchData_1_3_4.start(1000, std::bind(Task_InWatchData_1_3_4, this));
@@ -126,7 +126,7 @@ void LocalBusiness::Task_Keep(void *p) {
     }
 
     if (local->isRun) {
-        for (auto &iter:local->serverList) {
+        for (auto &iter: local->serverList) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
@@ -138,7 +138,7 @@ void LocalBusiness::Task_Keep(void *p) {
             }
         }
 
-        for (auto &iter:local->clientList) {
+        for (auto &iter: local->clientList) {
             if (!iter.second->isRun) {
                 iter.second->Close();
                 if (iter.second->Open() == 0) {
@@ -152,27 +152,38 @@ void LocalBusiness::Task_Keep(void *p) {
     }
 }
 
+uint64_t getSendTimestamp() {
+    return (uint64_t) std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+/**
+ * 发送输出队列
+ * @param client
+ * @param msgType
+ * @param pkg
+ * @return 0:成功，未连接 -2 失败 -1
+ */
 int LocalBusiness::SendDataUnitO(FusionClient *client, string msgType, Pkg pkg) {
 
     int ret = 0;
 
     if (client->isRun) {
-//        VLOG(3) << "发送到上层" << client->server_ip << ":" << client->server_port
-//                << "消息:" << msgType << ",matrixNo:" << pkg.head.deviceNO;
-        if (client->SendBase(pkg) == -1) {
+        ret = client->SendBase(pkg);
+        if (ret < 0) {
             VLOG(2) << msgType << " 发送失败:" << client->server_ip << ":" << client->server_port;
             ret = -1;
         } else {
             VLOG(2) << msgType << " 发送成功:" << client->server_ip << ":" << client->server_port;
+            ret = 0;
         }
     } else {
         VLOG(2) << "未连接上层:" << client->server_ip << ":" << client->server_port;
-        ret = -1;
+        ret = -2;
     }
 
     return ret;
 }
-
 
 void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
     if (p == nullptr) {
@@ -188,9 +199,12 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         CrossTrafficJamAlarm data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -218,8 +232,13 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
+
             }
         }
     }
@@ -239,9 +258,12 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitIntersectionOverflowAlarm;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         IntersectionOverflowAlarm data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -268,12 +290,17 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
 }
+
+int TrafficFlowGatherSaveCount = 0;
 
 void LocalBusiness::Task_TrafficFlowGather(void *p) {
     if (p == nullptr) {
@@ -289,23 +316,30 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
-
+//        if (!dataUnit->o_queue.empty()) {
+//            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+//        }
         TrafficFlowGather data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
             dataUnit->sn++;
             //存发送
             if (0) {
+//            if (TrafficFlowGatherSaveCount < 10) {
+//                TrafficFlowGatherSaveCount++;
                 string dirName1 = savePath + msgType;
                 int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
                 if (!isCreate1)
                     VLOG(2) << "create path:" << dirName1;
                 else
                     VLOG(2) << "create path failed! error _code:" << isCreate1;
+                auto sendTime = getSendTimestamp();
 
-                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                string fileName =
+                        savePath + msgType + "/" + to_string(sendTime) + "_" + to_string(data.timestamp) + ".txt";
                 ofstream file;
                 file.open(fileName);
                 if (file.is_open()) {
@@ -318,19 +352,61 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+
+                uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
+                uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                switch (ret) {
+                    case 0: {
+                        LOG(INFO) << "发送成功" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timestamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -1: {
+                        LOG(INFO) << "发送失败" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timestamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -2: {
+                        LOG(INFO) << "未连接" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timestamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+
+                    }
+                        break;
+                    default: {
+
+                    }
+                        break;
+                }
+
             }
         }
     }
 }
+
+int FusionDataSaveCount = 0;
 
 void LocalBusiness::Task_FusionData(void *p) {
     if (p == nullptr) {
         return;
     }
     auto local = (LocalBusiness *) p;
-//    LOG(INFO) << __FUNCTION__ << " START";
     if (local->serverList.empty() || local->clientList.empty()) {
         return;
     }
@@ -338,23 +414,25 @@ void LocalBusiness::Task_FusionData(void *p) {
         string msgType = "FusionData";
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitFusionData;
-
+//        if (!dataUnit->o_queue.empty()) {
+//            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+//        }
         FusionData data;
         if (dataUnit->popO(data)) {
-//            LOG(INFO) << "fusionData crossID:" << data.crossID << ",timestamp:" << uint64_t(data.timstamp)
-//                      << ",lstObjTarget size:" << data.lstObjTarget.size()
-//                      << ",lstVideos size:" << data.lstVideos.size();
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
 
-//            printf("101经纬度:%0.12f %.12f\n", data.lstObjTarget.at(0).latitude, data.lstObjTarget.at(0).longitude);
             if (local->clientList.empty()) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port == fixrPort) {
+                    continue;
+                }
                 FusionData dataSend = data;
                 //是否需要剔除图片
                 bool isSendPIC = true;
-                for (auto iter1:localConfig.isSendPIC) {
+                for (auto iter1: localConfig.isSendPIC) {
 //                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
 //                              << iter1.isEnable;
                     if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
@@ -364,11 +442,11 @@ void LocalBusiness::Task_FusionData(void *p) {
                 }
                 if (!isSendPIC) {
                     dataSend.isHasImage = 0;
-                    for (auto &iter2:dataSend.lstVideos) {
+                    for (auto &iter2: dataSend.lstVideos) {
                         iter2.imageData.clear();
                     }
 
-                    for (auto &iter3:dataSend.lstObjTarget) {
+                    for (auto &iter3: dataSend.lstObjTarget) {
                         iter3.carFeaturePic.clear();
                     }
                 }
@@ -379,8 +457,9 @@ void LocalBusiness::Task_FusionData(void *p) {
                 dataUnit->sn++;
                 //存发送
                 if (0) {
-                    string dirName1 = savePath + msgType + "/" + iter.second->server_ip + ":" +
-                                      to_string(iter.second->server_port);
+//                if (FusionDataSaveCount < 10) {
+//                    FusionDataSaveCount++;
+                    string dirName1 = savePath + msgType;
                     int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
                     if (!isCreate1)
                         VLOG(2) << "create path:" << dirName1;
@@ -396,8 +475,44 @@ void LocalBusiness::Task_FusionData(void *p) {
                         file.close();
                     }
                 }
+                uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
 
-                SendDataUnitO(iter.second, msgType, pkg);
+                uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                switch (ret) {
+                    case 0: {
+                        LOG(INFO) << "发送成功" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -1: {
+                        LOG(INFO) << "发送失败" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -2: {
+                        LOG(INFO) << "未连接" << msgType
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+
+                    }
+                        break;
+                    default: {
+
+                    }
+                        break;
+                }
+
             }
         }
     }
@@ -417,9 +532,12 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitInWatchData_1_3_4;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         InWatchData_1_3_4 data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -446,8 +564,11 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
@@ -467,9 +588,12 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitInWatchData_2;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         InWatchData_2 data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -496,8 +620,11 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
@@ -517,9 +644,12 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitStopLinePassData;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         StopLinePassData data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -546,8 +676,11 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
@@ -567,9 +700,12 @@ void LocalBusiness::Task_HumanData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitHumanData;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         HumanDataGather data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -596,8 +732,11 @@ void LocalBusiness::Task_HumanData(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
@@ -617,9 +756,12 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         AbnormalStopData data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -646,8 +788,11 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }
@@ -667,9 +812,12 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
-
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
         LongDistanceOnSolidLineAlarm data;
         if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
             uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
             Pkg pkg;
             data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
@@ -696,8 +844,11 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
                 LOG(ERROR) << "client list empty";
                 return;
             }
-            for (auto iter:local->clientList) {
-                SendDataUnitO(iter.second, msgType, pkg);
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
     }

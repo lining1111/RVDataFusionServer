@@ -5,9 +5,48 @@
 #include "proc.h"
 #include "common.h"
 #include "config.h"
-#include "server/ClientInfo.h"
 #include "data/Data.h"
 #include <glog/logging.h>
+
+
+void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
+    pthread_mutex_lock(&mtx);
+    //如果已经更新了就不再进行下面的操作
+    if (!isSetInterval) {
+        //判断是否设置了index，index默认为-1
+        if (dataIndex == -1) {
+            dataIndex = index;
+        } else {
+            //判断是否是对应的index
+            if (dataIndex == index) {
+                //是对应的index的话，将时间戳存进队列
+                dataTimestamps.push_back(timestamp);
+//                printf("存入index %d timestamp %d\n", index, timestamp);
+//                printf("已存的容量%d\n", dataTimestamps.size());
+            }
+        }
+        //如果存满缓存帧后，计算帧率，并设置标志位
+        if (dataTimestamps.size() == caches) {
+            std::vector<uint64_t> intervals;
+            for (int i = 1; i < dataTimestamps.size(); i++) {
+                auto cha = dataTimestamps.at(i) - dataTimestamps.at(i - 1);
+                if (cha > 0) {
+                    intervals.push_back(cha);
+                }
+            }
+            //计算差值的平均数
+            uint64_t sum = 0;
+            for (auto iter: intervals) {
+                sum += iter;
+            }
+            this->interval = sum / intervals.size();
+//            printf("帧率的差和为%d\n", sum);
+//            printf("计算的帧率为%d\n", this->interval);
+            this->isSetInterval = true;
+        }
+    }
+    pthread_mutex_unlock(&mtx);
+}
 
 int PkgProcessFun_CmdResponse(string ip, uint16_t port, string content) {
     VLOG(2) << "应答指令";
@@ -26,7 +65,7 @@ int PkgProcessFun_CmdControl(string ip, uint16_t port, string content) {
     control.JsonUnmarshal(in);
     LOG(INFO) << "control:" << content << "," << control.isSendVideoInfo;
     //处理控制命令
-    for (auto &iter:localConfig.isSendPIC) {
+    for (auto &iter: localConfig.isSendPIC) {
         if ((iter.ip == ip) && (iter.port == port)) {
             iter.isEnable = control.isSendVideoInfo;
             break;
@@ -43,6 +82,9 @@ int PkgProcessFun_CmdHeartBeat(string ip, uint16_t port, string content) {
 }
 
 bool issave = false;
+
+
+CacheTimestamp CT_fusionData;
 
 int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     int ret = 0;
@@ -63,11 +105,21 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     WatchData watchData;
     watchData.JsonUnmarshal(in);
 
-    //按照方向顺序放入
-//    auto server = (FusionServer *) client->super;
-
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitFusionData;
+
+    //存到帧率缓存
+    auto ct = &CT_fusionData;
+    ct->update(watchData.direction, watchData.timstamp, dataUnit->cache);
+    pthread_mutex_lock(&ct->mtx);
+    if (ct->isSetInterval) {
+        if (!ct->isStartTask) {
+            ct->isStartTask = true;
+            dataUnit->init(10, ct->interval, localConfig.roadNum, dataUnit->cache, data);
+        }
+    }
+    pthread_mutex_unlock(&ct->mtx);
+
     for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
         if (data->roadDirection[i] == watchData.direction) {
             //方向相同，放入对应索引下数组
@@ -80,6 +132,10 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
                         << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                         << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
                         << i;
+                auto now = std::chrono::system_clock::now();
+                uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now.time_since_epoch()).count();
+
 //                printf("01经纬度：%.12f %.12f\n", watchData.lstObjTarget.at(0).latitude,
 //                       watchData.lstObjTarget.at(0).longitude);
 //                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
@@ -150,6 +206,7 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string 
     return ret;
 }
 
+CacheTimestamp CT_trafficFlowGather;
 int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content) {
     int ret = 0;
     Json::Reader reader;
@@ -166,6 +223,19 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitTrafficFlowGather;
     int index = dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
+
+    //存到帧率缓存
+    auto ct = &CT_trafficFlowGather;
+    ct->update(index, trafficFlow.timestamp, dataUnit->cache);
+    pthread_mutex_lock(&ct->mtx);
+    if (ct->isSetInterval) {
+        if (!ct->isStartTask) {
+            ct->isStartTask = true;
+            dataUnit->init(10, ct->interval, localConfig.roadNum, dataUnit->cache, data);
+        }
+    }
+    pthread_mutex_unlock(&ct->mtx);
+
     if (!dataUnit->pushI(trafficFlow, index)) {
         VLOG(2) << "client ip:" << ip << " TrafficFlowGather,丢弃消息";
         ret = -1;
@@ -356,3 +426,4 @@ map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_LongDistanceOnSolidLineAlarm),
         make_pair(CmdHumanData, PkgProcessFun_HumanData),
 };
+

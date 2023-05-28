@@ -9,7 +9,7 @@
 const int INF = 0x7FFFFFFF;
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
-    objTarget.objID = objectInfoT.objID;
+    objTarget.objID = to_string(objectInfoT.objID);
     objTarget.objCameraID = objectInfoT.cameraID;
     objTarget.objType = objectInfoT.objType;
     objTarget.plates = string(objectInfoT.plate_number);
@@ -31,7 +31,7 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
 
 void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
-    objectInfoT.objID = objTarget.objID;
+    objectInfoT.objID = atoi(objTarget.objID.c_str());
 
     objectInfoT.cameraID = objTarget.objCameraID;
 
@@ -95,4 +95,24 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
     objectInfoNew.latitude = objectInfoT.latitude;
 //    objectInfoNew.carLength = objectInfoT.carLength;
 //    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
+}
+
+void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix) {
+    objMix.objID = to_string(objectInfoNew.showID);
+    objMix.objType = objectInfoNew.objType;
+    objMix.objColor = 0;
+    objMix.angle = objectInfoNew.directionAngle;
+    objMix.speed = objectInfoNew.speed;
+    objMix.locationX = objectInfoNew.locationX;
+    objMix.locationY = objectInfoNew.locationY;
+    objMix.longitude = objectInfoNew.longitude;
+    objMix.latitude = objectInfoNew.latitude;
+    objMix.flagNew = objectInfoNew.flag_new;
+    //添加属性
+//    objMix.laneCode = objectInfoNew.laneCode;
+//    objMix.carLength = objectInfoNew.carLength;
+//    objMix.carFeaturePic = objectInfoNew.carFeaturePic;
+//    objMix.plates = objectInfoNew.plates;
+//    objMix.plateColor = objectInfoNew.plateColor;
+//    objMix.carType = objectInfoNew.carType;
 }

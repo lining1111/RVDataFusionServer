@@ -33,17 +33,21 @@ int signalIgnPipe() {
 
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
-DEFINE_int32(cloudPort, 9988, "云端端口号，默认9966");
+DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
-DEFINE_int32(keep, 1, "日志清理周期 单位day，默认1");
+DEFINE_int32(mergeMode, 0, "多路融合模式，默认0,0:雷视 1:雷达 2:图像");
+DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
 DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
+DEFINE_int32(roadNum, 4, "外设路数，默认4");
 #ifdef aarch64
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 #else
 DEFINE_string(logDir, "/tmp", "日志的输出目录,默认/tmp");
 #endif
+
 #include "eocCom/fileFun.h"
+
 int main(int argc, char **argv) {
 
     char curPath[512];
@@ -68,10 +72,7 @@ int main(int argc, char **argv) {
     uint16_t cloudPort;
 
     //初始化本地数据和数据库
-    auto dataLocal = Data::instance();
-    dataLocal->isMerge = FLAGS_isMerge;
-    LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
-    LOG(INFO)<<"开启eoc通信，同时读取本地数据库到缓存";
+    LOG(INFO) << "开启eoc通信，同时读取本地数据库到缓存";
     StartEocCommon();
 //    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
 //        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
@@ -107,14 +108,21 @@ int main(int argc, char **argv) {
     }
 
     //将配置写入
-    localConfig.isSendPIC.push_back(ConfigEnable{cloudIp,cloudPort,FLAGS_isSendPIC});
-
-    LOG(INFO)<<"开启本地tcp通信，包括本地服务端和连接上层的客户端";
+    localConfig.isSendPIC.push_back(ConfigEnable{cloudIp, cloudPort, FLAGS_isSendPIC});
+    // localConfig.mergeMode = FLAGS_mergeMode;
+    localConfig.mergeMode = 2;
+    localConfig.roadNum = FLAGS_roadNum;
+    auto dataLocal = Data::instance();
+    dataLocal->isMerge = FLAGS_isMerge;
+    LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
+    LOG(INFO) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
     LocalBusiness local;
     local.AddServer("server1", port);
     local.AddServer("server2", port + 1);
     local.AddClient("client1", cloudIp, cloudPort);
+    //增加一个默认端口的客户端
+    local.AddClient("client2", cloudIp, fixrPort);
     //开启本地业务
     local.Run();
 

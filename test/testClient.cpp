@@ -10,218 +10,166 @@
 #include <sys/time.h>
 #include "common/CRC.h"
 #include "common/common.h"
+#include <gflags/gflags.h>
+#include <fstream>
+#include <chrono>
+#include <iomanip>
+#include "os/timeTask.hpp"
 
 using namespace std;
 using namespace common;
 
 
-int Msg1(uint8_t *out, uint32_t *len) {
-    //set struct
-    WatchData watchData;
+int getFusionData(FusionData &out) {
+    //查看测试文件是否存在
+    ifstream ifs;
+    ifs.open("fusiondata.json", ios::in);
+    if (!ifs.is_open()) {
+        return -1;
+    } else {
+        stringstream buffer;
+        buffer << ifs.rdbuf();
+        string content(buffer.str());
+        ifs.close();
+        Json::Reader reader;
+        Json::Value in;
+        if (!reader.parse(content, in, false)) {
+            return -1;
+        }
+        out.JsonUnmarshal(in);
 
-    timeval tv;
-    gettimeofday(&tv, nullptr);
-
-    watchData.oprNum = random_uuid().data();
-    watchData.hardCode = "hardCode";
-    watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-    watchData.matrixNo = "matrixNo";
-    watchData.cameraIp = "192.168.1.100";
-    watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-    watchData.isHasImage = 1;
-    uint8_t img[4] = {1, 2, 3, 4};
-
-    watchData.direction = East;
-
-    //AnnuciatorInfo
-
-    AnnuciatorInfo annuciatorInfo1;
-    annuciatorInfo1.LightID = 1;
-    annuciatorInfo1.Light = "R";
-    annuciatorInfo1.RT = 123;
-
-    AnnuciatorInfo annuciatorInfo2;
-    annuciatorInfo2.LightID = 2;
-    annuciatorInfo2.Light = "G";
-    annuciatorInfo2.RT = 456;
-
-    AnnuciatorInfo annuciatorInfo3;
-    annuciatorInfo3.LightID = 3;
-    annuciatorInfo3.Light = "Y";
-    annuciatorInfo3.RT = 789;
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo1);
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo2);
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo3);
-
-    //lstObjTarget
-
-    ObjTarget objTarget1;
-    objTarget1.objID = 1;
-    objTarget1.objType = 1;
-    objTarget1.plates = "冀A123456";
-    objTarget1.plateColor = "BLUE";
-    objTarget1.left = 1;
-    objTarget1.top = 2;
-    objTarget1.right = 3;
-    objTarget1.bottom = 4;
-    objTarget1.locationX = 5;
-    objTarget1.locationY = 6;
-    objTarget1.distance = "很近";
-    objTarget1.directionAngle = 0.56;
-//    objTarget1.speed = "很快";
-
-    ObjTarget objTarget2;
-    objTarget2.objID = 2;
-    objTarget2.objType = 2;
-    objTarget2.plates = "冀A234567";
-    objTarget2.plateColor = "BLUE";
-    objTarget2.left = 1;
-    objTarget2.top = 2;
-    objTarget2.right = 3;
-    objTarget2.bottom = 4;
-    objTarget2.locationX = 5;
-    objTarget2.locationY = 6;
-    objTarget2.distance = "很近";
-    objTarget2.directionAngle = 0.56;
-//    objTarget2.speed = "很快";
-
-    watchData.lstObjTarget.push_back(objTarget1);
-    watchData.lstObjTarget.push_back(objTarget2);
-
-    string jsonMarshal;
-
-    Json::FastWriter fastWriter;
-    Json::Value root;
-    watchData.JsonMarshal(root);
-    jsonMarshal = fastWriter.write(root);
-
-    Pkg pkg;
-    int pkg_len = 0;
-    //1.头部
-    pkg.head.tag = '$';
-    pkg.head.version = 1;
-    pkg.head.cmd = CmdType::CmdFusionData;
-    pkg.head.sn = 1;
-    pkg.head.deviceNO = 0x12345678;
-    pkg.head.len = 0;
-    pkg_len += sizeof(pkg.head);
-    //2.正文string
-    pkg.body = jsonMarshal;
-    pkg_len += jsonMarshal.length();
-    //3检验值
-    pkg.crc.data = 0x0000;
-    pkg_len += sizeof(pkg.crc);
-    //4 长度信息
-    pkg.head.len = pkg_len;
-
-    //组包
-    Pack(pkg, out, len);
+        return 0;
+    }
 }
 
-int Msg2(uint8_t *out, uint32_t *len) {
-    //set struct
-    WatchData watchData;
+int getTrafficFlowGather(TrafficFlowGather &out) {
+    out.oprNum = random_uuid();
+    out.crossID = "crossID";
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestampNow = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
 
-    timeval tv;
-    gettimeofday(&tv, nullptr);
+    out.timestamp = timestampNow;
 
-    watchData.oprNum = random_uuid().data();
-    watchData.hardCode = "hardCode";
-    watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-    watchData.matrixNo = "matrixNo";
-    watchData.cameraIp = "192.168.1.101";
-    watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-    watchData.isHasImage = 1;
-    uint8_t img[4] = {1, 2, 3, 4};
-
-    watchData.direction = North;
-
-    //AnnuciatorInfo
-    AnnuciatorInfo annuciatorInfo1;
-    annuciatorInfo1.LightID = 1;
-    annuciatorInfo1.Light = "R";
-    annuciatorInfo1.RT = 123;
-
-    AnnuciatorInfo annuciatorInfo2;
-    annuciatorInfo2.LightID = 2;
-    annuciatorInfo2.Light = "G";
-    annuciatorInfo2.RT = 456;
-
-    AnnuciatorInfo annuciatorInfo3;
-    annuciatorInfo3.LightID = 3;
-    annuciatorInfo3.Light = "Y";
-    annuciatorInfo3.RT = 789;
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo1);
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo2);
-    watchData.listAnnuciatorInfo.push_back(annuciatorInfo3);
-
-    //lstObjTarget
-
-    ObjTarget objTarget1;
-    objTarget1.objID = 1;
-    objTarget1.objType = 1;
-    objTarget1.plates = "冀B123456";
-    objTarget1.plateColor = "BLUE";
-    objTarget1.left = 1;
-    objTarget1.top = 2;
-    objTarget1.right = 3;
-    objTarget1.bottom = 4;
-    objTarget1.locationX = 5;
-    objTarget1.locationY = 6;
-    objTarget1.distance = "很近";
-    objTarget1.directionAngle = 0.56;
-//    objTarget1.speed = "很快";
-
-    ObjTarget objTarget2;
-    objTarget2.objID = 2;
-    objTarget2.objType = 2;
-    objTarget2.plates = "冀B234567";
-    objTarget2.plateColor = "BLUE";
-    objTarget2.left = 1;
-    objTarget2.top = 2;
-    objTarget2.right = 3;
-    objTarget2.bottom = 4;
-    objTarget2.locationX = 5;
-    objTarget2.locationY = 6;
-    objTarget2.distance = "很近";
-    objTarget2.directionAngle = 0.23;
-//    objTarget2.speed = "很快";
-
-    watchData.lstObjTarget.push_back(objTarget1);
-    watchData.lstObjTarget.push_back(objTarget2);
-
-    string jsonMarshal;
-    Json::FastWriter fastWriter;
-    Json::Value root;
-    watchData.JsonMarshal(root);
-    jsonMarshal = fastWriter.write(root);
-
-    Pkg pkg;
-    int pkg_len = 0;
-    //1.头部
-    pkg.head.tag = '$';
-    pkg.head.version = 1;
-    pkg.head.cmd = CmdType::CmdFusionData;
-    pkg.head.sn = 2;
-    pkg.head.deviceNO = 0x87654321;
-    pkg.head.len = 0;
-    pkg_len += sizeof(pkg.head);
-    //2.正文string
-    pkg.body = jsonMarshal;
-    pkg_len += jsonMarshal.length();
-    //3检验值
-    pkg.crc.data = 0x0000;
-    pkg_len += sizeof(pkg.crc);
-    //4 长度信息
-    pkg.head.len = pkg_len;
-
-    //组包
-    Pack(pkg, out, len);
+    std::time_t t(out.timestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+    out.recordDateTime = ss.str();
+    //最大20
+    int max = 20;
+    for (int i = 0; i < max; i++) {
+        OneFlowData item;
+        item.flowDirection = i;
+        item.inAverageSpeed = i * 0.1;
+        item.inCars = i;
+        item.outAverageSpeed = i * 0.2;
+        item.outCars = i;
+        item.laneCode = to_string(i);
+        item.laneDirection = i;
+        item.queueCars = i;
+        item.queueLen = i * 8;
+        out.trafficFlow.push_back(item);
+    }
+    return 0;
 }
 
+pthread_mutex_t mtx;
+
+uint64_t snFusionData = 0;
+
+void Task_FusionData(int sock, FusionData fusionData) {
+
+    pthread_mutex_lock(&mtx);
+    string msgType = "FusionData";
+
+    auto timestamp = std::chrono::system_clock::now();
+    uint64_t timestamp_u = std::chrono::duration_cast<std::chrono::milliseconds>(
+            timestamp.time_since_epoch()).count();
+
+    fusionData.timstamp = timestamp_u;
+    snFusionData++;
+    Pkg pkg;
+    fusionData.PkgWithoutCRC(snFusionData, 1030033983, pkg);
+    uint8_t buf[1024 * 1024];
+    uint32_t buf_len = 0;
+    memset(buf, 0, 1024 * 1024);
+    Pack(pkg, buf, &buf_len);
+
+    auto ret = send(sock, buf, buf_len, 0);
+    if (ret < 0) {
+        std::cout << "发送失败" << msgType << std::endl;
+    } else if (ret != buf_len) {
+        std::cout << "发送失败" << msgType << std::endl;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestampSend = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
+    std::cout << "发送" << msgType << ",发送时间:" << to_string(timestampSend) << ",帧内时间:"
+              << to_string(fusionData.timstamp) << " " << buf_len << std::endl;
+    auto cost = timestampSend - timestamp_u;
+    if (cost > 80) {
+        std::cout << msgType << "发送耗时" << cost << "ms" << std::endl;
+    }
+    pthread_mutex_unlock(&mtx);
+
+}
+
+
+uint64_t snTrafficFlowGather = 0;
+
+void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
+
+    pthread_mutex_lock(&mtx);
+    string msgType = "TrafficFlowGather";
+
+    auto timestamp = std::chrono::system_clock::now();
+    uint64_t timestamp_u = std::chrono::duration_cast<std::chrono::milliseconds>(
+            timestamp.time_since_epoch()).count();
+
+    trafficFlowGather.timestamp = timestamp_u;
+
+    std::time_t t(trafficFlowGather.timestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+    trafficFlowGather.recordDateTime = ss.str();
+
+
+    snTrafficFlowGather++;
+    Pkg pkg;
+    trafficFlowGather.PkgWithoutCRC(snTrafficFlowGather, 1030033983, pkg);
+    uint8_t buf[1024 * 1024];
+    uint32_t buf_len = 0;
+    memset(buf, 0, 1024 * 1024);
+    Pack(pkg, buf, &buf_len);
+
+    auto ret = send(sock, buf, buf_len, 0);
+    if (ret < 0) {
+        std::cout << "发送失败" << msgType << std::endl;
+    } else if (ret != buf_len) {
+        std::cout << "发送失败" << msgType << std::endl;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestampSend = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
+    std::cout << "发送" << msgType << ",发送时间:" << to_string(timestampSend) << ",帧内时间:"
+              << to_string(trafficFlowGather.timestamp) << " " << buf_len << std::endl;
+    auto cost = timestampSend - timestamp_u;
+    if (cost > 80) {
+        std::cout << msgType << "发送耗时" << cost << "ms" << std::endl;
+    }
+    pthread_mutex_unlock(&mtx);
+
+}
+
+
+DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
+DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 
 int main(int argc, char **argv) {
 
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
     //初始化一个client
     int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -232,43 +180,43 @@ int main(int argc, char **argv) {
 
     int opt = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    timeval timeout;
-    timeout.tv_sec = 3;
-    timeout.tv_usec = 0;
-    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
-
-    int recvSize = 0;
-    int sendSize = 0;
-    socklen_t optlen = sizeof(int);
-
-    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
-    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
-
-    printf("原始缓存大小，接收%d 发送%d\n", recvSize, sendSize);
-
-
-    int recvBufSize = 256 * 1024;
-    int sendBufSize = 256 * 1024;
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
-    setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
-
-    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
-    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
-
-    printf("设置后缓存大小，接收%d 发送%d\n", recvSize, sendSize);
+//    timeval timeout;
+//    timeout.tv_sec = 3;
+//    timeout.tv_usec = 0;
+//    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+//    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+//
+//    int recvSize = 0;
+//    int sendSize = 0;
+//    socklen_t optlen = sizeof(int);
+//
+//    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
+//    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
+//
+//    printf("原始缓存大小，接收%d 发送%d\n", recvSize, sendSize);
+//
+//
+//    int recvBufSize = 256 * 1024;
+//    int sendBufSize = 256 * 1024;
+//    setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
+//    setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
+//
+//    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
+//    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
+//
+//    printf("设置后缓存大小，接收%d 发送%d\n", recvSize, sendSize);
 //
 //    string server_ip = "127.0.0.1";
 //    uint16_t server_port = 9000;
 
-    string server_ip = "10.110.25.149";
-    uint16_t server_port = 7890;
+    string server_ip = FLAGS_cloudIp;
+    uint16_t server_port = FLAGS_cloudPort;
 
     struct sockaddr_in server_addr;
     int ret = 0;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(server_port);//端口5000
+    server_addr.sin_port = htons(server_port);
 
     server_addr.sin_addr.s_addr = inet_addr(server_ip.c_str());
     ret = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr));
@@ -293,6 +241,24 @@ int main(int argc, char **argv) {
 //        getData->GetOrderListFileName(path);
 //    }
 
+//获取实时数据和统计数据
+    FusionData fusionData;
+    TrafficFlowGather trafficFlowGather;
+
+    if (getFusionData(fusionData) != 0) {
+        std::cout << "fusionData get fail" << std::endl;
+    }
+
+    if (getTrafficFlowGather(trafficFlowGather) != 0) {
+        std::cout << "trafficFlowGather get fail" << std::endl;
+    }
+
+    //开启两个定时任务
+    os::Timer timerFusionData;
+    os::Timer timerTrafficFlowGather;
+    timerFusionData.start(80, std::bind(Task_FusionData, sockfd, fusionData));
+    timerTrafficFlowGather.start(500, std::bind(Task_TrafficFlowGather, sockfd, trafficFlowGather));
+
     bool isExit = false;
 
     while (!isExit) {
@@ -305,187 +271,11 @@ int main(int argc, char **argv) {
             isExit = true;
             continue;
         }
-
-        uint8_t msg[1024 * 256];
-        uint32_t msg_len = 1024 * 256;
-
-        for (int i = 0; i < ARRAY_SIZE(msg); i++) {
-            msg[i] = i;
-        }
-
-        bzero(msg, ARRAY_SIZE(msg));
-        if (user == "1") {
-            //send WatchData 1
-
-
-//            Msg1(msg, &msg_len);
-//            int len = send(sockfd, msg, msg_len, 0);
-            //打印下buffer
-//            PrintHex(msg, msg_len);
-
-//            uint16_t crc = 0;
-//            memcpy(&crc, msg + msg_len - 2, 2);
-//            Info("crc send:%d", crc);
-
-            timeval begin;
-            timeval end;
-
-            uint64_t max = 0;
-            uint64_t min = 0;
-            uint64_t sum = 0;
-            uint64_t avg = 0;
-
-            for (int i = 0; i < 1000; i++) {
-                usleep(100 * 1000);
-                gettimeofday(&begin, nullptr);
-
-                int len = send(sockfd, msg, msg_len, 0);
-                if (len != msg_len) {
-                    printf("send fail\n");
-                } else {
-                    printf("send success len:%d\n", len);
-                }
-                gettimeofday(&end, nullptr);
-                uint64_t cost = (end.tv_sec - begin.tv_sec) * 1000 * 1000 + (end.tv_usec - begin.tv_usec);
-                printf("pkg sn:%d 发送耗时%lu us\n", i, cost);
-
-                if (i == 1) {
-                    max = cost;
-                    min = cost;
-                    avg = cost;
-                } else {
-                    if (cost > max) {
-                        max = cost;
-                    }
-
-                    if (cost < min) {
-                        min = cost;
-                    }
-                    sum += cost;
-                    avg = sum / (i + 1);
-                }
-            }
-
-            printf("max/min/avg:%d/%d/%d\n", max, min, avg);
-
-        } else if (user == "2") {
-            //send WatchData 2
-            Msg2(msg, &msg_len);
-            int len = send(sockfd, msg, msg_len, 0);
-            //打印下buffer
-//            PrintHex(msg, msg_len);
-
-            if (len != msg_len) {
-                printf("send fail\n");
-            } else {
-                printf("send success len:%d\n", len);
-            }
-        }
-//        int index = 0;
-//        if (user == "send") {
-//            //依次发送
-//            string file;
-//            if ((index + 1) < getData->files.size()) {
-//                file = getData->files.at(index);
-//            } else {
-//                index = 0;
-//                file = getData->files.at(index);
-//            }
-//            getData->GetDataFromOneFile(getData->path + "/" + file);
-//            getData->GetObjFromData(getData->data);
-//            WatchData watchData;
-//            timeval tv;
-//            gettimeofday(&tv, nullptr);
-//
-//            watchData.oprNum = random_uuid().data();
-//            watchData.hardCode = "hardCode";
-//            watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-//            watchData.matrixNo = "matrixNo";
-//            watchData.cameraIp = "192.168.1.100";
-//            watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-//            watchData.isHasImage = 1;
-//            uint8_t img[4] = {1, 2, 3, 4};
-//
-//            char imgBase64[16];
-//            unsigned int imgBase64Len = 0;
-//
-//            base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
-//
-//            watchData.imageData = string(imgBase64).data();
-//            watchData.direction = roadNum;
-//            //lstObjTarget
-//            for (int i = 0; i < getData->objOutput.size(); i++) {
-//                auto iter = getData->objOutput.at(i);
-//                watchData.lstObjTarget.push_back(iter);
-//            }
-//            //组包
-//            Pkg pkg;
-//            PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
-//            index++;
-//            Pack(pkg, msg, &msg_len);
-//            int len = send(sockfd, msg, msg_len, 0);
-//            //打印下buffer
-////            PrintHex(msg, msg_len);
-//
-//            if (len != msg_len) {
-//                Error("send fail");
-//            } else {
-//                Info("send success len:%d", len);
-//            }
-//
-//        } else if (user == "sendall") {
-//            //发送全部
-//            //1.读取路径下所有文件
-//            //依次发送
-//            for (int i = 0; i < getData->files.size(); i++) {
-//                string file = getData->files.at(i);
-//                getData->GetDataFromOneFile(getData->path + "/" + file);
-//                getData->GetObjFromData(getData->data);
-//                WatchData watchData;
-//                timeval tv;
-//                gettimeofday(&tv, nullptr);
-//
-//                watchData.oprNum = random_uuid().data();
-//                watchData.hardCode = "hardCode";
-//                watchData.timstamp = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-//                watchData.matrixNo = "matrixNo";
-//                watchData.cameraIp = "192.168.1.100";
-//                watchData.RecordDateTime = (tv.tv_sec * 1000 + tv.tv_usec / 1000);
-//                watchData.isHasImage = 1;
-//                uint8_t img[4] = {1, 2, 3, 4};
-//
-//                char imgBase64[16];
-//                unsigned int imgBase64Len = 0;
-//
-//                base64_encode((unsigned char *) img, 4, (unsigned char *) imgBase64, &imgBase64Len);
-//
-//                watchData.imageData = string(imgBase64).data();
-//                watchData.direction = roadNum;
-//                //lstObjTarget
-//                for (int j = 0; j < getData->objOutput.size(); j++) {
-//                    auto iter = getData->objOutput.at(j);
-//                    watchData.lstObjTarget.push_back(iter);
-//                }
-//                //组包
-//                Pkg pkg;
-//                PkgWatchDataWithoutCRC(watchData, index, 0x12345678, pkg);
-//                index++;
-//                Pack(pkg, msg, &msg_len);
-//                int len = send(sockfd, msg, msg_len, 0);
-//                //打印下buffer
-////            PrintHex(msg, msg_len);
-//
-//                if (len != msg_len) {
-//                    Error("send fail");
-//                } else {
-//                    Info("send success len:%d", len);
-//                }
-//                usleep(50 * 1000);
-//            }
-//        }
-
+        sleep(10);
     }
 
+    timerFusionData.stop();
+    timerTrafficFlowGather.stop();
     close(sockfd);
 
     return 0;

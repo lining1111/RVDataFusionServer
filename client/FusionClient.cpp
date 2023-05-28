@@ -49,9 +49,10 @@ int FusionClient::Open() {
 //        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         timeval timeout;
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100 * 1000;
-//        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
+        timeout.tv_usec = 80 * 1000;
+        //设置发送最大时间80ms
+        setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+//        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
     }
 
@@ -91,7 +92,7 @@ int FusionClient::Run() {
     futureDump = std::async(std::launch::async, ThreadDump, this);
     futureProcessRev = std::async(std::launch::async, ThreadProcessRecv, this);
     futureGetPkgContent = std::async(std::launch::async, ThreadGetPkgContent, this);
-    futureProcessSend = std::async(std::launch::async, ThreadProcessSend, this);
+//    futureProcessSend = std::async(std::launch::async, ThreadProcessSend, this);
     //因为上层不会回复，所以不检查状态
 //    thread_checkStatus = thread(ThreadCheckStatus, this);
 //    thread_checkStatus.detach();
@@ -296,7 +297,7 @@ int FusionClient::ThreadProcessRecv(void *p) {
 
                     //存入分包队列
                     if (!client->queuePkg.push(pkg)) {
-                        LOG(INFO)<<"分包队列已满，丢弃此包:"<<pkg.body;
+                        LOG(INFO) << "分包队列已满，丢弃此包:" << pkg.body;
                     }
 
                     client->bodyLen = 0;//获取分包头后，得到的包长度
@@ -341,14 +342,14 @@ int FusionClient::ThreadGetPkgContent(void *p) {
             //按照cmd分别处理
             auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
             if (iter != PkgProcessMap.end()) {
-                iter->second(client->server_ip,client->server_port, pkg.body);
-                LOG(INFO)<<"server,content:"<<pkg.body<<" exe over";
+                iter->second(client->server_ip, client->server_port, pkg.body);
+                LOG(INFO) << "server,content:" << pkg.body << " exe over";
             } else {
                 //最后没有对应的方法名
                 VLOG(2) << "server:" << client->server_ip
                         << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
-                LOG(INFO) << "server:" << client->server_ip
-                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+//                LOG(INFO) << "server:" << client->server_ip
+//                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
             }
         }
         usleep(10);
@@ -412,7 +413,7 @@ int FusionClient::SendQueue(Pkg pkg) {
 
 int FusionClient::SendBase(Pkg pkg) {
     int ret = 0;
-
+    //阻塞调用，加锁
     pthread_mutex_lock(&lock_sock);
     uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
@@ -426,9 +427,11 @@ int FusionClient::SendBase(Pkg pkg) {
     nleft = len_send;
     while (nleft > 0) {
         if ((nsend = send(sockfd, ptr, nleft, 0)) < 0) {
-            ret = -1;
             printf("消息 nsend=%d, 错误代码是%d\n", nsend, errno);
-            isRun = false;
+            if (errno == EPIPE) {
+                isRun = false;
+            }
+            ret = -1;
             break;
         } else if (nsend == 0) {
             ret = -1;

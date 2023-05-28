@@ -19,14 +19,14 @@ add_executable(testServer testServer.cpp ${SRC_FILES})
 target_link_libraries(testServer ${LIBS})
 redefine_file_macro(testServer)
 
-###测试客户端
-#add_executable(testClient testClient.cpp
-#        ../common/common.cpp
-#        ../common/CRC.cpp
-#        ../ringbuffer/RingBuffer.cpp
-#        ../getData/GetData.cpp)
-#target_link_libraries(testClient ${LIBS})
-#redefine_file_macro(testClient)
+##测试客户端
+add_executable(testClient testClient.cpp
+        ../common/common.cpp
+        ../common/CRC.cpp
+        ../ringbuffer/RingBuffer.cpp
+        ../getData/GetData.cpp)
+target_link_libraries(testClient ${LIBS})
+redefine_file_macro(testClient)
 #
 ###testGetData
 #add_executable(testGetData testGetData.cpp

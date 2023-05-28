@@ -4,6 +4,7 @@
 
 #include <sqlite3.h>
 #include "Data.h"
+#include "common/config.h"
 #include <algorithm>
 
 Data *Data::m_pInstance = nullptr;
@@ -19,9 +20,10 @@ Data *Data::instance() {
         m_pInstance->getPlatId();
 
         //2初始化数据
-        int cliNum = 4;
-        m_pInstance->dataUnitFusionData.init(30, 80, cliNum, 10, m_pInstance);//80ms一帧
-        m_pInstance->dataUnitTrafficFlowGather.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
+        int cliNum = localConfig.roadNum;
+        //周期性数据放入自适应帧率
+//        m_pInstance->dataUnitFusionData.init(10, 80, cliNum, 10, m_pInstance);//80ms一帧
+//        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
         m_pInstance->dataUnitIntersectionOverflowAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
         m_pInstance->dataUnitInWatchData_1_3_4.init(30, 1000, cliNum, 0, m_pInstance);
