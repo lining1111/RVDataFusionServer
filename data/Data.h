@@ -27,16 +27,16 @@ public:
     //------路口溢出报警上传-----//
     DataUnitIntersectionOverflowAlarm dataUnitIntersectionOverflowAlarm{30, 1000, 4, 10, m_pInstance};//1000ms一帧
     //-----进口监控数据上传----//
-    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4{30, 1000, 4, 0, m_pInstance};
-    DataUnitInWatchData_2 dataUnitInWatchData_2{30, 1000, 4, 0, m_pInstance};
+    DataUnitInWatchData_1_3_4 dataUnitInWatchData_1_3_4{30, 1000, 4, 1, m_pInstance};
+    DataUnitInWatchData_2 dataUnitInWatchData_2{30, 1000, 4, 1, m_pInstance};
     //-----停止线过车数据----//
-    DataUnitStopLinePassData dataUnitStopLinePassData{30, 1000, 4, 0, m_pInstance};
+    DataUnitStopLinePassData dataUnitStopLinePassData{30, 1000, 4, 1, m_pInstance};
     //-----异常停车数据-----//
-    DataUnitAbnormalStopData dataUnitAbnormalStopData{30, 1000, 4, 0, m_pInstance};
+    DataUnitAbnormalStopData dataUnitAbnormalStopData{30, 1000, 4, 1, m_pInstance};
     //-----长距离压实线报警----//
-    DataUnitLongDistanceOnSolidLineAlarm dataUnitLongDistanceOnSolidLineAlarm{30, 1000, 4, 0, m_pInstance};
+    DataUnitLongDistanceOnSolidLineAlarm dataUnitLongDistanceOnSolidLineAlarm{30, 1000, 4, 1, m_pInstance};
     //-----行人数据----//
-    DataUnitHumanData dataUnitHumanData{30, 1000, 4, 0, m_pInstance};
+    DataUnitHumanData dataUnitHumanData{30, 1000, 4, 1, m_pInstance};
 public:
     //本地参数
     //FusionData相关

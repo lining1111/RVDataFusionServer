@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
 
     //初始化本地数据和数据库
     LOG(INFO) << "开启eoc通信，同时读取本地数据库到缓存";
-    StartEocCommon();
+//    StartEocCommon();
 //    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
 //        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
 //        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;

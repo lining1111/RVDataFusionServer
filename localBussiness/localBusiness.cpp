@@ -89,7 +89,7 @@ void LocalBusiness::StartTimerTask() {
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
 //    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
-//    addTimerTask("localBusiness timerCreateTrafficFlowGather",1000,std::bind(Task_CreateTrafficFlowGather,this));
+    timerCreateTrafficFlowGather.start(1000, std::bind(Task_CreateTrafficFlowGather, this));
 
 //    timerCreateAbnormalStopData.start(1000,std::bind(Task_CreateAbnormalStopData,this));
 //    timerCreateLongDistanceOnSolidLineAlarm.start(1000,std::bind(Task_CreateLongDistanceOnSolidLineAlarm,this));
@@ -108,7 +108,7 @@ void LocalBusiness::StopTimerTaskAll() {
     timerStopLinePassData.stop();
 
     timerCreateFusionData.stop();
-
+    timerCreateTrafficFlowGather.stop();
     timerCreateAbnormalStopData.stop();
     timerCreateLongDistanceOnSolidLineAlarm.stop();
     timerCreateHumanData.stop();
@@ -184,6 +184,125 @@ int LocalBusiness::SendDataUnitO(FusionClient *client, string msgType, Pkg pkg) 
 
     return ret;
 }
+
+int FusionDataSaveCount = 0;
+
+void LocalBusiness::Task_FusionData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+    if (local->isRun) {
+        string msgType = "FusionData";
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitFusionData;
+//        if (!dataUnit->o_queue.empty()) {
+//            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+//        }
+        FusionData data;
+        if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
+
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port == fixrPort) {
+                    continue;
+                }
+                FusionData dataSend = data;
+                //是否需要剔除图片
+                bool isSendPIC = true;
+                for (auto iter1: localConfig.isSendPIC) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPIC = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (!isSendPIC) {
+                    dataSend.isHasImage = 0;
+                    for (auto &iter2: dataSend.lstVideos) {
+                        iter2.imageData.clear();
+                    }
+
+                    for (auto &iter3: dataSend.lstObjTarget) {
+                        iter3.carFeaturePic.clear();
+                    }
+                }
+
+                uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+                Pkg pkg;
+                dataSend.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+                dataUnit->sn++;
+                //存发送
+                if (0) {
+//                if (FusionDataSaveCount < 10) {
+//                    FusionDataSaveCount++;
+                    string dirName1 = savePath + msgType;
+                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                    if (!isCreate1)
+                        VLOG(2) << "create path:" << dirName1;
+                    else
+                        VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                    string fileName = savePath + msgType + "/" + to_string(data.timstamp) + ".txt";
+                    ofstream file;
+                    file.open(fileName);
+                    if (file.is_open()) {
+                        file.write(pkg.body.data(), pkg.body.size());
+                        file.flush();
+                        file.close();
+                    }
+                }
+                uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
+
+                uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+                switch (ret) {
+                    case 0: {
+                        LOG(INFO) << "发送成功" << msgType << iter.second->server_ip << ":" << iter.second->server_port
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -1: {
+                        LOG(INFO) << "发送失败" << msgType << iter.second->server_ip << ":" << iter.second->server_port
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+                    }
+                        break;
+                    case -2: {
+                        LOG(INFO) << "未连接" << msgType << iter.second->server_ip << ":" << iter.second->server_port
+                                  << ",发送开始时间:" << to_string(timestampStart)
+                                  << ",发送结束时间:" << to_string(timestampEnd)
+                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
+                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
+
+                    }
+                        break;
+                    default: {
+
+                    }
+                        break;
+                }
+
+            }
+        }
+    }
+}
+
 
 void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
     if (p == nullptr) {
@@ -365,7 +484,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                         std::chrono::system_clock::now().time_since_epoch()).count();
                 switch (ret) {
                     case 0: {
-                        LOG(INFO) << "发送成功" << msgType
+                        LOG(INFO) << "发送成功" << msgType << iter.second->server_ip << ":" << iter.second->server_port
                                   << ",发送开始时间:" << to_string(timestampStart)
                                   << ",发送结束时间:" << to_string(timestampEnd)
                                   << ",帧内时间:" << to_string((uint64_t) data.timestamp)
@@ -373,7 +492,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                     }
                         break;
                     case -1: {
-                        LOG(INFO) << "发送失败" << msgType
+                        LOG(INFO) << "发送失败" << msgType << iter.second->server_ip << ":" << iter.second->server_port
                                   << ",发送开始时间:" << to_string(timestampStart)
                                   << ",发送结束时间:" << to_string(timestampEnd)
                                   << ",帧内时间:" << to_string((uint64_t) data.timestamp)
@@ -381,7 +500,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                     }
                         break;
                     case -2: {
-                        LOG(INFO) << "未连接" << msgType
+                        LOG(INFO) << "未连接" << msgType << iter.second->server_ip << ":" << iter.second->server_port
                                   << ",发送开始时间:" << to_string(timestampStart)
                                   << ",发送结束时间:" << to_string(timestampEnd)
                                   << ",帧内时间:" << to_string((uint64_t) data.timestamp)
@@ -400,123 +519,6 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
     }
 }
 
-int FusionDataSaveCount = 0;
-
-void LocalBusiness::Task_FusionData(void *p) {
-    if (p == nullptr) {
-        return;
-    }
-    auto local = (LocalBusiness *) p;
-    if (local->serverList.empty() || local->clientList.empty()) {
-        return;
-    }
-    if (local->isRun) {
-        string msgType = "FusionData";
-        auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitFusionData;
-//        if (!dataUnit->o_queue.empty()) {
-//            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-//        }
-        FusionData data;
-        if (dataUnit->popO(data)) {
-            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
-
-            if (local->clientList.empty()) {
-                LOG(ERROR) << "client list empty";
-                return;
-            }
-            for (auto iter: local->clientList) {
-                if (iter.second->server_port == fixrPort) {
-                    continue;
-                }
-                FusionData dataSend = data;
-                //是否需要剔除图片
-                bool isSendPIC = true;
-                for (auto iter1: localConfig.isSendPIC) {
-//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
-//                              << iter1.isEnable;
-                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
-                        isSendPIC = iter1.isEnable;
-                        break;
-                    }
-                }
-                if (!isSendPIC) {
-                    dataSend.isHasImage = 0;
-                    for (auto &iter2: dataSend.lstVideos) {
-                        iter2.imageData.clear();
-                    }
-
-                    for (auto &iter3: dataSend.lstObjTarget) {
-                        iter3.carFeaturePic.clear();
-                    }
-                }
-
-                uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
-                Pkg pkg;
-                dataSend.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
-                dataUnit->sn++;
-                //存发送
-                if (0) {
-//                if (FusionDataSaveCount < 10) {
-//                    FusionDataSaveCount++;
-                    string dirName1 = savePath + msgType;
-                    int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-                    if (!isCreate1)
-                        VLOG(2) << "create path:" << dirName1;
-                    else
-                        VLOG(2) << "create path failed! error _code:" << isCreate1;
-
-                    string fileName = savePath + msgType + "/" + to_string(data.timstamp) + ".txt";
-                    ofstream file;
-                    file.open(fileName);
-                    if (file.is_open()) {
-                        file.write(pkg.body.data(), pkg.body.size());
-                        file.flush();
-                        file.close();
-                    }
-                }
-                uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-                auto ret = SendDataUnitO(iter.second, msgType, pkg);
-
-                uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        std::chrono::system_clock::now().time_since_epoch()).count();
-                switch (ret) {
-                    case 0: {
-                        LOG(INFO) << "发送成功" << msgType
-                                  << ",发送开始时间:" << to_string(timestampStart)
-                                  << ",发送结束时间:" << to_string(timestampEnd)
-                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
-                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
-                    }
-                        break;
-                    case -1: {
-                        LOG(INFO) << "发送失败" << msgType
-                                  << ",发送开始时间:" << to_string(timestampStart)
-                                  << ",发送结束时间:" << to_string(timestampEnd)
-                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
-                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
-                    }
-                        break;
-                    case -2: {
-                        LOG(INFO) << "未连接" << msgType
-                                  << ",发送开始时间:" << to_string(timestampStart)
-                                  << ",发送结束时间:" << to_string(timestampEnd)
-                                  << ",帧内时间:" << to_string((uint64_t) data.timstamp)
-                                  << ",耗时" << (timestampEnd - timestampStart) << "ms";
-
-                    }
-                        break;
-                    default: {
-
-                    }
-                        break;
-                }
-
-            }
-        }
-    }
-}
 
 void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
     if (p == nullptr) {

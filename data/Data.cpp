@@ -26,12 +26,12 @@ Data *Data::instance() {
 //        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
         m_pInstance->dataUnitIntersectionOverflowAlarm.init(30, 1000, cliNum, 10, m_pInstance);//1000ms一帧
-        m_pInstance->dataUnitInWatchData_1_3_4.init(30, 1000, cliNum, 0, m_pInstance);
-        m_pInstance->dataUnitInWatchData_2.init(30, 1000, cliNum, 0, m_pInstance);
-        m_pInstance->dataUnitStopLinePassData.init(30, 1000, cliNum, 0, m_pInstance);
-        m_pInstance->dataUnitAbnormalStopData.init(30, 1000, cliNum, 0, m_pInstance);
-        m_pInstance->dataUnitLongDistanceOnSolidLineAlarm.init(30, 1000, cliNum, 0, m_pInstance);
-        m_pInstance->dataUnitHumanData.init(30, 1000, cliNum, 0, m_pInstance);//这个cliNum待定
+        m_pInstance->dataUnitInWatchData_1_3_4.init(30, 1000, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitInWatchData_2.init(30, 1000, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitStopLinePassData.init(30, 1000, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitAbnormalStopData.init(30, 1000, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitLongDistanceOnSolidLineAlarm.init(30, 1000, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitHumanData.init(30, 1000, cliNum, 1, m_pInstance);//这个cliNum待定
 
         //开启数据时间戳历史监听线程
         m_pInstance->isRun = true;

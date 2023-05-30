@@ -12,6 +12,7 @@ using namespace common;
 class DataUnitFusionData : public DataUnit<WatchData, FusionData> {
 public:
     int saveCount = 0;// 测试存包用
+
     DataUnitFusionData() {
 
     }
@@ -32,7 +33,7 @@ public:
     } MergeType;
 
     static void
-    FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, bool isFront = true);
+    FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, int offset = true);
 
     static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);

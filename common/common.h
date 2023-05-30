@@ -130,16 +130,17 @@ namespace common {
         double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
     } Beats;//心跳帧 "Beats"
 
-    class Control :public PkgClass{
+    class Control : public PkgClass {
     public:
         string oprNum;// `json "oprNum"` uuid()
         double timestamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
         int isSendVideoInfo;//0 不回传 1 回传
         int videoType;
     public:
-        Control(){
+        Control() {
             this->cmdType = CmdControl;
         }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);
@@ -194,7 +195,7 @@ namespace common {
     public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
-        double timstamp;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
+        double timstamp = 0;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
         string matrixNo;// `json "matrixNo"` 矩阵编号
         string cameraIp;// `json "cameraIp"` 相机编号
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间
@@ -595,7 +596,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-    class HumanDataGather_deviceListItem{
+    class HumanDataGather_deviceListItem {
     public:
         string deviceCode;
         int detectDirection;
@@ -617,9 +618,10 @@ namespace common {
         string hardCode;
         vector<HumanDataGather_deviceListItem> deviceList;
     public:
-        HumanDataGather(){
-            this->cmdType=CmdHumanData;
+        HumanDataGather() {
+            this->cmdType = CmdHumanData;
         }
+
         bool JsonMarshal(Json::Value &out);
 
         bool JsonUnmarshal(Json::Value in);

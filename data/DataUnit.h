@@ -6,6 +6,7 @@
 #define _DATAUNIT_H
 
 #include "Queue.h"
+#include "Vector.h"
 #include "common/common.h"
 #include <mutex>
 #include <condition_variable>
@@ -16,9 +17,7 @@
 #include <glog/logging.h>
 #include "merge/mergeStruct.h"
 
-
 using namespace common;
-
 using namespace std;
 using namespace os;
 
@@ -26,7 +25,7 @@ template<typename I, typename O>
 class DataUnit {
 public:
     int sn = 0;
-    vector<Queue<I>> i_queue_vector;
+    vector<Vector<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
     int cache = 0;
     int i_maxSizeIndex = 0;
@@ -36,8 +35,6 @@ public:
     int thresholdFrame = 10;//时间戳相差门限，单位ms
     uint64_t curTimestamp = 0;
     vector<uint64_t> xRoadTimestamp;
-
-//    DyFrame *dyFrame = nullptr;
 public:
     void *owner = nullptr;
 public:
@@ -52,10 +49,10 @@ public:
     DataUnit() : cap(30), thresholdFrame(100), fs_i(100), numI(4), cache(3) {
         i_queue_vector.resize(numI);
         for (int i = 0; i < i_queue_vector.size(); i++) {
-            auto iter = i_queue_vector.at(i);
-            iter.setMax(2 * cap);
+            auto iter = &i_queue_vector.at(i);
+            iter->setMax(cap);
         }
-        o_queue.setMax(numI);
+        o_queue.setMax(cap);
 
         oneFrame.resize(numI);
 
@@ -72,7 +69,6 @@ public:
 
     ~DataUnit() {
         delete timerBusiness;
-//        delete dyFrame;
     }
 
 public:
@@ -89,51 +85,41 @@ public:
         this->owner = owner;
         i_queue_vector.resize(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
-            auto iter = i_queue_vector.at(i);
-            iter.setMax(2 * c);
+            auto iter = &i_queue_vector.at(i);
+            iter->setMax(cap);
         }
-        o_queue.setMax(c);
 
-        oneFrame.resize(i_num);
+        o_queue.setMax(cap);
 
-        xRoadTimestamp.resize(i_num);
+        oneFrame.resize(numI);
+
+        xRoadTimestamp.resize(numI);
         for (auto &iter: xRoadTimestamp) {
             iter = 0;
         }
-        unOrder.resize(i_num);
-//        dyFrame = new DyFrame(&this->fs_i, &this->thresholdFrame);
+        unOrder.resize(numI);
     }
 
-    bool frontI(I &i, int index) {
+    bool getIOffset(I &i, int index, int offset) {
         try {
-            return i_queue_vector.at(index).front(i);
+            return i_queue_vector.at(index).getIndex(i, offset);
         } catch (const std::exception &e) {
             cout << __FUNCTION__ << e.what() << endl;
             return false;
         }
     }
 
-    bool backI(I &i, int index) {
+    void eraseBeginI(int index) {
         try {
-            return i_queue_vector.at(index).back(i);
+            i_queue_vector.at(index).eraseBegin();
         } catch (const std::exception &e) {
             cout << __FUNCTION__ << e.what() << endl;
-            return false;
         }
     }
 
     bool pushI(I i, int index) {
         try {
             return i_queue_vector.at(index).push(i);
-        } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
-            return false;
-        }
-    }
-
-    bool popI(I &i, int index) {
-        try {
-            return i_queue_vector.at(index).pop(i);
         } catch (const std::exception &e) {
             cout << __FUNCTION__ << e.what() << endl;
             return false;
@@ -270,6 +256,11 @@ public:
 
         pthread_mutex_unlock(&oneFrameMutex);
     }
+
+public:
+    //与寻找同一帧标定帧相关
+    uint64_t timestampStore = 0;//存的上一次的时间戳，如果这次的和上次的一样，但是时间戳又比设定的阈值小，则不进行后面的操作
+
 };
 
 //车辆轨迹
@@ -290,6 +281,7 @@ public:
 //    static int TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit);
 //};
 
+
 //车流量统计
 class DataUnitTrafficFlowGather : public DataUnit<TrafficFlow, TrafficFlowGather> {
 public:
@@ -308,7 +300,7 @@ public:
 
     static void task(void *local);
 
-    static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, uint64_t toCacheCha, bool isFront = true);
+    static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
     static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
@@ -334,12 +326,6 @@ public:
 
     static void task(void *local);
 
-    static void FindOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit, uint64_t toCacheCha, bool isFront = true);
-
-    static int ThreadGetDataInRange(DataUnitCrossTrafficJamAlarm *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitCrossTrafficJamAlarm *dataUnit);
 };
 
 
@@ -361,12 +347,6 @@ public:
 
     static void task(void *local);
 
-    static void FindOneFrame(DataUnitIntersectionOverflowAlarm *dataUnit, uint64_t toCacheCha, bool isFront = true);
-
-    static int ThreadGetDataInRange(DataUnitIntersectionOverflowAlarm *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitIntersectionOverflowAlarm *dataUnit);
 };
 
 class DataUnitInWatchData_1_3_4 : public DataUnit<InWatchData_1_3_4, InWatchData_1_3_4> {

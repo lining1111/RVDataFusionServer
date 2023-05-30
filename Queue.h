@@ -61,10 +61,6 @@ public:
             // 挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-//            struct timeval now;
-//            long timeout_ms = 3000;//wait time 100ms
-//            gettimeofday(&now, nullptr);
-//            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
             ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
@@ -81,16 +77,15 @@ public:
     }
 
     bool front(T &t) {
+        if (q.empty()){
+            return false;
+        }
         pthread_mutex_lock(&mutex);  //加锁
         // queue为空是一直等待，直到下一次push进新的数据  java中是wait和notify
         if (q.empty()) {
             // 挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-//            struct timeval now;
-//            long timeout_ms = 3000;//wait time 100ms
-//            gettimeofday(&now, nullptr);
-//            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
             ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
@@ -105,16 +100,15 @@ public:
     }
 
     bool back(T &t) {
+        if (q.empty()){
+            return false;
+        }
         pthread_mutex_lock(&mutex);  //加锁
         // queue为空是一直等待，直到下一次push进新的数据  java中是wait和notify
         if (q.empty()) {
             //挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-//            struct timeval now;
-//            long timeout_ms = 3000;//wait time 100ms
-//            gettimeofday(&now, nullptr);
-//            long nsec = now.tv_usec * 1000 + (timeout_ms % 1000) * 1000 * 1000;//ns
             ts.tv_sec = ts.tv_sec + 1;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
@@ -155,8 +149,6 @@ private:
     int max;
     bool isSetMax = false;
     pthread_mutex_t mutex;
-
-//    // 创建条件变量
     pthread_cond_t cond;
 
 };

@@ -9,6 +9,8 @@
 #include <math.h>
 #include <string>
 #include <fstream>
+#include <iomanip>
+#include "common/config.h"
 
 using namespace std;
 
@@ -22,10 +24,14 @@ void DataUnitFusionData::init(int c, int threshold_ms, int i_num, int cache, voi
     LOG(INFO) << "DataUnitFusionData thresholdFrame" << this->thresholdFrame;
     timerBusinessName = "DataUnitFusionData";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(10, std::bind(task, this));
 }
 
 void DataUnitFusionData::task(void *local) {
+
+    uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+
     auto dataUnit = (DataUnitFusionData *) local;
     pthread_mutex_lock(&dataUnit->oneFrameMutex);
     int maxSize = 0;
@@ -33,9 +39,10 @@ void DataUnitFusionData::task(void *local) {
         if (dataUnit->i_queue_vector.at(i).size() > maxSize) {
             maxSize = dataUnit->i_queue_vector.at(i).size();
             dataUnit->i_maxSizeIndex = i;
+            break;
         }
     }
-    if (maxSize > dataUnit->cache) {
+    if (maxSize >= dataUnit->cache) {
         //执行相应的流程
 
         auto data = (Data *) dataUnit->owner;
@@ -46,35 +53,46 @@ void DataUnitFusionData::task(void *local) {
         } else {
             mergeType = DataUnitFusionData::NotMerge;
         }
-        FindOneFrame(dataUnit, (1000 * 60), mergeType, true);
+        FindOneFrame(dataUnit, (1000 * 3), mergeType, 5);
     }
 
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
+
+    uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    auto cost = timestampEnd - timestampStart;
+//    LOG(INFO) << "DataUnitFusionData 取同一帧完成融合耗时" << cost << "ms";
 }
 
-
 void
-DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, bool isFront) {
+DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, int offset) {
     //1确定标定的时间戳
     IType refer;
-    if (isFront) {
-        dataUnit->frontI(refer, dataUnit->i_maxSizeIndex);
-    } else {
-        dataUnit->backI(refer, dataUnit->i_maxSizeIndex);
+    if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
+        return;
     }
-    //1.1如果取到的时间戳不正常(时间戳，比现在的时间晚(缓存数乘以频率))
-    auto now = std::chrono::system_clock::now();
-    uint64_t timestampThreshold =
-            (std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() -
-             (dataUnit->fs_i * dataUnit->cache) - toCacheCha);
-    if (uint64_t(refer.timstamp) < timestampThreshold) {
-        VLOG(3) << "DataUnitFusionData当前时间戳:" <<
-                (uint64_t) refer.timstamp << "小于缓存阈值:" << (uint64_t) timestampThreshold;
-        dataUnit->curTimestamp = timestampThreshold;
+//    printf("取到时间戳%lu 存的上帧的时间戳%lu\n", (uint64_t) refer.timstamp, dataUnit->timestampStore);
+    //判断上次取的时间戳和这次的一样吗
+    if (dataUnit->timestampStore == ((uint64_t) refer.timstamp)) {
+        dataUnit->eraseBeginI(dataUnit->i_maxSizeIndex);
+        return;
+    } else if (dataUnit->timestampStore + dataUnit->fs_i > refer.timstamp) {
+        //上帧取的时间戳和这次取的相差不超过80ms
+        dataUnit->eraseBeginI(dataUnit->i_maxSizeIndex);
+        return;
     } else {
-        dataUnit->curTimestamp = (uint64_t) refer.timstamp;
+        dataUnit->timestampStore = refer.timstamp;
     }
-    VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp;
+
+    dataUnit->curTimestamp = refer.timstamp;
+//    printf("开始寻找%lu\n", dataUnit->curTimestamp);
+
+    std::time_t t((uint64_t) dataUnit->curTimestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+
+    VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
+    LOG(INFO) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
 //    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
     uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
     uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
@@ -96,11 +114,31 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheC
 
     //打印下每一路取到的时间戳
     VLOG(3) << "====== fusionData oneFrame size:" << dataUnit->oneFrame.size();
+
+    //将标定时间戳，和帧内时间戳输出到文件
+    string line = "";
+    line += to_string(dataUnit->curTimestamp);
+    line += ",";
+
+    int findRoadCount = 0;
     for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
-        auto iter = dataUnit->oneFrame.at(i);
-        if (!iter.oprNum.empty()) {
-            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
+        auto iter = &dataUnit->oneFrame.at(i);
+        line += to_string((uint64_t) iter->timstamp);
+        line += ",";
+        if (!iter->oprNum.empty()) {
+            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter->timstamp;
+            LOG(INFO) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter->timstamp;
+            findRoadCount++;
         }
+    }
+    line += "\n";
+    //写入文件
+    ofstream ofs;
+    ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+    if (ofs.is_open()) {
+        ofs << line;
+        ofs.flush();
+        ofs.close();
     }
 
     //调用后续的处理
@@ -109,65 +147,57 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheC
 
 int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                                              int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
-    //找到时间戳在范围内的，如果只有1帧数据切晚于标定值则取出，直到取空为止
-//    Debug("第%d路 左值%lu 右值%lu", index, leftTimestamp, rightTimestamp);
+    //找到时间戳在范围内的帧
     VLOG(3) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp;
     bool isFind = false;
-    do {
-        if (dataUnit->emptyI(index)) {
-            VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";
+    //如果此路就是标定路，就取第5帧就好了
+    if (index == dataUnit->i_maxSizeIndex) {
+        IType refer;
+        if (dataUnit->getIOffset(refer, index, 5)) {
+            //记录当前路的时间戳
+            dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timstamp;
+            //将当前路的所有信息缓存入对应的索引
+            dataUnit->oneFrame[index] = refer;
+            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
+                    << (uint64_t) refer.timstamp;
             isFind = true;
-        } else {
-            IType refer;
-            if (dataUnit->frontI(refer, index)) {
-                auto data = (Data *) dataUnit->owner;
-                if (data->plateId.empty()) {
-                    data->plateId = refer.matrixNo;
-                }
+        }
+        return index;
+    }
 
-                if (uint64_t(refer.timstamp) < leftTimestamp) {
-                    //在左值外
-                    if (dataUnit->sizeI(index) == 1) {
-                        //取用
-                        IType cur;
-                        if (dataUnit->popI(cur, index)) {
-                            //记录当前路的时间戳
-                            dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timstamp;
-                            //将当前路的所有信息缓存入对应的索引
-                            dataUnit->oneFrame[index] = cur;
-                            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较旧但只有1帧，取出来:"
-                                    << (uint64_t) refer.timstamp;
-                            isFind = true;
-                        }
-                    } else {
-                        IType cur;
-                        dataUnit->popI(cur, index);
-                        VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较旧，舍弃:"
-                                << (uint64_t) refer.timstamp;
-                    }
-                } else if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                           (uint64_t(refer.timstamp) <= rightTimestamp)) {
+    if (dataUnit->emptyI(index)) {
+        VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";
+    } else {
+        for (int i = 0; i < dataUnit->sizeI(index); i++) {
+            IType refer;
+            if (dataUnit->getIOffset(refer, index, i)) {
+                if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
+                    (uint64_t(refer.timstamp) <= rightTimestamp)) {
                     //在范围内
-                    IType cur;
-                    if (dataUnit->popI(cur, index)) {
-                        //记录当前路的时间戳
-                        dataUnit->xRoadTimestamp[index] = (uint64_t) cur.timstamp;
-                        //将当前路的所有信息缓存入对应的索引
-                        dataUnit->oneFrame[index] = cur;
-                        VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
-                                << (uint64_t) refer.timstamp;
-                        isFind = true;
-                    }
-                } else if (uint64_t(refer.timstamp) > rightTimestamp) {
-                    //在右值外
-                    VLOG(3) << "DataUnitFusionData第" << index << "路时间戳较新，保留:"
+                    //记录当前路的时间戳
+                    dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timstamp;
+                    //将当前路的所有信息缓存入对应的索引
+                    dataUnit->oneFrame[index] = refer;
+                    VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
                             << (uint64_t) refer.timstamp;
                     isFind = true;
+                    break;
                 }
             }
         }
-    } while (!isFind);
+    }
 
+    //如果未找到打印下当前的寻找范围和存的时间戳
+    if (!isFind) {
+        IType referBegin;
+        IType referEnd;
+        if (dataUnit->getIOffset(referBegin, index, 0) &&
+            dataUnit->getIOffset(referEnd, index, dataUnit->sizeI(index) - 1)) {
+            LOG(WARNING) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp
+                         << ",begin:" << (uint64_t) referBegin.timstamp << ",end" << (uint64_t) referEnd.timstamp;
+        }
+
+    }
     return index;
 }
 

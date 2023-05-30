@@ -107,6 +107,16 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
 
     auto *data = Data::instance();
     auto dataUnit = &data->dataUnitFusionData;
+    int index = -1;
+    for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
+        if (data->roadDirection[i] == watchData.direction) {
+            index = i;
+            break;
+        }
+    }
+    if (index == -1) {
+        return -1;
+    }
 
     //存到帧率缓存
     auto ct = &CT_fusionData;
@@ -120,36 +130,22 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
-    for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
-        if (data->roadDirection[i] == watchData.direction) {
-            //方向相同，放入对应索引下数组
-            //存入队列
-            if (!dataUnit->pushI(watchData, i)) {
-                VLOG(2) << "client ip:" << ip << " WatchData,丢弃消息";
-                ret = -1;
-            } else {
-                VLOG(2) << "client ip:" << ip << " WatchData,存入消息,"
-                        << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
-                        << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
-                        << i;
-                auto now = std::chrono::system_clock::now();
-                uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                        now.time_since_epoch()).count();
+    //存入队列
+    if (!dataUnit->pushI(watchData, index)) {
+        VLOG(2) << "client ip:" << ip << " WatchData,丢弃消息";
+        LOG(INFO) << "client ip:" << ip << "direction:" << watchData.direction << " WatchData,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << ip << " WatchData,存入消息,"
+                << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
+                << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
+                << index;
 
-//                printf("01经纬度：%.12f %.12f\n", watchData.lstObjTarget.at(0).latitude,
-//                       watchData.lstObjTarget.at(0).longitude);
-//                LOG(INFO) << "client ip:" << inet_ntoa(client->addr.sin_addr) << " WatchData,存入消息,"
-//                          << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
-//                          << "timestamp:" << (uint64_t) watchData.timstamp << " lstObjTarget size:"
-//                          << watchData.lstObjTarget.size() << " dataUnit i_vector index:"
-//                          << i;
-
-            }
-            break;
-        }
     }
+
     return ret;
 }
+
 
 int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, uint16_t port, string content) {
     int ret = 0;
@@ -207,6 +203,7 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string 
 }
 
 CacheTimestamp CT_trafficFlowGather;
+
 int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content) {
     int ret = 0;
     Json::Reader reader;

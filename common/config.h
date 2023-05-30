@@ -16,6 +16,7 @@ typedef struct {
     bool isEnable;
 } ConfigEnable;
 
+
 typedef struct {
     std::vector<ConfigEnable> isSendPIC;
     int roadNum;

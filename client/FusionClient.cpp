@@ -152,11 +152,11 @@ int FusionClient::Close() {
         } catch (std::future_error e) {
             LOG(ERROR) << e.what();
         }
-        try {
-            futureProcessSend.wait();
-        } catch (std::future_error e) {
-            LOG(ERROR) << e.what();
-        }
+//        try {
+//            futureProcessSend.wait();
+//        } catch (std::future_error e) {
+//            LOG(ERROR) << e.what();
+//        }
     }
 
     if (rb != nullptr) {
