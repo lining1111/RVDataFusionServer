@@ -33,7 +33,7 @@ public:
     } MergeType;
 
     static void
-    FindOneFrame(DataUnitFusionData *dataUnit, uint64_t toCacheCha, MergeType mergeType, int offset = true);
+    FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
 
     static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                                     int index, uint64_t leftTimestamp, uint64_t rightTimestamp);

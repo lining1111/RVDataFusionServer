@@ -89,7 +89,7 @@ void LocalBusiness::StartTimerTask() {
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
 //    addTimerTask("localBusiness timerCreateLineupInfoGather",1000,std::bind(Task_CreateLineupInfoGather,this));
-    timerCreateTrafficFlowGather.start(1000, std::bind(Task_CreateTrafficFlowGather, this));
+//    timerCreateTrafficFlowGather.start(1000, std::bind(Task_CreateTrafficFlowGather, this));
 
 //    timerCreateAbnormalStopData.start(1000,std::bind(Task_CreateAbnormalStopData,this));
 //    timerCreateLongDistanceOnSolidLineAlarm.start(1000,std::bind(Task_CreateLongDistanceOnSolidLineAlarm,this));

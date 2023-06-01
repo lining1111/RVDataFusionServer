@@ -40,11 +40,7 @@ DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
 DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 DEFINE_int32(roadNum, 4, "外设路数，默认4");
-#ifdef aarch64
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
-#else
-DEFINE_string(logDir, "/tmp", "日志的输出目录,默认/tmp");
-#endif
 
 #include "eocCom/fileFun.h"
 
@@ -73,7 +69,7 @@ int main(int argc, char **argv) {
 
     //初始化本地数据和数据库
     LOG(INFO) << "开启eoc通信，同时读取本地数据库到缓存";
-//    StartEocCommon();
+    StartEocCommon();
 //    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
 //        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
 //        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;

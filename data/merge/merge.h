@@ -67,7 +67,7 @@ typedef struct {
     double speed;
     double longitude;//经度
     double latitude;//纬度
-    int flag_new;//判断当前目标id是否第一次出现
+    int flag_new = 0;//判断当前目标id是否第一次出现
     //斜路口再用
 //    double dmerge_left_up_x;
 //    double dmerge_left_up_y;

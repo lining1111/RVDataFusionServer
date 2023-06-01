@@ -169,6 +169,19 @@ DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 
 int main(int argc, char **argv) {
 
+
+    std::vector<int>  va;
+//    va.resize(10);
+    for (int i = 0; i < 10; i++) {
+        va.push_back(i);
+    }
+    for (int i = 0; i < 5; i++) {
+        va.erase(va.begin()+0);
+        printf("%d\n",va.size());
+    }
+
+
+
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     //初始化一个client
     int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);

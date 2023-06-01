@@ -28,7 +28,28 @@ public:
     vector<Vector<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
     int cache = 0;
-    int i_maxSizeIndex = 0;
+    int i_maxSizeIndex = -1;
+    int taskSearchCount = 0;//未找到下个标定缓存帧时+1,直到此值*寻找周期大于设定指时，更新i_maxSizeIndex为下一个
+
+    void taskSearchCountReset() {
+        taskSearchCount = 0;
+    }
+
+    void i_maxSizeIndexNext() {
+        //开一个满缓存的路数开始，总能找到一个满缓存的路
+        int count = 0;
+        do {
+            i_maxSizeIndex++;
+
+            if (i_maxSizeIndex > i_queue_vector.size()) {
+                i_maxSizeIndex = 0;
+            }
+            taskSearchCountReset();
+            count++;
+        } while (sizeI(i_maxSizeIndex) < cache || count > i_queue_vector.size());
+    }
+
+
     int fs_i;
     int cap;
     int numI = 0;

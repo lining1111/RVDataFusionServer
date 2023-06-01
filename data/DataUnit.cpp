@@ -29,13 +29,18 @@ void DataUnitTrafficFlowGather::task(void *local) {
     auto dataUnit = (DataUnitTrafficFlowGather *) local;
     pthread_mutex_lock(&dataUnit->oneFrameMutex);
     int maxSize = 0;
+    int maxSizeIndex = 0;
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
         if (dataUnit->i_queue_vector.at(i).size() > maxSize) {
             maxSize = dataUnit->i_queue_vector.at(i).size();
-            dataUnit->i_maxSizeIndex = i;
+            maxSizeIndex = i;
         }
     }
     if (maxSize >= dataUnit->cache) {
+        if (dataUnit->i_maxSizeIndex == -1) {
+            //只有在第一次它为数据默认值-1的时候才执行赋值
+            dataUnit->i_maxSizeIndex = maxSizeIndex;
+        }
         //执行相应的流程
         FindOneFrame(dataUnit, dataUnit->cache / 2);
     }
@@ -49,18 +54,17 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
         return;
     }
-//    printf("取到时间戳%lu 存的上帧的时间戳%lu\n", (uint64_t) refer.timstamp, dataUnit->timestampStore);
     //判断上次取的时间戳和这次的一样吗
     if (dataUnit->timestampStore == ((uint64_t) refer.timestamp)) {
-        dataUnit->eraseBeginI(dataUnit->i_maxSizeIndex);
+        dataUnit->taskSearchCount++;
+        if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
+            //超过阈值，切下一路,重新计数
+            dataUnit->i_maxSizeIndexNext();
+        }
         return;
-    } else if (dataUnit->timestampStore + dataUnit->fs_i > refer.timestamp) {
-        //上帧取的时间戳和这次取的相差不超过80ms
-        dataUnit->eraseBeginI(dataUnit->i_maxSizeIndex);
-        return;
-    } else {
-        dataUnit->timestampStore = refer.timestamp;
     }
+    dataUnit->taskSearchCount = 0;
+    dataUnit->timestampStore = refer.timestamp;
 
     dataUnit->curTimestamp = refer.timestamp;
 //    printf("开始寻找%lu\n", dataUnit->curTimestamp);
@@ -78,7 +82,7 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
     //2取数
-    dataUnit->oneFrame.clear();
+    vector<IType>().swap(dataUnit->oneFrame);
     dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {

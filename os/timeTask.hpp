@@ -34,6 +34,7 @@ namespace os {
         }
 
         void start(int interval_ms, std::function<void()> task) {
+            period = interval_ms;
             // is started, do not start again
             if (_expired == false)
                 return;
@@ -60,6 +61,7 @@ namespace os {
         }
 
         void startOnce(int delay_ms, std::function<void()> task) {
+            period = delay_ms;
             std::thread([delay_ms, task]() {
                 auto start = std::chrono::high_resolution_clock::now();
                 task();
@@ -95,12 +97,17 @@ namespace os {
             return _name;
         }
 
+        int getPeriodMs(){
+            return period;
+        }
+
     private:
         std::atomic<bool> _expired; // timer stopped status
         std::atomic<bool> _try_to_expire; // timer is in stop process
         std::mutex _mutex;
         std::condition_variable _expired_cond;
         std::string _name;
+        int period;
     };
 
 }

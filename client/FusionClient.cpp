@@ -49,7 +49,7 @@ int FusionClient::Open() {
 //        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
         timeval timeout;
         timeout.tv_sec = 0;
-        timeout.tv_usec = 80 * 1000;
+        timeout.tv_usec = 100 * 1000;
         //设置发送最大时间80ms
         setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
 //        setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
