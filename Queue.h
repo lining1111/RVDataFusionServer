@@ -61,7 +61,7 @@ public:
             // 挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_sec = ts.tv_sec + 1;//
+            ts.tv_sec = ts.tv_sec + 3;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {
@@ -86,7 +86,7 @@ public:
             // 挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_sec = ts.tv_sec + 1;//
+            ts.tv_sec = ts.tv_sec + 3;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {
@@ -109,7 +109,7 @@ public:
             //挂起状态，释放锁
             struct timespec ts;
             clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_sec = ts.tv_sec + 1;//
+            ts.tv_sec = ts.tv_sec + 3;//
             pthread_cond_timedwait(&cond, &mutex, &ts);
         }
         if (q.empty()) {

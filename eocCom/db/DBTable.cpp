@@ -110,7 +110,7 @@ int mkdirFromPath(std::string path) {
 int tableInit(std::string path, std::string version) {
     int ret = 0;
     LOG(INFO) << "using database file path:" << path << ",version:" << version;
-    LOG(INFO) << "config db file:" << path;
+    LOG(INFO) << "db file:" << path;
     bool isFindVersion = false;
     char *sqlStr = new char[1024 * 2];
     char **sqlData;
@@ -226,7 +226,7 @@ int tableInit(std::string path, std::string version) {
 
 int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     int ret = 0;
-    LOG(INFO) << "config db file:" << dbFile;
+    LOG(INFO) << "db file:" << dbFile;
     ret = mkdirFromPath(dbFile);
     if (ret != 0) {
         LOG(ERROR) << "mkdir err from path:" << dbFile;
@@ -283,7 +283,7 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
 }
 
 int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num) {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -322,7 +322,7 @@ int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check
 }
 
 int DBDataVersion::deleteFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
@@ -337,7 +337,7 @@ int DBDataVersion::deleteFromDB() {
 }
 
 int DBDataVersion::insertToDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     memset(sqlstr, 0x0, 1024);
@@ -353,7 +353,7 @@ int DBDataVersion::insertToDB() {
 }
 
 int DBDataVersion::selectFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char sqlstr[1024] = {0};
     char **sqldata;
@@ -381,7 +381,7 @@ int DBDataVersion::selectFromDB() {
 }
 
 int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path, int &file_server_port) {
-    LOG(INFO) << "config db file:" << RoadsideParking.path;
+    LOG(INFO) << "db file:" << RoadsideParking.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -415,7 +415,7 @@ int dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file
 }
 
 int dbGetUname(std::string &uname) {
-    LOG(INFO) << "config db file:" << CLParking.path;
+    LOG(INFO) << "db file:" << CLParking.path;
     int rtn = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -445,7 +445,7 @@ int dbGetUname(std::string &uname) {
 }
 
 int DBBaseSet::deleteFromDB() {
-    LOG(INFO) << "config db file:" << this->db;
+    LOG(INFO) << "db file:" << this->db;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -463,7 +463,7 @@ int DBBaseSet::deleteFromDB() {
 }
 
 int DBBaseSet::insertToDB() {
-    LOG(INFO) << "config db file:" << this->db;
+    LOG(INFO) << "db file:" << this->db;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -511,7 +511,7 @@ int DBBaseSet::insertToDB() {
 }
 
 int DBBaseSet::selectFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -567,7 +567,7 @@ int DBBaseSet::selectFromDB() {
 }
 
 int DBIntersection::deleteFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -585,7 +585,7 @@ int DBIntersection::deleteFromDB() {
 }
 
 int DBIntersection::insertToDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024 * 2];
 
@@ -632,7 +632,7 @@ int DBIntersection::insertToDB() {
 }
 
 int DBIntersection::selectFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024 * 4];
     char **sqldata;
@@ -686,7 +686,7 @@ int DBIntersection::selectFromDB() {
 }
 
 int DBFusionParaSet::deleteFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -704,7 +704,7 @@ int DBFusionParaSet::deleteFromDB() {
 }
 
 int DBFusionParaSet::insertToDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -734,7 +734,7 @@ int DBFusionParaSet::insertToDB() {
 }
 
 int DBFusionParaSet::selectFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
@@ -773,7 +773,7 @@ int DBFusionParaSet::selectFromDB() {
 }
 
 int DBAssociatedEquip::deleteAllFromDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     memset(sqlstr, 0, 1024);
@@ -790,7 +790,7 @@ int DBAssociatedEquip::deleteAllFromDB() {
 }
 
 int DBAssociatedEquip::insertToDB() {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
 
@@ -812,7 +812,7 @@ int DBAssociatedEquip::insertToDB() {
 }
 
 int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
-    LOG(INFO) << "config db file:" << eoc_configure.path;
+    LOG(INFO) << "db file:" << eoc_configure.path;
     int ret = 0;
     char *sqlstr = new char[1024];
     char **sqldata;
