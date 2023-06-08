@@ -20,7 +20,7 @@ extern "C"
 #endif
 
 /*调试模式*/
-#define DEBUG
+//#define DEBUG
 #define filename(x) (strrchr(x,'/')?strrchr(x,'/')+1:x)
 #define TIME_STR_LEN	50
 #define GET_CURRENT_TIME(p) {time_t now; struct tm *timenow; time(&now); timenow=localtime(&now); sprintf(p, "%u-%02u-%02u %02u:%02u:%02u", 1900+timenow->tm_year, 1+timenow->tm_mon, timenow->tm_mday, timenow->tm_hour, timenow->tm_min, timenow->tm_sec);}

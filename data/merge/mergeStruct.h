@@ -4,7 +4,9 @@
 
 #ifndef _MERGESTRUCT_H
 #define _MERGESTRUCT_H
+
 #include "merge.h"
+#include <json/json.h>
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget);
 
@@ -13,5 +15,156 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT);
 void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &objectInfoNew);
 
 void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix);
+
+//算法配置相关
+class PointF {
+public:
+    double x;
+    double y;
+
+    PointF() {
+
+    }
+
+    PointF(double x, double y) : x(x), y(y) {
+
+    }
+
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
+class PointFArray {
+public:
+    int index = 0;//属于第几组
+    vector<PointF> points;
+
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
+
+class DoubleValue {
+public:
+    int index = 0;
+    double value;
+
+    DoubleValue() {
+
+    }
+
+    DoubleValue(int index, double value) : index(index), value(value) {
+
+    }
+
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
+class CorrectedValueGPS {
+public:
+    int index = 0;
+    double latitude = 0.0;
+    double longitude = 0.0;
+
+    CorrectedValueGPS() {
+
+    }
+
+    CorrectedValueGPS(int index, double latitude, double longitude)
+            : index(index), latitude(latitude), longitude(longitude) {
+
+    }
+
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+};
+
+
+class AlgorithmParam {
+public:
+    //各个路口的矩阵
+    vector<DoubleValue> H_east;//西向东侧路口
+    vector<DoubleValue> H_north;//南向北侧路口
+    vector<DoubleValue> H_west;//东向西侧路口
+    vector<DoubleValue> H_south;//北向南侧路口
+    //将数组设置到类内变量
+    void setH_XX(vector<DoubleValue> &H_xx, vector<double> values);
+
+    //将类内变量设置到数组
+    void getH_XX(vector<DoubleValue> H_xx, vector<double> &values);
+
+    //每个路口的中心经纬度
+    int start_utm_x = 325235;
+    int start_utm_y = 4512985;
+    double crossroad_mid_longitude;//经度
+    double crossroad_mid_latitude;//纬度
+    //路口中心距离每侧停止线的距离（m）
+    int distance_of_east_stopline_from_roadcenter = 20;
+    int distance_of_west_stopline_from_roadcenter = 20;
+    int distance_of_north_stopline_from_roadcenter = 20;
+    int distance_of_south_stopline_from_roadcenter = 20;
+    int east_west_selection_criteria = 0;
+    //每侧路口的倾斜角度
+    vector<DoubleValue> angle;
+
+    void setAngle(vector<double> values);
+
+    void getAngle(vector<double> &values);
+
+    //有倾斜路口时需要划定区域
+    vector<PointFArray> east_west_driving_area;   //东向西行驶的车辆
+    vector<PointFArray> west_east_driving_area;   //西向东行驶的车辆
+    vector<PointFArray> north_south_driving_area; //北向南行驶的车辆
+    vector<PointFArray> south_north_driving_area; //南向北行驶的车辆
+
+    void setXX_driving_are(vector<PointFArray> &xx, vector<vector<PointF>> values);
+
+    void getXX_driving_are(vector<PointFArray> xx, vector<vector<PointF>> &values);
+
+    int piexl_type = 0;
+    int min_track_distance = 200;
+    int max_track_distance = 400;
+    double area_ratio = 0.8;
+    int failCount1 = 10;
+    int failCount2 = 2;
+    double piexlbymeter_x = 10.245;
+    double piexlbymeter_y = 7.76;
+    double speed_moving_average = 0.1;
+    int min_intersection_area = 50;
+    int road_length = 100;
+    int zone = 50;
+    double shaking_pixel_threshold = 0.1;
+    int stopline_length = 5;
+    int track_in_length = 50;
+    int track_out_length = 20;
+    int max_speed_by_piexl = 20;
+    int car_match_count = 2;
+    double max_center_distance_threshold = 0.5;
+    double min_center_distance_threshold = 0.3;
+    double min_area_threshold = 0.3;
+    double max_area_threshold = 0.7;
+    double middle_area_threshold = 0.6;
+    double max_stop_speed_threshold = 0.6;
+    double min_stop_speed_threshold = 0.4;
+
+
+    vector<CorrectedValueGPS> correctedValueGPSs;
+
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+
+//    //转化为ENW.h的结构体
+//    void getFromENW_ImageUnifiedParamsENW(class ImageUnifiedParamsENW in);
+//
+//    void setToENW_ImageUnifiedParamsENW(class ImageUnifiedParamsENW &out);
+};
+
+
 
 #endif //_MERGESTRUCT_H

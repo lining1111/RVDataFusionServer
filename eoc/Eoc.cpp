@@ -10,6 +10,7 @@
 #include "eoc_comm/eoc_comm.hpp"
 #include "eoc_comm/configure_eoc_init.h"
 #include "eoc_comm/utility/dns_server.h"
+
 int StartEocCommon() {
     dns_server_start();  /*dns服务*/
     if (g_eoc_config_init() < 0) {
@@ -17,18 +18,21 @@ int StartEocCommon() {
         return -1;
     }
     int eoc_port = 6526;
-    string eoc_host = "ehctest.eoc.aipark.com";
+    string eoc_host = "116.63.162.151";
     int file_port = 7000;
     string file_host = "ehctest.eoc.aipark.com";
-    string ipaddr = "116.63.162.151"/*"111.62.28.98"*/;
     int ret = db_parking_lot_get_cloud_addr_from_factory(eoc_host, &eoc_port, file_host, &file_port);
     if (ret == 0) {
         printf("db_parking_lot_get_cloud_addr_from_factory eoc_host:%s eoc_port:%d\n", eoc_host.c_str(), eoc_port);
     }
-    eoc_port = 6526;
-    eoc_host = "ehctest.eoc.aipark.com";
+    if (eoc_port == 0) {
+        eoc_port = 6526;
+    }
+    if (eoc_host.empty()) {
+        eoc_host = "116.63.162.151";
+    }
 //    url_get(eoc_host,ipaddr);
-    eoc_communication_start(ipaddr.c_str(), 6526);
+    eoc_communication_start(eoc_host.c_str(), eoc_port);//主控机端口固定为6526
 }
 
 #include "eocCom/EOCCom.h"
@@ -63,17 +67,20 @@ int StartEocCommon1() {
         return -1;
     }
     int eoc_port = 6526;
-    string eoc_host = "ehctest.eoc.aipark.com";
+    string eoc_host = "116.63.162.151";
     int file_port = 7000;
     string file_host = "ehctest.eoc.aipark.com";
-    string ipaddr = "116.63.162.151"/*"111.62.28.98"*/;
     int ret = dbGetCloudInfo(eoc_host, eoc_port, file_host, file_port);
     if (ret == 0) {
         printf("db_parking_lot_get_cloud_addr_from_factory eoc_host:%s eoc_port:%d\n", eoc_host.c_str(), eoc_port);
     }
-    eoc_port = 6526;
-    eoc_host = "ehctest.eoc.aipark.com";
+    if (eoc_port == 0) {
+        eoc_port = 6526;
+    }
+    if (eoc_host.empty()) {
+        eoc_host = "116.63.162.151";
+    }
 //    url_get(eoc_host,ipaddr);
-    std::thread(ThreadEOCCom, ipaddr, 6526, "./eoc.pem").detach();
+    std::thread(ThreadEOCCom, eoc_host, eoc_port, "./eoc.pem").detach();
     return 0;
 }

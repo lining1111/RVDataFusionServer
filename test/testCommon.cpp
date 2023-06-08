@@ -2,9 +2,9 @@
 // Created by lining on 2/16/22.
 //
 
-#include <cstring>
 #include <queue>
 #include <sys/time.h>
+#include <unistd.h>
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
@@ -172,9 +172,222 @@ void testCRC() {
     cout << "crc:" << to_string(crc) << endl;
 }
 
+#include <data/merge/mergeStruct.h>
+#include <future>
+#include <csignal>
+#include <fstream>
+
+void exampleAlgorithm() {
+    AlgorithmParam algorithmParam;
+    //H_south
+    double h_sourth[9] = {-0.007128362730, -0.583855347756, 114.889396729743,
+                          -0.002529960713, -0.207213146406, 40.775908214483,
+                          -0.000062048636, -0.005081861967, 1.000000000000};
+    vector<double> h_sourth_values;
+    for (auto iter: h_sourth) {
+        h_sourth_values.push_back(iter);
+    }
+    algorithmParam.setH_XX(algorithmParam.H_south, h_sourth_values);
+    //H_north
+    double h_north[9] = {-0.016188874511, -0.740660413078, 114.891390365757,
+                         -0.005745262581, -0.262856666713, 40.772950713216,
+                         -0.000140902508, -0.006446667951, 1.000000000000};
+    vector<double> h_north_values;
+    for (auto iter: h_north) {
+        h_north_values.push_back(iter);
+    }
+    algorithmParam.setH_XX(algorithmParam.H_north, h_north_values);
+    //H_east
+    double h_east[9] = {1.465148321114, -23.003566173151, 114.847388807580,
+                        0.519995524511, -8.163997188248, 40.762179835812,
+                        0.012752695973, -0.200223303444, 1.000000000000};
+    vector<double> h_east_values;
+    for (auto iter: h_east) {
+        h_east_values.push_back(iter);
+    }
+    algorithmParam.setH_XX(algorithmParam.H_east, h_east_values);
+
+    //H_west
+    double h_west[9] = {-1.038881614089, 30.397104706610, 114.824762733410,
+                        -0.368681781840, 10.787881511903, 40.757922817917,
+                        -0.009042351949, 0.264573853716, 1.000000000000};
+    vector<double> h_west_values;
+    for (auto iter: h_west) {
+        h_west_values.push_back(iter);
+    }
+    algorithmParam.setH_XX(algorithmParam.H_west, h_west_values);
+
+    algorithmParam.crossroad_mid_longitude = 114.8901745;
+    algorithmParam.crossroad_mid_latitude = 40.7745085;
+
+    algorithmParam.piexl_type = 1;
+    algorithmParam.min_track_distance = 80;// 600 / dst_ratio;// 600;
+    algorithmParam.max_track_distance = 120;// 2000 / dst_ratio;// 1400;
+    algorithmParam.failCount1 = 50;
+    algorithmParam.failCount2 = 2;
+    algorithmParam.min_area_threshold = 0.3;
+    algorithmParam.piexlbymeter_x = 10.245;
+    algorithmParam.piexlbymeter_y = 7.76;
+    algorithmParam.road_length = 150;
+
+    vector<double> angles = {180, 270, 0, 103};
+    algorithmParam.setAngle(angles);
+
+
+    algorithmParam.max_stop_speed_threshold = 2.0;//  test
+    algorithmParam.shaking_pixel_threshold = 0.3;
+    algorithmParam.stopline_length = 5;
+    algorithmParam.track_in_length = 120;
+    algorithmParam.track_out_length = 20;
+
+
+    algorithmParam.max_speed_by_piexl = 20; //新增 速度限制
+    algorithmParam.car_match_count = 3;
+    algorithmParam.max_center_distance_threshold = 0.4;// 0.45f; // 0.4
+    algorithmParam.min_center_distance_threshold = 0.2;// 0.25f; //0.2
+    algorithmParam.min_area_threshold = 0.1;// 0.45f; //0.5
+    algorithmParam.max_area_threshold = 0.3f; // 0.8
+    algorithmParam.middle_area_threshold = 0.2;
+    //south_north_driving_area
+    vector<PointF> values_tmp;
+    vector<vector<PointF>> values_driving_area;
+
+    values_driving_area.clear();
+    values_tmp.clear();
+    values_tmp.push_back(PointF(348, 426));
+    values_tmp.push_back(PointF(575, 315));
+    values_tmp.push_back(PointF(727, 250));
+    values_tmp.push_back(PointF(916, 244));
+    values_tmp.push_back(PointF(941, 309));
+    values_tmp.push_back(PointF(996, 432));
+    values_driving_area.push_back(values_tmp);
+    values_tmp.clear();
+    values_tmp.push_back(PointF(941, 391));
+    values_tmp.push_back(PointF(1245, 293));
+    values_tmp.push_back(PointF(1401, 233));
+    values_tmp.push_back(PointF(1681, 189));
+    values_tmp.push_back(PointF(1631, 285));
+    values_tmp.push_back(PointF(1793, 437));
+    values_driving_area.push_back(values_tmp);
+    algorithmParam.setXX_driving_are(algorithmParam.south_north_driving_area, values_driving_area);
+    //north_south_driving_area
+    values_driving_area.clear();
+    values_tmp.clear();
+    values_tmp.push_back(PointF(257, 382));
+    values_tmp.push_back(PointF(766, 293));
+    values_tmp.push_back(PointF(1102, 222));
+    values_tmp.push_back(PointF(1401, 233));
+    values_tmp.push_back(PointF(1245, 293));
+    values_tmp.push_back(PointF(941, 391));
+    values_driving_area.push_back(values_tmp);
+    values_tmp.clear();
+    values_tmp.push_back(PointF(996, 432));
+    values_tmp.push_back(PointF(941, 309));
+    values_tmp.push_back(PointF(916, 244));
+    values_tmp.push_back(PointF(1113, 247));
+    values_tmp.push_back(PointF(1297, 309));
+    values_tmp.push_back(PointF(1711, 453));
+    values_driving_area.push_back(values_tmp);
+    algorithmParam.setXX_driving_are(algorithmParam.north_south_driving_area, values_driving_area);
+
+    algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(0, 0.000015, 0.000035));
+    algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(1, 0.000015, 0.00004));
+    algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(2, 0.000015, 0.000035));
+    algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(3, 0.000035, 0.00002));
+
+
+    Json::FastWriter fastWriter;
+    Json::Value out;
+    algorithmParam.JsonMarshal(out);
+    std::string plainJson;
+    plainJson = fastWriter.write(out);
+    std::cout << plainJson << std::endl;
+
+    //写入文件
+    ofstream file;
+    file.open("algorithmParam.json", ios::trunc);
+    if (file.is_open()) {
+        file << plainJson;
+        file.flush();
+        file.close();
+    }
+
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(plainJson, in, false)) {
+        std::cout << "json parse fail" << std::endl;
+    }
+
+    AlgorithmParam algorithmParam1;
+    algorithmParam1.JsonUnmarshal(in);
+    std::cout << "angle:" << algorithmParam1.angle.at(0).value << std::endl;
+}
+
+int th1(int wait) {
+    sleep(wait);
+    std::cout << "wait" << wait << std::endl;
+    return 0;
+}
+
+void aysntest() {
+
+    vector<std::shared_future<int>> finishs;
+    for (int i = 0; i < 4; i++) {
+        std::shared_future<int> finish = std::async(std::launch::async, th1, 5 - i);
+        finishs.push_back(finish);
+    }
+
+    for (int i = 0; i < 4; i++) {
+        finishs.at(i).wait();
+    }
+    std::cout << "finish" << std::endl;
+}
+
+
+typedef struct S1 {
+    int a = 0;
+    string b;
+};
 
 int main(int argc, char **argv) {
 
+    Json::Reader reader;
+    Json::Value in;
+    string content = R"({"loactionX":null})";
+    if (!reader.parse(content,in,false)){
+        return -1;
+    }
+    ObjMix objMix;
+    objMix.JsonUnmarshal(in);
+    Json::FastWriter fastWriter;
+    Json::Value out;
+    objMix.JsonMarshal(out);
+    std::cout << fastWriter.write(out) << std::endl;
+
+
+//    vector<S1> vs;
+//    vs.resize(4);
+//    S1 s1;
+//    s1.a = 1;
+//    s1.b = "b";
+//    vs[0]=s1;
+//    S1 s2;
+//    s2.a = 2;
+//    s2.b = "2b";
+//    vs[1]=s2;
+//    S1 s3;
+//    s3.a = 3;
+//    s3.b = "3b";
+//    vs[2]=s3;
+//    for (int i = 0; i < vs.size(); i++) {
+//        auto iter = &vs.at(i);
+//        printf("a:%d b:%s\n",iter->a,iter->b.c_str());
+//    }
+
+
+
+//    aysntest();
+    exampleAlgorithm();
 //    exampleJsonTrafficFlow();
 //    exampleJsonTrafficFlows();
     string a = "nihao";
@@ -223,20 +436,20 @@ int main(int argc, char **argv) {
 //    Pkg pkg1;
 //    pkg1 = q.PopFront();
 
-    vector<struct S> vectorS;
-    struct S s1 = {
-            .a= 1,
-            .b = 2,
-            .c = 3,
-    };
-    struct S s2 = {
-            .a= 2,
-            .b = 3,
-            .c = 4,
-    };
-    vectorS.push_back(s1);
-    vectorS.push_back(s2);
-    printS(vectorS.data(), vectorS.size());
+//    vector<struct S> vectorS;
+//    struct S s1 = {
+//            .a= 1,
+//            .b = 2,
+//            .c = 3,
+//    };
+//    struct S s2 = {
+//            .a= 2,
+//            .b = 3,
+//            .c = 4,
+//    };
+//    vectorS.push_back(s1);
+//    vectorS.push_back(s2);
+//    printS(vectorS.data(), vectorS.size());
 
 
     return 0;

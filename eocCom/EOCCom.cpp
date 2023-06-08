@@ -441,58 +441,58 @@ static void ThreadDownload(EOCCom *local, std::string url) {
     if (local == nullptr) {
         return;
     }
-    LOG(INFO) << "download thread,url:" << url << "start";
+    LOG(INFO) << "download thread,url:" << url << " start";
     std::string updateFileName;
     auto msgDownload = &local->eocCloudData.downloads_msg;
     bool isUrlExist = false;
     for (int i = 0; i < msgDownload->size(); i++) {
-        auto iter = msgDownload->at(i);
-        LOG(INFO) << "index:" << i << ",download url:" << iter.download_url;
+        auto iter = &msgDownload->at(i);
+        LOG(INFO) << "index:" << i << ",download url:" << iter->download_url;
         //如果有链接和要下载的链接相同
-        if (iter.download_url == url) {
+        if (iter->download_url == url) {
             isUrlExist = true;
             //找到下载链接信息
-            if (iter.upgrade_dev.empty()) {
+            if (iter->upgrade_dev.empty()) {
                 //主控板升级下载文件
                 updateFileName = UPDATEFILE;
             } else {
-                if (iter.upgrade_dev.at(0).dev_type == EOCCom::EOC_UPGRADE_PARKINGAREA) {
+                if (iter->upgrade_dev.at(0).dev_type == EOCCom::EOC_UPGRADE_PARKINGAREA) {
                     //主控板升级下载文件
                     updateFileName = UPDATEFILE;
                 } else {
                     //相机或矩阵控制器升级下载文件
-                    updateFileName = iter.download_file_md5 + "_" + iter.download_file_name;
+                    updateFileName = iter->download_file_md5 + "_" + iter->download_file_name;
                 }
             }
             //正式下载文件
             LOG(INFO) << "正式下载文件";
-            int result = downloadFile(iter.download_url, 8 * 60 * 1000,
-                                      updateFileName, iter.download_file_size, iter.download_file_md5);
+            int result = downloadFile(iter->download_url, 8 * 60 * 1000,
+                                      updateFileName, iter->download_file_size, iter->download_file_md5);
 
             switch (result) {
                 case 0: {
-                    LOG(INFO) << "下载完成:" << iter.download_url;
-                    iter.download_status = EOCCom::DOWNLOAD_FINISHED;
+                    LOG(INFO) << "下载完成:" << iter->download_url;
+                    iter->download_status = EOCCom::DOWNLOAD_FINISHED;
                 }
                     break;
                 case -1: {
-                    LOG(ERROR) << "下载文件不存在:" << iter.download_url;
-                    iter.download_status = EOCCom::DOWNLOAD_FILE_NOT_EXIST;
+                    LOG(ERROR) << "下载文件不存在:" << iter->download_url;
+                    iter->download_status = EOCCom::DOWNLOAD_FILE_NOT_EXIST;
                 }
                     break;
                 case -2: {
-                    LOG(ERROR) << "下载超时:" << iter.download_url;
-                    iter.download_status = EOCCom::DOWNLOAD_TIMEOUT;
+                    LOG(ERROR) << "下载超时:" << iter->download_url;
+                    iter->download_status = EOCCom::DOWNLOAD_TIMEOUT;
                 }
                     break;
                 case -3: {
-                    LOG(ERROR) << "下载本地剩余空间不足:" << iter.download_url;
-                    iter.download_status = EOCCom::DOWNLOAD_SPACE_NOT_ENOUGH;
+                    LOG(ERROR) << "下载本地剩余空间不足:" << iter->download_url;
+                    iter->download_status = EOCCom::DOWNLOAD_SPACE_NOT_ENOUGH;
                 }
                     break;
                 case -4: {
-                    LOG(ERROR) << "下载失败MD5校验失败:" << iter.download_url;
-                    iter.download_status = EOCCom::DOWNLOAD_MD5_FAILD;
+                    LOG(ERROR) << "下载失败MD5校验失败:" << iter->download_url;
+                    iter->download_status = EOCCom::DOWNLOAD_MD5_FAILD;
                 }
                     break;
             }
@@ -502,7 +502,7 @@ static void ThreadDownload(EOCCom *local, std::string url) {
         LOG(ERROR) << "search download url err";
     }
 
-    LOG(INFO) << "download thread,url:" << url << "exit";
+    LOG(INFO) << "download thread,url:" << url << " exit";
 }
 
 void processR106(void *p, string content, string cmd) {
@@ -521,7 +521,7 @@ void processR106(void *p, string content, string cmd) {
     R106 r106;
     if (r106.JsonUnmarshal(in)) {
         LOG(INFO) << "eoc download file:" << r106.Data.DownloadPath <<
-                  ",file:" << r106.Data.FileName << ",size:" << r106.Data.FileSize << "md5:" << r106.Data.FileMD5;
+                  ",file:" << r106.Data.FileName << ",size:" << r106.Data.FileSize << ",md5:" << r106.Data.FileMD5;
         LOG(INFO) << "file local store:" << UPDATEFILE;
         //发送S106信息
         S106 s106;
@@ -1029,7 +1029,7 @@ int EOCCom::intervalPro(void *p) {
                 if (iter->download_status != EOCCom::DOWNLOAD_IDLE) {
                     //发送信息给eoc
                     //遍历设备类型数组
-                    for (auto &iter1:iter->upgrade_dev) {
+                    for (auto &iter1: iter->upgrade_dev) {
                         if (iter1.dev_type == EOCCom::EOC_UPGRADE_PARKINGAREA) {
                             //如果是则
                             S106 s106;

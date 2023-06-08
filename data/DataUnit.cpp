@@ -12,13 +12,13 @@
 #include <glog/logging.h>
 #include "Data.h"
 
-DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache, void *owner) :
-        DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs, int i_num, int cache, void *owner) :
+        DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitTrafficFlowGather::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitTrafficFlowGather::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     LOG(INFO) << "DataUnitTrafficFlowGather thresholdFrame" << this->thresholdFrame;
     timerBusinessName = "DataUnitTrafficFlowGather";
     timerBusiness = new Timer(timerBusinessName);
@@ -52,10 +52,11 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     //1确定标定的时间戳
     IType refer;
     if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
+        dataUnit->i_maxSizeIndexNext();
         return;
     }
     //判断上次取的时间戳和这次的一样吗
-    if (dataUnit->timestampStore == ((uint64_t) refer.timestamp)) {
+    if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timestamp)) {
         dataUnit->taskSearchCount++;
         if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
             //超过阈值，切下一路,重新计数
@@ -85,15 +86,19 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     vector<IType>().swap(dataUnit->oneFrame);
     dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
+    vector<std::shared_future<int>>().swap(finishs);
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
-                                                    leftTimestamp,
-                                                    rightTimestamp);
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i, offset,
+                                                    dataUnit->curTimestamp);
         finishs.push_back(finish);
     }
 
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        finishs.at(i).wait();
+        try {
+            finishs.at(i).wait();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+        }
     }
 
     //打印下每一路取到的时间戳
@@ -107,10 +112,21 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     TaskProcessOneFrame(dataUnit);
 }
 
-int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
-                                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, int offset,
+                                                    uint64_t curTimestamp) {
     //找到时间戳在范围内的帧
-    VLOG(3) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp;
+    if (index == dataUnit->i_maxSizeIndex) {
+        IType refer;
+        if (dataUnit->getIOffset(refer, index, offset)) {
+            //记录当前路的时间戳
+            dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timestamp;
+            //将当前路的所有信息缓存入对应的索引
+            dataUnit->oneFrame[index] = refer;
+            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
+                    << (uint64_t) refer.timestamp;
+        }
+        return index;
+    }
 
     if (dataUnit->emptyI(index)) {
         VLOG(3) << "DataUnitTrafficFlowGather第" << index << "路数据为空";
@@ -118,8 +134,7 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
         for (int i = 0; i < dataUnit->sizeI(index); i++) {
             IType refer;
             if (dataUnit->getIOffset(refer, index, i)) {
-                if ((uint64_t(refer.timestamp) >= leftTimestamp) &&
-                    (uint64_t(refer.timestamp) <= rightTimestamp)) {
+                if (abs((int) ((uint64_t) refer.timestamp - curTimestamp)) <= dataUnit->fs_i) {
                     //在范围内
                     //记录当前路的时间戳
                     dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timestamp;
@@ -127,6 +142,7 @@ int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *d
                     dataUnit->oneFrame[index] = refer;
                     VLOG(3) << "DataUnitTrafficFlowGather第" << index << "路时间戳在范围内，取出来:"
                             << (uint64_t) refer.timestamp;
+                    break;
                 }
             }
         }
@@ -164,16 +180,16 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame(DataUnitTrafficFlowGather *da
     return ret;
 }
 
-DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache, void *owner) :
-        DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs, int i_num, int cache, void *owner) :
+        DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitCrossTrafficJamAlarm::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitCrossTrafficJamAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitCrossTrafficJamAlarm";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitCrossTrafficJamAlarm::task(void *local) {
@@ -207,17 +223,17 @@ void DataUnitCrossTrafficJamAlarm::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitIntersectionOverflowAlarm::DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache,
+DataUnitIntersectionOverflowAlarm::DataUnitIntersectionOverflowAlarm(int c, int fs, int i_num, int cache,
                                                                      void *owner)
-        : DataUnit(c, threshold_ms, i_num, cache, owner) {
+        : DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitIntersectionOverflowAlarm::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitIntersectionOverflowAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitIntersectionOverflowAlarm";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitIntersectionOverflowAlarm::task(void *local) {
@@ -252,17 +268,17 @@ void DataUnitIntersectionOverflowAlarm::task(void *local) {
 }
 
 
-DataUnitInWatchData_1_3_4::DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache, void *owner) :
-        DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitInWatchData_1_3_4::DataUnitInWatchData_1_3_4(int c, int fs, int i_num, int cache, void *owner) :
+        DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
 
-void DataUnitInWatchData_1_3_4::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitInWatchData_1_3_4::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitInWatchData_1_3_4";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitInWatchData_1_3_4::task(void *local) {
@@ -295,16 +311,16 @@ void DataUnitInWatchData_1_3_4::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitInWatchData_2::DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache, void *owner) :
-        DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitInWatchData_2::DataUnitInWatchData_2(int c, int fs, int i_num, int cache, void *owner) :
+        DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitInWatchData_2::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitInWatchData_2::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitInWatchData_2";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitInWatchData_2::task(void *local) {
@@ -337,16 +353,16 @@ void DataUnitInWatchData_2::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitStopLinePassData::DataUnitStopLinePassData(int c, int threshold_ms, int i_num, int cache, void *owner)
-        : DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitStopLinePassData::DataUnitStopLinePassData(int c, int fs, int i_num, int cache, void *owner)
+        : DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitStopLinePassData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitStopLinePassData::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitStopLinePassData";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitStopLinePassData::task(void *local) {
@@ -379,8 +395,8 @@ void DataUnitStopLinePassData::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitHumanData::DataUnitHumanData(int c, int threshold_ms, int i_num, int cache, void *owner) : DataUnit(
-        c, threshold_ms, i_num, cache, owner) {
+DataUnitHumanData::DataUnitHumanData(int c, int fs, int i_num, int cache, void *owner) : DataUnit(
+        c, fs, i_num, cache, owner) {
 
 }
 
@@ -388,7 +404,7 @@ void DataUnitHumanData::init(int c, int threshold_ms, int i_num, int cache, void
     DataUnit::init(c, threshold_ms, i_num, cache, owner);
     timerBusinessName = "DataUnitHumanData";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitHumanData::task(void *local) {
@@ -440,8 +456,8 @@ void DataUnitHumanData::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitAbnormalStopData::DataUnitAbnormalStopData(int c, int threshold_ms, int i_num, int cache, void *owner)
-        : DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitAbnormalStopData::DataUnitAbnormalStopData(int c, int fs, int i_num, int cache, void *owner)
+        : DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
@@ -449,7 +465,7 @@ void DataUnitAbnormalStopData::init(int c, int threshold_ms, int i_num, int cach
     DataUnit::init(c, threshold_ms, i_num, cache, owner);
     timerBusinessName = "DataUnitAbnormalStopData";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitAbnormalStopData::task(void *local) {
@@ -482,17 +498,17 @@ void DataUnitAbnormalStopData::task(void *local) {
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
 
-DataUnitLongDistanceOnSolidLineAlarm::DataUnitLongDistanceOnSolidLineAlarm(int c, int threshold_ms, int i_num,
+DataUnitLongDistanceOnSolidLineAlarm::DataUnitLongDistanceOnSolidLineAlarm(int c, int fs, int i_num,
                                                                            int cache, void *owner)
-        : DataUnit(c, threshold_ms, i_num, cache, owner) {
+        : DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitLongDistanceOnSolidLineAlarm::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitLongDistanceOnSolidLineAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     timerBusinessName = "DataUnitLongDistanceOnSolidLineAlarm";
     timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(fs_i, std::bind(task, this));
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
 }
 
 void DataUnitLongDistanceOnSolidLineAlarm::task(void *local) {

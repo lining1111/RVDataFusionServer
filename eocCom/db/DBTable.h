@@ -67,7 +67,7 @@ typedef struct {
 int checkTableColumn(std::string tab_name, DBTableColInfo *tab_column, int check_num);
 ///////////具体的表内业务////////////
 
-//核心板基础配置
+//核心板基础配置 ./eoc_configure.db base_set表
 class DBBaseSet {
 private:
     std::string db = "./eoc_configure.db";
@@ -103,7 +103,7 @@ public:
     int selectFromDB();
 };
 
-//所属路口信息
+//所属路口信息 ./eoc_configure.db  belong_intersection表
 class DBIntersection {
 private:
     std::string db = "./eoc_configure.db";
@@ -141,7 +141,7 @@ public:
     int selectFromDB();
 };
 
-//融合参数设置
+//融合参数设置 ./eoc_configure.db fusion_para_set表
 class DBFusionParaSet {
 private:
     std::string db = "./eoc_configure.db";
@@ -163,7 +163,7 @@ public:
     int selectFromDB();
 };
 
-//关联设备
+//关联设备 ./eoc_configure.db associated_equip表
 class DBAssociatedEquip {
 private:
     std::string db = "./eoc_configure.db";

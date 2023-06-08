@@ -122,7 +122,7 @@ bool S100::JsonMarshal(Json::Value &out) {
 }
 
 bool S100::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -158,7 +158,7 @@ bool R100::JsonMarshal(Json::Value &out) {
 }
 
 bool R100::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -204,7 +204,7 @@ bool S101::JsonMarshal(Json::Value &out) {
 }
 
 bool S101::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -314,7 +314,7 @@ bool R101::JsonMarshal(Json::Value &out) {
 }
 
 bool R101::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -550,7 +550,7 @@ bool DataR102::JsonUnmarshal(Json::Value in) {
 
     Json::Value AssociatedEquips = in["AssociatedEquips"];
     if (AssociatedEquips.isArray()) {
-        for (auto iter:AssociatedEquips) {
+        for (auto iter: AssociatedEquips) {
             AssociatedEquip item;
             if (item.JsonUnmarshal(iter)) {
                 this->AssociatedEquips.push_back(item);
@@ -570,7 +570,7 @@ bool R102::JsonMarshal(Json::Value &out) {
 }
 
 bool R102::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -610,7 +610,7 @@ bool S102::JsonMarshal(Json::Value &out) {
 }
 
 bool S102::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -684,7 +684,7 @@ bool DataR104::JsonUnmarshal(Json::Value in) {
 
     Json::Value AssociatedEquips = in["AssociatedEquips"];
     if (AssociatedEquips.isArray()) {
-        for (auto iter:AssociatedEquips) {
+        for (auto iter: AssociatedEquips) {
             AssociatedEquip item;
             if (item.JsonUnmarshal(iter)) {
                 this->AssociatedEquips.push_back(item);
@@ -704,7 +704,7 @@ bool R104::JsonMarshal(Json::Value &out) {
 }
 
 bool R104::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -744,7 +744,7 @@ bool S104::JsonMarshal(Json::Value &out) {
 }
 
 bool S104::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -793,7 +793,7 @@ bool S105::JsonMarshal(Json::Value &out) {
 }
 
 bool S105::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -835,7 +835,7 @@ bool R105::JsonMarshal(Json::Value &out) {
 }
 
 bool R105::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -882,7 +882,7 @@ bool R106::JsonMarshal(Json::Value &out) {
 }
 
 bool R106::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -927,7 +927,7 @@ bool S106::JsonMarshal(Json::Value &out) {
 }
 
 bool S106::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -982,7 +982,7 @@ bool R107::JsonMarshal(Json::Value &out) {
 }
 
 bool R107::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -1027,7 +1027,7 @@ bool S107::JsonMarshal(Json::Value &out) {
 }
 
 bool S107::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -1068,7 +1068,7 @@ bool R108::JsonMarshal(Json::Value &out) {
 }
 
 bool R108::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);
@@ -1104,7 +1104,7 @@ bool S108::JsonMarshal(Json::Value &out) {
 }
 
 bool S108::JsonUnmarshal(Json::Value in) {
-    this->JsonUnmarshal(in);
+    this->head.JsonUnmarshal(in);
     Json::Value Data = in["Data"];
     if (Data.isObject()) {
         this->Data.JsonUnmarshal(Data);

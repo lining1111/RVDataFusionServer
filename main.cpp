@@ -43,6 +43,7 @@ DEFINE_int32(roadNum, 4, "外设路数，默认4");
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 
 #include "eocCom/fileFun.h"
+#include "configure_eoc_init.h"
 
 int main(int argc, char **argv) {
 
@@ -69,24 +70,26 @@ int main(int argc, char **argv) {
 
     //初始化本地数据和数据库
     LOG(INFO) << "开启eoc通信，同时读取本地数据库到缓存";
+    /*
     StartEocCommon();
-//    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
-//        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
-//        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
-//    } else {
-//        cloudIp = FLAGS_cloudIp;
-//        LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
-//    }
-//
-//    if (g_eoc_base_set.PlatformTcpPort != 0) {
-//        cloudPort = g_eoc_base_set.PlatformTcpPort;
-//        LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
-//    } else {
-//        cloudPort = FLAGS_cloudPort;
-//        LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
-//    }
+    if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
+        cloudIp = string(g_eoc_base_set.PlatformTcpPath);
+        LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
+    } else {
+        cloudIp = FLAGS_cloudIp;
+        LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
+    }
 
-//    StartEocCommon1();
+    if (g_eoc_base_set.PlatformTcpPort != 0) {
+        cloudPort = g_eoc_base_set.PlatformTcpPort;
+        LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
+    } else {
+        cloudPort = FLAGS_cloudPort;
+        LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
+    }
+*/
+
+    StartEocCommon1();
     if (!string(g_BaseSet.PlatformTcpPath).empty()) {
         cloudIp = string(g_BaseSet.PlatformTcpPath);
         LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;

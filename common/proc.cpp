@@ -125,7 +125,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(10, ct->interval, localConfig.roadNum, dataUnit->cache, data);
+            dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data);
         }
     }
     pthread_mutex_unlock(&ct->mtx);
@@ -133,14 +133,12 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     //存入队列
     if (!dataUnit->pushI(watchData, index)) {
         VLOG(2) << "client ip:" << ip << " WatchData,丢弃消息";
-        LOG(INFO) << "client ip:" << ip << "direction:" << watchData.direction << " WatchData,丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " WatchData,存入消息,"
                 << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                 << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
                 << index;
-
     }
 
     return ret;
@@ -228,7 +226,7 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(10, ct->interval, localConfig.roadNum, dataUnit->cache, data);
+            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data);
         }
     }
     pthread_mutex_unlock(&ct->mtx);

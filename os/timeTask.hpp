@@ -44,11 +44,8 @@ namespace os {
             std::thread([this, interval_ms, task]() {
                 while (!_try_to_expire) {
                     // sleep every interval and do the task again and again until times up
-                    auto start = std::chrono::high_resolution_clock::now();
                     task();
-                    auto end = std::chrono::high_resolution_clock::now();
-                    long count = ((end - start) / std::chrono::milliseconds(interval_ms)) + 1;
-                    std::this_thread::sleep_until(start + count * std::chrono::milliseconds(interval_ms));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
                 }
 
                 {
@@ -63,9 +60,8 @@ namespace os {
         void startOnce(int delay_ms, std::function<void()> task) {
             period = delay_ms;
             std::thread([delay_ms, task]() {
-                auto start = std::chrono::high_resolution_clock::now();
                 task();
-                std::this_thread::sleep_until(start + std::chrono::milliseconds(delay_ms));
+                std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
             }).detach();
         }
 
@@ -97,7 +93,7 @@ namespace os {
             return _name;
         }
 
-        int getPeriodMs(){
+        int getPeriodMs() {
             return period;
         }
 

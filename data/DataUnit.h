@@ -21,6 +21,7 @@ using namespace common;
 using namespace std;
 using namespace os;
 
+#define TaskTimeval 10 //任务开启周期
 template<typename I, typename O>
 class DataUnit {
 public:
@@ -37,18 +38,15 @@ public:
 
     void i_maxSizeIndexNext() {
         //开一个满缓存的路数开始，总能找到一个满缓存的路
-        int count = 0;
-        do {
-            i_maxSizeIndex++;
 
-            if (i_maxSizeIndex > i_queue_vector.size()) {
-                i_maxSizeIndex = 0;
-            }
-            taskSearchCountReset();
-            count++;
-        } while (sizeI(i_maxSizeIndex) < cache || count > i_queue_vector.size());
+        i_maxSizeIndex++;
+
+        if (i_maxSizeIndex > i_queue_vector.size()) {
+            i_maxSizeIndex = 0;
+        }
+        taskSearchCountReset();
+
     }
-
 
     int fs_i;
     int cap;
@@ -156,7 +154,7 @@ public:
         }
     }
 
-    int emptyI(int index) {
+    bool emptyI(int index) {
         try {
             return i_queue_vector.at(index).empty();
         } catch (const std::exception &e) {
@@ -210,7 +208,7 @@ public:
         }
     }
 
-    int emptyO() {
+    bool emptyO() {
         try {
             return o_queue.empty();
         } catch (const std::exception &e) {
@@ -315,16 +313,16 @@ public:
 
     }
 
-    DataUnitTrafficFlowGather(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitTrafficFlowGather(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
-    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, int offset,
+                                    uint64_t curTimestamp);
 
     static int TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit);
 };
@@ -341,9 +339,9 @@ public:
 
     }
 
-    DataUnitCrossTrafficJamAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitCrossTrafficJamAlarm(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -362,9 +360,9 @@ public:
 
     }
 
-    DataUnitIntersectionOverflowAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitIntersectionOverflowAlarm(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -381,9 +379,9 @@ public:
 
     }
 
-    DataUnitInWatchData_1_3_4(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitInWatchData_1_3_4(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -400,9 +398,9 @@ public:
 
     }
 
-    DataUnitInWatchData_2(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitInWatchData_2(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -419,9 +417,9 @@ public:
 
     }
 
-    DataUnitStopLinePassData(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitStopLinePassData(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };
@@ -438,9 +436,9 @@ public:
 
     }
 
-    DataUnitAbnormalStopData(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitAbnormalStopData(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };
@@ -458,9 +456,9 @@ public:
 
     }
 
-    DataUnitLongDistanceOnSolidLineAlarm(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitLongDistanceOnSolidLineAlarm(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };
@@ -477,9 +475,9 @@ public:
 
     }
 
-    DataUnitHumanData(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitHumanData(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 };

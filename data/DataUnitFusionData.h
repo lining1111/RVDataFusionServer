@@ -21,9 +21,9 @@ public:
 
     }
 
-    DataUnitFusionData(int c, int threshold_ms, int i_num, int cache, void *owner);
+    DataUnitFusionData(int c, int fs, int i_num, int cache, void *owner);
 
-    void init(int c, int threshold_ms, int i_num, int cache, void *owner);
+    void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
 
@@ -36,7 +36,7 @@ public:
     FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
 
     static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
-                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
+                                    int index, int offset, uint64_t curTimestamp);
 
     static int TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
 

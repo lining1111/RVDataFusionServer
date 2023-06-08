@@ -15,7 +15,7 @@
 #include "os/os.h"
 
 #define HOME_PATH "/home/nvidianx"
-#define UPDATEFILE "zkj_update.zip"
+#define UPDATEFILE "zkj_update.tar.gz"
 #define UPDATEUNZIPFILE HOME_PATH"/zkj_update_tmp"  // 升级包解压路径
 #define INSTALLSH "update.sh"  // 升级脚本
 

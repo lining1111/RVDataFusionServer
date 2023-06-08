@@ -11,7 +11,7 @@ std::string getFileMD5(std::string file) {
         MD5_Init(&ctx);
         unsigned char *buf = new unsigned char[1024];
         while (!inStream.eof()) {
-            inStream.read((char*)buf, 1024);
+            inStream.read((char *) buf, 1024);
             std::streamsize num = inStream.gcount();
             MD5_Update(&ctx, buf, num);
         }
@@ -71,7 +71,7 @@ static size_t download_file_callback(void *buffer, size_t size, size_t nmemb, vo
     for (int i = 0; i < countDownloadPrint; i++) {
         printPrefix.append("#");
     }
-    LOG(INFO) << printPrefix << "..." << "download:" << downloaded << ",total:" << downloadTotal;
+    LOG(INFO) << "..." << "download:" << downloaded << ",total:" << downloadTotal;
     return writen(*(int *) userp, buffer, nmemb * size);
 }
 
@@ -140,7 +140,7 @@ int downloadFile(std::string url, int timeout, std::string fileName, int fileSiz
 
         if (res == CURLE_OK && http_response_code == 200) {
             //请求成功
-            LOG(INFO) << "download file:" << fileName << ",from url:" << url << "success";
+            LOG(INFO) << "download file:" << fileName << ",from url:" << url << " success";
             ret = 0;
             std::string md5 = getFileMD5(fileName);
             if (md5 != fileMD5) {
@@ -188,7 +188,7 @@ int extractFile(std::string filePath) {
         return -1;
     }
     memset(cmd, 0, 512);
-    sprintf(cmd, "unzip %s -d %s", filePath.c_str(), UPDATEUNZIPFILE);
+    sprintf(cmd, "tar -zxf %s -C %s", filePath.c_str(), UPDATEUNZIPFILE);
     LOG(INFO) << "解压到指定目录,cmd=" << cmd;
     ret = os::execute_command(cmd);
     if (ret < 0) {

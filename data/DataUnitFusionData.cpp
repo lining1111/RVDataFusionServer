@@ -14,13 +14,13 @@
 
 using namespace std;
 
-DataUnitFusionData::DataUnitFusionData(int c, int threshold_ms, int i_num, int cache, void *owner) :
-        DataUnit(c, threshold_ms, i_num, cache, owner) {
+DataUnitFusionData::DataUnitFusionData(int c, int fs, int i_num, int cache, void *owner) :
+        DataUnit(c, fs, i_num, cache, owner) {
 
 }
 
-void DataUnitFusionData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
+void DataUnitFusionData::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
     LOG(INFO) << "DataUnitFusionData thresholdFrame" << this->thresholdFrame;
     timerBusinessName = "DataUnitFusionData";
     timerBusiness = new Timer(timerBusinessName);
@@ -73,10 +73,11 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     //1确定标定的时间戳
     IType refer;
     if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
+        dataUnit->i_maxSizeIndexNext();
         return;
     }
     //判断上次取的时间戳和这次的一样吗
-    if (dataUnit->timestampStore == ((uint64_t) refer.timstamp)) {
+    if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timstamp)) {
         dataUnit->taskSearchCount++;
         if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
             //超过阈值，切下一路,重新计数,还得是下一路的满缓存情况
@@ -90,7 +91,6 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     dataUnit->timestampStore = refer.timstamp;
 
     dataUnit->curTimestamp = refer.timstamp;
-//    printf("开始寻找%lu\n", dataUnit->curTimestamp);
 
     std::time_t t((uint64_t) dataUnit->curTimestamp / 1000);
     std::stringstream ss;
@@ -98,23 +98,24 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
 
     VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
     LOG(INFO) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
-//    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
-    uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
-    uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
     //3取数
     vector<IType>().swap(dataUnit->oneFrame);
     dataUnit->oneFrame.resize(dataUnit->numI);
     vector<std::shared_future<int>> finishs;
+    vector<std::shared_future<int>>().swap(finishs);
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i,
-                                                    leftTimestamp,
-                                                    rightTimestamp);
+        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i, offset,
+                                                    dataUnit->curTimestamp);
         finishs.push_back(finish);
     }
 
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        finishs.at(i).wait();
+        try {
+            finishs.at(i).wait();
+        } catch (const std::exception &e) {
+            cout << __FUNCTION__ << e.what() << endl;
+        }
     }
 
     //打印下每一路取到的时间戳
@@ -125,21 +126,31 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     line += to_string(dataUnit->curTimestamp);
     line += ",";
 
-    int findRoadCount = 0;
     for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
-        auto iter = &dataUnit->oneFrame.at(i);
-        line += to_string((uint64_t) iter->timstamp);
+        auto iter = dataUnit->oneFrame.at(i);
+        line += to_string((uint64_t) iter.timstamp);
         line += ",";
-        if (!iter->oprNum.empty()) {
-            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter->timstamp;
-            LOG(INFO) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter->timstamp;
-            findRoadCount++;
+        if (!iter.oprNum.empty()) {
+            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
+            LOG(INFO) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
         }
     }
     line += "\n";
     //写入文件
     ofstream ofs;
     ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+    //判断大小是否超过最大值
+    uint64_t maxSize = 1024 * 1024 * 100;
+    if (ofs.tellp() >= maxSize) {
+        //清空
+        ofs.close();
+        ofstream ofs1;
+        ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
+        ofs1.flush();
+        ofs1.close();
+        ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+    }
+
     if (ofs.is_open()) {
         ofs << line;
         ofs.flush();
@@ -150,47 +161,16 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     TaskProcessOneFrame(dataUnit, mergeType);
 }
 
-int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
-                                             int index, uint64_t leftTimestamp, uint64_t rightTimestamp) {
+int
+DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, int offset, uint64_t curTimestamp) {
     //找到时间戳在范围内的帧
-    VLOG(3) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp;
-    bool isFind = false;
-    //如果此路就是标定路，就取第5帧就好了
-    if (index == dataUnit->i_maxSizeIndex) {
-        IType refer;
-        if (dataUnit->getIOffset(refer, index, 5)) {
-            //记录当前路的时间戳
-            dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timstamp;
-            //将当前路的所有信息缓存入对应的索引
-            dataUnit->oneFrame[index] = refer;
-            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
-                    << (uint64_t) refer.timstamp;
-            isFind = true;
-        }
-        return index;
-    }
-
     if (dataUnit->emptyI(index)) {
         VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";
     } else {
-        uint64_t timestampBegin;
-        uint64_t timestampEnd;
-        IType referBegin;
-        IType referEnd;
-        if (dataUnit->getIOffset(referBegin, index, 0)) {
-            timestampBegin = referBegin.timstamp;
-        }
-
-        if (dataUnit->getIOffset(referEnd, index, dataUnit->sizeI(index) - 1)) {
-            timestampEnd = referEnd.timstamp;
-        }
-        LOG(INFO) << "DataUnitFusionData第" << index << "，开始时间戳" << timestampBegin << ",结束时间戳"
-                  << timestampEnd;
         for (int i = 0; i < dataUnit->sizeI(index); i++) {
             IType refer;
             if (dataUnit->getIOffset(refer, index, i)) {
-                if ((uint64_t(refer.timstamp) >= leftTimestamp) &&
-                    (uint64_t(refer.timstamp) <= rightTimestamp)) {
+                if (abs((int) ((uint64_t) refer.timstamp - curTimestamp)) < dataUnit->fs_i) {
                     //在范围内
                     //记录当前路的时间戳
                     dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timstamp;
@@ -198,24 +178,12 @@ int DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit,
                     dataUnit->oneFrame[index] = refer;
                     VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
                             << (uint64_t) refer.timstamp;
-                    isFind = true;
                     break;
                 }
             }
         }
     }
 
-    //如果未找到打印下当前的寻找范围和存的时间戳
-    if (!isFind) {
-        IType referBegin;
-        IType referEnd;
-        if (dataUnit->getIOffset(referBegin, index, 0) &&
-            dataUnit->getIOffset(referEnd, index, dataUnit->sizeI(index) - 1)) {
-            LOG(WARNING) << "第" << index << "路，左值:" << leftTimestamp << ",右值:" << rightTimestamp
-                         << ",begin:" << (uint64_t) referBegin.timstamp << ",end" << (uint64_t) referEnd.timstamp;
-        }
-
-    }
     return index;
 }
 

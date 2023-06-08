@@ -158,15 +158,14 @@ private:
             auto iter = clients.at(i);
             if (iter->sock == clientSock) {
                 client = iter;
-                delete client;
+//                delete client;
                 clients.erase(clients.begin() + i);
             }
         }
-        clients.shrink_to_fit();
         pthread_mutex_unlock(&lockClients);
-//        if (client != nullptr) {
-//            delete client;
-//        }
+        if (client != nullptr) {
+            delete client;
+        }
     }
 
 
