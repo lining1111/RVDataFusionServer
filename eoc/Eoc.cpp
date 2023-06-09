@@ -31,6 +31,7 @@ int StartEocCommon() {
     if (eoc_host.empty()) {
         eoc_host = "116.63.162.151";
     }
+    string ipaddr;
 //    url_get(eoc_host,ipaddr);
     eoc_communication_start(eoc_host.c_str(), eoc_port);//主控机端口固定为6526
 }
@@ -61,7 +62,7 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
 }
 
 int StartEocCommon1() {
-    DNSServerStart();  /*dns服务*/
+    myDNS::DNSServerStart();  /*dns服务*/
     if (globalConfigInit() < 0) {
         LOG(ERROR) << "g_eoc_config_init err";
         return -1;
@@ -80,7 +81,11 @@ int StartEocCommon1() {
     if (eoc_host.empty()) {
         eoc_host = "116.63.162.151";
     }
-//    url_get(eoc_host,ipaddr);
+    if (myDNS::isIP((char *) eoc_host.c_str()) == 0) {
+        string ipaddr;
+        myDNS::url_get(eoc_host, ipaddr);
+        eoc_host = ipaddr;
+    }
     std::thread(ThreadEOCCom, eoc_host, eoc_port, "./eoc.pem").detach();
     return 0;
 }

@@ -39,6 +39,7 @@ public:
     Timer timerAbnormalStopData;
     Timer timerLongDistanceOnSolidLineAlarm;
     Timer timerHumanData;
+    Timer timerHumanLitPoleData;
 
     Timer timerCreateFusionData;
     Timer timerCreateTrafficFlowGather;
@@ -74,6 +75,8 @@ private:
     static void Task_StopLinePassData(void *p);
 
     static void Task_HumanData(void *p);
+
+    static void Task_HumanLitPoleData(void *p);
 
     static void Task_AbnormalStopData(void *p);
 

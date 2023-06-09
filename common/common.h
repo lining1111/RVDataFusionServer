@@ -43,6 +43,11 @@ namespace common {
      */
 
 
+#define ComVersion "1.1.0"
+
+    string GetComVersion();
+
+
     enum CmdType {
         CmdResponse = 0x00,//应答指令
         CmdControl = 0x01,//设备控制指令--视频数据回传
@@ -57,6 +62,7 @@ namespace common {
         CmdStopLinePassData = 0x0a,//停止线过车数据
         CmdLongDistanceOnSolidLineAlarm = 0x0b,//长距离压实线报警
         CmdHumanData = 0x0c,//3516相机预警信息 行人感知
+        CmdHumanLitPoleData = 0x0d,//人形灯杆数据
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -202,6 +208,7 @@ namespace common {
         int isHasImage;//`json "isHasImage"` 是否包含图像
         string imageData;//`json "imageData"` 当前的视频图像数据
         int direction;//方向，枚举类型 enum Direction
+        int roadDirection;
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     public:
@@ -620,6 +627,37 @@ namespace common {
     public:
         HumanDataGather() {
             this->cmdType = CmdHumanData;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //人形灯杆数据，透传
+    class HumanLitPoleData_deviceListItem {
+    public:
+        string deviceCode;//设备编号
+        int detectDirection;//检查方位
+        int direction;//流向
+        int humanNum;//等待区人数
+        int humanFlow;//穿行人数
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class HumanLitPoleData : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        vector<HumanLitPoleData_deviceListItem> deviceList;
+    public:
+        HumanLitPoleData() {
+            this->cmdType = CmdHumanLitPoleData;
         }
 
         bool JsonMarshal(Json::Value &out);

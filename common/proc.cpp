@@ -406,6 +406,33 @@ int PkgProcessFun_HumanData(string ip, uint16_t port, string content) {
     return ret;
 }
 
+int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "HumanLitPoleData json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    HumanLitPoleData humanLitPoleData;
+    humanLitPoleData.JsonUnmarshal(in);
+    //存入队列
+//    auto server = (FusionServer *) client->super;
+    auto *data = Data::instance();
+    auto dataUnit = &data->dataUnitHumanLitPoleData;
+    int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
+    if (!dataUnit->pushI(humanLitPoleData, index)) {
+        VLOG(2) << "client ip:" << ip << " HumanLitPoleData,丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << ip << " HumanLitPoleData,存入消息,"
+                << "hardCode:" << humanLitPoleData.hardCode << " crossID:" << humanLitPoleData.crossID
+                << "timestamp:" << (uint64_t) humanLitPoleData.timestamp << " dataUnit i_vector index:"
+                << index;
+    }
+    return ret;
+}
+
 map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdResponse, PkgProcessFun_CmdResponse),
         make_pair(CmdControl, PkgProcessFun_CmdControl),
@@ -420,5 +447,6 @@ map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdAbnormalStopData, PkgProcessFun_AbnormalStopData),
         make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_LongDistanceOnSolidLineAlarm),
         make_pair(CmdHumanData, PkgProcessFun_HumanData),
+        make_pair(CmdHumanLitPoleData, PkgProcessFun_HumanLitPoleData),
 };
 

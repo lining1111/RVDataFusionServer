@@ -32,6 +32,7 @@ Data *Data::instance() {
         m_pInstance->dataUnitAbnormalStopData.init(10, 500, cliNum, 1, m_pInstance);
         m_pInstance->dataUnitLongDistanceOnSolidLineAlarm.init(10, 500, cliNum, 1, m_pInstance);
         m_pInstance->dataUnitHumanData.init(10, 500, cliNum, 1, m_pInstance);//这个cliNum待定
+        m_pInstance->dataUnitHumanLitPoleData.init(10, 500, cliNum, 1, m_pInstance);//这个cliNum待定
 
         //开启数据时间戳历史监听线程
         m_pInstance->isRun = true;
@@ -75,7 +76,7 @@ int Data::getMatrixNo() {
         }
     }
     //处理下sn字符串中间可能带-的情况
-    matrixNo.erase(std::remove(matrixNo.begin(), matrixNo.end(),'-'),matrixNo.end());
+    matrixNo.erase(std::remove(matrixNo.begin(), matrixNo.end(), '-'), matrixNo.end());
 
     LOG(INFO) << "sn:" << matrixNo;
     sqlite3_free_table(result);

@@ -483,4 +483,23 @@ public:
 };
 
 
+//行人灯杆数据
+class DataUnitHumanLitPoleData : public DataUnit<HumanLitPoleData, HumanLitPoleData> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitHumanLitPoleData() {
+
+    }
+
+    ~DataUnitHumanLitPoleData() {
+
+    }
+
+    DataUnitHumanLitPoleData(int c, int fs, int i_num, int cache, void *owner);
+
+    void init(int c, int fs, int i_num, int cache, void *owner);
+
+    static void task(void *local);
+};
+
 #endif //_DATAUNIT_H

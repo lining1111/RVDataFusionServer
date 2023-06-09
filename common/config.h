@@ -16,11 +16,13 @@ typedef struct {
     bool isEnable;
 } ConfigEnable;
 
-
 typedef struct {
     std::vector<ConfigEnable> isSendPIC;
     int roadNum;
     int mergeMode;
+    bool isSaveOutObj = false;
+    bool isSaveInObj = false;
+    AlgorithmParam algorithmParam;
 } LocalConfig;
 
 typedef enum {
@@ -32,5 +34,9 @@ typedef enum {
 extern LocalConfig localConfig;
 
 extern int fixrPort;
+
+extern string savePath;
+
+extern int getAlgorithmParam(string file,AlgorithmParam &out);
 
 #endif //CONFIG_H

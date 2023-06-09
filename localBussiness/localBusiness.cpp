@@ -14,7 +14,6 @@
 #include "data/Data.h"
 #include "common/config.h"
 
-static string savePath = "/mnt/mnt_hd/save/";
 static int saveCountMax = 0;
 
 LocalBusiness::LocalBusiness() {
@@ -75,16 +74,15 @@ void LocalBusiness::StartTimerTask() {
     timerKeep.start(1000 * 3, std::bind(Task_Keep, this));
     timerFusionData.start(1, std::bind(Task_FusionData, this));
     timerTrafficFlowGather.start(1, std::bind(Task_TrafficFlowGather, this));
-    timerCrossTrafficJamAlarm.start(1000, std::bind(Task_CrossTrafficJamAlarm, this));
-    timerIntersectionOverflowAlarm.start(1000, std::bind(Task_IntersectionOverflowAlarm, this));
-    timerInWatchData_1_3_4.start(1000, std::bind(Task_InWatchData_1_3_4, this));
-    timerInWatchData_2.start(1000, std::bind(Task_InWatchData_2, this));
-    timerStopLinePassData.start(1000, std::bind(Task_StopLinePassData, this));
-    timerAbnormalStopData.start(1000, std::bind(Task_AbnormalStopData, this));
-    timerLongDistanceOnSolidLineAlarm.start(1000, std::bind(Task_LongDistanceOnSolidLineAlarm, this));
-    timerHumanData.start(1000, std::bind(Task_HumanData, this));
-
-
+    timerCrossTrafficJamAlarm.start(5, std::bind(Task_CrossTrafficJamAlarm, this));
+    timerIntersectionOverflowAlarm.start(5, std::bind(Task_IntersectionOverflowAlarm, this));
+    timerInWatchData_1_3_4.start(5, std::bind(Task_InWatchData_1_3_4, this));
+    timerInWatchData_2.start(5, std::bind(Task_InWatchData_2, this));
+    timerStopLinePassData.start(5, std::bind(Task_StopLinePassData, this));
+    timerAbnormalStopData.start(5, std::bind(Task_AbnormalStopData, this));
+    timerLongDistanceOnSolidLineAlarm.start(5, std::bind(Task_LongDistanceOnSolidLineAlarm, this));
+    timerHumanData.start(5, std::bind(Task_HumanData, this));
+    timerHumanLitPoleData.start(5, std::bind(Task_HumanLitPoleData, this));
     //开启伪造数据线程
 //    timerCreateFusionData.start(100,std::bind(Task_CreateFusionData,this));
 //    addTimerTask("localBusiness timerCreateCrossTrafficJamAlarm",10*1000,std::bind(Task_CreateCrossTrafficJamAlarm,this));
@@ -743,6 +741,63 @@ void LocalBusiness::Task_HumanData(void *p) {
         }
     }
 }
+
+void LocalBusiness::Task_HumanLitPoleData(void *p) {
+    if (p == nullptr) {
+        return;
+    }
+    auto local = (LocalBusiness *) p;
+    if (local->serverList.empty() || local->clientList.empty()) {
+        return;
+    }
+
+    if (local->isRun) {
+        string msgType = "HumanLitPoleData";
+
+        auto dataLocal = Data::instance();
+        auto dataUnit = &dataLocal->dataUnitHumanLitPoleData;
+        if (!dataUnit->o_queue.empty()) {
+            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
+        }
+        HumanLitPoleData data;
+        if (dataUnit->popO(data)) {
+            LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
+            uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
+            Pkg pkg;
+            data.PkgWithoutCRC(dataUnit->sn, deviceNo, pkg);
+            dataUnit->sn++;
+            //存发送
+            if (0) {
+                string dirName1 = savePath + msgType;
+                int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
+                if (!isCreate1)
+                    VLOG(2) << "create path:" << dirName1;
+                else
+                    VLOG(2) << "create path failed! error _code:" << isCreate1;
+
+                string fileName = savePath + msgType + "/" + to_string(data.timestamp) + ".txt";
+                ofstream file;
+                file.open(fileName);
+                if (file.is_open()) {
+                    file.write(pkg.body.data(), pkg.body.size());
+                    file.flush();
+                    file.close();
+                }
+            }
+            if (local->clientList.empty()) {
+                LOG(ERROR) << "client list empty";
+                return;
+            }
+            for (auto iter: local->clientList) {
+                if (iter.second->server_port != fixrPort) {
+                    continue;
+                }
+                auto ret = SendDataUnitO(iter.second, msgType, pkg);
+            }
+        }
+    }
+}
+
 
 void LocalBusiness::Task_AbnormalStopData(void *p) {
     if (p == nullptr) {

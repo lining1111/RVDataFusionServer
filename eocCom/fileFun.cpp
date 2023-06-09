@@ -106,7 +106,7 @@ int downloadFile(std::string url, int timeout, std::string fileName, int fileSiz
     }
     std::string ipurl;
     std::string host, port, ipaddr;
-    searchDNS(url, ipurl, 0, host, port, ipaddr);
+    myDNS::searchDNS(url, ipurl, 0, host, port, ipaddr);
     host = "Host:" + host;
     port = "Port:" + port;
     LOG(INFO) << "download " << host << "," << port;

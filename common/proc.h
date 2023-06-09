@@ -54,6 +54,8 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, uint16_t port, string 
 
 int PkgProcessFun_HumanData(string ip, uint16_t port, string content);
 
+int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content);
+
 typedef int (*PkgProcessFun)(string ip, uint16_t port, string content);
 
 extern map<CmdType, PkgProcessFun> PkgProcessMap;

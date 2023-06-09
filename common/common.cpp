@@ -64,6 +64,10 @@ namespace common {
         return string(buf);
     }
 
+    string GetComVersion() {
+        return ComVersion;
+    }
+
     int PkgClass::PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
         int len = 0;
         //1.头部
@@ -248,6 +252,7 @@ namespace common {
         out["isHasImage"] = this->isHasImage;
         out["imageData"] = this->imageData;
         out["direction"] = this->direction;
+        out["roadDirection"] = this->roadDirection;
 
         Json::Value listAnnuciatorInfo = Json::arrayValue;
         if (!this->listAnnuciatorInfo.empty()) {
@@ -289,6 +294,7 @@ namespace common {
         this->isHasImage = in["isHasImage"].asInt();
         this->imageData = in["imageData"].asString();
         this->direction = in["direction"].asInt();
+        this->roadDirection = in["roadDirection"].asInt();
 
         Json::Value listAnnuciatorInfo = in["listAnnuciatorInfo"];
         if (listAnnuciatorInfo.isArray()) {
@@ -1239,5 +1245,65 @@ namespace common {
     }
 
 
+    bool HumanLitPoleData_deviceListItem::JsonMarshal(Json::Value &out) {
+        out["deviceCode"] = this->deviceCode;
+        out["detectDirection"] = this->detectDirection;
+        out["direction"] = this->direction;
+        out["humanNum"] = this->humanNum;
+        out["humanFlow"] = this->humanFlow;
+
+        return true;
+    }
+
+    bool HumanLitPoleData_deviceListItem::JsonUnmarshal(Json::Value in) {
+        this->deviceCode = in["deviceCode"].asString();
+        this->detectDirection = in["detectDirection"].asInt();
+        this->direction = in["direction"].asInt();
+        this->humanNum = in["humanNum"].asInt();
+        this->humanFlow = in["humanFlow"].asInt();
+
+        return true;
+    }
+
+    bool HumanLitPoleData::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+        Json::Value deviceList = Json::arrayValue;
+        if (!this->deviceList.empty()) {
+            for (auto iter: this->deviceList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                deviceList.append(item);
+            }
+        } else {
+            deviceList.resize(0);
+        }
+
+        out["deviceList"] = deviceList;
+        return true;
+    }
+
+    bool HumanLitPoleData::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        Json::Value deviceList = in["deviceList"];
+        if (deviceList.isArray()) {
+            for (auto iter: deviceList) {
+                HumanLitPoleData_deviceListItem item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->deviceList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
 }
 

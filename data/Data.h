@@ -37,6 +37,8 @@ public:
     DataUnitLongDistanceOnSolidLineAlarm dataUnitLongDistanceOnSolidLineAlarm{10, 500, 4, 1, m_pInstance};
     //-----行人数据----//
     DataUnitHumanData dataUnitHumanData{10, 500, 4, 1, m_pInstance};
+    //-----行人灯杆数据----//
+    DataUnitHumanLitPoleData dataUnitHumanLitPoleData{10, 500, 4, 1, m_pInstance};
 public:
     //本地参数
     //FusionData相关

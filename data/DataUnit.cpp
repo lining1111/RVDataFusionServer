@@ -541,3 +541,48 @@ void DataUnitLongDistanceOnSolidLineAlarm::task(void *local) {
 
     pthread_mutex_unlock(&dataUnit->oneFrameMutex);
 }
+
+
+DataUnitHumanLitPoleData::DataUnitHumanLitPoleData(int c, int fs, int i_num,
+                                                                           int cache, void *owner)
+        : DataUnit(c, fs, i_num, cache, owner) {
+
+}
+
+void DataUnitHumanLitPoleData::init(int c, int fs, int i_num, int cache, void *owner) {
+    DataUnit::init(c, fs, i_num, cache, owner);
+    timerBusinessName = "DataUnitHumanLitPoleData";
+    timerBusiness = new Timer(timerBusinessName);
+    timerBusiness->start(TaskTimeval, std::bind(task, this));
+}
+
+void DataUnitHumanLitPoleData::task(void *local) {
+    auto dataUnit = (DataUnitHumanLitPoleData *) local;
+    pthread_mutex_lock(&dataUnit->oneFrameMutex);
+    int maxSize = 0;
+    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+        if (dataUnit->i_queue_vector.at(i).size() > maxSize) {
+            maxSize = dataUnit->i_queue_vector.at(i).size();
+            dataUnit->i_maxSizeIndex = i;
+        }
+    }
+    if (maxSize >= dataUnit->cache) {
+        //执行相应的流程
+        for (auto &iter: dataUnit->i_queue_vector) {
+            while (!iter.empty()) {
+                IType cur;
+                iter.getIndex(cur, 0);
+                iter.eraseBegin();
+                OType item = cur;
+                if (!dataUnit->pushO(item)) {
+                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
+                            << (uint64_t) item.timestamp;
+                } else {
+                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                }
+            }
+        }
+    }
+
+    pthread_mutex_unlock(&dataUnit->oneFrameMutex);
+}
