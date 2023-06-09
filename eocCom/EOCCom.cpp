@@ -119,6 +119,7 @@ void processR100(void *p, string content, string cmd) {
         return;
     }
     LOG(INFO) << "recv:" << cmd;
+    local->heartFlag = 0;
 }
 
 //101
@@ -923,8 +924,11 @@ int EOCCom::intervalPro(void *p) {
                 } else {
                     LOG(INFO) << "s101_login_send ok";
                 }
-
                 local->last_send_heart_t = now - 20;
+                local->heartFlag++;
+                if (local->heartFlag > 10) {
+                    local->isLive.store(false);
+                }
             }
         } else {
             //登录后，每隔30s上传1次心跳，如果上次获取配置的时间大于180s且获取配置失败的话，主动发送获取配置命令，每300s上传一次外围状态

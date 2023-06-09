@@ -23,6 +23,7 @@ public:
     std::future<int> future_proPkgs;
     std::future<int> future_interval;
     bool isLogIn = false;
+    int heartFlag = 0;//每次发送加1,每次接到回复-1,如果加到10,则表明10次没有得到回复，就要重连
     time_t last_login_t = time(nullptr);//上次登录时间
     time_t last_send_heart_t = time(nullptr);//上次发送心态时间
     time_t last_send_net_state_t = time(nullptr);//上次发送外围状态时间
