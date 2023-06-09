@@ -271,7 +271,10 @@ int TlsClient::Close() {
     }
     isLocalThreadRun = false;
 
-    delete rb;
+    if (rb != nullptr) {
+        delete rb;
+        rb = nullptr;
+    }
 
     EVP_cleanup();
     if (ssl) {
@@ -297,7 +300,8 @@ int TlsClient::Write(const char *data, int len) {
                 if (errno == EINTR) {
                     nsend = 0;          /* and call send() again */
                 } else {
-                    printf("消息data='%s' nsend=%d, 错误代码是%d, 错误信息是'%s'\n", data, nsend, errno, strerror(errno));
+                    printf("消息data='%s' nsend=%d, 错误代码是%d, 错误信息是'%s'\n", data, nsend, errno,
+                           strerror(errno));
                     pthread_mutex_unlock(&lockSend);
                     return (-1);
                 }

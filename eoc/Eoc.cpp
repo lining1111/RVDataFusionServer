@@ -48,7 +48,7 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
         eocCom->Run();
     }
     while (true) {
-        sleep(60);
+        sleep(30);
         if (!eocCom->isLive) {
             eocCom->Close();
             if (eocCom->Open() == 0) {
@@ -86,6 +86,9 @@ int StartEocCommon1() {
         myDNS::url_get(eoc_host, ipaddr);
         eoc_host = ipaddr;
     }
+    //本地测试
+//    eoc_host = "127.0.0.1";
+//    eoc_port = 8000;
     std::thread(ThreadEOCCom, eoc_host, eoc_port, "./eoc.pem").detach();
     return 0;
 }
