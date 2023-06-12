@@ -895,6 +895,7 @@ int EOCCom::intervalPro(void *p) {
     }
     EOCCom *local = (EOCCom *) p;
     LOG(INFO) << __FUNCTION__ << "run";
+    local->isLogIn = false;
     while (local->isLive.load()) {
         sleep(1);
         time_t now = time(NULL);

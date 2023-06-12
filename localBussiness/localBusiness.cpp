@@ -925,9 +925,9 @@ void LocalBusiness::Task_CreateFusionData(void *p) {
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
     if (dataUnit->pushO(inData)) {
-        printf("伪造数据 CrossFusionData 插入成功\n");
+//        printf("伪造数据 CrossFusionData 插入成功\n");
     } else {
-        printf("伪造数据 CrossFusionData 插入失败\n");
+//        printf("伪造数据 CrossFusionData 插入失败\n");
     }
 }
 
