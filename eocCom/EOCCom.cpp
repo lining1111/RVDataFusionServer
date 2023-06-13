@@ -89,8 +89,8 @@ int EOCCom::getPkgs(void *p) {
     LOG(INFO) << __FUNCTION__ << "exit";
     return 0;
 }
-
 #define COMVersion "V1.0.0"
+//#define COMVersion VERSION_BUILD_TIME
 
 //100
 void processS100(void *p, string content, string cmd) {

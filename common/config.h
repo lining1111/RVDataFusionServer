@@ -18,6 +18,7 @@ typedef struct {
 
 typedef struct {
     std::vector<ConfigEnable> isSendPIC;
+    std::vector<ConfigEnable> isSendPICOnly;
     int roadNum;
     int mergeMode;
     bool isSaveOutObj = false;

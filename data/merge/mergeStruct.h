@@ -6,7 +6,6 @@
 #define _MERGESTRUCT_H
 
 #include "merge.h"
-#include <json/json.h>
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget);
 
@@ -15,6 +14,7 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT);
 void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &objectInfoNew);
 
 void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix);
+
 
 //算法配置相关
 class PointF {
@@ -82,6 +82,54 @@ public:
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
+};
+
+class RectFValue {
+public:
+    int index = 0;
+    double x;
+    double y;
+    double width;
+    double height;
+
+    RectFValue() {
+
+    }
+
+    RectFValue(int index, double x, double y, double width, double height)
+            : index(index), x(x), y(y), width(width), height(height) {
+
+    }
+
+public:
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+
+};
+
+
+class RectF {
+public:
+    double x;
+    double y;
+    double width;
+    double height;
+
+    RectF() {
+
+    }
+
+    RectF(double x, double y, double width, double height)
+            : x(x), y(y), width(width), height(height) {
+
+    }
+
+public:
+    bool JsonMarshal(Json::Value &out);
+
+    bool JsonUnmarshal(Json::Value in);
+
 };
 
 
@@ -155,6 +203,26 @@ public:
 
     vector<CorrectedValueGPS> correctedValueGPSs;
 
+
+    vector<RectFValue> north_west_driving_missing_area;
+    vector<RectFValue> east_north_driving_missing_area;
+
+    vector<RectFValue> west_south_driving_missing_area;
+    vector<RectFValue> south_east_driving_missing_area;
+
+    vector<RectFValue> north_west_driving_in_area;
+    vector<RectFValue> east_north_driving_in_area;
+
+    vector<RectFValue> west_south_driving_in_area;
+    vector<RectFValue> south_east_driving_in_area;
+
+    //将数组设置到类内变量
+    void set_area(vector<RectFValue> &xx, vector<RectF> values);
+
+    //将类内变量设置到数组
+    void get_area(vector<RectFValue> xx, vector<RectF> &values);
+
+
     bool JsonMarshal(Json::Value &out);
 
     bool JsonUnmarshal(Json::Value in);
@@ -164,7 +232,6 @@ public:
 //
 //    void setToENW_ImageUnifiedParamsENW(class ImageUnifiedParamsENW &out);
 };
-
 
 
 #endif //_MERGESTRUCT_H

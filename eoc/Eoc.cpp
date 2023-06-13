@@ -11,6 +11,8 @@
 #include "eoc_comm/configure_eoc_init.h"
 #include "eoc_comm/utility/dns_server.h"
 
+//在登录EOC的时候，主要是获取 HOME_PATH"/bin/RoadsideParking.db"内的 TB_ParkingLot表的 CloudServerPath、CloudServerPort 用于登录EOC
+
 int StartEocCommon() {
     dns_server_start();  /*dns服务*/
     if (g_eoc_config_init() < 0) {

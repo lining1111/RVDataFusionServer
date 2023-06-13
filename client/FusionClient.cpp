@@ -29,7 +29,7 @@ FusionClient::~FusionClient() {
 
 int FusionClient::Open() {
     if (this->server_ip.empty()) {
-        LOG(ERROR) << "server ip empty" << std::endl;
+        LOG(ERROR) << "server ip empty";
         return -1;
     }
     //先ping下远端开是否可以连接必须在root权限下使用
@@ -69,7 +69,7 @@ int FusionClient::Open() {
     gettimeofday(&tv_now, nullptr);
 
     if (ret == -1) {
-        LOG(ERROR) << "connect server fail:" << this->server_ip << ":" << this->server_port;
+        LOG(ERROR) << "connect server fail:" << this->server_ip << ":" << this->server_port << "errno:" << errno;
         close(sockfd);
         return -1;
     }
@@ -135,6 +135,7 @@ int FusionClient::Close() {
     if (sockfd > 0) {
         shutdown(sockfd, SHUT_RDWR);
         close(sockfd);
+        sockfd = 0;
     }
     if (isLocalThreadRun) {
         try {
@@ -165,7 +166,10 @@ int FusionClient::Close() {
         rb = nullptr;
     }
 
-    delete[] pkgBuffer;
+    if (pkgBuffer != nullptr) {
+        delete[] pkgBuffer;
+        pkgBuffer = nullptr;
+    }
 
     return 0;
 }

@@ -19,6 +19,7 @@ typedef struct {
     int objType;
     char plate_number[15];
     char plate_color[7];
+    int carType;//车辆类型
     int left;
     int top;
     int right;
@@ -56,6 +57,7 @@ typedef struct {
     int objType;
     char plate_number[15];
     char plate_color[7];
+    int carType;//车辆类型
     int left;
     int top;
     int right;

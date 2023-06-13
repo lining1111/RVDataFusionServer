@@ -3,7 +3,6 @@
 //
 
 #include <valarray>
-#include "merge.h"
 #include "mergeStruct.h"
 
 const int INF = 0x7FFFFFFF;
@@ -12,17 +11,22 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
     objTarget.objID = to_string(objectInfoT.objID);
     objTarget.objCameraID = objectInfoT.cameraID;
     objTarget.objType = objectInfoT.objType;
-    objTarget.plates = string(objectInfoT.plate_number);
-    objTarget.plateColor = string(objectInfoT.plate_color);
     objTarget.left = objectInfoT.left;
     objTarget.top = objectInfoT.top;
     objTarget.right = objectInfoT.right;
+
+
+//    objTarget.plates = objectInfoT.plates;
+//    objTarget.plateColor = objectInfoT.plateColor;
+//    objTarget.carFeaturePic = objectInfoT.carFeaturePic;
+//    objTarget.laneCode = objectInfoT.laneCode;
+//    objTarget.carLength = objectInfoT.carLength;
+    objTarget.carType = objectInfoT.carType;
+
     objTarget.bottom = objectInfoT.bottom;
     objTarget.locationX = objectInfoT.locationX;
     objTarget.locationY = objectInfoT.locationY;
-    objTarget.distance = string(objectInfoT.distance);
     objTarget.directionAngle = objectInfoT.directionAngle;
-//    objTarget.speed = to_string(objectInfoT.speed);
     objTarget.speedX = objectInfoT.speedX;
     objTarget.speedY = objectInfoT.speedY;
     objTarget.longitude = objectInfoT.longitude;
@@ -37,11 +41,6 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
     objectInfoT.objType = objTarget.objType;
 
-    bzero(objectInfoT.plate_number, ARRAY_SIZE(objectInfoT.plate_number));
-    sprintf(objectInfoT.plate_number, "%s", objTarget.plates.c_str());
-
-    bzero(objectInfoT.plate_color, ARRAY_SIZE(objectInfoT.plate_color));
-    sprintf(objectInfoT.plate_color, "%s", objTarget.plateColor.c_str());
 
     objectInfoT.left = objTarget.left;
     objectInfoT.top = objTarget.top;
@@ -50,19 +49,20 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
     objectInfoT.locationX = objTarget.locationX;
     objectInfoT.locationY = objTarget.locationY;
 
-    bzero(objectInfoT.distance, ARRAY_SIZE(objectInfoT.distance));
-    sprintf(objectInfoT.distance, "%s", objTarget.distance.c_str());
+//    objectInfoT.plates = objTarget.plates;
+//    objectInfoT.plateColor = objTarget.plateColor;
+//    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
+//    objectInfoT.laneCode = objTarget.laneCode;
+//    objectInfoT.carLength = objTarget.carLength;
+    objectInfoT.carType = objTarget.carType;
 
     objectInfoT.directionAngle = objTarget.directionAngle;
 
-//    objectInfoT.speed = atof(objTarget.speed.data());
     objectInfoT.speedX = objTarget.speedX;
     objectInfoT.speedY = objTarget.speedY;
 
     objectInfoT.longitude = objTarget.longitude;
     objectInfoT.latitude = objTarget.latitude;
-//    objectInfoT.carLength = objTarget.carLength;
-//    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
 
 }
 
@@ -78,9 +78,6 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
     objectInfoNew.showID = objectInfoT.objID;
     objectInfoNew.objType = objectInfoT.objType;
 
-    memcpy(objectInfoNew.plate_number, objectInfoT.plate_number, sizeof(objectInfoNew.plate_number));
-    memcpy(objectInfoNew.plate_color, objectInfoT.plate_color, sizeof(objectInfoNew.plate_color));
-
     objectInfoNew.left = objectInfoT.left;
     objectInfoNew.top = objectInfoT.top;
     objectInfoNew.right = objectInfoT.right;
@@ -88,13 +85,16 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
     objectInfoNew.locationX = objectInfoT.locationX;
     objectInfoNew.locationY = objectInfoT.locationY;
 
-    memcpy(objectInfoNew.distance, objectInfoT.distance, sizeof(objectInfoNew.distance));
+//    objectInfoNew.plates = objectInfoT.plates;
+//    objectInfoNew.plateColor = objectInfoT.plateColor;
+//    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
+//    objectInfoNew.laneCode = objectInfoT.laneCode;
+//    objectInfoNew.carLength = objectInfoT.carLength;
+    objectInfoNew.carType = objectInfoT.carType;
     objectInfoNew.directionAngle = objectInfoT.directionAngle;
     objectInfoNew.speed = sqrt(objectInfoT.speedX * objectInfoT.speedX + objectInfoT.speedY * objectInfoT.speedY);
     objectInfoNew.longitude = objectInfoT.longitude;
     objectInfoNew.latitude = objectInfoT.latitude;
-//    objectInfoNew.carLength = objectInfoT.carLength;
-//    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
 }
 
 void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix) {
@@ -116,6 +116,7 @@ void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix) {
 //    objMix.plateColor = objectInfoNew.plateColor;
 //    objMix.carType = objectInfoNew.carType;
 }
+
 
 bool PointF::JsonMarshal(Json::Value &out) {
     out["x"] = this->x;
@@ -188,6 +189,41 @@ bool CorrectedValueGPS::JsonUnmarshal(Json::Value in) {
     this->latitude = in["latitude"].asDouble();
     this->longitude = in["longitude"].asDouble();
 
+    return true;
+}
+
+bool RectFValue::JsonMarshal(Json::Value &out) {
+    out["index"] = this->index;
+    out["x"] = this->x;
+    out["y"] = this->y;
+    out["width"] = this->width;
+    out["height"] = this->height;
+    return true;
+}
+
+bool RectFValue::JsonUnmarshal(Json::Value in) {
+    this->index = in["index"].asInt();
+    this->x = in["x"].asDouble();
+    this->y = in["y"].asDouble();
+    this->width = in["width"].asDouble();
+    this->height = in["height"].asDouble();
+    return true;
+}
+
+
+bool RectF::JsonMarshal(Json::Value &out) {
+    out["x"] = this->x;
+    out["y"] = this->y;
+    out["width"] = this->width;
+    out["height"] = this->height;
+    return true;
+}
+
+bool RectF::JsonUnmarshal(Json::Value in) {
+    this->x = in["x"].asDouble();
+    this->y = in["y"].asDouble();
+    this->width = in["width"].asDouble();
+    this->height = in["height"].asDouble();
     return true;
 }
 
@@ -357,6 +393,118 @@ bool AlgorithmParam::JsonMarshal(Json::Value &out) {
         correctedValueGPSs.resize(0);
     }
     out["correctedValueGPSs"] = correctedValueGPSs;
+
+    //north_west_driving_missing_area
+    Json::Value north_west_driving_missing_area = Json::arrayValue;
+    if (!this->north_west_driving_missing_area.empty()) {
+        for (auto iter: this->north_west_driving_missing_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                north_west_driving_missing_area.append(item);
+            }
+        }
+    } else {
+        north_west_driving_missing_area.resize(0);
+    }
+    out["north_west_driving_missing_area"] = north_west_driving_missing_area;
+
+    //east_north_driving_missing_area
+    Json::Value east_north_driving_missing_area = Json::arrayValue;
+    if (!this->east_north_driving_missing_area.empty()) {
+        for (auto iter: this->east_north_driving_missing_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                east_north_driving_missing_area.append(item);
+            }
+        }
+    } else {
+        east_north_driving_missing_area.resize(0);
+    }
+    out["east_north_driving_missing_area"] = east_north_driving_missing_area;
+
+    //west_south_driving_missing_area
+    Json::Value west_south_driving_missing_area = Json::arrayValue;
+    if (!this->west_south_driving_missing_area.empty()) {
+        for (auto iter: this->west_south_driving_missing_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                west_south_driving_missing_area.append(item);
+            }
+        }
+    } else {
+        west_south_driving_missing_area.resize(0);
+    }
+    out["west_south_driving_missing_area"] = west_south_driving_missing_area;
+
+    //south_east_driving_missing_area
+    Json::Value south_east_driving_missing_area = Json::arrayValue;
+    if (!this->south_east_driving_missing_area.empty()) {
+        for (auto iter: this->south_east_driving_missing_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                south_east_driving_missing_area.append(item);
+            }
+        }
+    } else {
+        south_east_driving_missing_area.resize(0);
+    }
+    out["south_east_driving_missing_area"] = south_east_driving_missing_area;
+
+    //north_west_driving_in_area
+    Json::Value north_west_driving_in_area = Json::arrayValue;
+    if (!this->north_west_driving_in_area.empty()) {
+        for (auto iter: this->north_west_driving_in_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                north_west_driving_in_area.append(item);
+            }
+        }
+    } else {
+        north_west_driving_in_area.resize(0);
+    }
+    out["north_west_driving_in_area"] = north_west_driving_in_area;
+
+    //east_north_driving_in_area
+    Json::Value east_north_driving_in_area = Json::arrayValue;
+    if (!this->east_north_driving_in_area.empty()) {
+        for (auto iter: this->east_north_driving_in_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                east_north_driving_in_area.append(item);
+            }
+        }
+    } else {
+        east_north_driving_in_area.resize(0);
+    }
+    out["east_north_driving_in_area"] = east_north_driving_in_area;
+
+    //west_south_driving_in_area
+    Json::Value west_south_driving_in_area = Json::arrayValue;
+    if (!this->west_south_driving_in_area.empty()) {
+        for (auto iter: this->west_south_driving_in_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                west_south_driving_in_area.append(item);
+            }
+        }
+    } else {
+        west_south_driving_in_area.resize(0);
+    }
+    out["west_south_driving_in_area"] = west_south_driving_in_area;
+
+    //south_east_driving_in_area
+    Json::Value south_east_driving_in_area = Json::arrayValue;
+    if (!this->south_east_driving_in_area.empty()) {
+        for (auto iter: this->south_east_driving_in_area) {
+            Json::Value item;
+            if (iter.JsonMarshal(item)) {
+                south_east_driving_in_area.append(item);
+            }
+        }
+    } else {
+        south_east_driving_in_area.resize(0);
+    }
+    out["south_east_driving_in_area"] = south_east_driving_in_area;
 
 
     return true;
@@ -568,6 +716,94 @@ bool AlgorithmParam::JsonUnmarshal(Json::Value in) {
         }
     }
 
+    //north_west_driving_missing_area
+    if (in["north_west_driving_missing_area"].isArray()) {
+        Json::Value north_west_driving_missing_area = in["north_west_driving_missing_area"];
+        for (auto iter: north_west_driving_missing_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->north_west_driving_missing_area.push_back(item);
+            }
+        }
+    }
+
+    //east_north_driving_missing_area
+    if (in["east_north_driving_missing_area"].isArray()) {
+        Json::Value east_north_driving_missing_area = in["east_north_driving_missing_area"];
+        for (auto iter: east_north_driving_missing_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->east_north_driving_missing_area.push_back(item);
+            }
+        }
+    }
+
+    //west_south_driving_missing_area
+    if (in["west_south_driving_missing_area"].isArray()) {
+        Json::Value west_south_driving_missing_area = in["west_south_driving_missing_area"];
+        for (auto iter: west_south_driving_missing_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->west_south_driving_missing_area.push_back(item);
+            }
+        }
+    }
+
+    //south_east_driving_missing_area
+    if (in["south_east_driving_missing_area"].isArray()) {
+        Json::Value south_east_driving_missing_area = in["south_east_driving_missing_area"];
+        for (auto iter: south_east_driving_missing_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->south_east_driving_missing_area.push_back(item);
+            }
+        }
+    }
+
+    //north_west_driving_in_area
+    if (in["north_west_driving_in_area"].isArray()) {
+        Json::Value north_west_driving_in_area = in["north_west_driving_in_area"];
+        for (auto iter: north_west_driving_in_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->north_west_driving_in_area.push_back(item);
+            }
+        }
+    }
+
+    //east_north_driving_in_area
+    if (in["east_north_driving_in_area"].isArray()) {
+        Json::Value east_north_driving_in_area = in["east_north_driving_in_area"];
+        for (auto iter: east_north_driving_in_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->east_north_driving_in_area.push_back(item);
+            }
+        }
+    }
+
+    //west_south_driving_in_area
+    if (in["west_south_driving_in_area"].isArray()) {
+        Json::Value west_south_driving_in_area = in["west_south_driving_in_area"];
+        for (auto iter: west_south_driving_in_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->west_south_driving_in_area.push_back(item);
+            }
+        }
+    }
+
+    //south_east_driving_in_area
+    if (in["south_east_driving_in_area"].isArray()) {
+        Json::Value south_east_driving_in_area = in["south_east_driving_in_area"];
+        for (auto iter: south_east_driving_in_area) {
+            RectFValue item;
+            if (item.JsonUnmarshal(iter)) {
+                this->south_east_driving_in_area.push_back(item);
+            }
+        }
+    }
+
     return true;
 }
 
@@ -581,6 +817,9 @@ void AlgorithmParam::setH_XX(vector<DoubleValue> &H_xx, vector<double> values) {
 }
 
 void AlgorithmParam::getH_XX(vector<DoubleValue> H_xx, vector<double> &values) {
+    if (H_xx.empty()) {
+        return;
+    }
     //先将H_xx排序
     if (H_xx.size() > 1) {
         std::sort(H_xx.begin(), H_xx.end(), [](DoubleValue a, DoubleValue b) {
@@ -602,6 +841,9 @@ void AlgorithmParam::setAngle(vector<double> values) {
 }
 
 void AlgorithmParam::getAngle(vector<double> &values) {
+    if (angle.empty()) {
+        return;
+    }
     //先将angle排序
     if (angle.size() > 1) {
         std::sort(angle.begin(), angle.end(), [](DoubleValue a, DoubleValue b) {
@@ -627,6 +869,9 @@ void AlgorithmParam::setXX_driving_are(vector<PointFArray> &xx, vector<vector<Po
 }
 
 void AlgorithmParam::getXX_driving_are(vector<PointFArray> xx, vector<vector<PointF>> &values) {
+    if (xx.empty()) {
+        return;
+    }
     //先将xx排序
     if (xx.size() > 1) {
         std::sort(xx.begin(), xx.end(), [](PointFArray a, PointFArray b) {
@@ -643,6 +888,43 @@ void AlgorithmParam::getXX_driving_are(vector<PointFArray> xx, vector<vector<Poi
         values.push_back(v_pointF);
     }
 }
+
+//将数组设置到类内变量
+void AlgorithmParam::set_area(vector<RectFValue> &xx, vector<RectF> values) {
+    for (int i = 0; i < values.size(); i++) {
+        RectFValue item;
+        item.index = i;
+        item.x = values.at(i).x;
+        item.y = values.at(i).y;
+        item.width = values.at(i).width;
+        item.height = values.at(i).height;
+        xx.push_back(item);
+    }
+}
+
+//将类内变量设置到数组
+void AlgorithmParam::get_area(vector<RectFValue> xx, vector<RectF> &values) {
+    if (xx.empty()) {
+        return;
+    }
+    //先将xx排序
+    if (xx.size() > 1) {
+        std::sort(xx.begin(), xx.end(), [](RectFValue a, RectFValue b) {
+            return a.index < b.index;
+        });
+    }
+
+    for (auto iter: xx) {
+        RectF item;
+        item.x = iter.x;
+        item.y = iter.y;
+        item.width = iter.width;
+        item.height = iter.height;
+        values.push_back(item);
+    }
+}
+
+
 
 //void AlgorithmParam::getFromENW_ImageUnifiedParamsENW(class ImageUnifiedParamsENW in) {
 //    vector<double> v_double;
@@ -917,4 +1199,3 @@ void AlgorithmParam::getXX_driving_are(vector<PointFArray> xx, vector<vector<Poi
 //    out.middle_area_threshold = this->middle_area_threshold;
 //}
 //
-

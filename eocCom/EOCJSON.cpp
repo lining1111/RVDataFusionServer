@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "db/DBTable.h"
+#include "version.h"
 
 /*
  * 函数功能：产生uuid
@@ -88,7 +89,9 @@ bool RspHead::JsonUnmarshal(Json::Value in) {
     this->Version = in["Version"].asString();
     this->Code = in["Code"].asString();
     this->State = in["State"].asInt();
-    this->ResultMessage = in["ResultMessage"].asString();
+    if (!in["ResultMessage"].isNull()) {
+        this->ResultMessage = in["ResultMessage"].asString();
+    }
 
     return true;
 }
@@ -284,7 +287,7 @@ int S101::get(std::string comVersion) {
     this->Data.DataVersion = dbDataVersion.version;
 
     this->Data.EquipType = "XX";
-    this->Data.SoftVersion = "V1.0.0";
+    this->Data.SoftVersion = VERSION_BUILD_TIME;
 
     this->head.get(comVersion, this->_code);
 
@@ -301,7 +304,9 @@ bool DataR101::JsonMarshal(Json::Value &out) {
 bool DataR101::JsonUnmarshal(Json::Value in) {
     this->Code = in["Code"].asString();
     this->State = in["State"].asInt();
-    this->Message = in["Message"].asString();
+    if (!in["Message"].isNull()) {
+        this->Message = in["Message"].asString();
+    }
     return true;
 }
 
@@ -596,7 +601,9 @@ bool DataS102::JsonMarshal(Json::Value &out) {
 bool DataS102::JsonUnmarshal(Json::Value in) {
     this->Code = in["Code"].asString();
     this->State = in["State"].asInt();
-    this->Messsage = in["Messsage"].asString();
+    if (!in["Messsage"].isNull()) {
+        this->Messsage = in["Messsage"].asString();
+    }
 
     return true;
 }
@@ -822,7 +829,9 @@ bool DataR105::JsonMarshal(Json::Value &out) {
 bool DataR105::JsonUnmarshal(Json::Value in) {
     this->Code = in["Code"].asString();
     this->State = in["State"].asInt();
-    this->Message = in["Message"].asString();
+    if (!in["Messsage"].isNull()) {
+        this->Message = in["Message"].asString();
+    }
     return true;
 }
 
@@ -913,8 +922,9 @@ bool DataS106::JsonUnmarshal(Json::Value in) {
     this->ResultType = in["ResultType"].asInt();
     this->State = in["State"].asInt();
     this->Progress = in["Progress"].asInt();
-    this->Message = in["Message"].asString();
-
+    if (!in["Messsage"].isNull()) {
+        this->Message = in["Message"].asString();
+    }
     return true;
 }
 
@@ -1013,8 +1023,9 @@ bool DataS107::JsonUnmarshal(Json::Value in) {
     this->ResultType = in["ResultType"].asInt();
     this->State = in["State"].asInt();
     this->Progress = in["Progress"].asInt();
-    this->Message = in["Message"].asString();
-
+    if (!in["Messsage"].isNull()) {
+        this->Message = in["Message"].asString();
+    }
     return true;
 }
 

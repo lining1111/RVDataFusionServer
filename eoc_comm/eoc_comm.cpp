@@ -694,6 +694,8 @@ static int r100_heart_deal(cJSON *json)
     return 0;
 }
 
+#include "version.h"
+
 /*
  * 登录eoc
  *
@@ -745,7 +747,7 @@ static int s101_login_send(tcp_client_t* client)
     cJSON_AddStringToObject(data, "EquipNumber", equip_num.c_str());
     cJSON_AddStringToObject(data, "EquipIp", ipmsg);
     cJSON_AddStringToObject(data, "EquipType", "XX");
-    cJSON_AddStringToObject(data, "SoftVersion", "V1.0.0");
+    cJSON_AddStringToObject(data, "SoftVersion", VERSION_BUILD_TIME);
     cJSON_AddStringToObject(data, "DataVersion", db_data_version.c_str());
 
     json_str = cJSON_PrintUnformatted(root);

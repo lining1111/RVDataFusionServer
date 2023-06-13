@@ -56,7 +56,7 @@ ClientInfo::~ClientInfo() {
             LOG(ERROR) << e.what();
         }
     }
-
+    isThreadRun = false;
     if (this->pkgBuffer != nullptr) {
         delete[] this->pkgBuffer;
         this->pkgBuffer = nullptr;

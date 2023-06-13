@@ -215,6 +215,7 @@ void LocalBusiness::Task_FusionData(void *p) {
                 FusionData dataSend = data;
                 //是否需要剔除图片
                 bool isSendPIC = true;
+
                 for (auto iter1: localConfig.isSendPIC) {
 //                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
 //                              << iter1.isEnable;
@@ -232,6 +233,23 @@ void LocalBusiness::Task_FusionData(void *p) {
                     for (auto &iter3: dataSend.lstObjTarget) {
                         iter3.carFeaturePic.clear();
                     }
+                }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    for (auto &iter2: dataSend.lstVideos) {
+                        iter2.lstVideoTargets.clear();
+                    }
+                    dataSend.lstObjTarget.clear();
                 }
 
                 uint32_t deviceNo = stoi(dataLocal->matrixNo.substr(0, 10));
@@ -316,9 +334,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         CrossTrafficJamAlarm data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -354,6 +370,20 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
                     continue;
                 }
 
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
 
             }
@@ -375,9 +405,7 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitIntersectionOverflowAlarm;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         IntersectionOverflowAlarm data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -411,6 +439,22 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -433,9 +477,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
-//        if (!dataUnit->o_queue.empty()) {
-//            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-//        }
+
         TrafficFlowGather data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -474,6 +516,21 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
 
                 uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                         std::chrono::system_clock::now().time_since_epoch()).count();
@@ -532,9 +589,7 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitInWatchData_1_3_4;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         InWatchData_1_3_4 data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -568,6 +623,22 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -588,9 +659,7 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitInWatchData_2;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         InWatchData_2 data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -624,6 +693,21 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -644,9 +728,7 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitStopLinePassData;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         StopLinePassData data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -680,6 +762,21 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -700,9 +797,7 @@ void LocalBusiness::Task_HumanData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitHumanData;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         HumanDataGather data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -736,6 +831,21 @@ void LocalBusiness::Task_HumanData(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -756,9 +866,7 @@ void LocalBusiness::Task_HumanLitPoleData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitHumanLitPoleData;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         HumanLitPoleData data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -792,6 +900,20 @@ void LocalBusiness::Task_HumanLitPoleData(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -813,9 +935,7 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         AbnormalStopData data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -849,6 +969,21 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -869,9 +1004,7 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
 
         auto dataLocal = Data::instance();
         auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
-        if (!dataUnit->o_queue.empty()) {
-            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
-        }
+
         LongDistanceOnSolidLineAlarm data;
         if (dataUnit->popO(data)) {
             LOG(INFO) << msgType << "发送队列取出后数量" << dataUnit->o_queue.size();
@@ -905,6 +1038,20 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
                 if (iter.second->server_port != fixrPort) {
                     continue;
                 }
+                bool isSendPICOnly = false;
+
+                for (auto iter1: localConfig.isSendPICOnly) {
+//                    LOG(INFO) << "localConfig, ip:" << iter1.ip << ",port:" << iter1.port << "isEnable:"
+//                              << iter1.isEnable;
+                    if ((iter1.ip == iter.second->server_ip) && (iter1.port == (uint16_t) iter.second->server_port)) {
+                        isSendPICOnly = iter1.isEnable;
+                        break;
+                    }
+                }
+                if (isSendPICOnly) {
+                    continue;
+                }
+
                 auto ret = SendDataUnitO(iter.second, msgType, pkg);
             }
         }
@@ -925,9 +1072,9 @@ void LocalBusiness::Task_CreateFusionData(void *p) {
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
     if (dataUnit->pushO(inData)) {
-//        printf("伪造数据 CrossFusionData 插入成功\n");
+        printf("伪造数据 CrossFusionData 插入成功\n");
     } else {
-//        printf("伪造数据 CrossFusionData 插入失败\n");
+        printf("伪造数据 CrossFusionData 插入失败\n");
     }
 }
 
