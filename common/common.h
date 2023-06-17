@@ -266,15 +266,15 @@ namespace common {
         int carType = 0;//车辆类型 0.非汽车1.大型车2.中型车3.小型车4.货车5.公交车算法暂时识别不出来默认填0
         string plates;//车牌号
         string plateColor;//车牌颜色
-        float distance;//距离
-        float angle;//航角度
-        float speed;//速度
+        float distance = 0.0;//距离
+        float angle = 0.0;//航角度
+        float speed = 0.0;//速度
         double locationX = 0.0;//平面X位置
         double locationY = 0.0;//平面Y位置
         double longitude = 0.0;//经度
         double latitude = 0.0;//纬度
         string laneCode;//车道号
-        double carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+        double carLength = 0.0;//车长,只会在停止线附近给一次估算值,其他时刻都是0
         string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
         int flagNew = 0;
     public:

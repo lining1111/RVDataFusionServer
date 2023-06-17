@@ -188,7 +188,7 @@ int FusionClient::ThreadDump(void *p) {
         int recvLen = (client->rb->GetWriteLen() < (1024 * 512)) ? client->rb->GetWriteLen() : (1024 * 512);
 
         nread = recv(client->sockfd, buf, recvLen, 0);
-        if (nread <= 0) {
+        if (nread < 0) {
             if (errno == EINTR || errno == EWOULDBLOCK || errno == EAGAIN) {
                 continue;
             }

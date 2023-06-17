@@ -209,6 +209,10 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
+         usleep(10);
+        if (client->queuePkg.empty()) {
+            continue;
+        }
         Pkg pkg;
         if (client->queuePkg.pop(pkg)) {
 //        Info("pkg cmd:%d", pkg.head.cmd);
@@ -222,7 +226,6 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 //                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
             }
         }
-//        usleep(10);
     }
     LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " exit";
     return 0;

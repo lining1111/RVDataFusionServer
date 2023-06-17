@@ -52,10 +52,15 @@ redefine_file_macro(testClient)
 #add_executable(testTempClass testTempClass.cpp)
 #target_link_libraries(testTempClass ${LIBS})
 #
-###测试信号机通讯
-#add_executable(testSingalControl testSingalControl.cpp
-#        ../signalControl/signalControlCom.cpp
-#        ../signalControl/SignalControl.cpp
-#        ../common/CRC.cpp)
-#target_link_libraries(testSingalControl ${LIBS})
-#redefine_file_macro(testSingalControl)
+##测试信号机通讯
+add_executable(testSingalControl testSingalControl.cpp
+        ../signalControl/signalControlCom.cpp
+        ../signalControl/SignalControl.cpp
+        ../common/CRC.cpp)
+target_link_libraries(testSingalControl ${LIBS})
+redefine_file_macro(testSingalControl)
+
+##测试从本地获取数据发送到服务器
+add_executable(GetLocalDataSend GetLocalDataSend.cpp ${SRC_FILES})
+target_link_libraries(GetLocalDataSend ${LIBS})
+redefine_file_macro(GetLocalDataSend)

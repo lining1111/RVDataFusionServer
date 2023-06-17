@@ -24,7 +24,7 @@ static bool isInSet(uint8_t in, vector<uint8_t> set) {
 vector<uint8_t> TransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> needSet) {
     vector<uint8_t> out;
     out.assign(in.begin(), in.end());
-    for (int i = 0; i < out.size(); i++) {
+    for (int i = 1; i < out.size()-1; i++) {
         if (isInSet(out.at(i), needSet)) {
             out.insert(out.begin() + i, tf);
             i++;
@@ -36,7 +36,7 @@ vector<uint8_t> TransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> nee
 vector<uint8_t> DeTransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> needSet) {
     vector<uint8_t> out;
     out.assign(in.begin(), in.end());
-    for (int i = 0; i < out.size(); i++) {
+    for (int i = 1; i < out.size()-1; i++) {
         if (out.at(i) == tf && i < (out.size() - 1)) {
             if (isInSet(out.at(i + 1), needSet)) {
                 out.erase(out.begin() + i);
@@ -260,8 +260,8 @@ namespace ComFrame_GBT20999_2017 {
             return -1;
         }
         uint16_t value16 = bytes.size() - 4;
-        bytes.at(2) = ((value16 & 0xff00) >> 8);
-        bytes.at(3) = ((value16 & 0x00ff));
+        bytes.at(1) = ((value16 & 0xff00) >> 8);
+        bytes.at(2) = ((value16 & 0x00ff));
 
         return 0;
     }
@@ -279,8 +279,8 @@ namespace ComFrame_GBT20999_2017 {
         vector<uint8_t> inBytes;
         inBytes.assign(bytesWithoutTF.begin() + 1, bytesWithoutTF.end() - 3);
         uint16_t value16 = Crc16TabCCITT(inBytes.data(), inBytes.size());
-        bytes.at(bytes.size() - 4) = ((value16 & 0xff00) >> 8);
-        bytes.at(bytes.size() - 3) = ((value16 & 0x00ff));
+        bytes.at(bytes.size() - 3) = ((value16 & 0xff00) >> 8);
+        bytes.at(bytes.size() - 2) = ((value16 & 0x00ff));
         return 0;
     }
 
@@ -291,8 +291,8 @@ namespace ComFrame_GBT20999_2017 {
             return -1;
         }
         //判断长度信息是否正确
-        uint16_t calLen = in.size() - 4;//去掉头尾字节包括转义字符
-        uint16_t len = ((uint16_t) in.at(2) << 8) + ((uint16_t) in.at(3));
+        uint16_t calLen = in.size() - 4;//去掉头尾字节+长度字节
+        uint16_t len = ((uint16_t) in.at(1) << 8) + ((uint16_t) in.at(2));
         if (calLen != len) {
             printf("len error calLen:%d,len:%d\n", calLen, len);
             return -1;

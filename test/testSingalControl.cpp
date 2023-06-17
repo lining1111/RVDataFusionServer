@@ -27,28 +27,49 @@ void ComTest() {
 }
 
 void ComFrame_GBT20999_2017Test() {
+
+    // 7e 0022 0100 05 000c48fc 01 13 30 03
+    // 01 05 11 01 02 01 01
+    // 02 05 11 01 03 01 01
+    // 03 05 11 01 04 01 21
+    // e443 7d
+
     using namespace ComFrame_GBT20999_2017;
     FrameAll frame;
-    frame.version = 0x0102;
-    frame.controlCenterID = 1;
-    frame.roadTrafficSignalControllerID = 0x12345678;
-    frame.roadID = 2;
-    frame.sequence = 1;
-    frame.type = ComFrame_GBT20999_2017::Type_Query;
-    frame.dataItemNum = 2;
+    frame.version = 0x0100;
+    frame.controlCenterID = 0x05;
+    frame.roadTrafficSignalControllerID = 0x000c48fc;
+    frame.roadID = 0x01;
+    frame.sequence = 0x13;
+    frame.type = ComFrame_GBT20999_2017::Type_Set;
+    frame.dataItemNum = 0x03;
     ComFrame_GBT20999_2017::DataItem dataItem;
     dataItem.index = 1;
     dataItem.length = 5;
-    dataItem.typeID = 1;
-    dataItem.objID = 2;
-    dataItem.attrID = 3;
-    dataItem.elementID = 4;
-    dataItem.data.push_back(5);
+    dataItem.typeID = 0x11;
+    dataItem.objID = 0x01;
+    dataItem.attrID = 0x02;
+    dataItem.elementID = 0x01;
+    dataItem.data.push_back(0x01);
     frame.dataItems.push_back(dataItem);
     ComFrame_GBT20999_2017::DataItem dataItem1;
-    dataItem1.index = 2;
-    dataItem1.length = 0;
+    dataItem1.index = 1;
+    dataItem1.length = 5;
+    dataItem1.typeID = 0x11;
+    dataItem1.objID = 0x01;
+    dataItem1.attrID = 0x03;
+    dataItem1.elementID = 0x01;
+    dataItem1.data.push_back(0x01);
     frame.dataItems.push_back(dataItem1);
+    ComFrame_GBT20999_2017::DataItem dataItem2;
+    dataItem2.index = 1;
+    dataItem2.length = 5;
+    dataItem2.typeID = 0x11;
+    dataItem2.objID = 0x01;
+    dataItem2.attrID = 0x04;
+    dataItem2.elementID = 0x01;
+    dataItem2.data.push_back(0x21);
+    frame.dataItems.push_back(dataItem2);
 
     vector<uint8_t> plainBytes;
     frame.setToBytes(plainBytes);
@@ -83,7 +104,7 @@ void ComFrame_GBT20999_2017Test() {
 
 int main() {
 //    ComTest();
-//    ComFrame_GBT20999_2017Test();
+    ComFrame_GBT20999_2017Test();
 
     std::map<int, string> mapa = {
             {1, "1"},
