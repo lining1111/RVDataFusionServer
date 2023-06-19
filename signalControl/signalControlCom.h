@@ -264,8 +264,9 @@ namespace ComFrame_GBT20999_2017 {
         vector<DataItem> dataItems;//数据值数组
         uint16_t crc16;//报文数据CRC16校验值，CRC生成多项式x16+x12+x2+1,不包含报文头尾字节
         uint8_t end = 0x7d;//结束字节，固定为0x7d
+        //中间流程
         int getFromBytes(vector<uint8_t> in);
-
+        //中间流程，设置的时候，不负责更新长度和校验
         int setToBytes(vector<uint8_t> &out);
 
     public:
