@@ -102,20 +102,8 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     //3取数
     vector<IType>().swap(dataUnit->oneFrame);
     dataUnit->oneFrame.resize(dataUnit->numI);
-    vector<std::shared_future<int>> finishs;
-    vector<std::shared_future<int>>().swap(finishs);
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i, offset,
-                                                    dataUnit->curTimestamp);
-        finishs.push_back(finish);
-    }
-
-    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        try {
-            finishs.at(i).wait();
-        } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
-        }
+        ThreadGetDataInRange(dataUnit, i, dataUnit->curTimestamp);
     }
 
     //打印下每一路取到的时间戳
@@ -162,7 +150,7 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
 }
 
 int
-DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, int offset, uint64_t curTimestamp) {
+DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, uint64_t curTimestamp) {
     //找到时间戳在范围内的帧
     if (dataUnit->emptyI(index)) {
         VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";

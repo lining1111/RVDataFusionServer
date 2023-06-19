@@ -35,8 +35,7 @@ public:
     static void
     FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
 
-    static int ThreadGetDataInRange(DataUnitFusionData *dataUnit,
-                                    int index, int offset, uint64_t curTimestamp);
+    static int ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, uint64_t curTimestamp);
 
     static int TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
 

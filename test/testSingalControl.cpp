@@ -6,6 +6,7 @@
 
 #include "../signalControl/signalControlCom.h"
 #include "../signalControl/SignalControl.h"
+#include "common/CRC.h"
 
 void ComTest() {
     //转移字符为0x5c 要转义的字节集为 0x7e 0x7d 0x5c
@@ -53,7 +54,7 @@ void ComFrame_GBT20999_2017Test() {
     dataItem.data.push_back(0x01);
     frame.dataItems.push_back(dataItem);
     ComFrame_GBT20999_2017::DataItem dataItem1;
-    dataItem1.index = 1;
+    dataItem1.index = 2;
     dataItem1.length = 5;
     dataItem1.typeID = 0x11;
     dataItem1.objID = 0x01;
@@ -62,7 +63,7 @@ void ComFrame_GBT20999_2017Test() {
     dataItem1.data.push_back(0x01);
     frame.dataItems.push_back(dataItem1);
     ComFrame_GBT20999_2017::DataItem dataItem2;
-    dataItem2.index = 1;
+    dataItem2.index = 3;
     dataItem2.length = 5;
     dataItem2.typeID = 0x11;
     dataItem2.objID = 0x01;
@@ -102,7 +103,19 @@ void ComFrame_GBT20999_2017Test() {
     printf("over\n");
 }
 
+void crc16_test(){
+    uint8_t plain[]={0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06, 0x01, 0x12,
+                     0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x03, 0x00};
+    int len = sizeof(plain);
+    uint16_t crc = Crc16Cal(plain, sizeof(plain),0x1005,0x0000,0x0000,0);
+    printf("%x\n",crc);
+
+}
+
+
+//10.100.24.28 15050 udp
 int main() {
+//    crc16_test();
 //    ComTest();
     ComFrame_GBT20999_2017Test();
 

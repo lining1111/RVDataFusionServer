@@ -84,7 +84,7 @@ int ClientInfo::ThreadGetPkg(void *pClientInfo) {
 
     LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
-        usleep(10);
+        usleep(1000);
         if (client->rb == nullptr) {
             //数据缓存区不存在
             continue;
@@ -209,7 +209,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
 
     LOG(WARNING) << "client ip:" << inet_ntoa(client->addr.sin_addr) << __FUNCTION__ << " run";
     while (client->isConnect) {
-         usleep(10);
+         usleep(1000*10);
         if (client->queuePkg.empty()) {
             continue;
         }

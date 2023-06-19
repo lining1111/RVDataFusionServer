@@ -12,7 +12,7 @@ using namespace std;
 //转义字符问题处理
 static bool isInSet(uint8_t in, vector<uint8_t> set) {
     bool ret = false;
-    for (auto iter : set) {
+    for (auto iter: set) {
         if (iter == in) {
             ret = true;
             break;
@@ -24,7 +24,7 @@ static bool isInSet(uint8_t in, vector<uint8_t> set) {
 vector<uint8_t> TransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> needSet) {
     vector<uint8_t> out;
     out.assign(in.begin(), in.end());
-    for (int i = 1; i < out.size()-1; i++) {
+    for (int i = 1; i < out.size() - 1; i++) {
         if (isInSet(out.at(i), needSet)) {
             out.insert(out.begin() + i, tf);
             i++;
@@ -36,7 +36,7 @@ vector<uint8_t> TransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> nee
 vector<uint8_t> DeTransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> needSet) {
     vector<uint8_t> out;
     out.assign(in.begin(), in.end());
-    for (int i = 1; i < out.size()-1; i++) {
+    for (int i = 1; i < out.size() - 1; i++) {
         if (out.at(i) == tf && i < (out.size() - 1)) {
             if (isInSet(out.at(i + 1), needSet)) {
                 out.erase(out.begin() + i);
@@ -46,6 +46,7 @@ vector<uint8_t> DeTransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> n
     }
     return out;
 }
+
 
 //大小端字节转换
 static uint16_t reverse16(uint16_t value) {
@@ -62,6 +63,15 @@ static uint64_t reverse64(uint64_t value) {
 
 
 namespace ComFrame_GBT20999_2017 {
+
+    uint16_t CRC16(uint8_t *data, int len) {
+        if (data == nullptr || len <= 0) {
+            return 0;
+        }
+
+        return Crc16Cal(data, len, 0x1005, 0x0000, 0x0000, 0);
+    }
+
 
     int DataItem::getFromBytes(vector<uint8_t> in) {
         int needLen = 2;
@@ -218,7 +228,7 @@ namespace ComFrame_GBT20999_2017 {
         //数据值数量
         out.push_back(this->dataItemNum);
         //根据数据至数量，这里根据的是vector的成员个数,将数据压入
-        for (auto iter:this->dataItems) {
+        for (auto iter: this->dataItems) {
             vector<uint8_t> outItem;
             iter.setToBytes(outItem);
             out.insert(out.end(), outItem.begin(), outItem.end());
@@ -248,7 +258,7 @@ namespace ComFrame_GBT20999_2017 {
         this->setToBytes(outBytes);
         vector<uint8_t> inBytes;
         inBytes.assign(outBytes.begin() + 1, outBytes.end() - 3);
-        uint16_t crc = Crc16TabCCITT(inBytes.data(), inBytes.size());
+        uint16_t crc = CRC16(inBytes.data(), inBytes.size());
         this->crc16 = crc;
         this->isUpdateCRC = true;
     }
@@ -278,7 +288,7 @@ namespace ComFrame_GBT20999_2017 {
 
         vector<uint8_t> inBytes;
         inBytes.assign(bytesWithoutTF.begin() + 1, bytesWithoutTF.end() - 3);
-        uint16_t value16 = Crc16TabCCITT(inBytes.data(), inBytes.size());
+        uint16_t value16 = CRC16(inBytes.data(), inBytes.size());
         bytes.at(bytes.size() - 3) = ((value16 & 0xff00) >> 8);
         bytes.at(bytes.size() - 2) = ((value16 & 0x00ff));
         return 0;
@@ -301,15 +311,21 @@ namespace ComFrame_GBT20999_2017 {
 
         //1.先去掉转义字符
         //转移字符为0x5c 要转义的字节集为 0x7e 0x7d 0x5c
-        uint8_t tf = 0x5c;
-        vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
-        auto bytes = DeTransferMean(in, tf, needSet);
+        vector<uint8_t> bytes;
+        bytes.clear();
+        if (this->comType != ComType_UDP) {
+            uint8_t tf = 0x5c;
+            vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
+            bytes = DeTransferMean(in, tf, needSet);
+        } else {
+            bytes.assign(in.begin(), in.end());
+        }
         //2.根据通信字节流获取帧内容
         this->getFromBytes(bytes);
         if (isCheckCRC) {
             vector<uint8_t> inBytes;
             inBytes.assign(bytes.begin() + 1, bytes.end() - 3);
-            uint16_t calCRC16 = Crc16TabCCITT(inBytes.data(), inBytes.size());
+            uint16_t calCRC16 = CRC16(inBytes.data(), inBytes.size());
             //字节流内的校验值
             uint16_t crc16 = (((uint16_t) bytes.at(bytes.size() - 3)) << 8) + ((uint16_t) bytes.at(bytes.size() - 2));
             if (calCRC16 != crc16) {
@@ -325,19 +341,24 @@ namespace ComFrame_GBT20999_2017 {
         //1.根据具体的帧内容变换成字节流
         this->setToBytes(bytes);
         //2.添加转义字符
-        uint8_t tf = 0x5c;
-        vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
-        vector<uint8_t> bytesWithTF;
-        bytesWithTF = TransferMean(bytes, tf, needSet);
+        vector<uint8_t> bytes_plain;
+        bytes_plain.clear();
+        if (this->comType != ComType_UDP) {
+            uint8_t tf = 0x5c;
+            vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
+            bytes_plain = TransferMean(bytes, tf, needSet);
+        } else {
+            bytes_plain.assign(bytes.begin(), bytes.end());
+        }
         //3.根据实际情况更新长度
         if (!isUpdateLength) {
-            UpdateByteLength(bytesWithTF);
+            UpdateByteLength(bytes_plain);
         }
         //4.根据实际情况更新校验值
         if (!isUpdateCRC) {
-            UpdateByteCRC16(bytesWithTF);
+            UpdateByteCRC16(bytes_plain);
         }
-        out.assign(bytesWithTF.begin(), bytesWithTF.end());
+        out.assign(bytes_plain.begin(), bytes_plain.end());
 
         return 0;
     }
@@ -399,4 +420,6 @@ namespace ComFrame_GBT20999_2017 {
 
         return 0;
     }
+
+
 }

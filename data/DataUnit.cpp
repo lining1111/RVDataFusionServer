@@ -85,20 +85,8 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     //2取数
     vector<IType>().swap(dataUnit->oneFrame);
     dataUnit->oneFrame.resize(dataUnit->numI);
-    vector<std::shared_future<int>> finishs;
-    vector<std::shared_future<int>>().swap(finishs);
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        std::shared_future<int> finish = std::async(std::launch::async, ThreadGetDataInRange, dataUnit, i, offset,
-                                                    dataUnit->curTimestamp);
-        finishs.push_back(finish);
-    }
-
-    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        try {
-            finishs.at(i).wait();
-        } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
-        }
+        ThreadGetDataInRange(dataUnit, i, dataUnit->curTimestamp);
     }
 
     //打印下每一路取到的时间戳
@@ -112,35 +100,22 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     TaskProcessOneFrame(dataUnit);
 }
 
-int DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, int offset,
-                                                    uint64_t curTimestamp) {
+int
+DataUnitTrafficFlowGather::ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, uint64_t curTimestamp) {
     //找到时间戳在范围内的帧
-    if (index == dataUnit->i_maxSizeIndex) {
-        IType refer;
-        if (dataUnit->getIOffset(refer, index, offset)) {
-            //记录当前路的时间戳
-            dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timestamp;
-            //将当前路的所有信息缓存入对应的索引
-            dataUnit->oneFrame[index] = refer;
-            VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
-                    << (uint64_t) refer.timestamp;
-        }
-        return index;
-    }
-
     if (dataUnit->emptyI(index)) {
-        VLOG(3) << "DataUnitTrafficFlowGather第" << index << "路数据为空";
+        VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";
     } else {
         for (int i = 0; i < dataUnit->sizeI(index); i++) {
             IType refer;
             if (dataUnit->getIOffset(refer, index, i)) {
-                if (abs((int) ((uint64_t) refer.timestamp - curTimestamp)) <= dataUnit->fs_i) {
+                if (abs((int) ((uint64_t) refer.timestamp - curTimestamp)) < dataUnit->fs_i) {
                     //在范围内
                     //记录当前路的时间戳
                     dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timestamp;
                     //将当前路的所有信息缓存入对应的索引
                     dataUnit->oneFrame[index] = refer;
-                    VLOG(3) << "DataUnitTrafficFlowGather第" << index << "路时间戳在范围内，取出来:"
+                    VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
                             << (uint64_t) refer.timestamp;
                     break;
                 }

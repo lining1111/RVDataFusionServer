@@ -321,8 +321,7 @@ public:
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
-    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, int offset,
-                                    uint64_t curTimestamp);
+    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, uint64_t curTimestamp);
 
     static int TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit);
 };

@@ -34,6 +34,9 @@ vector<uint8_t> DeTransferMean(vector<uint8_t> in, uint8_t tf, vector<uint8_t> n
 
 //协议大帧,本地是主机的小端字节，通信的时候为大端字节,这里具体字节按实际情况存，在组织发送字节的时候做多字节转换
 namespace ComFrame_GBT20999_2017 {
+
+    uint16_t CRC16(uint8_t *data,int len);
+
     typedef enum {
         ComType_TCP = 0x01,
         ComType_UDP = 0x02,
@@ -247,6 +250,7 @@ namespace ComFrame_GBT20999_2017 {
     private:
         bool isUpdateLength = false;
         bool isUpdateCRC = false;
+        ComType comType = ComType_UDP;
     public:
         uint8_t begin = 0x7e;//开始字节,固定0x7e
         uint16_t length;//报文长度，不包含报文头尾
