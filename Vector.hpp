@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <pthread.h>
+#include <mutex>
 
 using namespace std;
 
@@ -15,23 +16,24 @@ template<typename T>
 class Vector {
 public:
     Vector() {
-        // 锁的初始化
-        pthread_mutex_init(&mutex, 0);
+        if (mtx == nullptr){
+            mtx = new std::mutex();
+        }
     }
 
     Vector(unsigned int max) {
-        // 锁的初始化
-        pthread_mutex_init(&mutex, 0);
+        if (mtx == nullptr){
+            mtx = new std::mutex();
+        }
         setMax(max);
     }
 
     ~Vector() {
-        // 锁的释放
-        pthread_mutex_destroy(&mutex);
+        delete mtx;
     }
 
     bool push(T t) {
-        pthread_mutex_lock(&mutex);  //加锁
+        std::unique_lock<std::mutex> lock(*mtx);
         //先将数据压入
         q.push_back(t);
 
@@ -41,7 +43,6 @@ public:
                 q.erase(q.begin());
             }
         }
-        pthread_mutex_unlock(&mutex);  //操作完成后解锁
         return true;
     }
 
@@ -49,17 +50,15 @@ public:
         if ((q.size() < (index + 1)) || index < 0 || q.empty()) {
             return false;
         }
-        pthread_mutex_lock(&mutex);  //加锁
+        std::unique_lock<std::mutex> lock(*mtx);
         t = q.at(index);
-        pthread_mutex_unlock(&mutex);  //操作完成后解锁
         return true;
     }
 
     void eraseBegin() {
         if (!q.empty()) {
-            pthread_mutex_lock(&mutex);  //加锁
+            std::unique_lock<std::mutex> lock(*mtx);
             q.erase(q.begin());
-            pthread_mutex_unlock(&mutex);  //操作完成后解锁
         }
     }
 
@@ -85,8 +84,7 @@ private:
     int max;
     bool isSetMax = false;
     vector<T> q;
-    pthread_mutex_t mutex;
-
+    std::mutex *mtx= nullptr;
 };
 
 

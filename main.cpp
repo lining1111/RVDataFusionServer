@@ -40,7 +40,7 @@ DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
 DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");
 DEFINE_bool(isSendPICOnly, false, "只发送图片到云端，默认false");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
-DEFINE_int32(roadNum, 4, "外设路数，默认4");
+DEFINE_int32(roadNum, 8, "外设路数，默认8");
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 
 #include "eocCom/fileFun.h"
@@ -140,6 +140,16 @@ int main(int argc, char **argv) {
 
     while (true) {
         sleep(5);
+        if (dataLocal->isStartFusion) {
+            //判断是否有10s没有发送数据了
+            uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            if ((now - dataLocal->dataUnitFusionData->curTimestamp) > (10 * 1000)) {
+                LOG(ERROR) << "data fusion not send 10s";
+                exit(-1);
+            }
+
+        }
     }
 
     return 0;

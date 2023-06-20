@@ -5,7 +5,7 @@
 #ifndef EOCCOM_H
 #define EOCCOM_H
 
-#include "Queue.h"
+#include "Queue.hpp"
 #include "net/tlsClient/TlsClient.h"
 #include "EOCJSON.h"
 #include "db/DBTable.h"

@@ -16,7 +16,7 @@
 #include <future>
 #include <vector>
 #include <queue>
-#include "Queue.h"
+#include "Queue.hpp"
 
 namespace Nebulalink {
 

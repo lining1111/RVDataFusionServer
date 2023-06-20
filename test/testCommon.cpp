@@ -8,7 +8,7 @@
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
-#include "Queue.h"
+#include "Queue.hpp"
 #include "ringbuffer/RingBuffer.h"
 
 using namespace common;

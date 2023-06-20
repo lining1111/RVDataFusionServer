@@ -196,7 +196,7 @@ void LocalBusiness::Task_FusionData(void *p) {
     if (local->isRun) {
         string msgType = "FusionData";
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitFusionData;
+        auto dataUnit = dataLocal->dataUnitFusionData;
 //        if (!dataUnit->o_queue.empty()) {
 //            LOG(INFO) << msgType << "发送队列取出前数量" << dataUnit->o_queue.size();
 //        }
@@ -333,7 +333,7 @@ void LocalBusiness::Task_CrossTrafficJamAlarm(void *p) {
         string msgType = "CrossTrafficJamAlarm";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
+        auto dataUnit = dataLocal->dataUnitCrossTrafficJamAlarm;
 
         CrossTrafficJamAlarm data;
         if (dataUnit->popO(data)) {
@@ -404,7 +404,7 @@ void LocalBusiness::Task_IntersectionOverflowAlarm(void *p) {
         string msgType = "IntersectionOverflowAlarm";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitIntersectionOverflowAlarm;
+        auto dataUnit = dataLocal->dataUnitIntersectionOverflowAlarm;
 
         IntersectionOverflowAlarm data;
         if (dataUnit->popO(data)) {
@@ -476,7 +476,7 @@ void LocalBusiness::Task_TrafficFlowGather(void *p) {
         string msgType = "TrafficFlowGather";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
+        auto dataUnit = dataLocal->dataUnitTrafficFlowGather;
 
         TrafficFlowGather data;
         if (dataUnit->popO(data)) {
@@ -588,7 +588,7 @@ void LocalBusiness::Task_InWatchData_1_3_4(void *p) {
         string msgType = "InWatchData_1_3_4";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitInWatchData_1_3_4;
+        auto dataUnit = dataLocal->dataUnitInWatchData_1_3_4;
 
         InWatchData_1_3_4 data;
         if (dataUnit->popO(data)) {
@@ -658,7 +658,7 @@ void LocalBusiness::Task_InWatchData_2(void *p) {
         string msgType = "InWatchData_2";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitInWatchData_2;
+        auto dataUnit = dataLocal->dataUnitInWatchData_2;
 
         InWatchData_2 data;
         if (dataUnit->popO(data)) {
@@ -727,7 +727,7 @@ void LocalBusiness::Task_StopLinePassData(void *p) {
         string msgType = "StopLinePassData";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitStopLinePassData;
+        auto dataUnit = dataLocal->dataUnitStopLinePassData;
 
         StopLinePassData data;
         if (dataUnit->popO(data)) {
@@ -796,7 +796,7 @@ void LocalBusiness::Task_HumanData(void *p) {
         string msgType = "HumanData";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitHumanData;
+        auto dataUnit = dataLocal->dataUnitHumanData;
 
         HumanDataGather data;
         if (dataUnit->popO(data)) {
@@ -865,7 +865,7 @@ void LocalBusiness::Task_HumanLitPoleData(void *p) {
         string msgType = "HumanLitPoleData";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitHumanLitPoleData;
+        auto dataUnit = dataLocal->dataUnitHumanLitPoleData;
 
         HumanLitPoleData data;
         if (dataUnit->popO(data)) {
@@ -934,7 +934,7 @@ void LocalBusiness::Task_AbnormalStopData(void *p) {
         string msgType = "AbnormalStopData";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
+        auto dataUnit = dataLocal->dataUnitAbnormalStopData;
 
         AbnormalStopData data;
         if (dataUnit->popO(data)) {
@@ -1003,7 +1003,7 @@ void LocalBusiness::Task_LongDistanceOnSolidLineAlarm(void *p) {
         string msgType = "LongDistanceOnSolidLineAlarm";
 
         auto dataLocal = Data::instance();
-        auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
+        auto dataUnit = dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
 
         LongDistanceOnSolidLineAlarm data;
         if (dataUnit->popO(data)) {
@@ -1065,7 +1065,7 @@ void LocalBusiness::Task_CreateFusionData(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitFusionData;
+    auto dataUnit = dataLocal->dataUnitFusionData;
     FusionData inData;
     inData.oprNum = random_uuid();
     inData.timstamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1085,7 +1085,7 @@ void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitCrossTrafficJamAlarm;
+    auto dataUnit = dataLocal->dataUnitCrossTrafficJamAlarm;
     CrossTrafficJamAlarm inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1113,7 +1113,7 @@ void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitTrafficFlowGather;
+    auto dataUnit = dataLocal->dataUnitTrafficFlowGather;
     TrafficFlowGather inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1150,7 +1150,7 @@ void LocalBusiness::Task_CreateAbnormalStopData(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitAbnormalStopData;
+    auto dataUnit = dataLocal->dataUnitAbnormalStopData;
     AbnormalStopData inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1180,7 +1180,7 @@ void LocalBusiness::Task_CreateLongDistanceOnSolidLineAlarm(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
+    auto dataUnit = dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
     LongDistanceOnSolidLineAlarm inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -1212,7 +1212,7 @@ void LocalBusiness::Task_CreateHumanData(void *p) {
     auto local = (LocalBusiness *) p;
     //只往第1个server放数据
     auto dataLocal = Data::instance();
-    auto dataUnit = &dataLocal->dataUnitHumanData;
+    auto dataUnit = dataLocal->dataUnitHumanData;
     HumanDataGather inData;
     inData.oprNum = random_uuid();
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(

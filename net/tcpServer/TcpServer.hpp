@@ -23,7 +23,7 @@ public:
     int sock = 0;
     int port;
     string name;
-    int maxListen = 10;
+    int maxListen = 32;
 
     bool isRun = false;
     bool isLocalThreadRun = false;

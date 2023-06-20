@@ -11,7 +11,7 @@
 
 #include "common/common.h"
 #include "ringbuffer/RingBuffer.h"
-#include "Queue.h"
+#include "Queue.hpp"
 #include "monitor/PacketLoss.hpp"
 #include "os/timeTask.hpp"
 #include "utility/utility.h"

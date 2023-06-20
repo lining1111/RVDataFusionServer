@@ -5,8 +5,8 @@
 #ifndef _DATAUNIT_H
 #define _DATAUNIT_H
 
-#include "Queue.h"
-#include "Vector.h"
+#include "Queue.hpp"
+#include "Vector.hpp"
 #include "common/common.h"
 #include <mutex>
 #include <condition_variable>
@@ -22,6 +22,7 @@ using namespace std;
 using namespace os;
 
 #define TaskTimeval 10 //任务开启周期
+
 template<typename I, typename O>
 class DataUnit {
 public:
@@ -65,21 +66,8 @@ public:
     vector<string> unOrder;
 
 public:
-    DataUnit() : cap(30), thresholdFrame(100), fs_i(100), numI(4), cache(3) {
-        i_queue_vector.resize(numI);
-        for (int i = 0; i < i_queue_vector.size(); i++) {
-            auto iter = &i_queue_vector.at(i);
-            iter->setMax(cap);
-        }
-        o_queue.setMax(cap);
+    DataUnit(){
 
-        oneFrame.resize(numI);
-
-        xRoadTimestamp.resize(numI);
-        for (auto &iter: xRoadTimestamp) {
-            iter = 0;
-        }
-        unOrder.resize(numI);
     }
 
     DataUnit(int c, int threshold_ms, int i_num, int i_cache, void *owner) {
@@ -123,7 +111,7 @@ public:
         try {
             return i_queue_vector.at(index).getIndex(i, offset);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -132,7 +120,7 @@ public:
         try {
             i_queue_vector.at(index).eraseBegin();
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
         }
     }
 
@@ -140,7 +128,7 @@ public:
         try {
             return i_queue_vector.at(index).push(i);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -149,7 +137,7 @@ public:
         try {
             return i_queue_vector.at(index).size();
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return 0;
         }
     }
@@ -158,7 +146,7 @@ public:
         try {
             return i_queue_vector.at(index).empty();
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            LOG(WARNING) << e.what();
             return true;
         }
     }
@@ -167,7 +155,7 @@ public:
         try {
             return o_queue.front(o);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -176,7 +164,7 @@ public:
         try {
             return o_queue.back(o);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -185,7 +173,7 @@ public:
         try {
             return o_queue.push(o);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -194,7 +182,7 @@ public:
         try {
             return o_queue.pop(o);
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return false;
         }
     }
@@ -203,7 +191,7 @@ public:
         try {
             return o_queue.size();
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return 0;
         }
     }
@@ -212,7 +200,7 @@ public:
         try {
             return o_queue.empty();
         } catch (const std::exception &e) {
-            cout << __FUNCTION__ << e.what() << endl;
+            std::cout << e.what() << std::endl;
             return true;
         }
     }

@@ -98,6 +98,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
 //        issave=true;
 //    }
 
+
     if (!reader.parse(content, in, false)) {
         VLOG(2) << "watchData json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
@@ -106,7 +107,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     watchData.JsonUnmarshal(in);
 
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitFusionData;
+    auto dataUnit = data->dataUnitFusionData;
     int index = -1;
     for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
         if (data->roadDirection[i] == watchData.direction) {
@@ -158,7 +159,7 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, uint16_t port, string conte
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitCrossTrafficJamAlarm;
+    auto dataUnit = data->dataUnitCrossTrafficJamAlarm;
     int index = dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
     if (!dataUnit->pushI(crossTrafficJamAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " CrossTrafficJamAlarm,丢弃消息";
@@ -185,7 +186,7 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string 
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitIntersectionOverflowAlarm;
+    auto dataUnit = data->dataUnitIntersectionOverflowAlarm;
     int index = dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
     if (!dataUnit->pushI(intersectionOverflowAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " IntersectionOverflowAlarm,丢弃消息";
@@ -216,7 +217,7 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitTrafficFlowGather;
+    auto dataUnit = data->dataUnitTrafficFlowGather;
     int index = dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
 
     //存到帧率缓存
@@ -256,7 +257,7 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, uint16_t port, string content)
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitInWatchData_1_3_4;
+    auto dataUnit = data->dataUnitInWatchData_1_3_4;
     int index = dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
     if (!dataUnit->pushI(inWatchData134, index)) {
         VLOG(2) << "client ip:" << ip << " InWatchData_1_3_4,丢弃消息";
@@ -283,7 +284,7 @@ int PkgProcessFun_CmdInWatchData_2(string ip, uint16_t port, string content) {
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitInWatchData_2;
+    auto dataUnit = data->dataUnitInWatchData_2;
     int index = dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
     if (!dataUnit->pushI(inWatchData2, index)) {
         VLOG(2) << "client ip:" << ip << " InWatchData_2,丢弃消息";
@@ -310,7 +311,7 @@ int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitStopLinePassData;
+    auto dataUnit = data->dataUnitStopLinePassData;
     int index = dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
     if (!dataUnit->pushI(stopLinePassData, index)) {
         VLOG(2) << "client ip:" << ip << " InWatchData_2,丢弃消息";
@@ -337,7 +338,7 @@ int PkgProcessFun_AbnormalStopData(string ip, uint16_t port, string content) {
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitAbnormalStopData;
+    auto dataUnit = data->dataUnitAbnormalStopData;
     int index = dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
     if (!dataUnit->pushI(abnormalStopData, index)) {
         VLOG(2) << "client ip:" << ip << " AbnormalStopData,丢弃消息";
@@ -364,7 +365,7 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, uint16_t port, string 
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitLongDistanceOnSolidLineAlarm;
+    auto dataUnit = data->dataUnitLongDistanceOnSolidLineAlarm;
     int index = dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
     if (!dataUnit->pushI(longDistanceOnSolidLineAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " LongDistanceOnSolidLineAlarm,丢弃消息";
@@ -392,7 +393,7 @@ int PkgProcessFun_HumanData(string ip, uint16_t port, string content) {
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitHumanData;
+    auto dataUnit = data->dataUnitHumanData;
     int index = dataUnit->FindIndexInUnOrder(humanData.hardCode);
     if (!dataUnit->pushI(humanData, index)) {
         VLOG(2) << "client ip:" << ip << " HumanData,丢弃消息";
@@ -419,7 +420,7 @@ int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
-    auto dataUnit = &data->dataUnitHumanLitPoleData;
+    auto dataUnit = data->dataUnitHumanLitPoleData;
     int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
     if (!dataUnit->pushI(humanLitPoleData, index)) {
         VLOG(2) << "client ip:" << ip << " HumanLitPoleData,丢弃消息";
