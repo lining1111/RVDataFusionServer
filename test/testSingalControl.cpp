@@ -3,6 +3,11 @@
 //
 #include <string>
 #include <algorithm>
+#include <gflags/gflags.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <iostream>
+#include <csignal>
 
 #include "../signalControl/signalControlCom.h"
 #include "../signalControl/SignalControl.h"
@@ -103,49 +108,163 @@ void ComFrame_GBT20999_2017Test() {
     printf("over\n");
 }
 
-void crc16_test(){
-    uint8_t plain[]={0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06, 0x01, 0x12,
-                     0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x03, 0x00};
+void crc16_test() {
+    uint8_t plain[] = {0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06, 0x01, 0x12,
+                       0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x03, 0x00};
     int len = sizeof(plain);
-    uint16_t crc = Crc16Cal(plain, sizeof(plain),0x1005,0x0000,0x0000,0);
-    printf("%x\n",crc);
+    uint16_t crc = Crc16Cal(plain, sizeof(plain), 0x1005, 0x0000, 0x0000, 0);
+    printf("%x\n", crc);
 
 }
 
 
 //10.100.24.28 15050 udp
-int main() {
+DEFINE_string(cloudIp, "10.100.24.28", "ip，默认 10.100.24.28");
+DEFINE_int32(cloudPort, 15050, "端口号，默认15050");
+DEFINE_int32(localPort, 1234, "端口号，默认1234");
+int main(int argc, char **argv) {
 //    crc16_test();
 //    ComTest();
-    ComFrame_GBT20999_2017Test();
+//    ComFrame_GBT20999_2017Test();
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    //开启udp客户端
+    printf("udp :%s:%d\n", FLAGS_cloudIp.c_str(), FLAGS_cloudPort);
+    int socketFd;
+    // Create UDP socket:
+    socketFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-    std::map<int, string> mapa = {
-            {1, "1"},
-            {2, "2"},
-            {3, "3"},
-    };
-    string value = "1";
+    if (socketFd < 0) {
+        printf("Error while creating socket\n");
+        return -1;
+    }
+    printf("Socket created successful\n");
 
-    auto iter = std::find_if(mapa.begin(), mapa.end(), [value](const std::map<int, string>::value_type &item) {
-        return (item.second == value);
-    });
-    if (iter != mapa.end()) {
-        printf("1 key:%d\n",iter->first);
-        printf("1 find\n");
-    } else {
-        printf("1 not find\n");
+    // Set port and IP:
+    struct sockaddr_in remote_addr;
+    auto addrLen = sizeof(struct sockaddr_in);
+    memset(&remote_addr, 0, sizeof(remote_addr));
+    remote_addr.sin_family = AF_INET;
+    remote_addr.sin_port = htons(FLAGS_cloudPort);
+    remote_addr.sin_addr.s_addr = inet_addr(FLAGS_cloudIp.c_str());
+
+    struct sockaddr_in local;
+    memset(&local, 0, sizeof(struct sockaddr_in));
+    local.sin_family = AF_INET;
+    local.sin_addr.s_addr = INADDR_ANY;
+    local.sin_port = htons(FLAGS_localPort);//UDP 广播包 本地端口
+    socklen_t local_len = sizeof(struct sockaddr);
+
+
+    if(bind(socketFd, (struct sockaddr *)&local, sizeof(local)))//绑定端口
+    {
+        printf("####L(%d) client bind port failed!\n", __LINE__);
+        close(socketFd);//关闭socket
+        exit(-1);
     }
 
-    string value1 = "6";
+    timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 100 * 1000;
+    //设置发送最大时间80ms
+//    setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+        setsockopt(socketFd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 
-    auto iter1 = std::find_if(mapa.begin(), mapa.end(), [value1](const std::map<int, string>::value_type &item) {
-        return (item.second == value1);
-    });
-    if (iter1 != mapa.end()) {
-        printf("6 key:%d\n",iter1->first);
-        printf("6 find\n");
-    } else {
-        printf("6 not find\n");
+
+    printf("udp client sock:%d\n", socketFd);
+
+    string usage = "输入1 :发送心跳\n"
+                   "    2:发送查询\n"
+                   "    3:发送设置\n"
+                   "    q:退出\n";
+    printf("%s\n", usage.c_str());
+
+    bool isExit = false;
+
+    while (!isExit) {
+        string user;
+        cout << "please enter(q:quit):" << endl;
+        cin >> user;
+
+        uint8_t bufR[1024];
+        int lenR = 0;
+        memset(bufR, 0, 1024);
+
+        if (user == "q") {
+            isExit = true;
+        } else if (user == "1") {
+            //7e000c01000500000000001370c06d7d
+            //7e000d0100000000000000a7809b537d
+            uint8_t buf[] = {0x7e, 0x00, 0x0c, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00,
+                             0x00, 0x13, 0x70, 0xc0, 0x6d, 0x7d};
+            uint32_t len = sizeof(buf);
+            int lenS = sendto(socketFd, buf, len, 0, (struct sockaddr *) &remote_addr, addrLen);
+            if (lenS != len) {
+                printf("send fail:%d\n",errno);
+            } else {
+                printf("send ok\n");
+                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &local, &local_len);
+                if (lenR > 0) {
+                    printf("recv ok\n");
+                    for (int i = 0; i < lenR; i++) {
+                        printf("%02x ", bufR[i]);
+                    }
+                    printf("\n");
+                } else {
+                    printf("recv fail:%d\n",errno);
+                }
+            }
+
+        } else if (user == "2") {
+            //7e0013010005000000060112100101040c0203004bd77d
+            //7e000d0100000000000000a7809b537d
+            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
+                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x03, 0x00,
+                             0x4b, 0xd7, 0x7d};
+            uint32_t len = sizeof(buf);
+            int lenS = sendto(socketFd, buf, len, 0, (struct sockaddr *) &remote_addr, addrLen);
+            if (lenS != len) {
+                printf("send fail:%d\n",errno);
+            } else {
+                printf("send ok\n");
+                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
+                if (lenR > 0) {
+                    printf("recv ok\n");
+                    for (int i = 0; i < lenR; i++) {
+                        printf("%02x ", bufR[i]);
+                    }
+                    printf("\n");
+                } else {
+                    printf("recv fail:%d\n",errno);
+                }
+            }
+        } else if (user == "3") {
+            //7e0013010005000000060112100101040c0207001e837d
+            //7e000d0100000000000000a7809b537d
+            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
+                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x07, 0x00,
+                             0x1e, 0x83, 0x7d};
+            uint32_t len = sizeof(buf);
+            int lenS = sendto(socketFd, buf, len, 0, (struct sockaddr *) &remote_addr, addrLen);
+            if (lenS != len) {
+                printf("send fail:%d\n",errno);
+            } else {
+                printf("send ok\n");
+                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
+                if (lenR > 0) {
+                    printf("recv ok\n");
+                    for (int i = 0; i < lenR; i++) {
+                        printf("%02x ", bufR[i]);
+                    }
+                    printf("\n");
+                } else {
+                    printf("recv fail:%d\n",errno);
+                }
+            }
+        }
+
+        sleep(10);
+
     }
-
+    close(socketFd);
+    return 0;
 }
