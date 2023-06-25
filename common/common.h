@@ -67,12 +67,25 @@ namespace common {
     };//命令字类型
 
     //基本解包组包函数
+
+//    enum Direction {
+//        Unknown = 0,//未知
+//        East = 1,//东
+//        South = 2,//南
+//        West = 3,//西
+//        North = 4,//北
+//    };
+    //方向枚举1=东,2=西,3=南,4=北,5=东北,6=西南,7=东南,8=西北
     enum Direction {
         Unknown = 0,//未知
         East = 1,//东
-        South = 2,//南
-        West = 3,//西
+        West = 2,//西
+        South = 3,//南
         North = 4,//北
+        Northeast = 5,//东北
+        Southwest = 6,//西南
+        Southeast = 7,//东南
+        Northwest = 8,//西北
     };
 #pragma pack(1)
     typedef struct {

@@ -43,11 +43,22 @@ public:
     //本地参数
     //FusionData相关
     bool isMerge = true;
+//    vector<int> roadDirection = {
+//            North,//北
+//            East,//东
+//            South,//南
+//            West,//西
+//    };
+
     vector<int> roadDirection = {
-            North,//北
             East,//东
-            South,//南
             West,//西
+            South,//南
+            North,//北
+            Northeast,//东北
+            Southwest,//西南
+            Southeast,//东南
+            Northwest,//西北
     };
     //无特定顺序存入的数据
     //本地属性
