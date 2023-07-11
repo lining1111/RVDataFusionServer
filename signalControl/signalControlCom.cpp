@@ -247,8 +247,8 @@ namespace ComFrame_GBT20999_2017 {
         vector<uint8_t> outBytes;
         this->setToBytes(outBytes);
         int len = outBytes.size();
-        //去掉头尾
-        this->length = (len - 2);
+        //去掉头尾和长度字节
+        this->length = (len - 4);
         this->isUpdateLength = true;
     }
 
@@ -269,6 +269,7 @@ namespace ComFrame_GBT20999_2017 {
 //        throw std::length_error("ComFrame_GBT20999_2017::UpdateByteLength len less " + to_string(needLen));
             return -1;
         }
+        //去掉头尾和长度字节
         uint16_t value16 = bytes.size() - 4;
         bytes.at(1) = ((value16 & 0xff00) >> 8);
         bytes.at(2) = ((value16 & 0x00ff));
@@ -282,12 +283,14 @@ namespace ComFrame_GBT20999_2017 {
 //        throw std::length_error("ComFrame_GBT20999_2017::UpdateByteLength len less " + to_string(needLen));
             return -1;
         }
-        uint8_t tf = 0x5c;
-        vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
-        auto bytesWithoutTF = DeTransferMean(bytes, tf, needSet);
+//        uint8_t tf = 0x5c;
+//        vector<uint8_t> needSet = {0x7e, 0x7d, 0x5c};
+//        auto bytesWithoutTF = DeTransferMean(bytes, tf, needSet);
 
+//        vector<uint8_t> inBytes;
+//        inBytes.assign(bytesWithoutTF.begin() + 1, bytesWithoutTF.end() - 3);
         vector<uint8_t> inBytes;
-        inBytes.assign(bytesWithoutTF.begin() + 1, bytesWithoutTF.end() - 3);
+        inBytes.assign(bytes.begin()+1, bytes.end()-3);
         uint16_t value16 = CRC16(inBytes.data(), inBytes.size());
         bytes.at(bytes.size() - 3) = ((value16 & 0xff00) >> 8);
         bytes.at(bytes.size() - 2) = ((value16 & 0x00ff));

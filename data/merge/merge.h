@@ -17,9 +17,18 @@ typedef struct {
     int objID;
     int cameraID;
     int objType;
+    int objSourceType = 0;//0:相机 1：雷达 2：多目
     char plate_number[15];
     char plate_color[7];
     int carType;//车辆类型
+
+    //添加属性
+    string laneCode;
+    float carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+    string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
+    string plates;//车牌号
+    string plateColor;//车牌颜色
+    int radarID;
     int left;
     int top;
     int right;
@@ -58,6 +67,14 @@ typedef struct {
     char plate_number[15];
     char plate_color[7];
     int carType;//车辆类型
+    int objSourceType = 0;//0:相机 1：雷达 2：多目
+    uint64_t time_stamp;//新增时间戳
+    //添加属性
+    string laneCode;
+    float carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+    string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
+    string plates;//车牌号
+    string plateColor;//车牌颜色
     int left;
     int top;
     int right;
@@ -67,6 +84,8 @@ typedef struct {
     char distance[10];
     double directionAngle;
     double speed;
+    double speedX;
+    double speedY;
     double longitude;//经度
     double latitude;//纬度
     int flag_new = 0;//判断当前目标id是否第一次出现

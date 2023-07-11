@@ -87,6 +87,8 @@ namespace os {
 
     void GetDirFiles(string path, vector<string> &array);
 
+    //创建路径文件夹
+    void CreatePath(const std::string path);
 };
 
 

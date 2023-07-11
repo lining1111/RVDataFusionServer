@@ -42,9 +42,11 @@ DEFINE_bool(isSendPICOnly, false, "只发送图片到云端，默认false");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 DEFINE_int32(roadNum, 8, "外设路数，默认8");
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
+DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,默认./algorithmParam.json");
 
 #include "eocCom/fileFun.h"
 #include "configure_eoc_init.h"
+#include "os/os.h"
 
 int main(int argc, char **argv) {
 
@@ -117,6 +119,12 @@ int main(int argc, char **argv) {
     // localConfig.mergeMode = FLAGS_mergeMode;
     localConfig.mergeMode = 2;
     localConfig.roadNum = FLAGS_roadNum;
+
+    //读取默认的算法配置文件
+    if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {
+        LOG(ERROR) << "读取算法配置文件失败:" << FLAGS_algorithmParamFile;
+    }
+
     auto dataLocal = Data::instance();
     dataLocal->isMerge = FLAGS_isMerge;
     LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;

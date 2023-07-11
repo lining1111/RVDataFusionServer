@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <dirent.h>
 #include "os.h"
+#include <sys/stat.h>
+#include <errno.h>
 
 using namespace std;
 
@@ -34,21 +36,21 @@ namespace os {
 
 
     // 取文件夹名字 无后缀
-     string g_getFolderPath(string str) {
+    string g_getFolderPath(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string folder = str.substr(0, idx);
         return folder;
     }
 
     // 取后缀
-     string g_getFileSuffix(string str) {
+    string g_getFileSuffix(string str) {
         string::size_type idx = str.rfind('.', str.length());
         string suffix = str.substr(idx + 1, str.length());
         return suffix;
     }
 
     // 取文件名字 不包括后缀
-     string g_getFileName(string str) {
+    string g_getFileName(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string::size_type pidx = str.rfind('.', str.length());
         string filename = str.substr(idx + 1, pidx - (idx + 1));
@@ -56,14 +58,14 @@ namespace os {
     }
 
     // 去掉后缀
-     string g_getRemoveSuffix(string str) {
+    string g_getRemoveSuffix(string str) {
         string::size_type idx = str.rfind('.', str.length());
         string filename = str.substr(0, idx);
         return filename;
     }
 
     // 取文件名字 包括后缀
-     string g_getFileNameAll(string str) {
+    string g_getFileNameAll(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string name_all = str.substr(idx + 1, str.length());
         return name_all;
@@ -90,7 +92,7 @@ namespace os {
         fstream fin;
         fin.open(filePath.c_str(), ios::out | ios::binary | ios::trunc);
         if (fin.is_open()) {
-            for (auto iter:array) {
+            for (auto iter: array) {
                 fin.put(iter);
             }
             fin.flush();
@@ -377,7 +379,6 @@ namespace os {
     void GetDirFiles(string path, vector<string> &array) {
         DIR *dir;
         struct dirent *ptr;
-        char base[1000];
         if ((dir = opendir(path.c_str())) == nullptr) {
             printf("can not open dir %s\n", path.c_str());
             return;
@@ -390,6 +391,31 @@ namespace os {
                     array.push_back(name);
                 }
             }
+            closedir(dir);
+        }
+    }
+
+    void CreatePath(const std::string path) {
+
+        DIR *dir = nullptr;
+        dir = opendir(path.c_str());
+        //目录不存在
+        if (!dir) {
+            vector<string> v = split(path, "/");
+            string curpath = "";
+            //一级一级的创建目录
+            for (size_t i = 0; i < v.size(); i++) {
+                curpath += v[i];
+                curpath += "/";
+                DIR *curdir = nullptr;
+                curdir = opendir(curpath.c_str());
+                if (!curdir) {
+                    mkdir(curpath.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);//创建目录
+                } else {
+                    closedir(curdir);
+                }
+            }
+        } else {
             closedir(dir);
         }
     }

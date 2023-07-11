@@ -10,6 +10,7 @@
 #include <iostream>
 #include <csignal>
 #include <unistd.h>
+#include <thread>
 
 #include "../signalControl/signalControlCom.h"
 #include "../signalControl/SignalControl.h"
@@ -119,6 +120,31 @@ void crc16_test() {
 
 }
 
+bool isThreadRun = false;
+
+static void RecvThread(int sock, struct sockaddr *local, socklen_t local_len) {
+    uint8_t bufR[1024];
+    int lenR = 0;
+    memset(bufR, 0, 1024);
+    LOG(INFO) << "thread recv begin";
+    while (isThreadRun) {
+        memset(bufR, 0, 1024);
+        lenR = recvfrom(sock, bufR, 1024, 0, (struct sockaddr *) &local, &local_len);
+        if (lenR > 0) {
+//                    printf("recv ok\n");
+            LOG(INFO) << "thread recv ok";
+            for (int i = 0; i < lenR; i++) {
+                printf("%02x ", bufR[i]);
+            }
+            printf("\n");
+        } else {
+            printf("thread recv fail:%d\n", errno);
+        }
+    }
+    LOG(INFO) << "thread recv end";
+}
+
+
 
 //10.100.24.28 15050 udp
 DEFINE_string(cloudIp, "10.100.24.28", "ip，默认 10.100.24.28");
@@ -184,6 +210,9 @@ int main(int argc, char **argv) {
     printf("%s\n", usage.c_str());
 
     bool isExit = false;
+    isThreadRun = true;
+    std::thread th(RecvThread, socketFd, (struct sockaddr *)&local, local_len);
+    th.detach();
 
     while (!isExit) {
         string user;
@@ -197,10 +226,10 @@ int main(int argc, char **argv) {
         if (user == "q") {
             isExit = true;
         } else if (user == "1") {
-            //7e000c01000500000000001370c06d7d
+            //7e000c01000000000000001370c06d7d
             //7e000d0100000000000000a7809b537d
-            uint8_t buf[] = {0x7e, 0x00, 0x0c, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00,
-                             0x00, 0x13, 0x70, 0xc0, 0x6d, 0x7d};
+            uint8_t buf[] = {0x7e, 0x00, 0x0c, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                             0x00, 0x13, 0x70, 0x81, 0x3d, 0x7d};
             uint32_t len = sizeof(buf);
             int lenS = sendto(socketFd, buf, len, 0, (struct sockaddr *) &remote_addr, addrLen);
             if (lenS != len) {
@@ -208,67 +237,34 @@ int main(int argc, char **argv) {
             } else {
 //                printf("send ok\n");
                 LOG(INFO) << "send ok";
-                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &local, &local_len);
-                if (lenR > 0) {
-//                    printf("recv ok\n");
-                    LOG(INFO) << "recv ok";
-                    for (int i = 0; i < lenR; i++) {
-                        printf("%02x ", bufR[i]);
-                    }
-                    printf("\n");
-                } else {
-                    printf("recv fail:%d\n", errno);
-                }
+//                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &local, &local_len);
+//                if (lenR > 0) {
+//                    LOG(INFO) << "recv ok";
+//                    for (int i = 0; i < lenR; i++) {
+//                        printf("%02x ", bufR[i]);
+//                    }
+//                    printf("\n");
+//                } else {
+//                    printf("recv fail:%d\n", errno);
+//                }
             }
 
         } else if (user == "2") {
-            //7e0013010005000000060112100101040c0203004bd77d
-            //7e000d0100000000000000a7809b537d
-            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
-                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x03, 0x00,
-                             0x4b, 0xd7, 0x7d};
-            uint32_t len = sizeof(buf);
-            int lenS = sendto(socketFd, buf, len, 0, (struct sockaddr *) &remote_addr, addrLen);
-            if (lenS != len) {
-                printf("send fail:%d\n", errno);
-            } else {
-//                printf("send ok\n");
-                LOG(INFO) << "send ok";
-                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
-                if (lenR > 0) {
-//                    printf("recv ok\n");
-                    LOG(INFO) << "recv ok";
-                    for (int i = 0; i < lenR; i++) {
-                        printf("%02x ", bufR[i]);
-                    }
-                    printf("\n");
-                } else {
-                    printf("recv fail:%d\n", errno);
-                }
-            }
-        } else if (user == "3") {
-            //7e0013010005000000060112100101040c0207001e837d
-            //7e000d0100000000000000a7809b537d
-//            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
-//                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x07, 0x00,
-//                             0x1e, 0x83, 0x7d};
-//            uint32_t len = sizeof(buf);
-            //用组包工具来做
             using namespace ComFrame_GBT20999_2017;
             FrameAll frame;
             frame.version = 0x0100;
             frame.controlCenterID = 0x05;
-            frame.roadTrafficSignalControllerID = 0x00000006;
-            frame.roadID = 0x01;
+            frame.roadTrafficSignalControllerID = 0x00000000;
+            frame.roadID = 0x00;
             frame.sequence = 0x12;
             frame.type = ComFrame_GBT20999_2017::Type_Query;
             frame.dataItemNum = 0x01;
             ComFrame_GBT20999_2017::DataItem dataItem;
             dataItem.index = 1;
             dataItem.length = 4;
-            dataItem.typeID = 0x0c;
+            dataItem.typeID = 0x04;
             dataItem.objID = 0x02;
-            dataItem.attrID = 0x07;
+            dataItem.attrID = 0x10;
             dataItem.elementID = 0x00;
             frame.dataItems.push_back(dataItem);
 
@@ -289,7 +285,6 @@ int main(int argc, char **argv) {
                 LOG(INFO) << "send ok";
                 lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
                 if (lenR > 0) {
-//                    printf("recv ok\n");
                     LOG(INFO) << "recv ok";
                     vector<uint8_t> recvBytes;
                     for (int i = 0; i < lenR; i++) {
@@ -310,17 +305,83 @@ int main(int argc, char **argv) {
                         }
                         printf("\n");
                     }
+                } else {
+                    printf("recv fail:%d\n", errno);
+                }
+            }
+        } else if (user == "3") {
+            //7e0013010005000000060112100101040c0207001e837d
+            //7e000d0100000000000000a7809b537d
+//            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
+//                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x07, 0x00,
+//                             0x1e, 0x83, 0x7d};
+//            uint32_t len = sizeof(buf);
+            //用组包工具来做
+            using namespace ComFrame_GBT20999_2017;
+            FrameAll frame;
+            frame.version = 0x0100;
+            frame.controlCenterID = 0x05;
+            frame.roadTrafficSignalControllerID = 0x00000000;
+            frame.roadID = 0x00;
+            frame.sequence = 0x12;
+            frame.type = ComFrame_GBT20999_2017::Type_Query;
+            frame.dataItemNum = 0x01;
+            ComFrame_GBT20999_2017::DataItem dataItem;
+            dataItem.index = 1;
+            dataItem.length = 4;
+            dataItem.typeID = 0x01;
+            dataItem.objID = 0x01;
+            dataItem.attrID = 0x00;
+            dataItem.elementID = 0x00;
+            frame.dataItems.push_back(dataItem);
 
+            vector<uint8_t> sendBytes;
+            frame.setToBytesWithTF(sendBytes);
+            printf("sendBytes:");
+            for (auto iter: sendBytes) {
+                printf("%02x ", iter);
+            }
+            printf("\n");
 
+            int lenS = sendto(socketFd, sendBytes.data(), sendBytes.size(), 0, (struct sockaddr *) &remote_addr,
+                              addrLen);
+            if (lenS != sendBytes.size()) {
+                printf("send fail:%d\n", errno);
+            } else {
+//                printf("send ok\n");
+                LOG(INFO) << "send ok";
+                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
+                if (lenR > 0) {
+                    LOG(INFO) << "recv ok";
+                    vector<uint8_t> recvBytes;
+                    for (int i = 0; i < lenR; i++) {
+                        printf("%02x ", bufR[i]);
+                        recvBytes.push_back(bufR[i]);
+                    }
+                    printf("\n");
+
+                    FrameAll frameGet;
+                    if (frameGet.getFromBytesWithTF(recvBytes) == 0) {
+                        vector<uint8_t> getPlainBytes;
+                        getPlainBytes.clear();
+                        frameGet.setToBytes(getPlainBytes);
+
+                        printf("getPlainBytes:");
+                        for (auto iter: getPlainBytes) {
+                            printf("%02x ", iter);
+                        }
+                        printf("\n");
+                    }
                 } else {
                     printf("recv fail:%d\n", errno);
                 }
             }
         }
 
-        sleep(10);
+        sleep(1);
 
     }
     close(socketFd);
+    isThreadRun = false;
     return 0;
 }

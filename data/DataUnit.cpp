@@ -232,10 +232,10 @@ void DataUnitIntersectionOverflowAlarm::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitCrossTrafficJamAlarm 队列已满，未存入数据 timestamp:"
+                    VLOG(3) << "DataUnitIntersectionOverflowAlarm 队列已满，未存入数据 timestamp:"
                             << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitCrossTrafficJamAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(3) << "DataUnitIntersectionOverflowAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
