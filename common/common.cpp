@@ -430,7 +430,7 @@ namespace common {
     bool ObjMix::JsonUnmarshal(Json::Value in) {
         this->objID = in["objID"].asString();
         this->objType = in["objType"].asInt();
-        this->objColor = in["objColor"].asInt();
+        this->objColor = in["objColor"].asString();
         this->carType = in["catType"].asInt();
         this->plates = in["plates"].asString();
         this->plateColor = in["plateColor"].asString();

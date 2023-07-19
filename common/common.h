@@ -275,7 +275,7 @@ namespace common {
         string objID;//目标ID
         vector<OneRvWayObject> rvWayObject;
         int objType = 0;//目标类型 0.汽车1.人2.摩托3.自行车4.三轮
-        int objColor = 0;//目标颜色
+        string objColor;//目标颜色
         int carType = 0;//车辆类型 0.非汽车1.大型车2.中型车3.小型车4.货车5.公交车算法暂时识别不出来默认填0
         string plates;//车牌号
         string plateColor;//车牌颜色

@@ -303,7 +303,7 @@ int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
     Json::Reader reader;
     Json::Value in;
     if (!reader.parse(content, in, false)) {
-        VLOG(2) << "InWatchData_2 json 解析失败:" << reader.getFormattedErrorMessages();
+        VLOG(2) << "StopLinePassData json 解析失败:" << reader.getFormattedErrorMessages();
         return -1;
     }
     StopLinePassData stopLinePassData;
@@ -314,10 +314,10 @@ int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
     auto dataUnit = data->dataUnitStopLinePassData;
     int index = dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
     if (!dataUnit->pushI(stopLinePassData, index)) {
-        VLOG(2) << "client ip:" << ip << " InWatchData_2,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " StopLinePassData,丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " InWatchData_2,存入消息,"
+        VLOG(2) << "client ip:" << ip << " StopLinePassData,存入消息,"
                 << "hardCode:" << stopLinePassData.hardCode << " crossID:" << stopLinePassData.crossID
                 << "timestamp:" << (uint64_t) stopLinePassData.timestamp << " dataUnit i_vector index:"
                 << index;

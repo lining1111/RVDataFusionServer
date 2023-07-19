@@ -15,6 +15,7 @@
 #include <fstream>
 #include <chrono>
 #include "os/os.h"
+#include <algorithm>
 
 using namespace std;
 using namespace common;
@@ -92,27 +93,54 @@ void readTXT(std::string txt_path_, std::vector<FusionData> &fusionDatas) {
         ElementIndex_latitude = 8,
         ElementIndex_directionAngle = 9,
         ElementIndex_speed = 10,
+        ElementIndex_objType = 11,
     } ElementIndex;
     for (auto iter: frames) {
         FusionData item;
         item.oprNum = random_uuid();
-        item.crossID = "crossID";
+        item.crossID = "123456ts";
         item.isHasImage = false;
         for (int i = iter.start; i < iter.end + 1; i++) {
             auto lineContent = contents.at(i);
-            printf("%d\n", i);
+//            printf("%d\n", i);
             ObjMix objMix;
             objMix.objID = lineContent.at(ElementIndex_showID);
             objMix.angle = atof(lineContent.at(ElementIndex_directionAngle).c_str());
             objMix.speed = atof(lineContent.at(ElementIndex_speed).c_str());
             objMix.longitude = atof(lineContent.at(ElementIndex_longitude).c_str());
             objMix.latitude = atof(lineContent.at(ElementIndex_latitude).c_str());
+            objMix.objType = atoi(lineContent.at(ElementIndex_objType).c_str());
 
             item.lstObjTarget.push_back(objMix);
         }
         fusionDatas.push_back(item);
     }
 }
+
+void readPicName(string path, vector<string> &picNameArray) {
+    //1.将路径下的文件名读取到集合
+    vector<string> files;
+    os::GetDirFiles(path, files);
+    if (files.empty()) {
+        return;
+    }
+    //2.以pic后的时间戳升序排列文件名
+    std::sort(files.begin(), files.end(), [](string a, string b) {
+        //去掉pic和.jpg
+        auto s_a = a.substr(3, 13);
+        auto s_b = b.substr(3, 13);
+        auto v_a = atoll(s_a.c_str());
+        auto v_b = atoll(s_b.c_str());
+
+        return v_a < v_b;
+    });
+    //3.依次读取文件，并编成base64,压入输出
+    for (auto iter: files) {
+      picNameArray.push_back(path+"/"+iter);
+    }
+
+}
+
 
 //发送数据到服务器
 int sn = 0;
@@ -136,14 +164,29 @@ int SendServer(int sock, FusionData fusionData, string matrixNo) {
 
 }
 
+/**
+11---2 1030065111
+12---3 1030065212
+13---4 1030065331
+14---1 1030065346
+ */
+vector<string> hardCode ={
+        "1030065346",
+        "1030065111",
+        "1030065212",
+        "1030065331",
+};
 
-DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
-DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
+
+DEFINE_string(cloudIp, "111.62.28.98", "云端ip，默认 111.62.28.98");
+DEFINE_int32(cloudPort, 3410, "云端端口号，默认3410");
 DEFINE_string(file, "data.txt", "数据文件名，包括路径，默认 data.txt");
+DEFINE_string(picPath, "pic", "图片的路径，默认 pic");
 DEFINE_string(matrixNo, "123456789", "matrixNo，默认 123456789");
-DEFINE_string(crossID, "crossID", "路口号，默认 crossID");
+DEFINE_string(crossID, "123456ts", "路口号，默认 123456ts");
 DEFINE_int32(fs, 80, "数据帧率，默认80,单位ms");
 
+//#define isSendPIC
 
 int main(int argc, char **argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -152,6 +195,16 @@ int main(int argc, char **argv) {
     std::vector<FusionData> fusionDatas;
     readTXT(FLAGS_file, fusionDatas);
 
+#ifdef isSendPIC
+    //从图片路径中获取图片名称集合
+    vector<vector<string>> pics;
+    for (int i = 1; i < 5; i++) {
+        vector<string> pic;
+        pic.clear();
+        readPicName(FLAGS_picPath + "/" + to_string(i), pic);
+        pics.push_back(pic);
+    }
+#endif
     //连接云端TCP
     //初始化一个client
     int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -163,10 +216,10 @@ int main(int argc, char **argv) {
 
     int opt = 1;
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//    timeval timeout;
+    timeval timeout;
 //    timeout.tv_sec = 3;
-//    timeout.tv_usec = 0;
-//    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
+    timeout.tv_usec = 100*1000;
+    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
 //    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 //
 //    int recvSize = 0;
@@ -216,13 +269,40 @@ int main(int argc, char **argv) {
     auto matrixNo = FLAGS_matrixNo;
     for (int i = 0; i < fusionDatas.size(); i++) {
         usleep(1000 * fs);
-        auto iter = fusionDatas.at(i);
+        //将图片放入对应的融合数据中
+        auto fusionData = fusionDatas.at(i);
+#ifdef isSendPIC
+        fusionData.isHasImage = true;
+        for (int j = 0; j < pics.size(); j++) {
+            VideoData videoData;
+            videoData.direction = j + 1;
+            videoData.rvHardCode = hardCode.at(j);
+            //读取图片并编成base64
+            vector<uint8_t> plain;
+            string base64;
+            string filePath = pics.at(j).at(i);
+            os::GetVectorFromFile(plain, filePath);
+            if (!plain.empty()) {
+                unsigned char buf[1 * 1024 * 1024];
+                unsigned int len = 0;
+                memset(buf, 0, 1 * 1024 * 1024);
+                os::base64_encode(plain.data(), plain.size(), buf, &len);
+                base64.clear();
+                for (int i = 0; i < len; i++) {
+                    base64.push_back(buf[i]);
+                }
+            }
+            videoData.imageData = base64;
+            fusionData.lstVideos.push_back(videoData);
+        }
+#endif
+
         printf("开始发送第%i帧\n", i);
         uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-        iter.timstamp = timestampStart;
-        iter.crossID = FLAGS_crossID;
-        int ret = SendServer(sockfd, iter, matrixNo);
+        fusionData.timstamp = timestampStart;
+        fusionData.crossID = FLAGS_crossID;
+        int ret = SendServer(sockfd, fusionData, matrixNo);
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
         string result;
@@ -234,8 +314,8 @@ int main(int argc, char **argv) {
         cout << "发送" << result << server_ip << ":" << server_port
              << ",发送开始时间:" << to_string(timestampStart)
              << ",发送结束时间:" << to_string(timestampEnd)
-             << ",帧内时间:" << to_string((uint64_t) iter.timstamp)
-             << ",耗时" << (timestampEnd - timestampStart) << "ms";
+             << ",帧内时间:" << to_string((uint64_t) fusionData.timstamp)
+             << ",耗时" << (timestampEnd - timestampStart) << "ms" << endl;
     }
 
     close(sockfd);

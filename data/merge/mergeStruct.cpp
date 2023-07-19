@@ -100,7 +100,6 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
 void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix) {
     objMix.objID = to_string(objectInfoNew.showID);
     objMix.objType = objectInfoNew.objType;
-    objMix.objColor = 0;
     objMix.angle = objectInfoNew.directionAngle;
     objMix.speed = objectInfoNew.speed;
     objMix.locationX = objectInfoNew.locationX;
