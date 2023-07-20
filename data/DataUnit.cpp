@@ -68,7 +68,6 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
     dataUnit->timestampStore = refer.timestamp;
 
     dataUnit->curTimestamp = refer.timestamp;
-//    printf("开始寻找%lu\n", dataUnit->curTimestamp);
 
     std::time_t t((uint64_t) dataUnit->curTimestamp / 1000);
     std::stringstream ss;
@@ -76,9 +75,7 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
 
     VLOG(3) << "DataUnitTrafficFlowGather取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " "
             << ss.str();
-    LOG(INFO) << "DataUnitTrafficFlowGather取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " "
-              << ss.str();
-//    printf("dataUnit->thresholdFrame:%d\n",dataUnit->thresholdFrame);
+
     uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
     uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
 
@@ -146,15 +143,12 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame(DataUnitTrafficFlowGather *da
             }
         }
     }
-    int ret = 0;
     if (!dataUnit->pushO(item)) {
-        VLOG(3) << "DataUnitTrafficFlowGather 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
-        ret = -1;
+        VLOG(2) << "DataUnitTrafficFlowGather 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
     } else {
-        VLOG(3) << "DataUnitTrafficFlowGather 数据存入 timestamp:" << (uint64_t) item.timestamp;
-        ret = 0;
+        VLOG(2) << "DataUnitTrafficFlowGather 数据存入 timestamp:" << (uint64_t) item.timestamp;
     }
-    return ret;
+    return 0;
 }
 
 DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs, int i_num, int cache, void *owner) :
@@ -188,10 +182,10 @@ void DataUnitCrossTrafficJamAlarm::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitCrossTrafficJamAlarm 队列已满，未存入数据 timestamp:"
+                    VLOG(2) << "DataUnitCrossTrafficJamAlarm 队列已满，未存入数据 timestamp:"
                             << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitCrossTrafficJamAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitCrossTrafficJamAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -232,10 +226,10 @@ void DataUnitIntersectionOverflowAlarm::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitIntersectionOverflowAlarm 队列已满，未存入数据 timestamp:"
+                    VLOG(2) << "DataUnitIntersectionOverflowAlarm 队列已满，未存入数据 timestamp:"
                             << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitIntersectionOverflowAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitIntersectionOverflowAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -277,9 +271,9 @@ void DataUnitInWatchData_1_3_4::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitInWatchData_1_3_4 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitInWatchData_1_3_4 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitInWatchData_1_3_4 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitInWatchData_1_3_4 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -319,9 +313,9 @@ void DataUnitInWatchData_2::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitInWatchData_2 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitInWatchData_2 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitInWatchData_2 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitInWatchData_2 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -361,9 +355,9 @@ void DataUnitStopLinePassData::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitStopLinePassData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitStopLinePassData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitStopLinePassData 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitStopLinePassData 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -422,9 +416,9 @@ void DataUnitHumanData::task(void *local) {
                 item.deviceList.push_back(item1);
 
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitHumanData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitHumanData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitHumanData 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitHumanData 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -464,9 +458,9 @@ void DataUnitAbnormalStopData::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitAbnormalStopData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitAbnormalStopData 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitAbnormalStopData 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitAbnormalStopData 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -507,10 +501,10 @@ void DataUnitLongDistanceOnSolidLineAlarm::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
+                    VLOG(2) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
                             << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }
@@ -552,10 +546,10 @@ void DataUnitHumanLitPoleData::task(void *local) {
                 iter.eraseBegin();
                 OType item = cur;
                 if (!dataUnit->pushO(item)) {
-                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
+                    VLOG(2) << "DataUnitLongDistanceOnSolidLineAlarm 队列已满，未存入数据 timestamp:"
                             << (uint64_t) item.timestamp;
                 } else {
-                    VLOG(3) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                    VLOG(2) << "DataUnitLongDistanceOnSolidLineAlarm 数据存入 timestamp:" << (uint64_t) item.timestamp;
                 }
             }
         }

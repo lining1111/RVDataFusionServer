@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iomanip>
 #include "common/config.h"
+#include "DataUnitUtilty.h"
 
 using namespace std;
 
@@ -27,13 +28,13 @@ void DataUnitFusionData::init(int c, int fs, int i_num, int cache, void *owner) 
     timerBusiness->start(10, std::bind(task, this));
 }
 
+bool isProcessMerge = false;//task是否执行了融合流程
 void DataUnitFusionData::task(void *local) {
 
     uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-
+    isProcessMerge = false;
     auto dataUnit = (DataUnitFusionData *) local;
-    pthread_mutex_lock(&dataUnit->oneFrameMutex);
     int maxSize = 0;
     int maxSizeIndex = 0;
     for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
@@ -59,20 +60,19 @@ void DataUnitFusionData::task(void *local) {
         }
         FindOneFrame(dataUnit, mergeType, dataUnit->cache / 2);
     }
-
-    pthread_mutex_unlock(&dataUnit->oneFrameMutex);
-
-    uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-    auto cost = timestampEnd - timestampStart;
-//    LOG(INFO) << "DataUnitFusionData 取同一帧完成融合耗时" << cost << "ms";
+    if (isProcessMerge) {
+        uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+        auto cost = timestampEnd - timestampStart;
+        LOG(INFO) << "DataUnitFusionData 取同一帧完成融合耗时" << cost << "ms";
+    }
 }
 
-void
-DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset) {
+void DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset) {
     //1确定标定的时间戳
     IType refer;
     if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
+        VLOG(3) << "DataUnitFusionData 当前路" << dataUnit->i_maxSizeIndex << "取第" << offset << "失败，切换下一路";
         dataUnit->i_maxSizeIndexNext();
         return;
     }
@@ -80,12 +80,14 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timstamp)) {
         dataUnit->taskSearchCount++;
         if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
+            VLOG(3) << "DataUnitFusionData 当前路" << dataUnit->i_maxSizeIndex << "取下一个时间戳超时，切换下一路";
             //超过阈值，切下一路,重新计数,还得是下一路的满缓存情况
             dataUnit->i_maxSizeIndexNext();
         }
         return;
     }
-    LOG(INFO) << "DataUnitFusionData取同一帧时,标定路是:" << dataUnit->i_maxSizeIndex;
+    isProcessMerge = true;
+    VLOG(3) << "DataUnitFusionData取同一帧时,标定路是:" << dataUnit->i_maxSizeIndex;
     dataUnit->taskSearchCount = 0;
     dataUnit->timestampStore = refer.timstamp;
 
@@ -95,7 +97,7 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
     std::stringstream ss;
     ss << std::put_time(std::localtime(&t), "%F %T");
 
-    LOG(INFO) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
+    VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
     auto data = (Data *) dataUnit->owner;
     data->isStartFusion = true;
     //3取数
@@ -115,31 +117,32 @@ DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeTy
         line += to_string((uint64_t) iter.timstamp);
         line += ",";
         if (!iter.oprNum.empty()) {
-            LOG(INFO) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
+            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
         }
     }
     line += "\n";
     //写入文件
-    ofstream ofs;
-    ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-    //判断大小是否超过最大值
-    uint64_t maxSize = 1024 * 1024 * 100;
-    if (ofs.tellp() >= maxSize) {
-        //清空
-        ofs.close();
-        ofstream ofs1;
-        ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
-        ofs1.flush();
-        ofs1.close();
+    if (0) {
+        ofstream ofs;
         ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-    }
+        //判断大小是否超过最大值
+        uint64_t maxSize = 1024 * 1024 * 100;
+        if (ofs.tellp() >= maxSize) {
+            //清空
+            ofs.close();
+            ofstream ofs1;
+            ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
+            ofs1.flush();
+            ofs1.close();
+            ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+        }
 
-    if (ofs.is_open()) {
-        ofs << line;
-        ofs.flush();
-        ofs.close();
+        if (ofs.is_open()) {
+            ofs << line;
+            ofs.flush();
+            ofs.close();
+        }
     }
-
     //调用后续的处理
     TaskProcessOneFrame(dataUnit, mergeType);
 }
@@ -176,7 +179,6 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
     //1，将同一帧内待输入量存入集合
     DataUnitFusionData::RoadDataInSet roadDataInSet;
     roadDataInSet.roadDataList.resize(dataUnit->numI);
-//    printf("=====1 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
     roadDataInSet.timestamp = dataUnit->curTimestamp;
     for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
         auto iter = dataUnit->oneFrame.at(i);
@@ -195,7 +197,6 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
         //存入对应路的集合
         roadDataInSet.roadDataList[i] = item;
     }
-//    printf("=====2 roadDataInSet.roadDataList size:%d\n", roadDataInSet.roadDataList.size());
     int ret = 0;
     switch (mergeType) {
         case DataUnitFusionData::NotMerge: {
@@ -215,8 +216,6 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
     MergeData mergeData;
     mergeData.timestamp = roadDataInSet.timestamp;
     mergeData.objOutput.clear();
-
-//    mergeData.objInput.roadDataList.resize(this->numI);
     mergeData.objInput = roadDataInSet;
 
     const int INF = 0x7FFFFFFF;
@@ -323,47 +322,14 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         }
     }
     VLOG(3) << "融合算法细节---有数据的路数:" << haveOneRoadDataCount;
-    //存输入数据到文件
-    if (0) {
-        string fileName = to_string(mergeData.timestamp) + "_in.txt";
-        ofstream inDataFile;
-        string inDataFileName = "mergeData/" + fileName;
-        inDataFile.open(inDataFileName);
-        string content;
+    //存输入的目标数据元素到文件
+    if (localConfig.isSaveInObj) {
         for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
             auto iter = mergeData.objInput.roadDataList.at(i);
-
-            string split = ",";
-            for (auto iter1: iter.listObjs) {
-                content.append(to_string(i) + split +
-                               to_string(iter1.locationX) + split +
-                               to_string(iter1.locationY) + split +
-                               to_string(iter1.speedX) + split +
-                               to_string(iter1.speedY) + split +
-                               to_string(iter1.objID) + split +
-                               to_string(iter1.objType));
-                content.append("\n");
-            }
-            //存入图片
-            string inDataPicFileName = "mergeData/" + to_string(mergeData.timestamp) + "_in_" + to_string(i) + ".jpeg";
-            ofstream inDataPicFile;
-            inDataPicFile.open(inDataPicFileName);
-            if (inDataPicFile.is_open()) {
-                inDataPicFile.write(iter.imageData.data(), iter.imageData.size());
-                printf("融合数据图片写入\n");
-                inDataPicFile.flush();
-                inDataPicFile.close();
-            }
-
-        }
-        if (inDataFile.is_open()) {
-            inDataFile.write((const char *) content.c_str(), content.size());
-            printf("融合数据写入\n");
-            inDataFile.flush();
-            inDataFile.close();
+            string path = "/mnt/mnt_hd/save/FusionData/In/" + to_string(i) + "/";
+            SaveDataIn(iter.listObjs, mergeData.timestamp, path);
         }
     }
-
 
     VLOG(3) << "融合算法细节---从原始数据拷贝到算法输入量的数组容量:" << mergeData.objInput.roadDataList.size();
     //这里是根据含有识别数据路数来操作输出量
@@ -441,40 +407,6 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
             break;
     }
 
-//存输出数据到文件
-    if (0) {
-        string fileName = to_string((uint64_t) mergeData.timestamp) + "_out.txt";
-        std::ofstream inDataFile;
-        string inDataFileName = "mergeData/" + fileName;
-        inDataFile.open(inDataFileName);
-        string contentO;
-        for (int j = 0; j < mergeData.objOutput.size(); j++) {
-            string split = ",";
-            auto iter = mergeData.objOutput.at(j);
-            contentO.append(to_string(iter.objID1) + split +
-                            to_string(iter.objID2) + split +
-                            to_string(iter.objID3) + split +
-                            to_string(iter.objID4) + split +
-                            to_string(iter.showID) + split +
-                            to_string(iter.cameraID1) + split +
-                            to_string(iter.cameraID2) + split +
-                            to_string(iter.cameraID3) + split +
-                            to_string(iter.cameraID4) + split +
-                            to_string(iter.locationX) + split +
-                            to_string(iter.locationY) + split +
-                            to_string(iter.speed) + split +
-                            to_string(iter.flag_new));
-            contentO.append("\n");
-        }
-        if (inDataFile.is_open()) {
-            inDataFile.write((const char *) contentO.c_str(), contentO.size());
-            inDataFile.flush();
-            inDataFile.close();
-        } else {
-//          Error("打开文件失败:%s", inDataFileNameO.c_str());
-        }
-    }
-
     return GetFusionData(mergeData);
 }
 
@@ -549,10 +481,10 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     }
     VLOG(3) << "算法输出量到FusionData---fusionData.lstVideos size:" << fusionData.lstVideos.size();
 
-    if (pushO(fusionData)) {
-        VLOG(3) << "DataUnitFusionData 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timstamp;
+    if (!pushO(fusionData)) {
+        VLOG(2) << "DataUnitFusionData 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timstamp;
     } else {
-        VLOG(3) << "DataUnitFusionData 数据存入 timestamp:" << (uint64_t) fusionData.timstamp;
+        VLOG(2) << "DataUnitFusionData 数据存入 timestamp:" << (uint64_t) fusionData.timstamp;
     }
 
     return 0;
