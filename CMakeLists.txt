@@ -15,14 +15,26 @@ else ()
     execute_process(COMMAND sh build_aarch64.sh
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
 endif ()
-include(conan/build/conanbuildinfo.cmake)
-conan_basic_setup()
+
+#set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/conan/build/conan_toolchain.cmake")
+find_package(gflags REQUIRED)
+find_package(jsoncpp REQUIRED)
+find_package(SQLite3 REQUIRED)
+find_package(CURL REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(httplib REQUIRED)
+find_package(libuuid REQUIRED)
+find_package(glog REQUIRED)
+
+set(3rdLibs gflags::gflags JsonCpp::JsonCpp SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
+        libuuid::libuuid glog::glog)
+
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 include(utility)
 include(CPM)
 
-set(LIBS m pthread ${CONAN_LIBS})
+set(LIBS m pthread ${3rdLibs})
 
 set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test nebulalink)
 SUBDIRLISTINCLUDE(SRC_DIRS ${CMAKE_SOURCE_DIR} 2 ${filtration_dirlist})
@@ -31,17 +43,8 @@ include_directories(.)
 include_directories(eoc_comm/utility)
 include_directories(eoc_comm)
 
-if (${ARCH} STREQUAL "x64")
-    include_directories(lib/x64)
-    file(GLOB allCopyFiles "lib/x64/*.so" "lib/x64/*.so.*" "lib/x64/*.a")
-    file(COPY ${allCopyFiles} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/lib FOLLOW_SYMLINK_CHAIN)
-else ()
-    include_directories(lib/arm64)
-    file(GLOB allCopyFiles "lib/arm64/*.so" "lib/arm64/*.so.*" "lib/arm64/*.a")
-    file(COPY ${allCopyFiles} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/lib FOLLOW_SYMLINK_CHAIN)
-endif ()
-link_directories(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/lib)
-set(CMAKE_CXX_FLAGS "-Wl,-rpath=lib")
+include_directories(lib/${ARCH})
+link_directories(lib/${ARCH})
 
 foreach (src_dir ${SRC_DIRS})
     aux_source_directory(${src_dir} SRC_FILES)

@@ -1,0 +1,1245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="RVDataFusionServer"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\conan\;CMake Files\conan\build\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\.conan2\;CMake Files\..\..\.conan2\p\;CMake Files\..\..\.conan2\p\b\;CMake Files\..\..\.conan2\p\b\opens977b3808ec01c\;CMake Files\..\..\.conan2\p\b\opens977b3808ec01c\p\;CMake Files\..\..\.conan2\p\b\opens977b3808ec01c\p\lib\;CMake Files\..\..\.conan2\p\b\opens977b3808ec01c\p\lib\cmake\;CMake Files\..\..\.conan2\p\b\xz_ut708eeb768cf09\;CMake Files\..\..\.conan2\p\b\xz_ut708eeb768cf09\p\;CMake Files\..\..\.conan2\p\b\xz_ut708eeb768cf09\p\lib\;CMake Files\..\..\.conan2\p\b\xz_ut708eeb768cf09\p\lib\cmake\;CMake Files\cmake\;CMake Files\test\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="RVDataFusionServer">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/RVDataFusionServer" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 RVDataFusionServer"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="RVDataFusionServer/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/RVDataFusionServer" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 RVDataFusionServer/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testCommon">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testCommon" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testCommon"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testCommon/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testCommon" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testCommon/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testServer">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testServer" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testServer"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testServer/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testServer" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testServer/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testClient">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testClient" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testClient"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testClient/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testClient" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testClient/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testSingalControl">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testSingalControl" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testSingalControl"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="testSingalControl/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/testSingalControl" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 testSingalControl/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="GetLocalDataSend">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/GetLocalDataSend" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 GetLocalDataSend"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="GetLocalDataSend/fast">
+				<Option output="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/GetLocalDataSend" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-Daarch64"/>
+					<Add option="-DCURL_STATICLIB=1"/>
+					<Add option="-DGFLAGS_DLL_DECLARE_FLAG="/>
+					<Add option="-DGFLAGS_DLL_DEFINE_FLAG="/>
+					<Add option="-DLZMA_API_STATIC"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/."/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm"/>
+					<Add directory="/home/lining/CLionProjects/RVDataFusionServer/lib/aarch64"/>
+					<Add directory="/home/lining/.conan2/p/b/gflag43e69894607fe/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/jsonc88fab20b69a34/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/sqlitedb479503e641/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libcuf89ca8717a032/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/opens977b3808ec01c/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include"/>
+					<Add directory="/home/lining/.conan2/p/cpp-h1b2b40eb87e7e/p/include/httplib"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include"/>
+					<Add directory="/home/lining/.conan2/p/b/libuu386c8e3ab3915/p/include/uuid"/>
+					<Add directory="/home/lining/.conan2/p/b/glog732933800c042/p/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/aarch64-linux-gnu"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include/c++/7.5.0/backward"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/include-fixed"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/7.5.0/../../../../aarch64-linux-gnu/include"/>
+					<Add directory="/usr/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/../aarch64-linux-gnu/libc/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 GetLocalDataSend/fast"/>
+					<CompileFile command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -f &quot;/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/client/FusionClient.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/client/FusionClient.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/CRC.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/CRC.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/common.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/common.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/config.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/config.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/proc.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/common/proc.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/Data.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/Data.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnit.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnit.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnitFusionData.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnitFusionData.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnitUtilty.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/DataUnitUtilty.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/merge/merge.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/merge/merge.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/merge/mergeStruct.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/data/merge/mergeStruct.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc/Eoc.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc/Eoc.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/EOCCom.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/EOCCom.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/EOCJSON.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/EOCJSON.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/DBCom.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/DBCom.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/DBTable.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/DBTable.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/sqliteApi.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/db/sqliteApi.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/dns/DNSServer.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/dns/DNSServer.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/dns/uri.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/dns/uri.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/fileFun.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eocCom/fileFun.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/configure_eoc_init.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/configure_eoc_init.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/eoc_comm.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/eoc_comm.hpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/sqlite_eoc_db.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/sqlite_eoc_db.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/ttcp.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/ttcp.hpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/MySystemCmd.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/MySystemCmd.hpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/cJSON.c">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/cJSON.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/db_tool.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/db_tool.hpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/dns_server.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/dns_server.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/http_dns_protocol.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/md5.c">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/md5.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/sqlite_api.c">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/sqlite_api.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/uri.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/eoc_comm/utility/uri.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/getData/GetData.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/getData/GetData.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/glogHelper/GlogHelper.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/glogHelper/GlogHelper.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/localBussiness/localBusiness.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/localBussiness/localBusiness.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/main.cpp">
+			<Option target="RVDataFusionServer"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/tcpClient/TcpClient.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/tcpClient/TcpClient.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/tlsClient/TlsClient.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/tlsClient/TlsClient.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpClient/UdpClient.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpClient/UdpClient.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpServer/UdpServer.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpServer/UdpServer.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpSvrBroadcast/UdpSvrBroadcast.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/net/udpSvrBroadcast/UdpSvrBroadcast.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/os/os.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/os/os.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/ringbuffer/RingBuffer.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/ringbuffer/RingBuffer.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testCommon"/>
+			<Option target="testServer"/>
+			<Option target="testClient"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/server/ClientInfo.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/server/ClientInfo.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/server/FusionServer.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/server/FusionServer.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/signalControl/SignalControl.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/signalControl/SignalControl.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/signalControl/signalControlCom.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/signalControl/signalControlCom.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="testSingalControl"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/simpleini/ConvertUTF.c">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/simpleini/ConvertUTF.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test">
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/GetLocalDataSend.cpp">
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/testClient.cpp">
+			<Option target="testClient"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/testCommon.cpp">
+			<Option target="testCommon"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/testServer.cpp">
+			<Option target="testServer"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/testSingalControl.cpp">
+			<Option target="testSingalControl"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/utility/utility.cpp">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/utility/utility.h">
+			<Option target="RVDataFusionServer"/>
+			<Option target="testServer"/>
+			<Option target="GetLocalDataSend"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/version.h.in">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/CURL-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/CURL-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/CURLConfig.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/CURLConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/CURLTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/LibLZMA-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/LibLZMA-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/LibLZMAConfig.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/LibLZMAConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/LibLZMATargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/OpenSSL-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/OpenSSL-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/OpenSSLConfig.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/OpenSSLConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/OpenSSLTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/SQLite3-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/SQLite3-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/SQLite3Config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/SQLite3ConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/SQLite3Targets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/ZLIB-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/ZLIB-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/ZLIBConfig.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/ZLIBConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/ZLIBTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/cmakedeps_macros.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/conan_toolchain.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/gflags-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/gflags-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/gflags-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/gflags-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/gflagsTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/glog-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/glog-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/glog-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/glog-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/glogTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/httplib-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/httplib-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/httplib-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/httplib-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/httplibTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/jsoncpp-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/jsoncpp-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/jsoncpp-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/jsoncpp-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/jsoncppTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libunwind-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libunwind-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libunwind-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libunwind-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libunwindTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libuuid-Target-debug.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libuuid-config-version.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libuuid-config.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libuuid-debug-armv8-data.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/conan/build/libuuidTargets.cmake">
+			<Option virtualFolder="CMake Files\conan\build\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/../../.conan2/p/b/opens977b3808ec01c/p/lib/cmake/conan-official-openssl-variables.cmake">
+			<Option virtualFolder="CMake Files\..\..\.conan2\p\b\opens977b3808ec01c\p\lib\cmake\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/../../.conan2/p/b/xz_ut708eeb768cf09/p/lib/cmake/conan-official-xz_utils-variables.cmake">
+			<Option virtualFolder="CMake Files\..\..\.conan2\p\b\xz_ut708eeb768cf09\p\lib\cmake\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/cmake/CPM.cmake">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/cmake/utility.cmake">
+			<Option virtualFolder="CMake Files\cmake\"/>
+		</Unit>
+		<Unit filename="/home/lining/CLionProjects/RVDataFusionServer/test/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\test\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

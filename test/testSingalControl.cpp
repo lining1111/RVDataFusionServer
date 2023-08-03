@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 //    ComFrame_GBT20999_2017Test();
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     google::InitGoogleLogging(argv[0]);
-    FLAGS_logtostdout = true;
+    FLAGS_logtostderr = true;
     //开启udp客户端
     printf("udp :%s:%d\n", FLAGS_cloudIp.c_str(), FLAGS_cloudPort);
     int socketFd;

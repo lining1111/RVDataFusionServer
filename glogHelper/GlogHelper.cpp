@@ -4,6 +4,7 @@
 
 #include "GlogHelper.h"
 #include <glog/logging.h>
+#include <gflags/gflags.h>
 #include <sys/stat.h>
 #include <fstream>
 #include <dirent.h>
@@ -14,11 +15,10 @@ GlogHelper::GlogHelper(std::string _program, uint _keep, std::string _logDir, bo
     google::InstallFailureSignalHandler();
     google::InstallFailureWriter(&FatalMessageDump);
     FLAGS_log_dir = logDir;
-    google::EnableLogCleaner(keepDays);
     FLAGS_logbufsecs = 0;//刷新日志buffer的时间，0就是立即刷新
     FLAGS_stop_logging_if_full_disk = true; //设置是否在磁盘已满时避免日志记录到磁盘
     if (isSendSTDOUT) {
-        FLAGS_logtostdout = true;
+        FLAGS_logtostderr = true;
     }
     isRun = true;
     futureRun = std::async(std::launch::async, cleaner, this);
@@ -113,7 +113,7 @@ int GlogHelper::cleaner(void *p) {
     return 0;
 }
 
-void GlogHelper::FatalMessageDump(const char *data, unsigned long size) {
+void GlogHelper::FatalMessageDump(const char *data, int size) {
     std::ofstream fs("./fatal.log", std::ios::app);
     std::string str = std::string(data, size);
     fs << str;

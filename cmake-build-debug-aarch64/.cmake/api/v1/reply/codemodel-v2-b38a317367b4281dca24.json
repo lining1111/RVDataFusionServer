@@ -1,0 +1,124 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "test",
+					"jsonFile" : "directory-test-Debug-451c0598f41488bb20b9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.14"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test",
+					"targetIndexes" : 
+					[
+						0,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "RVDataFusionServer",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "GetLocalDataSend::@36f028580bb02cc8272a",
+					"jsonFile" : "target-GetLocalDataSend-Debug-4cc92c27a580e26a9a15.json",
+					"name" : "GetLocalDataSend",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "RVDataFusionServer::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-RVDataFusionServer-Debug-ada0496d20cf1dd47a32.json",
+					"name" : "RVDataFusionServer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "testClient::@36f028580bb02cc8272a",
+					"jsonFile" : "target-testClient-Debug-12f248ef666d08ed213c.json",
+					"name" : "testClient",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "testCommon::@36f028580bb02cc8272a",
+					"jsonFile" : "target-testCommon-Debug-672def083e2a3ffcc8b9.json",
+					"name" : "testCommon",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "testServer::@36f028580bb02cc8272a",
+					"jsonFile" : "target-testServer-Debug-03a8524f775e6c1376ac.json",
+					"name" : "testServer",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "testSingalControl::@36f028580bb02cc8272a",
+					"jsonFile" : "target-testSingalControl-Debug-d3b1b9170cc83edeadf4.json",
+					"name" : "testSingalControl",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64",
+		"source" : "/home/lining/CLionProjects/RVDataFusionServer"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 4
+	}
+}

@@ -1,0 +1,10 @@
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/CMakeFiles/RVDataFusionServer.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/CMakeFiles/edit_cache.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/CMakeFiles/rebuild_cache.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/testCommon.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/testServer.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/testClient.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/testSingalControl.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/GetLocalDataSend.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/edit_cache.dir
+/home/lining/CLionProjects/RVDataFusionServer/cmake-build-debug-aarch64/test/CMakeFiles/rebuild_cache.dir
