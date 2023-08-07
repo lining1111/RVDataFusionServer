@@ -6,17 +6,8 @@ configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/versi
 
 set(CMAKE_CXX_STANDARD 11)
 add_definitions(-D${ARCH})
-# 引入Conan的CMake
-set(CONAN_DISABLE_CHECK_COMPILER 1)
-if (${ARCH} STREQUAL "x64")
-    execute_process(COMMAND sh build_local.sh
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
-else ()
-    execute_process(COMMAND sh build_aarch64.sh
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/conan)
-endif ()
 
-#set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/conan/build/conan_toolchain.cmake")
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/conan/build/conan_toolchain.cmake")
 find_package(gflags REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(SQLite3 REQUIRED)
@@ -25,9 +16,10 @@ find_package(OpenSSL REQUIRED)
 find_package(httplib REQUIRED)
 find_package(libuuid REQUIRED)
 find_package(glog REQUIRED)
+find_package(fmt REQUIRED)
 
 set(3rdLibs gflags::gflags JsonCpp::JsonCpp SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
-        libuuid::libuuid glog::glog)
+        libuuid::libuuid glog::glog fmt::fmt)
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")

@@ -8,6 +8,8 @@ cpp-httplib/0.13.3
 libuuid/1.0.3
 glog/0.4.0
 protobuf/3.20.0
+#fmt/5.3.0
+fmt/10.0.0
 [generators]
 CMakeDeps
 CMakeToolchain

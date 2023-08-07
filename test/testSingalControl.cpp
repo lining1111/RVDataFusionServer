@@ -11,6 +11,9 @@
 #include <csignal>
 #include <unistd.h>
 #include <thread>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/ranges.h>
 
 #include "../signalControl/signalControlCom.h"
 #include "../signalControl/SignalControl.h"
@@ -82,19 +85,11 @@ void ComFrame_GBT20999_2017Test() {
 
     vector<uint8_t> plainBytes;
     frame.setToBytes(plainBytes);
-    printf("plainBytes:");
-    for (auto iter: plainBytes) {
-        printf("%02x ", iter);
-    }
-    printf("\n");
+    fmt::print("plainBytes:{::#x}\n",plainBytes);
 
     vector<uint8_t> sendBytes;
     frame.setToBytesWithTF(sendBytes);
-    printf("sendBytes:");
-    for (auto iter: sendBytes) {
-        printf("%02x ", iter);
-    }
-    printf("\n");
+
 
     FrameAll frameGet;
     frameGet.getFromBytesWithTF(sendBytes);
@@ -102,11 +97,7 @@ void ComFrame_GBT20999_2017Test() {
     vector<uint8_t> getPlainBytes;
     frameGet.setToBytes(getPlainBytes);
 
-    printf("getPlainBytes:");
-    for (auto iter: getPlainBytes) {
-        printf("%02x ", iter);
-    }
-    printf("\n");
+    fmt::print("getPlainBytes:{::#x}\n",getPlainBytes);
 
     printf("over\n");
 }
@@ -133,10 +124,7 @@ static void RecvThread(int sock, struct sockaddr *local, socklen_t local_len) {
         if (lenR > 0) {
 //                    printf("recv ok\n");
             LOG(INFO) << "thread recv ok";
-            for (int i = 0; i < lenR; i++) {
-                printf("%02x ", bufR[i]);
-            }
-            printf("\n");
+            fmt::print("getPlainBytes:{::#x}\n",bufR);
         } else {
             printf("thread recv fail:%d\n", errno);
         }
@@ -154,7 +142,7 @@ DEFINE_int32(localPort, 16000, "端口号，默认16000");
 int main(int argc, char **argv) {
 //    crc16_test();
 //    ComTest();
-//    ComFrame_GBT20999_2017Test();
+    ComFrame_GBT20999_2017Test();
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     google::InitGoogleLogging(argv[0]);
     FLAGS_logtostderr = true;
@@ -270,11 +258,7 @@ int main(int argc, char **argv) {
 
             vector<uint8_t> sendBytes;
             frame.setToBytesWithTF(sendBytes);
-            printf("sendBytes:");
-            for (auto iter: sendBytes) {
-                printf("%02x ", iter);
-            }
-            printf("\n");
+            fmt::print("sendBytes:{::#x}\n",sendBytes);
 
             int lenS = sendto(socketFd, sendBytes.data(), sendBytes.size(), 0, (struct sockaddr *) &remote_addr,
                               addrLen);
@@ -287,35 +271,20 @@ int main(int argc, char **argv) {
                 if (lenR > 0) {
                     LOG(INFO) << "recv ok";
                     vector<uint8_t> recvBytes;
-                    for (int i = 0; i < lenR; i++) {
-                        printf("%02x ", bufR[i]);
-                        recvBytes.push_back(bufR[i]);
-                    }
-                    printf("\n");
+                    fmt::print("recvBytes:{::#x}\n",recvBytes);
 
                     FrameAll frameGet;
                     if (frameGet.getFromBytesWithTF(recvBytes) == 0) {
                         vector<uint8_t> getPlainBytes;
                         getPlainBytes.clear();
                         frameGet.setToBytes(getPlainBytes);
-
-                        printf("getPlainBytes:");
-                        for (auto iter: getPlainBytes) {
-                            printf("%02x ", iter);
-                        }
-                        printf("\n");
+                        fmt::print("getPlainBytes:{::#x}\n",getPlainBytes);
                     }
                 } else {
                     printf("recv fail:%d\n", errno);
                 }
             }
         } else if (user == "3") {
-            //7e0013010005000000060112100101040c0207001e837d
-            //7e000d0100000000000000a7809b537d
-//            uint8_t buf[] = {0x7e, 0x00, 0x13, 0x01, 0x00, 0x05, 0x00, 0x00, 0x00, 0x06,
-//                             0x01, 0x12, 0x10, 0x01, 0x01, 0x04, 0x0c, 0x02, 0x07, 0x00,
-//                             0x1e, 0x83, 0x7d};
-//            uint32_t len = sizeof(buf);
             //用组包工具来做
             using namespace ComFrame_GBT20999_2017;
             FrameAll frame;
@@ -337,11 +306,7 @@ int main(int argc, char **argv) {
 
             vector<uint8_t> sendBytes;
             frame.setToBytesWithTF(sendBytes);
-            printf("sendBytes:");
-            for (auto iter: sendBytes) {
-                printf("%02x ", iter);
-            }
-            printf("\n");
+            fmt::print("sendBytes:{::#x}\n",sendBytes);
 
             int lenS = sendto(socketFd, sendBytes.data(), sendBytes.size(), 0, (struct sockaddr *) &remote_addr,
                               addrLen);
@@ -354,23 +319,64 @@ int main(int argc, char **argv) {
                 if (lenR > 0) {
                     LOG(INFO) << "recv ok";
                     vector<uint8_t> recvBytes;
-                    for (int i = 0; i < lenR; i++) {
-                        printf("%02x ", bufR[i]);
-                        recvBytes.push_back(bufR[i]);
-                    }
-                    printf("\n");
+                    fmt::print("recvBytes:{::#x}\n",recvBytes);
 
                     FrameAll frameGet;
                     if (frameGet.getFromBytesWithTF(recvBytes) == 0) {
                         vector<uint8_t> getPlainBytes;
                         getPlainBytes.clear();
                         frameGet.setToBytes(getPlainBytes);
+                        fmt::print("getPlainBytes:{::#x}\n",getPlainBytes);
+                    }
+                } else {
+                    printf("recv fail:%d\n", errno);
+                }
+            }
+        }else if (user == "4") {
+            //用组包工具来做
+            using namespace ComFrame_GBT20999_2017;
+            FrameAll frame;
+            frame.version = 0x0100;
+            frame.controlCenterID = 0x05;
+            frame.roadTrafficSignalControllerID = 0x00000000;
+            frame.roadID = 0x00;
+            frame.sequence = 0x12;
+            frame.type = ComFrame_GBT20999_2017::Type_Query;
+            frame.dataItemNum = 0x01;
+            ComFrame_GBT20999_2017::DataItem dataItem;
+            dataItem.index = 1;
+            dataItem.length = 4;
+            dataItem.typeID = 192;
+            dataItem.objID = 2;
+            dataItem.attrID = 1;
+            dataItem.elementID = 0;
+            dataItem.data.push_back(0);
+            dataItem.data.push_back(7);
+            frame.dataItems.push_back(dataItem);
 
-                        printf("getPlainBytes:");
-                        for (auto iter: getPlainBytes) {
-                            printf("%02x ", iter);
-                        }
-                        printf("\n");
+            vector<uint8_t> sendBytes;
+            frame.setToBytesWithTF(sendBytes);
+            fmt::print("sendBytes:{::#x}\n",sendBytes);
+
+            int lenS = sendto(socketFd, sendBytes.data(), sendBytes.size(), 0, (struct sockaddr *) &remote_addr,
+                              addrLen);
+            if (lenS != sendBytes.size()) {
+                printf("send fail:%d\n", errno);
+            } else {
+//                printf("send ok\n");
+                LOG(INFO) << "send ok";
+                lenR = recvfrom(socketFd, bufR, 1024, 0, (struct sockaddr *) &remote_addr, (socklen_t *) &addrLen);
+                if (lenR > 0) {
+                    LOG(INFO) << "recv ok";
+                    vector<uint8_t> recvBytes;
+                    fmt::print("recvBytes:{::#x}\n",recvBytes);
+
+                    FrameAll frameGet;
+                    if (frameGet.getFromBytesWithTF(recvBytes) == 0) {
+                        vector<uint8_t> getPlainBytes;
+                        getPlainBytes.clear();
+                        frameGet.setToBytes(getPlainBytes);
+                        fmt::print("getPlainBytes:{::#x}\n",getPlainBytes);
                     }
                 } else {
                     printf("recv fail:%d\n", errno);
