@@ -9,6 +9,8 @@ LocalConfig localConfig;
 int fixrPort = 9977;
 string savePath = "/mnt/mnt_hd/save/";
 
+SignalControl *signalControl = nullptr;
+
 int getAlgorithmParam(string file, AlgorithmParam &out) {
     //打开文件
     std::ifstream ifs;

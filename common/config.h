@@ -9,6 +9,7 @@
 #include <vector>
 #include <stdint.h>
 #include "data/Data.h"
+#include "signalControl/SignalControl.h"
 
 typedef struct {
     std::string ip;
@@ -39,5 +40,7 @@ extern int fixrPort;
 extern string savePath;
 
 extern int getAlgorithmParam(string file,AlgorithmParam &out);
+
+extern SignalControl *signalControl;
 
 #endif //CONFIG_H

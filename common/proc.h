@@ -56,6 +56,13 @@ int PkgProcessFun_HumanData(string ip, uint16_t port, string content);
 
 int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content);
 
+
+int PkgProcessFun_0xf1(string ip, uint16_t port, string content);
+
+int PkgProcessFun_0xf2(string ip, uint16_t port, string content);
+
+int PkgProcessFun_0xf3(string ip, uint16_t port, string content);
+
 typedef int (*PkgProcessFun)(string ip, uint16_t port, string content);
 
 extern map<CmdType, PkgProcessFun> PkgProcessMap;

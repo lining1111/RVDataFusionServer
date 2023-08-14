@@ -43,7 +43,7 @@ namespace common {
      */
 
 
-#define ComVersion "1.1.0"
+#define ComVersion "1.1.1"
 
     string GetComVersion();
 
@@ -67,26 +67,25 @@ namespace common {
     };//命令字类型
 
     //基本解包组包函数
-
-//    enum Direction {
-//        Unknown = 0,//未知
-//        East = 1,//东
-//        South = 2,//南
-//        West = 3,//西
-//        North = 4,//北
-//    };
-    //方向枚举1=东,2=西,3=南,4=北,5=东北,6=西南,7=东南,8=西北
     enum Direction {
         Unknown = 0,//未知
         East = 1,//东
-        West = 2,//西
-        South = 3,//南
+        South = 2,//南
+        West = 3,//西
         North = 4,//北
-        Northeast = 5,//东北
-        Southwest = 6,//西南
-        Southeast = 7,//东南
-        Northwest = 8,//西北
     };
+    //方向枚举0=北,1=东北,2=东,3=东南,4=南,5=西南,6=西,7=西北
+//    enum Direction {
+//        Unknown = 0xff,//未知
+//        North = 0,//北
+//        Northeast = 1,//东北
+//        East = 2,//东
+//        Southeast = 3,//东南
+//        South = 4,//南
+//        Southwest = 5,//西南
+//        West = 6,//西
+//        Northwest = 7,//西北
+//    };
 #pragma pack(1)
     typedef struct {
         uint8_t tag = '$';//固定的头开始 ‘$’ 0x24
@@ -376,7 +375,6 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-//    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
     //---------交叉路口堵塞报警---------//
     class CrossTrafficJamAlarm : public PkgClass {
@@ -389,6 +387,7 @@ namespace common {
         int alarmType;//1：交叉口堵塞
         int alarmStatus;//1 有报警 0 报警恢复
         string alarmTime;//日期2022-10-31 10:00:21
+        string imageData;//报警时的图片 Jpeg的base64编码
     public:
         CrossTrafficJamAlarm() {
             this->cmdType = CmdCrossTrafficJamAlarm;
@@ -398,10 +397,6 @@ namespace common {
 
         bool JsonUnmarshal(Json::Value in);
     };
-
-//    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
-//    Pkg &pkg
-//    );
 
     //--路口溢出报警上传--//
     class IntersectionOverflowAlarm : public PkgClass {
@@ -414,6 +409,7 @@ namespace common {
         int alarmType;//1：交叉口堵塞
         int alarmStatus;//1 有报警 0 报警恢复
         string alarmTime;//日期2022-10-31 10:00:21
+        string imageData;//报警时的图片 Jpeg的base64编码
     public:
         IntersectionOverflowAlarm() {
             this->cmdType = CmdIntersectionOverflowAlarm;
@@ -423,9 +419,6 @@ namespace common {
 
         bool JsonUnmarshal(Json::Value in);
     };
-
-//    int PkgIntersectionOverflowAlarmWithoutCRC(IntersectionOverflowAlarm intersectionOverflowAlarm, uint16_t sn,
-//                                               uint32_t deviceNO, Pkg &pkg);
 
     //透传类型
     class InWatchData_1_3_4 : public PkgClass {
@@ -440,6 +433,7 @@ namespace common {
         int detectLocation;//触发线位置 0停止线 42检测线 60检测线
         int vehicleID;//车辆ID
         int vehicleType;//车辆类型
+        int vehicleLen;//车辆长度
         int vehicleSpeed;//车辆速度
     public:
         InWatchData_1_3_4() {
@@ -451,13 +445,13 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };
 
-//    int PkgInWatchData_1_3_4WithoutCRC(InWatchData_1_3_4 inWatchData134, uint16_t sn, uint32_t deviceNO, Pkg &pkg);
 
     //透传类型
     class InWatchData_2_trafficFlowListItem_vehicleIDListItem {
     public:
         int vehicleID;//车辆ID
         int vehicleType;//车辆类型 0.非汽车1.小型汽车2.大型（公交）3.大型（渣土）4.大型（其他）5.其他 算法暂时识别不出来默认填0
+        int vehicleLen;//车辆长度
         int vehicleSpeed;//车辆速度
     public:
         bool JsonMarshal(Json::Value &out);
@@ -541,6 +535,7 @@ namespace common {
         int alarmType;
         int alarmStatus;
         string alarmTime;
+        string imageData;//报警时的图片 Jpeg的base64编码
     public:
         AbnormalStopData() {
             this->cmdType = CmdAbnormalStopData;
@@ -587,6 +582,11 @@ namespace common {
     class HumanData_areaListItem {
     public:
         vector<HumanData_areaListItem_pointListItem> pointList;
+        string deviceCode;
+        string waitingAreaLocation;
+        string zebraCrossingCode;
+        int detectDirection;
+        int direction;
         int humanNum;
         int humanType;
         int bicycleNum;
@@ -619,6 +619,9 @@ namespace common {
     class HumanDataGather_deviceListItem {
     public:
         string deviceCode;
+        string deviceLocation;
+        string waitingAreaLocation;
+        string zebraCrossingCode;
         int detectDirection;
         int direction;
         int humanNum;
@@ -650,11 +653,16 @@ namespace common {
     //人形灯杆数据，透传
     class HumanLitPoleData_deviceListItem {
     public:
-        string deviceCode;//设备编号
-        int detectDirection;//检查方位
-        int direction;//流向
+        string deviceCode;
+        string deviceLocation;
+        string waitingAreaLocation;
+        string zebraCrossingCode;
+        int detectDirection;
+        int direction;
         int humanNum;//等待区人数
         int humanFlow;//穿行人数
+        int lightStatus;
+        string imageData;
 
         bool JsonMarshal(Json::Value &out);
 
@@ -671,6 +679,69 @@ namespace common {
     public:
         HumanLitPoleData() {
             this->cmdType = CmdHumanLitPoleData;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //信控机测试相关
+    //交通流量0xf1
+    class TrafficData : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        int direction;
+        int personCount;
+        int vehicleCount;
+        string time;
+    public:
+        TrafficData() {
+            this->cmdType = (CmdType) 0xf1;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //报警故障0xf2
+    class AlarmBroken : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        int alarmType;
+        int alarmValue;
+        int deviceType;
+        string time;
+    public:
+        AlarmBroken() {
+            this->cmdType = (CmdType) 0xf2;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //紧急优先0xf3
+    class UrgentPriority : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        int direction;
+        int type;
+        string time;
+    public:
+        UrgentPriority() {
+            this->cmdType = (CmdType) 0xf3;
         }
 
         bool JsonMarshal(Json::Value &out);

@@ -13,7 +13,7 @@
 using namespace ComFrame_GBT20999_2017;
 
 class SignalControl {
-private:
+public:
     std::string serverIP;
     uint32_t serverPort;
     struct sockaddr_in remote_addr;
@@ -23,14 +23,17 @@ private:
     bool isOpen = false;
     int sock = 0;
 public:
-    SignalControl(std::string _serverIP,uint32_t _serverPort,uint32_t _localPort);
+    SignalControl(std::string _serverIP, uint32_t _serverPort, uint32_t _localPort);
+
     ~SignalControl();
 
     int Open();
+
     int Close();
 
     int SetRecvTimeout(uint8_t timeout);
-    int Communicate(FrameAll sendFrame,FrameAll &recvFrame);
+
+    int Communicate(FrameAll sendFrame, FrameAll &recvFrame);
 };
 
 

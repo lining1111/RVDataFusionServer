@@ -56,8 +56,8 @@ int SignalControl::Open() {
     }
 
     timeval timeout;
-    timeout.tv_sec = 10;
-//    timeout.tv_usec = 100 * 1000;
+//    timeout.tv_sec = 10;
+    timeout.tv_usec = 100 * 1000;
     //设置发送最大时间80ms
 //    setsockopt(socketFd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
     setsockopt(socketFd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
@@ -97,11 +97,11 @@ int SignalControl::Communicate(FrameAll sendFrame, FrameAll &recvFrame) {
 
     vector<uint8_t> sendBytes;
     sendFrame.setToBytesWithTF(sendBytes);
-    printf("sendBytes:");
-    for (auto iter: sendBytes) {
-        printf("%02x ", iter);
-    }
-    printf("\n");
+//    printf("sendBytes:");
+//    for (auto iter: sendBytes) {
+//        printf("%02x ", iter);
+//    }
+//    printf("\n");
 
     auto addrLen = sizeof(struct sockaddr_in);
     int lenS = sendto(sock, sendBytes.data(), sendBytes.size(), 0, (struct sockaddr *) &remote_addr,
@@ -118,21 +118,21 @@ int SignalControl::Communicate(FrameAll sendFrame, FrameAll &recvFrame) {
             LOG(INFO) << "SignalControl recv ok";
             vector<uint8_t> recvBytes;
             for (int i = 0; i < lenR; i++) {
-                printf("%02x ", bufR[i]);
+//                printf("%02x ", bufR[i]);
                 recvBytes.push_back(bufR[i]);
             }
-            printf("\n");
+//            printf("\n");
 
             if (recvFrame.getFromBytesWithTF(recvBytes) == 0) {
-                vector<uint8_t> getPlainBytes;
-                getPlainBytes.clear();
-                recvFrame.setToBytes(getPlainBytes);
-
-                printf("getPlainBytes:");
-                for (auto iter: getPlainBytes) {
-                    printf("%02x ", iter);
-                }
-                printf("\n");
+//                vector<uint8_t> getPlainBytes;
+//                getPlainBytes.clear();
+//                recvFrame.setToBytes(getPlainBytes);
+//
+//                printf("getPlainBytes:");
+//                for (auto iter: getPlainBytes) {
+//                    printf("%02x ", iter);
+//                }
+//                printf("\n");
             }
         } else {
             LOG(ERROR) << "SignalControl recv fail:" << errno;

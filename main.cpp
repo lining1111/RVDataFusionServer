@@ -138,6 +138,15 @@ int main(int argc, char **argv) {
     local.AddClient("client2", cloudIp, fixrPort);
     //开启本地业务
     local.Run();
+    LOG(INFO) << "通信协议版本:" << GetComVersion();
+
+    //信控机测试，打开信控机
+    signalControl = new SignalControl("172.16.1.1", 15050, 12345);
+    if (signalControl->Open() != 0) {
+        //打开失败
+        LOG(ERROR) << "信控机打开失败";
+        delete signalControl;
+    }
 
 //    FusionServer *server = new FusionServer(port);
 //    if (server->Open() == 0) {
@@ -148,7 +157,7 @@ int main(int argc, char **argv) {
 
     while (true) {
         sleep(5);
-        if (dataLocal->isStartFusion) {
+        if (dataLocal->isStartFusion && 0) {
             //判断是否有10s没有发送数据了
             uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();

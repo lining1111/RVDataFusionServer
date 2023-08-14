@@ -525,32 +525,6 @@ namespace common {
         return true;
     }
 
-//    int PkgFusionDataWithoutCRC(FusionData fusionData, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdFusionData;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        fusionData.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
 
     bool OneFlowData::JsonMarshal(Json::Value &out) {
         out["laneCode"] = this->laneCode;
@@ -663,42 +637,16 @@ namespace common {
         return true;
     }
 
-//    int PkgTrafficFlowGatherWithoutCRC(TrafficFlowGather trafficFlows, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdTrafficFlowGather;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        trafficFlows.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
 
     bool CrossTrafficJamAlarm::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
         out["timestamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["hardCode"] = this->hardCode;
-//        out["roadDirection"] = this->roadDirection;
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
         out["alarmTime"] = this->alarmTime;
+        out["imageData"] = this->imageData;
 
         return true;
     }
@@ -709,42 +657,14 @@ namespace common {
         this->timestamp = in["timestamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->hardCode = in["hardCode"].asString();
-//        this->roadDirection = in["roadDirection"].asInt();
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
         this->alarmTime = in["alarmTime"].asString();
+        this->imageData = in["imageData"].asString();
 
         return true;
     }
 
-//    int PkgCrossTrafficJamAlarmWithoutCRC(CrossTrafficJamAlarm crossTrafficJamAlarm, uint16_t sn, uint32_t deviceNO,
-//                                          Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdCrossTrafficJamAlarm;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        crossTrafficJamAlarm.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
 
     bool IntersectionOverflowAlarm::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
@@ -755,6 +675,7 @@ namespace common {
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
         out["alarmTime"] = this->alarmTime;
+        out["imageData"] = this->imageData;
 
         return true;
     }
@@ -768,38 +689,10 @@ namespace common {
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
         this->alarmTime = in["alarmTime"].asString();
+        this->imageData = in["imageData"].asString();
 
         return true;
     }
-
-//    int PkgIntersectionOverflowAlarmWithoutCRC(IntersectionOverflowAlarm intersectionOverflowAlarm, uint16_t sn,
-//                                               uint32_t deviceNO, Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdIntersectionOverflowAlarm;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        intersectionOverflowAlarm.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
 
     bool InWatchData_1_3_4::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
@@ -812,6 +705,7 @@ namespace common {
         out["detectLocation"] = this->detectLocation;
         out["vehicleID"] = this->vehicleID;
         out["vehicleType"] = this->vehicleType;
+        out["vehicleLen"] = this->vehicleLen;
         out["vehicleSpeed"] = this->vehicleSpeed;
         return true;
     }
@@ -827,41 +721,16 @@ namespace common {
         this->detectLocation = in["detectLocation"].asInt();
         this->vehicleID = in["vehicleID"].asInt();
         this->vehicleType = in["vehicleType"].asInt();
+        this->vehicleLen = in["vehicleLen"].asInt();
         this->vehicleSpeed = in["vehicleSpeed"].asInt();
         return true;
     }
 
-//    int PkgInWatchData_1_3_4WithoutCRC(InWatchData_1_3_4 inWatchData134, uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
-//        int len = 0;
-//        //1.头部
-//        pkg.head.tag = '$';
-//        pkg.head.version = 1;
-//        pkg.head.cmd = CmdType::CmdInWatchData_1_3_4;
-//        pkg.head.sn = sn;
-//        pkg.head.deviceNO = deviceNO;
-//        pkg.head.len = 0;
-//        len += sizeof(pkg.head);
-//        //正文
-//        string jsonStr;
-//        Json::FastWriter fastWriter;
-//        Json::Value root;
-//        inWatchData134.JsonMarshal(root);
-//        jsonStr = fastWriter.write(root);
-//
-//        pkg.body = jsonStr;
-//        len += jsonStr.length();
-//        //校验,可以先不设置，等待组包的时候更新
-//        pkg.crc.data = 0x0000;
-//        len += sizeof(pkg.crc);
-//
-//        pkg.head.len = len;
-//
-//        return 0;
-//    }
 
     bool InWatchData_2_trafficFlowListItem_vehicleIDListItem::JsonMarshal(Json::Value &out) {
         out["vehicleID"] = this->vehicleID;
         out["vehicleType"] = this->vehicleType;
+        out["vehicleLen"] = this->vehicleLen;
         out["vehicleSpeed"] = this->vehicleSpeed;
         return true;
     }
@@ -869,6 +738,7 @@ namespace common {
     bool InWatchData_2_trafficFlowListItem_vehicleIDListItem::JsonUnmarshal(Json::Value in) {
         this->vehicleID = in["vehicleID"].asInt();
         this->vehicleType = in["vehicleType"].asInt();
+        this->vehicleLen = in["vehicleLen"].asInt();
         this->vehicleSpeed = in["vehicleSpeed"].asInt();
         return true;
     }
@@ -1055,6 +925,11 @@ namespace common {
         }
         out["pointList"] = pointList;
 
+        out["deviceCode"] = this->deviceCode;
+        out["waitingAreaLocation"] = this->waitingAreaLocation;
+        out["zebraCrossingCode"] = this->zebraCrossingCode;
+        out["detectDirection"] = this->detectDirection;
+        out["direction"] = this->direction;
         out["humanNum"] = this->humanNum;
         out["humanType"] = this->humanType;
         out["bicycleNum"] = this->bicycleNum;
@@ -1074,6 +949,11 @@ namespace common {
         } else {
             return false;
         }
+
+        this->deviceCode = in["deviceCode"].asString();
+        this->zebraCrossingCode = in["zebraCrossingCode"].asString();
+        this->detectDirection = in["detectDirection"].asInt();
+        this->direction = in["direction"].asInt();
         this->humanNum = in["humanNum"].asInt();
         this->humanType = in["humanType"].asInt();
         this->bicycleNum = in["bicycleNum"].asInt();
@@ -1136,6 +1016,7 @@ namespace common {
         out["alarmType"] = this->alarmType;
         out["alarmStatus"] = this->alarmStatus;
         out["alarmTime"] = this->alarmTime;
+        out["imageData"] = this->imageData;
 
         return true;
     }
@@ -1149,6 +1030,7 @@ namespace common {
         this->alarmType = in["alarmType"].asInt();
         this->alarmStatus = in["alarmStatus"].asInt();
         this->alarmTime = in["alarmTime"].asString();
+        this->imageData = in["imageData"].asString();
 
         return true;
     }
@@ -1185,6 +1067,9 @@ namespace common {
 
     bool HumanDataGather_deviceListItem::JsonMarshal(Json::Value &out) {
         out["deviceCode"] = this->deviceCode;
+        out["deviceLocation"] = this->deviceLocation;
+        out["waitingAreaLocation"] = this->waitingAreaLocation;
+        out["zebraCrossingCode"] = this->zebraCrossingCode;
         out["detectDirection"] = this->detectDirection;
         out["direction"] = this->direction;
         out["humanNum"] = this->humanNum;
@@ -1195,6 +1080,9 @@ namespace common {
 
     bool HumanDataGather_deviceListItem::JsonUnmarshal(Json::Value in) {
         this->deviceCode = in["deviceCode"].asString();
+        this->deviceLocation = in["deviceLocation"].asString();
+        this->waitingAreaLocation = in["waitingAreaLocation"].asString();
+        this->zebraCrossingCode = in["zebraCrossingCode"].asString();
         this->detectDirection = in["detectDirection"].asInt();
         this->direction = in["direction"].asInt();
         this->humanNum = in["humanNum"].asInt();
@@ -1247,20 +1135,30 @@ namespace common {
 
     bool HumanLitPoleData_deviceListItem::JsonMarshal(Json::Value &out) {
         out["deviceCode"] = this->deviceCode;
+        out["deviceLocation"] = this->deviceLocation;
+        out["waitingAreaLocation"] = this->waitingAreaLocation;
+        out["zebraCrossingCode"] = this->zebraCrossingCode;
         out["detectDirection"] = this->detectDirection;
         out["direction"] = this->direction;
         out["humanNum"] = this->humanNum;
         out["humanFlow"] = this->humanFlow;
+        out["lightStatus"] = this->lightStatus;
+        out["imageData"] = this->imageData;
 
         return true;
     }
 
     bool HumanLitPoleData_deviceListItem::JsonUnmarshal(Json::Value in) {
         this->deviceCode = in["deviceCode"].asString();
+        this->deviceLocation = in["deviceLocation"].asString();
+        this->waitingAreaLocation = in["waitingAreaLocation"].asString();
+        this->zebraCrossingCode = in["zebraCrossingCode"].asString();
         this->detectDirection = in["detectDirection"].asInt();
         this->direction = in["direction"].asInt();
         this->humanNum = in["humanNum"].asInt();
         this->humanFlow = in["humanFlow"].asInt();
+        this->lightStatus = in["lightStatus"].asInt();
+        this->imageData = in["imageData"].asString();
 
         return true;
     }
@@ -1305,5 +1203,89 @@ namespace common {
 
         return true;
     }
+
+    //信控机测试相关
+    bool TrafficData::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        out["direction"] = this->direction;
+        out["personCount"] = this->personCount;
+        out["vehicleCount"] = this->vehicleCount;
+        out["time"] = this->time;
+
+        return true;
+    }
+
+    bool TrafficData::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        this->direction = in["direction"].asInt();
+        this->personCount = in["personCount"].asInt();
+        this->vehicleCount = in["vehicleCount"].asInt();
+        this->time = in["time"].asString();
+
+        return true;
+    }
+
+    bool AlarmBroken::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        out["alarmType"] = this->alarmType;
+        out["alarmValue"] = this->alarmValue;
+        out["deviceType"] = this->deviceType;
+        out["this->time"] = this->time;
+
+        return true;
+    }
+
+    bool AlarmBroken::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        this->alarmType = in["alarmType"].asInt();
+        this->alarmValue = in["alarmValue"].asInt();
+        this->deviceType = in["deviceType"].asInt();
+        this->time = in["this->time"].asString();
+
+        return true;
+    }
+
+    bool UrgentPriority::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        out["type"] = this->type;
+        out["direction"] = this->direction;
+        out["time"] = this->time;
+
+        return true;
+    }
+
+    bool UrgentPriority::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        this->type = in["type"].asInt();
+        this->direction = in["direction"].asInt();
+        this->time = in["time"].asString();
+
+        return true;
+    }
+
 }
 

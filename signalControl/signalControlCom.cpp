@@ -229,6 +229,11 @@ namespace ComFrame_GBT20999_2017 {
         out.push_back(this->dataItemNum);
         //根据数据至数量，这里根据的是vector的成员个数,将数据压入
         for (auto iter: this->dataItems) {
+            //检测小帧数据的长度
+            auto length_iter = 4 + iter.data.size();
+            if (iter.length != length_iter) {
+                iter.length = length_iter;
+            }
             vector<uint8_t> outItem;
             iter.setToBytes(outItem);
             out.insert(out.end(), outItem.begin(), outItem.end());
@@ -290,7 +295,7 @@ namespace ComFrame_GBT20999_2017 {
 //        vector<uint8_t> inBytes;
 //        inBytes.assign(bytesWithoutTF.begin() + 1, bytesWithoutTF.end() - 3);
         vector<uint8_t> inBytes;
-        inBytes.assign(bytes.begin()+1, bytes.end()-3);
+        inBytes.assign(bytes.begin() + 1, bytes.end() - 3);
         uint16_t value16 = CRC16(inBytes.data(), inBytes.size());
         bytes.at(bytes.size() - 3) = ((value16 & 0xff00) >> 8);
         bytes.at(bytes.size() - 2) = ((value16 & 0x00ff));

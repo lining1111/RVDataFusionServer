@@ -7,6 +7,8 @@
 #include "config.h"
 #include "data/Data.h"
 #include <glog/logging.h>
+#include <fmt/core.h>
+#include <fmt/ranges.h>
 
 
 void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
@@ -434,6 +436,187 @@ int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
     return ret;
 }
 
+
+int PkgProcessFun_0xf1(string ip, uint16_t port, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "TrafficData json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    TrafficData trafficData;
+    trafficData.JsonUnmarshal(in);
+    VLOG(2) << "0xf1 cmd recv:vehicleCount " << trafficData.vehicleCount;
+    //根据人数和车数进行设置
+    uint8_t num = 0;
+    if (trafficData.vehicleCount > 0) {
+        num = 1;
+    }
+
+    if (signalControl->isOpen) {
+        //发送14
+        using namespace ComFrame_GBT20999_2017;
+        FrameAll frameSend;
+        frameSend.version = 0x0100;
+        frameSend.controlCenterID = 1;
+        frameSend.roadTrafficSignalControllerID = 21;
+        frameSend.roadID = 1;
+        frameSend.sequence = 1;
+        frameSend.type = ComFrame_GBT20999_2017::Type_Set;
+        frameSend.dataItemNum = 1;
+        ComFrame_GBT20999_2017::DataItem dataItem;
+        dataItem.index = 1;
+        dataItem.length = 13;
+        dataItem.typeID = 192;
+        dataItem.objID = 2;
+        dataItem.attrID = 1;
+        dataItem.elementID = 0;
+        dataItem.data.push_back(0);
+
+        dataItem.data.push_back(0xfe);
+        dataItem.data.push_back(7);
+
+        dataItem.data.push_back(0);
+
+        dataItem.data.push_back(0);
+        dataItem.data.push_back(3);
+
+        dataItem.data.push_back(1);
+
+        dataItem.data.push_back(1);
+
+        dataItem.data.push_back(num);
+
+        dataItem.data.push_back(0xff);
+
+        frameSend.dataItems.push_back(dataItem);
+
+        vector<uint8_t> bytesSend;
+        frameSend.setToBytesWithTF(bytesSend);
+        VLOG(2) << fmt::format("bytesSend:{::#x}", bytesSend);
+
+        FrameAll frameRecv;
+        if (signalControl->Communicate(frameSend, frameRecv) == 0) {
+            vector<uint8_t> bytesRecv;
+            frameRecv.setToBytes(bytesRecv);
+            VLOG(2) << fmt::format("bytesRecv:{::#x}", bytesRecv);
+        }
+
+    } else {
+        VLOG(2) << "信控机未打开";
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int PkgProcessFun_0xf2(string ip, uint16_t port, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "AlarmBroken json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    AlarmBroken alarmBroken;
+    alarmBroken.JsonUnmarshal(in);
+    VLOG(2) << "0xf2 cmd recv";
+    //根据
+
+//    if (signalControl->isOpen) {
+//        //发送15或者16
+//        using namespace ComFrame_GBT20999_2017;
+//        FrameAll frameSend;
+//        frameSend.version = 0x0100;
+//        frameSend.controlCenterID = 1;
+//        frameSend.roadTrafficSignalControllerID = 21;
+//        frameSend.roadID = 1;
+//        frameSend.sequence = 1;
+//        frameSend.type = ComFrame_GBT20999_2017::Type_Trap;
+//        frameSend.dataItemNum = 1;
+//        ComFrame_GBT20999_2017::DataItem dataItem;
+//        dataItem.index = 1;
+//        dataItem.length = 4;
+//        dataItem.typeID = 15;
+//        dataItem.objID = 2;
+//        dataItem.attrID = 2;
+//        dataItem.elementID = 0;
+//        //待加入
+//        frameSend.dataItems.push_back(dataItem);
+//
+//        vector<uint8_t> bytesSend;
+//        frameSend.setToBytesWithTF(bytesSend);
+//        VLOG(2) << fmt::format("bytesSend:{::#x}", bytesSend);
+//
+//        FrameAll frameRecv;
+//        if (signalControl->Communicate(frameSend, frameRecv) == 0) {
+//            vector<uint8_t> bytesRecv;
+//            frameRecv.setToBytes(bytesRecv);
+//            VLOG(2) << fmt::format("bytesRecv:{::#x}", bytesRecv);
+//        }
+//
+//    } else {
+//        VLOG(2) << "信控机未打开";
+//        ret = -1;
+//    }
+
+    return ret;
+}
+
+int PkgProcessFun_0xf3(string ip, uint16_t port, string content) {
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "UrgentPriority json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    UrgentPriority urgentPriority;
+    urgentPriority.JsonUnmarshal(in);
+    VLOG(2) << "0xf3 cmd recv";
+    //根据
+
+//    if (signalControl->isOpen) {
+//        //发送8
+//        using namespace ComFrame_GBT20999_2017;
+//        FrameAll frameSend;
+//        frameSend.version = 0x0100;
+//        frameSend.controlCenterID = 1;
+//        frameSend.roadTrafficSignalControllerID = 21;
+//        frameSend.roadID = 1;
+//        frameSend.sequence = 1;
+//        frameSend.type = ComFrame_GBT20999_2017::Type_Trap;
+//        frameSend.dataItemNum = 1;
+//        ComFrame_GBT20999_2017::DataItem dataItem;
+//        dataItem.index = 1;
+//        dataItem.length = 4;
+//        dataItem.typeID = 8;
+//        dataItem.objID = 2;
+//        dataItem.attrID = 2;
+//        dataItem.elementID = 0;
+//        //待加入
+//        frameSend.dataItems.push_back(dataItem);
+//
+//        vector<uint8_t> bytesSend;
+//        frameSend.setToBytesWithTF(bytesSend);
+//        VLOG(2) << fmt::format("bytesSend:{::#x}", bytesSend);
+//
+//        FrameAll frameRecv;
+//        if (signalControl->Communicate(frameSend, frameRecv) == 0) {
+//            vector<uint8_t> bytesRecv;
+//            frameRecv.setToBytes(bytesRecv);
+//            VLOG(2) << fmt::format("bytesRecv:{::#x}", bytesRecv);
+//        }
+//
+//    } else {
+//        VLOG(2) << "信控机未打开";
+//        ret = -1;
+//    }
+
+    return ret;
+}
+
 map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdResponse, PkgProcessFun_CmdResponse),
         make_pair(CmdControl, PkgProcessFun_CmdControl),
@@ -449,5 +632,12 @@ map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_LongDistanceOnSolidLineAlarm),
         make_pair(CmdHumanData, PkgProcessFun_HumanData),
         make_pair(CmdHumanLitPoleData, PkgProcessFun_HumanLitPoleData),
+
+        //信控机测试
+        make_pair((CmdType) 0xf1, PkgProcessFun_0xf1),
+        make_pair((CmdType) 0xf2, PkgProcessFun_0xf2),
+        make_pair((CmdType) 0xf3, PkgProcessFun_0xf3),
 };
+
+
 

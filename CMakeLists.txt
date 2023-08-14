@@ -7,7 +7,6 @@ configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/versi
 set(CMAKE_CXX_STANDARD 11)
 add_definitions(-D${ARCH})
 
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/conan/build/conan_toolchain.cmake")
 find_package(gflags REQUIRED)
 find_package(jsoncpp REQUIRED)
 find_package(SQLite3 REQUIRED)
