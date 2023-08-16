@@ -472,7 +472,6 @@ int PkgProcessFun_0xf1(string ip, uint16_t port, string content) {
         dataItem.objID = 2;
         dataItem.attrID = 1;
         dataItem.elementID = 0;
-        dataItem.data.push_back(0);
 
         dataItem.data.push_back(0xfe);
         dataItem.data.push_back(7);

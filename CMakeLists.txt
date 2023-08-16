@@ -4,7 +4,7 @@ string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
 set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
 
-set(CMAKE_CXX_STANDARD 11)
+
 add_definitions(-D${ARCH})
 
 find_package(gflags REQUIRED)

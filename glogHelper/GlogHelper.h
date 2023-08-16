@@ -24,7 +24,7 @@ public:
 private:
     static int cleaner(void *p);
 
-    static void FatalMessageDump(const char *data, int size);
+    static void FatalMessageDump(const char *data, unsigned long size);
 
 };
 

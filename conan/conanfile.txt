@@ -6,7 +6,7 @@ libcurl/7.78.0
 openssl/3.0.5
 cpp-httplib/0.13.3
 libuuid/1.0.3
-glog/0.4.0
+glog/0.6.0
 protobuf/3.20.0
 fmt/10.0.0
 [generators]

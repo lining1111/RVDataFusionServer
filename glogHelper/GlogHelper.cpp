@@ -113,7 +113,7 @@ int GlogHelper::cleaner(void *p) {
     return 0;
 }
 
-void GlogHelper::FatalMessageDump(const char *data, int size) {
+void GlogHelper::FatalMessageDump(const char *data, unsigned long size) {
     std::ofstream fs("./fatal.log", std::ios::app);
     std::string str = std::string(data, size);
     fs << str;
