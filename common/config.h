@@ -24,6 +24,7 @@ typedef struct {
     int mergeMode;
     bool isSaveOutObj = false;
     bool isSaveInObj = false;
+    bool isSaveOutJSON = false;
     AlgorithmParam algorithmParam;
 } LocalConfig;
 

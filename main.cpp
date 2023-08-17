@@ -34,6 +34,7 @@ int signalIgnPipe() {
 DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
 DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
+DEFINE_bool(isSamePort, false, "是否发送同一端口，默认false");
 DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
 DEFINE_int32(mergeMode, 0, "多路融合模式，默认0,0:雷视 1:雷达 2:图像");
 DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
@@ -42,6 +43,11 @@ DEFINE_bool(isSendPICOnly, false, "只发送图片到云端，默认false");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 DEFINE_int32(roadNum, 8, "外设路数，默认8");
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
+
+DEFINE_bool(isSaveOutObj, false, "存算法输出，默认false");
+DEFINE_bool(isSaveInObj, false, "存算法输入，默认false");
+DEFINE_bool(isSaveOutJSON, false, "存发送json，默认false");
+
 DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,默认./algorithmParam.json");
 
 #include "eocCom/fileFun.h"
@@ -53,11 +59,11 @@ int main(int argc, char **argv) {
     char curPath[512];
     getcwd(curPath, 512);
     printf("cur path:%s\n", curPath);
-    if (opendir(FLAGS_logDir.c_str()) == nullptr) {
-        if (mkdir(FLAGS_logDir.c_str(), 0644)) {
-            printf("create %s fail\n", FLAGS_logDir.c_str());
-        }
-    }
+//    if (opendir(FLAGS_logDir.c_str()) == nullptr) {
+//        if (mkdir(FLAGS_logDir.c_str(), 0644)) {
+//            printf("create %s fail\n", FLAGS_logDir.c_str());
+//        }
+//    }
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -119,6 +125,9 @@ int main(int argc, char **argv) {
     // localConfig.mergeMode = FLAGS_mergeMode;
     localConfig.mergeMode = 2;
     localConfig.roadNum = FLAGS_roadNum;
+    localConfig.isSaveOutObj = FLAGS_isSaveOutObj;
+    localConfig.isSaveInObj = FLAGS_isSaveInObj;
+    localConfig.isSaveOutJSON = FLAGS_isSaveOutJSON;
 
     //读取默认的算法配置文件
     if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {
@@ -130,14 +139,19 @@ int main(int argc, char **argv) {
     LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
     LOG(INFO) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
-    LocalBusiness local;
-    local.AddServer("server1", port);
-    local.AddServer("server2", port + 1);
-    local.AddClient("client1", cloudIp, cloudPort);
+    auto businessLocal = LocalBusiness::instance();
+    businessLocal->AddServer("server1", port);
+    businessLocal->AddServer("server2", port + 1);
+    businessLocal->AddClient("client1", cloudIp, cloudPort);
     //增加一个默认端口的客户端
-    local.AddClient("client2", cloudIp, fixrPort);
+    if (!FLAGS_isSamePort) {
+        businessLocal->AddClient("client2", cloudIp, fixrPort);
+    } else {
+        businessLocal->AddClient("client2", cloudIp, cloudPort);
+    }
+//    local.AddClient("client2", cloudIp, cloudPort);
     //开启本地业务
-    local.Run();
+    businessLocal->Run();
     LOG(INFO) << "通信协议版本:" << GetComVersion();
 
     //信控机测试，打开信控机
@@ -168,6 +182,7 @@ int main(int argc, char **argv) {
 
         }
     }
-
+    delete businessLocal;
+    delete dataLocal;
     return 0;
 }

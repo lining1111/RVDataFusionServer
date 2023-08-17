@@ -9,17 +9,32 @@
 #include <client/FusionClient.h>
 #include <map>
 #include <functional>
-#include "monitor/PacketLoss.hpp"
+#include "os/nonCopyable.hpp"
 
-class LocalBusiness {
+class LocalBusiness : public NonCopyable {
 public:
+    std::mutex mtx;
+    static LocalBusiness *m_pInstance;
+
     bool isRun = false;
     std::map<string, FusionServer *> serverList;
     std::map<string, FusionClient *> clientList;
 public:
-    LocalBusiness();
+    static LocalBusiness *instance();
 
-    ~LocalBusiness();
+    ~LocalBusiness(){
+        StopTimerTaskAll();
+        isRun = false;
+        for (auto iter = clientList.begin(); iter != clientList.end();) {
+            delete iter->second;
+            iter = clientList.erase(iter);
+        }
+        for (auto iter = serverList.begin(); iter != serverList.end();) {
+            delete iter->second;
+            iter = serverList.erase(iter);
+        }
+    };
+
 
     void AddServer(string name, int port);
 
@@ -51,6 +66,7 @@ public:
 
     void StopTimerTaskAll();
 
+    static int SendDataUnitO(FusionClient *client, string msgType, Pkg pkg);
 private:
     /**
     * 查看服务端和客户端状态，并执行断线重连
@@ -58,7 +74,7 @@ private:
     */
     static void Task_Keep(void *p);
 
-    static int SendDataUnitO(FusionClient *client, string msgType, Pkg pkg);
+
 
     static void Task_CrossTrafficJamAlarm(void *p);
 
@@ -90,6 +106,7 @@ private:
     static void Task_CreateTrafficFlowGather(void *p);
 
     static void Task_CreateAbnormalStopData(void *p);
+
     static void Task_CreateLongDistanceOnSolidLineAlarm(void *p);
 
     static void Task_CreateHumanData(void *p);

@@ -16,9 +16,10 @@ find_package(httplib REQUIRED)
 find_package(libuuid REQUIRED)
 find_package(glog REQUIRED)
 find_package(fmt REQUIRED)
+find_package(Poco REQUIRED)
 
 set(3rdLibs gflags::gflags JsonCpp::JsonCpp SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
-        libuuid::libuuid glog::glog fmt::fmt)
+        libuuid::libuuid glog::glog fmt::fmt Poco::Poco)
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
