@@ -17,6 +17,7 @@
 #include <iostream>
 #include <string>
 #include <Poco/Thread.h>
+#include <thread>
 
 typedef Poco::AutoPtr<Poco::Net::TCPServerParams> Ptr;
 using namespace std;
@@ -26,14 +27,15 @@ vector<void *> conns;
 class createconnection : public Poco::Net::TCPServerConnection {
 public:
     bool isActive;
+    string recv;
+    Poco::Event ev;
 
     createconnection(const Poco::Net::StreamSocket &s) :
             Poco::Net::TCPServerConnection(s) {
         conns.push_back(this);
     };
 
-    static void thread1(void *p) {
-        auto local = (createconnection *) p;
+    static void getplain(createconnection *local) {
         Poco::Timespan timeOut(1, 0);
         unsigned char Buffer[1000];
         while (local->isActive) {
@@ -43,13 +45,10 @@ public:
                 num = num + 1;
                 if (20000 == num) {
                     // 到时间可以发送
-
                 }
                 //cout << " No Data Recieved till Timeout span . Client connection status : Active "<< flush <<endl;
             } else {
-                cout << " Client Message : " << flush;
                 int recBytes = -1;
-
                 try {
                     recBytes = local->socket().receiveBytes(Buffer, sizeof(Buffer));
                 }
@@ -62,16 +61,27 @@ public:
 
                 if (recBytes == 0) {
                     cout << "Client closes connection!" << endl << flush;
+                    local->ev.set();//一定要设置下否则其他的退出不了
                     local->isActive = false;
                 } else {
-                    cout << "Receiving recBytes: " << recBytes << endl << flush;
-                    cout << "String Recieved : " << Buffer << endl;
+                    for (int i = 0; i < recBytes; i++) {
+                        local->recv.push_back(Buffer[i]);
+                    }
+                    local->ev.set();
                 }
             }
-            //延时执行一个命令；
-            //socket().
         }
     }
+
+    static void printplain(createconnection *local) {
+        while (local->isActive) {
+            local->ev.wait();
+            if (!local->recv.empty()) {
+                cout << "client " << local->socket().peerAddress().toString() << " : " << local->recv << endl;
+            }
+        }
+    }
+
 
     void run() {
         Poco::Net::SocketAddress addr = socket().peerAddress();
@@ -79,9 +89,10 @@ public:
         isActive = true;
         socket().setKeepAlive(true);
 
-        Poco::Thread thread;
-        thread.start(thread1, this);
-        thread.join();
+        thread thget(getplain, this);
+        thread thprint(printplain, this);
+        thget.join();
+        thprint.join();
 
         cout << "Connection finished!" << endl << flush;
 
