@@ -100,7 +100,7 @@ public:
             auto con = (createconnection *) *iter;
             if (con->socket().peerAddress().toString() == this->socket().peerAddress().toString()) {
                 cout << "从数组踢出客户端:" << con->socket().peerAddress().toString() << endl;
-                conns.erase(iter);
+                iter = conns.erase(iter);
                 break;
             }
         }
