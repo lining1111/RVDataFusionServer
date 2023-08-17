@@ -21,15 +21,18 @@
 typedef Poco::AutoPtr<Poco::Net::TCPServerParams> Ptr;
 using namespace std;
 
+vector<void *> conns;
+
 class createconnection : public Poco::Net::TCPServerConnection {
 public:
     bool isActive;
 
     createconnection(const Poco::Net::StreamSocket &s) :
             Poco::Net::TCPServerConnection(s) {
+        conns.push_back(this);
     };
 
-    static void thread1(void *p){
+    static void thread1(void *p) {
         auto local = (createconnection *) p;
         Poco::Timespan timeOut(1, 0);
         unsigned char Buffer[1000];
@@ -77,10 +80,20 @@ public:
         socket().setKeepAlive(true);
 
         Poco::Thread thread;
-        thread.start(thread1,this);
+        thread.start(thread1, this);
         thread.join();
 
         cout << "Connection finished!" << endl << flush;
+
+        for (auto iter = conns.begin(); iter != conns.end(); iter++) {
+            auto con = (createconnection *) *iter;
+            if (con->socket().peerAddress().toString() == this->socket().peerAddress().toString()) {
+                cout << "从数组踢出客户端:" << con->socket().peerAddress().toString() << endl;
+                conns.erase(iter);
+                break;
+            }
+        }
+
     }
 };
 
@@ -107,6 +120,10 @@ int main(int argc, char **argv) {       //Setting Server IP address
     cout << "Server Started" << endl;
     cout << "Ready To Accept the connections" << endl;
 
-    while (1);
+    while (1) {
+        Poco::Thread::sleep(5000);
+        cout << "server total client:" << t.currentConnections() << endl;
+
+    }
 
 }
