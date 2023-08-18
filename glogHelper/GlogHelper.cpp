@@ -18,7 +18,7 @@ GlogHelper::GlogHelper(std::string _program, uint _keep, std::string _logDir, bo
     FLAGS_logbufsecs = 0;//刷新日志buffer的时间，0就是立即刷新
     FLAGS_stop_logging_if_full_disk = true; //设置是否在磁盘已满时避免日志记录到磁盘
     if (isSendSTDOUT) {
-        FLAGS_logtostderr = true;
+        FLAGS_logtostdout = true;
     }
     isRun = true;
     futureRun = std::async(std::launch::async, cleaner, this);
@@ -81,7 +81,7 @@ int GlogHelper::cleaner(void *p) {
         GetDirFiles(local->logDir, files);
         std::vector<std::string> logs;
         logs.clear();
-        for (auto &iter:files) {
+        for (auto &iter: files) {
             if (startsWith(iter, local->program + ".")) {
                 logs.push_back(iter);
             }
@@ -91,7 +91,7 @@ int GlogHelper::cleaner(void *p) {
             time_t now;
             time(&now);
             struct stat buf;
-            for (auto &iter:logs) {
+            for (auto &iter: logs) {
                 std::string fulPath = local->logDir + "/" + iter;
                 if (stat(fulPath.c_str(), &buf) == 0) {
                     if ((now - buf.st_ctime) > keepSeconds) {
