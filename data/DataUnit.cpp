@@ -13,15 +13,15 @@
 #include "Data.h"
 
 
-
 void DataUnitTrafficFlowGather::task() {
     this->runTask(std::bind(DataUnitTrafficFlowGather::FindOneFrame, this, this->cache / 2));
 }
 
 void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset) {
-    DataUnit::FindOneFrame(dataUnit, offset);
-    //调用后续的处理
-    dataUnit->TaskProcessOneFrame();
+    if (DataUnit::FindOneFrame(dataUnit, offset) == 0) {
+        //调用后续的处理
+        dataUnit->TaskProcessOneFrame();
+    }
 }
 
 int DataUnitTrafficFlowGather::TaskProcessOneFrame() {

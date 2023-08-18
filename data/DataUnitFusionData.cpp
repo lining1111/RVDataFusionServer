@@ -40,10 +40,10 @@ void DataUnitFusionData::task() {
 }
 
 void DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset) {
-
-    DataUnit::FindOneFrame(dataUnit, offset);
-    //调用后续的处理
-    dataUnit->TaskProcessOneFrame(mergeType);
+    if (DataUnit::FindOneFrame(dataUnit, offset) == 0) {
+        //调用后续的处理
+        dataUnit->TaskProcessOneFrame(mergeType);
+    }
 }
 
 int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeType) {

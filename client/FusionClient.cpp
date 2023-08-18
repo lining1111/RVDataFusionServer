@@ -378,7 +378,7 @@ int FusionClient::ThreadProcessSend(void *p) {
         if (!client->queue_send.pop(pkg)) {
             continue;
         }
-        pthread_mutex_lock(&client->lock_sock);
+        client->mtx_timed.lock();
         uint32_t len_send = 0;
         //pack
         common::Pack(pkg, buf_send, &len_send);
@@ -399,7 +399,7 @@ int FusionClient::ThreadProcessSend(void *p) {
             nleft -= nsend;
             ptr += nsend;
         }
-        pthread_mutex_unlock(&client->lock_sock);
+        client->mtx_timed.unlock();
         usleep(10);
     }
     delete[] buf_send;
@@ -419,7 +419,9 @@ int FusionClient::SendQueue(Pkg pkg) {
 int FusionClient::SendBase(Pkg pkg) {
     int ret = 0;
     //阻塞调用，加锁
-    pthread_mutex_lock(&lock_sock);
+    if (mtx_timed.try_lock_for(chrono::milliseconds(100))) {
+        return -1;
+    }
     uint8_t *buf_send = new uint8_t[1024 * 1024];
     uint32_t len_send = 0;
     len_send = 0;
@@ -447,6 +449,6 @@ int FusionClient::SendBase(Pkg pkg) {
         ptr += nsend;
     }
     delete[] buf_send;
-    pthread_mutex_unlock(&lock_sock);
+    mtx_timed.unlock();
     return ret;
 }

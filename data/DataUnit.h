@@ -315,12 +315,12 @@ public:
     //业务1 与寻找同一帧标定帧相关
     uint64_t timestampStore = 0;//存的上一次的时间戳，如果这次的和上次的一样，但是时间戳又比设定的阈值小，则不进行后面的操作
 
-    static void FindOneFrame(DataUnit *dataUnit, int offset) {
+    static int FindOneFrame(DataUnit *dataUnit, int offset) {
         //1确定标定的时间戳
         IType refer;
         if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
             dataUnit->i_maxSizeIndexNext();
-            return;
+            return -1;
         }
         //判断上次取的时间戳和这次的一样吗
         if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timestamp)) {
@@ -329,7 +329,7 @@ public:
                 //超过阈值，切下一路,重新计数
                 dataUnit->i_maxSizeIndexNext();
             }
-            return;
+            return -2;
         }
         dataUnit->taskSearchCount = 0;
         dataUnit->timestampStore = refer.timestamp;
@@ -360,7 +360,7 @@ public:
             }
         }
         //调用后续的处理(用户自定义内容)
-
+        return 0;
     }
 
     int ThreadGetDataInRange(int index, uint64_t curTimestamp) {
