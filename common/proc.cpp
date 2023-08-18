@@ -123,12 +123,13 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
 
     //存到帧率缓存
     auto ct = &CT_fusionData;
-    ct->update(watchData.direction, watchData.timestamp, dataUnit->cache);
+    ct->update(watchData.direction, watchData.timestamp, 15);
     pthread_mutex_lock(&ct->mtx);
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data);
+            dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data,
+                           "DataUnitFusionData", 10);
         }
     }
     pthread_mutex_unlock(&ct->mtx);
@@ -224,12 +225,13 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
 
     //存到帧率缓存
     auto ct = &CT_trafficFlowGather;
-    ct->update(index, trafficFlow.timestamp, dataUnit->cache);
+    ct->update(index, trafficFlow.timestamp, 3);
     pthread_mutex_lock(&ct->mtx);
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data);
+            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+                           "DataUnitTrafficFlowGather", 10);
         }
     }
     pthread_mutex_unlock(&ct->mtx);

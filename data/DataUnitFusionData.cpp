@@ -15,28 +15,13 @@
 
 using namespace std;
 
-DataUnitFusionData::DataUnitFusionData(int c, int fs, int i_num, int cache, void *owner) :
-        DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitFusionData::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitFusionData";
-    LOG(INFO) << name << " fs_i:" << this->fs_i;
-    timerBusinessName = "DataUnitFusionData";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(10, std::bind(task, this));
-}
-
 bool isProcessMerge = false;//task是否执行了融合流程
-void DataUnitFusionData::task(void *local) {
+void DataUnitFusionData::task() {
 
     uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     isProcessMerge = false;
-    auto dataUnit = (DataUnitFusionData *) local;
-    auto data = (Data *) dataUnit->owner;
+    auto data = (Data *) this->owner;
 
     DataUnitFusionData::MergeType mergeType;
     if (data->isMerge) {
@@ -45,7 +30,7 @@ void DataUnitFusionData::task(void *local) {
         mergeType = DataUnitFusionData::NotMerge;
     }
 
-    dataUnit->runTask(std::bind(DataUnitFusionData::FindOneFrame, dataUnit, mergeType, dataUnit->cache / 2));
+    this->runTask(std::bind(DataUnitFusionData::FindOneFrame, this, mergeType, this->cache / 2));
     if (isProcessMerge) {
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();

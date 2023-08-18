@@ -13,16 +13,13 @@
 #include <iostream>
 #include <atomic>
 #include <functional>
-#include "os/timeTask.hpp"
+#include <thread>
 #include <glog/logging.h>
 #include <iomanip>
 #include "merge/mergeStruct.h"
 
 using namespace common;
 using namespace std;
-using namespace os;
-
-#define TaskTimeval 10 //任务开启周期
 
 template<typename I, typename O>
 class DataUnit {
@@ -74,30 +71,17 @@ public:
         }
     }
 
-    DataUnit(int c, int threshold_ms, int i_num, int i_cache, void *owner) {
-        init(c, threshold_ms, i_num, i_cache, owner);
-    }
-
     ~DataUnit() {
-        delete timerBusiness;
+        isTaskRun = false;
         delete oneFrameMutex;
     }
 
 public:
 
-    Timer *timerBusiness;
-    string timerBusinessName;
-
-    void init(int c, int fs, int i_num, int cache, void *owner) {
-        if (oneFrameMutex == nullptr) {
-            oneFrameMutex = new std::mutex();
-        }
+    //未启用init，必须启用这个
+    void setCapNumI(int c, int i_num) {
         this->cap = c;
         this->numI = i_num;
-        this->thresholdFrame = fs;
-        this->fs_i = fs;
-        this->cache = cache;
-        this->owner = owner;
         i_queue_vector.resize(i_num);
         for (int i = 0; i < i_queue_vector.size(); i++) {
             auto iter = &i_queue_vector.at(i);
@@ -113,6 +97,52 @@ public:
             iter = 0;
         }
         unOrder.resize(numI);
+        for (int i = 0; i < unOrder.size(); i++) {
+            auto iter = &unOrder.at(i);
+            iter->clear();
+        }
+    }
+
+    void init(int c, int fs, int i_num, int _cache, void *_owner, string _name, int _intervalTask) {
+        this->name = _name;
+        this->isTaskRun = true;
+        if (oneFrameMutex == nullptr) {
+            oneFrameMutex = new std::mutex();
+        }
+        this->cap = c;
+        this->numI = i_num;
+        this->thresholdFrame = fs;
+        this->fs_i = fs;
+        this->cache = _cache;
+        this->owner = _owner;
+        i_queue_vector.resize(i_num);
+        for (int i = 0; i < i_queue_vector.size(); i++) {
+            auto iter = &i_queue_vector.at(i);
+            iter->setMax(cap);
+        }
+
+        o_queue.setMax(cap);
+
+        oneFrame.resize(numI);
+
+        xRoadTimestamp.resize(numI);
+        for (auto &iter: xRoadTimestamp) {
+            iter = 0;
+        }
+        unOrder.resize(numI);
+        for (int i = 0; i < unOrder.size(); i++) {
+            auto iter = &unOrder.at(i);
+            iter->clear();
+        }
+        this->intervalTask = _intervalTask;
+        LOG(INFO) << this->name << " fs_i:" << this->fs_i << " intervalTask:" << intervalTask;
+        thread t([&]() {
+            while (isTaskRun) {
+                usleep(1000 * intervalTask);
+                this->task();
+            }
+        });
+        t.detach();
     }
 
     bool getIOffset(I &i, int index, int offset) {
@@ -255,6 +285,11 @@ public:
         return index;
     }
 
+    bool isTaskRun = false;
+    int intervalTask = 10;
+
+    virtual void task() = 0;
+
     void runTask(std::function<void()> task) {
         std::unique_lock<std::mutex> lock(*oneFrameMutex);
         int maxSize = 0;
@@ -290,7 +325,7 @@ public:
         //判断上次取的时间戳和这次的一样吗
         if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timestamp)) {
             dataUnit->taskSearchCount++;
-            if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
+            if ((dataUnit->taskSearchCount * dataUnit->intervalTask) >= (dataUnit->fs_i * 2.5)) {
                 //超过阈值，切下一路,重新计数
                 dataUnit->i_maxSizeIndexNext();
             }
@@ -401,11 +436,7 @@ public:
 
     }
 
-    DataUnitTrafficFlowGather(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
@@ -424,12 +455,9 @@ public:
 
     }
 
-    DataUnitCrossTrafficJamAlarm(int c, int fs, int i_num, int cache, void *owner);
+    void task();
 
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
-
+    static void specialBusiness(DataUnitCrossTrafficJamAlarm *dataUnit);
 };
 
 
@@ -445,11 +473,7 @@ public:
 
     }
 
-    DataUnitIntersectionOverflowAlarm(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
 };
 
@@ -464,11 +488,7 @@ public:
 
     }
 
-    DataUnitInWatchData_1_3_4(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
 };
 
@@ -483,11 +503,7 @@ public:
 
     }
 
-    DataUnitInWatchData_2(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
 };
 
@@ -502,11 +518,7 @@ public:
 
     }
 
-    DataUnitStopLinePassData(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 };
 
 //异常停车报警
@@ -521,11 +533,7 @@ public:
 
     }
 
-    DataUnitAbnormalStopData(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 };
 
 //长距离压实线报警
@@ -541,11 +549,7 @@ public:
 
     }
 
-    DataUnitLongDistanceOnSolidLineAlarm(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 };
 
 //行人数据
@@ -560,11 +564,7 @@ public:
 
     }
 
-    DataUnitHumanData(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
     static void specialBusiness(DataUnitHumanData *dataUnit);
 };
@@ -582,11 +582,7 @@ public:
 
     }
 
-    DataUnitHumanLitPoleData(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 };
 
 #endif //_DATAUNIT_H

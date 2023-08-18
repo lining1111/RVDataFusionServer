@@ -22,36 +22,47 @@ Data *Data::instance() {
         //2初始化数据
         int cliNum = localConfig.roadNum;
         //周期性数据放入自适应帧率
-        m_pInstance->dataUnitFusionData = new DataUnitFusionData(30, 80, cliNum, 15, m_pInstance);
+        m_pInstance->dataUnitFusionData = new DataUnitFusionData();
+        m_pInstance->dataUnitFusionData->setCapNumI(15,cliNum);
 //        m_pInstance->dataUnitFusionData.init(10, 80, cliNum, 10, m_pInstance);//80ms一帧
-        m_pInstance->dataUnitTrafficFlowGather = new DataUnitTrafficFlowGather(30, 500, cliNum, 3, m_pInstance);
+        m_pInstance->dataUnitTrafficFlowGather = new DataUnitTrafficFlowGather();
+        m_pInstance->dataUnitFusionData->setCapNumI(3,cliNum);
 //        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm = new DataUnitCrossTrafficJamAlarm();
-        m_pInstance->dataUnitCrossTrafficJamAlarm->init(10, 500, cliNum, 10, m_pInstance);//1000ms一帧
+        m_pInstance->dataUnitCrossTrafficJamAlarm->init(10, 500, cliNum, 1, m_pInstance,
+                                                        "DataUnitCrossTrafficJamAlarm", 10*1000);//1000ms一帧
 
         m_pInstance->dataUnitIntersectionOverflowAlarm = new DataUnitIntersectionOverflowAlarm();
-        m_pInstance->dataUnitIntersectionOverflowAlarm->init(10, 500, cliNum, 10, m_pInstance);//1000ms一帧
+        m_pInstance->dataUnitIntersectionOverflowAlarm->init(10, 500, cliNum, 1, m_pInstance,
+                                                             "DataUnitIntersectionOverflowAlarm", 10);//1000ms一帧
 
         m_pInstance->dataUnitInWatchData_1_3_4 = new DataUnitInWatchData_1_3_4();
-        m_pInstance->dataUnitInWatchData_1_3_4->init(10, 500, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitInWatchData_1_3_4->init(10, 500, cliNum, 1, m_pInstance,
+                                                     "DataUnitInWatchData_1_3_4", 10);
 
         m_pInstance->dataUnitInWatchData_2 = new DataUnitInWatchData_2();
-        m_pInstance->dataUnitInWatchData_2->init(10, 500, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitInWatchData_2->init(10, 500, cliNum, 1, m_pInstance,
+                                                 "DataUnitInWatchData_2", 10);
 
         m_pInstance->dataUnitStopLinePassData = new DataUnitStopLinePassData();
-        m_pInstance->dataUnitStopLinePassData->init(10, 500, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitStopLinePassData->init(10, 500, cliNum, 1, m_pInstance,
+                                                    "DataUnitStopLinePassData", 10);
 
         m_pInstance->dataUnitAbnormalStopData = new DataUnitAbnormalStopData();
-        m_pInstance->dataUnitAbnormalStopData->init(10, 500, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitAbnormalStopData->init(10, 500, cliNum, 1, m_pInstance,
+                                                    "DataUnitAbnormalStopData", 10);
 
         m_pInstance->dataUnitLongDistanceOnSolidLineAlarm = new DataUnitLongDistanceOnSolidLineAlarm();
-        m_pInstance->dataUnitLongDistanceOnSolidLineAlarm->init(10, 500, cliNum, 1, m_pInstance);
+        m_pInstance->dataUnitLongDistanceOnSolidLineAlarm->init(10, 500, cliNum, 1, m_pInstance,
+                                                                "DataUnitLongDistanceOnSolidLineAlarm", 10);
 
         m_pInstance->dataUnitHumanData = new DataUnitHumanData();
-        m_pInstance->dataUnitHumanData->init(10, 500, cliNum, 1, m_pInstance);//这个cliNum待定
+        m_pInstance->dataUnitHumanData->init(10, 500, cliNum, 1, m_pInstance,
+                                             "DataUnitHumanData", 10);//这个cliNum待定
 
         m_pInstance->dataUnitHumanLitPoleData = new DataUnitHumanLitPoleData();
-        m_pInstance->dataUnitHumanLitPoleData->init(10, 500, cliNum, 1, m_pInstance);//这个cliNum待定
+        m_pInstance->dataUnitHumanLitPoleData->init(10, 500, cliNum, 1, m_pInstance,
+                                                    "DataUnitHumanLitPoleData", 10);//这个cliNum待定
 
         //开启数据时间戳历史监听线程
         m_pInstance->isRun = true;

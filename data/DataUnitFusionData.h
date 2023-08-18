@@ -22,11 +22,7 @@ public:
 
     }
 
-    DataUnitFusionData(int c, int fs, int i_num, int cache, void *owner);
-
-    void init(int c, int fs, int i_num, int cache, void *owner);
-
-    static void task(void *local);
+    void task();
 
     typedef enum {
         NotMerge,

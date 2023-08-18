@@ -12,24 +12,10 @@
 #include <glog/logging.h>
 #include "Data.h"
 
-DataUnitTrafficFlowGather::DataUnitTrafficFlowGather(int c, int fs, int i_num, int cache, void *owner) :
-        DataUnit(c, fs, i_num, cache, owner) {
 
-}
 
-void DataUnitTrafficFlowGather::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitTrafficFlowGather";
-    LOG(INFO) << name << " fs_i:" << this->fs_i;
-    timerBusinessName = "DataUnitTrafficFlowGather";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(10, std::bind(task, this));
-}
-
-void DataUnitTrafficFlowGather::task(void *local) {
-    auto dataUnit = (DataUnitTrafficFlowGather *) local;
-
-    dataUnit->runTask(std::bind(DataUnitTrafficFlowGather::FindOneFrame, dataUnit, dataUnit->cache / 2));
+void DataUnitTrafficFlowGather::task() {
+    this->runTask(std::bind(DataUnitTrafficFlowGather::FindOneFrame, this, this->cache / 2));
 }
 
 void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset) {
@@ -64,115 +50,56 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
     return 0;
 }
 
-DataUnitCrossTrafficJamAlarm::DataUnitCrossTrafficJamAlarm(int c, int fs, int i_num, int cache, void *owner) :
-        DataUnit(c, fs, i_num, cache, owner) {
-
+void DataUnitCrossTrafficJamAlarm::task() {
+    this->runTask(std::bind(DataUnitCrossTrafficJamAlarm::specialBusiness, this));
 }
 
-void DataUnitCrossTrafficJamAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitCrossTrafficJamAlarm";
-    timerBusinessName = "DataUnitCrossTrafficJamAlarm";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
+void DataUnitCrossTrafficJamAlarm::specialBusiness(DataUnitCrossTrafficJamAlarm *dataUnit) {
+//第一次取到有报警的时间戳
+    uint64_t alarmTimestamp = 0;
+
+    for (auto &iter: dataUnit->i_queue_vector) {
+        while (!iter.empty()) {
+            IType cur;
+            iter.getIndex(cur, 0);
+            iter.eraseBegin();
+            if (alarmTimestamp == 0) {
+                //如果第一次赋值
+                alarmTimestamp = cur.timestamp;
+            } else if (abs((long long) alarmTimestamp - (long long) cur.timestamp) <= (10 * 1000)) {
+                //查看当前的时间戳是否在第一次取到的10s内
+                continue;
+            }
+
+            OType item = cur;
+            if (!dataUnit->pushO(item)) {
+                VLOG(2) << dataUnit->name << " 队列已满，未存入数据 timestamp:"
+                        << (uint64_t) item.timestamp;
+            } else {
+                VLOG(2) << dataUnit->name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
+            }
+        }
+    }
 }
 
-void DataUnitCrossTrafficJamAlarm::task(void *local) {
-    auto dataUnit = (DataUnitCrossTrafficJamAlarm *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
+void DataUnitIntersectionOverflowAlarm::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-DataUnitIntersectionOverflowAlarm::DataUnitIntersectionOverflowAlarm(int c, int fs, int i_num, int cache,
-                                                                     void *owner)
-        : DataUnit(c, fs, i_num, cache, owner) {
-
+void DataUnitInWatchData_1_3_4::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitIntersectionOverflowAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitIntersectionOverflowAlarm";
-    timerBusinessName = "DataUnitIntersectionOverflowAlarm";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
+void DataUnitInWatchData_2::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitIntersectionOverflowAlarm::task(void *local) {
-    auto dataUnit = (DataUnitIntersectionOverflowAlarm *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
+void DataUnitStopLinePassData::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-
-DataUnitInWatchData_1_3_4::DataUnitInWatchData_1_3_4(int c, int fs, int i_num, int cache, void *owner) :
-        DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-
-void DataUnitInWatchData_1_3_4::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitInWatchData_1_3_4";
-    timerBusinessName = "DataUnitInWatchData_1_3_4";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitInWatchData_1_3_4::task(void *local) {
-    auto dataUnit = (DataUnitInWatchData_1_3_4 *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
-}
-
-DataUnitInWatchData_2::DataUnitInWatchData_2(int c, int fs, int i_num, int cache, void *owner) :
-        DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitInWatchData_2::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitInWatchData_2";
-    timerBusinessName = "DataUnitInWatchData_2";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitInWatchData_2::task(void *local) {
-    auto dataUnit = (DataUnitInWatchData_2 *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
-}
-
-DataUnitStopLinePassData::DataUnitStopLinePassData(int c, int fs, int i_num, int cache, void *owner)
-        : DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitStopLinePassData::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitStopLinePassData";
-    timerBusinessName = "DataUnitStopLinePassData";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitStopLinePassData::task(void *local) {
-    auto dataUnit = (DataUnitStopLinePassData *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
-}
-
-DataUnitHumanData::DataUnitHumanData(int c, int fs, int i_num, int cache, void *owner) : DataUnit(
-        c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitHumanData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
-    name = "DataUnitHumanData";
-    timerBusinessName = "DataUnitHumanData";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitHumanData::task(void *local) {
-    auto dataUnit = (DataUnitHumanData *) local;
-    dataUnit->runTask(std::bind(DataUnitHumanData::specialBusiness, dataUnit));
+void DataUnitHumanData::task() {
+    this->runTask(std::bind(DataUnitHumanData::specialBusiness, this));
 }
 
 void DataUnitHumanData::specialBusiness(DataUnitHumanData *dataUnit) {
@@ -210,59 +137,14 @@ void DataUnitHumanData::specialBusiness(DataUnitHumanData *dataUnit) {
     }
 }
 
-DataUnitAbnormalStopData::DataUnitAbnormalStopData(int c, int fs, int i_num, int cache, void *owner)
-        : DataUnit(c, fs, i_num, cache, owner) {
-
+void DataUnitAbnormalStopData::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitAbnormalStopData::init(int c, int threshold_ms, int i_num, int cache, void *owner) {
-    DataUnit::init(c, threshold_ms, i_num, cache, owner);
-    name = "DataUnitAbnormalStopData";
-    timerBusinessName = "DataUnitAbnormalStopData";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
+void DataUnitLongDistanceOnSolidLineAlarm::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitAbnormalStopData::task(void *local) {
-    auto dataUnit = (DataUnitAbnormalStopData *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
-}
-
-DataUnitLongDistanceOnSolidLineAlarm::DataUnitLongDistanceOnSolidLineAlarm(int c, int fs, int i_num,
-                                                                           int cache, void *owner)
-        : DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitLongDistanceOnSolidLineAlarm::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitLongDistanceOnSolidLineAlarm";
-    timerBusinessName = "DataUnitLongDistanceOnSolidLineAlarm";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitLongDistanceOnSolidLineAlarm::task(void *local) {
-    auto dataUnit = (DataUnitLongDistanceOnSolidLineAlarm *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
-}
-
-
-DataUnitHumanLitPoleData::DataUnitHumanLitPoleData(int c, int fs, int i_num,
-                                                   int cache, void *owner)
-        : DataUnit(c, fs, i_num, cache, owner) {
-
-}
-
-void DataUnitHumanLitPoleData::init(int c, int fs, int i_num, int cache, void *owner) {
-    DataUnit::init(c, fs, i_num, cache, owner);
-    name = "DataUnitHumanLitPoleData";
-    timerBusinessName = "DataUnitHumanLitPoleData";
-    timerBusiness = new Timer(timerBusinessName);
-    timerBusiness->start(TaskTimeval, std::bind(task, this));
-}
-
-void DataUnitHumanLitPoleData::task(void *local) {
-    auto dataUnit = (DataUnitHumanLitPoleData *) local;
-    dataUnit->runTask(std::bind(DataUnit::TransparentTransmission, dataUnit));
+void DataUnitHumanLitPoleData::task() {
+    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
