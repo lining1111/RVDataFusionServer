@@ -26,7 +26,7 @@ Data *Data::instance() {
         m_pInstance->dataUnitFusionData->setCapNumI(15,cliNum);
 //        m_pInstance->dataUnitFusionData.init(10, 80, cliNum, 10, m_pInstance);//80ms一帧
         m_pInstance->dataUnitTrafficFlowGather = new DataUnitTrafficFlowGather();
-        m_pInstance->dataUnitFusionData->setCapNumI(3,cliNum);
+        m_pInstance->dataUnitTrafficFlowGather->setCapNumI(3,cliNum);
 //        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm = new DataUnitCrossTrafficJamAlarm();
         m_pInstance->dataUnitCrossTrafficJamAlarm->init(10, 500, cliNum, 1, m_pInstance,
