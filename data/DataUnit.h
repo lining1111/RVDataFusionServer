@@ -15,6 +15,7 @@
 #include <functional>
 #include "os/timeTask.hpp"
 #include <glog/logging.h>
+#include <iomanip>
 #include "merge/mergeStruct.h"
 
 using namespace common;
@@ -26,6 +27,7 @@ using namespace os;
 template<typename I, typename O>
 class DataUnit {
 public:
+    string name;
     int sn = 0;
     vector<Vector<I>> i_queue_vector;
     Queue<O> o_queue;//数据队列
@@ -61,13 +63,15 @@ public:
     typedef I IType;
     typedef O OType;
     vector<I> oneFrame;//寻找同一时间戳的数据集
-    pthread_mutex_t oneFrameMutex = PTHREAD_MUTEX_INITIALIZER;
+    std::mutex *oneFrameMutex = nullptr;
     //预先不知道顺序插入队列时使用的
     vector<string> unOrder;
 
 public:
-    DataUnit(){
-
+    DataUnit() {
+        if (oneFrameMutex == nullptr) {
+            oneFrameMutex = new std::mutex();
+        }
     }
 
     DataUnit(int c, int threshold_ms, int i_num, int i_cache, void *owner) {
@@ -76,6 +80,7 @@ public:
 
     ~DataUnit() {
         delete timerBusiness;
+        delete oneFrameMutex;
     }
 
 public:
@@ -84,6 +89,9 @@ public:
     string timerBusinessName;
 
     void init(int c, int fs, int i_num, int cache, void *owner) {
+        if (oneFrameMutex == nullptr) {
+            oneFrameMutex = new std::mutex();
+        }
         this->cap = c;
         this->numI = i_num;
         this->thresholdFrame = fs;
@@ -248,26 +256,118 @@ public:
     }
 
     void runTask(std::function<void()> task) {
-        pthread_mutex_lock(&oneFrameMutex);
+        std::unique_lock<std::mutex> lock(*oneFrameMutex);
         int maxSize = 0;
+        int maxSizeIndex = 0;
         for (int i = 0; i < i_queue_vector.size(); i++) {
             if (i_queue_vector.at(i).size() > maxSize) {
                 maxSize = i_queue_vector.at(i).size();
-                i_maxSizeIndex = i;
+                maxSizeIndex = i;
             }
         }
-        if (maxSize > cache) {
+//        VLOG(3) << name << " maxSize:" << maxSize << " maxSizeIndex:" << maxSizeIndex << " cache :" << cache;
+        if (maxSize >= cache) {
+            if (i_maxSizeIndex == -1) {
+                //只有在第一次它为数据默认值-1的时候才执行赋值
+                i_maxSizeIndex = maxSizeIndex;
+            }
             //执行相应的流程
             task();
         }
-
-        pthread_mutex_unlock(&oneFrameMutex);
     }
 
 public:
-    //与寻找同一帧标定帧相关
+    //业务1 与寻找同一帧标定帧相关
     uint64_t timestampStore = 0;//存的上一次的时间戳，如果这次的和上次的一样，但是时间戳又比设定的阈值小，则不进行后面的操作
 
+    static void FindOneFrame(DataUnit *dataUnit, int offset) {
+        //1确定标定的时间戳
+        IType refer;
+        if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
+            dataUnit->i_maxSizeIndexNext();
+            return;
+        }
+        //判断上次取的时间戳和这次的一样吗
+        if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timestamp)) {
+            dataUnit->taskSearchCount++;
+            if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
+                //超过阈值，切下一路,重新计数
+                dataUnit->i_maxSizeIndexNext();
+            }
+            return;
+        }
+        dataUnit->taskSearchCount = 0;
+        dataUnit->timestampStore = refer.timestamp;
+
+        dataUnit->curTimestamp = refer.timestamp;
+
+        std::time_t t(dataUnit->curTimestamp / 1000);
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&t), "%F %T");
+
+        VLOG(3) << dataUnit->name << " 取同一帧时,标定时间戳为:" << dataUnit->curTimestamp << " " << ss.str();
+
+        uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
+        uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
+
+        //2取数
+        vector<IType>().swap(dataUnit->oneFrame);
+        dataUnit->oneFrame.resize(dataUnit->numI);
+        for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
+            dataUnit->ThreadGetDataInRange(i, dataUnit->curTimestamp);
+        }
+
+        //打印下每一路取到的时间戳
+        for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
+            auto iter = dataUnit->oneFrame.at(i);
+            if (!iter.oprNum.empty()) {
+                VLOG(3) << dataUnit->name << " 第" << i << "路取到的时间戳为" << (uint64_t) iter.timestamp;
+            }
+        }
+        //调用后续的处理(用户自定义内容)
+
+    }
+
+    int ThreadGetDataInRange(int index, uint64_t curTimestamp) {
+        //找到时间戳在范围内的帧
+        if (emptyI(index)) {
+            VLOG(3) << name << " 第" << index << "路数据为空";
+        } else {
+            for (int i = 0; i < sizeI(index); i++) {
+                IType refer;
+                if (getIOffset(refer, index, i)) {
+                    if (abs(((long long) refer.timestamp - (long long) curTimestamp)) < fs_i) {
+                        //在范围内
+                        //记录当前路的时间戳
+                        xRoadTimestamp[index] = (uint64_t) refer.timestamp;
+                        //将当前路的所有信息缓存入对应的索引
+                        oneFrame[index] = refer;
+                        VLOG(3) << name << " 第" << index << "路时间戳在范围内，取出来:" << (uint64_t) refer.timestamp;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return index;
+    }
+
+    //业务2 与透传相关
+    static void TransparentTransmission(DataUnit *dataUnit) {
+        for (auto &iter: dataUnit->i_queue_vector) {
+            while (!iter.empty()) {
+                IType cur;
+                iter.getIndex(cur, 0);
+                iter.eraseBegin();
+                OType item = cur;
+                if (!dataUnit->pushO(item)) {
+                    VLOG(2) << dataUnit->name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+                } else {
+                    VLOG(2) << dataUnit->name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
+                }
+            }
+        }
+    }
 };
 
 //车辆轨迹
@@ -309,9 +409,7 @@ public:
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
-    static int ThreadGetDataInRange(DataUnitTrafficFlowGather *dataUnit, int index, uint64_t curTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitTrafficFlowGather *dataUnit);
+    int TaskProcessOneFrame();
 };
 
 //交叉路口堵塞报警
@@ -467,6 +565,8 @@ public:
     void init(int c, int fs, int i_num, int cache, void *owner);
 
     static void task(void *local);
+
+    static void specialBusiness(DataUnitHumanData *dataUnit);
 };
 
 

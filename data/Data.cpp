@@ -22,7 +22,7 @@ Data *Data::instance() {
         //2初始化数据
         int cliNum = localConfig.roadNum;
         //周期性数据放入自适应帧率
-        m_pInstance->dataUnitFusionData = new DataUnitFusionData(10, 80, cliNum, 15, m_pInstance);
+        m_pInstance->dataUnitFusionData = new DataUnitFusionData(30, 80, cliNum, 15, m_pInstance);
 //        m_pInstance->dataUnitFusionData.init(10, 80, cliNum, 10, m_pInstance);//80ms一帧
         m_pInstance->dataUnitTrafficFlowGather = new DataUnitTrafficFlowGather(30, 500, cliNum, 3, m_pInstance);
 //        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧

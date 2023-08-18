@@ -123,7 +123,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
 
     //存到帧率缓存
     auto ct = &CT_fusionData;
-    ct->update(watchData.direction, watchData.timstamp, dataUnit->cache);
+    ct->update(watchData.direction, watchData.timestamp, dataUnit->cache);
     pthread_mutex_lock(&ct->mtx);
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
@@ -140,7 +140,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     } else {
         VLOG(2) << "client ip:" << ip << " WatchData,存入消息,"
                 << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
-                << "timestamp:" << (uint64_t) watchData.timstamp << " dataUnit i_vector index:"
+                << "timestamp:" << (uint64_t) watchData.timestamp << " dataUnit i_vector index:"
                 << index;
     }
 

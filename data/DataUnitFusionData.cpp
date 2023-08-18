@@ -22,7 +22,8 @@ DataUnitFusionData::DataUnitFusionData(int c, int fs, int i_num, int cache, void
 
 void DataUnitFusionData::init(int c, int fs, int i_num, int cache, void *owner) {
     DataUnit::init(c, fs, i_num, cache, owner);
-    LOG(INFO) << "DataUnitFusionData fs_i:" << this->fs_i;
+    name = "DataUnitFusionData";
+    LOG(INFO) << name << " fs_i:" << this->fs_i;
     timerBusinessName = "DataUnitFusionData";
     timerBusiness = new Timer(timerBusinessName);
     timerBusiness->start(10, std::bind(task, this));
@@ -35,31 +36,16 @@ void DataUnitFusionData::task(void *local) {
             std::chrono::system_clock::now().time_since_epoch()).count();
     isProcessMerge = false;
     auto dataUnit = (DataUnitFusionData *) local;
-    int maxSize = 0;
-    int maxSizeIndex = 0;
-    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        if (dataUnit->i_queue_vector.at(i).size() > maxSize) {
-            maxSize = dataUnit->i_queue_vector.at(i).size();
-            maxSizeIndex = i;
-        }
-    }
-    if (maxSize >= dataUnit->cache) {
-        //执行相应的流程
-        if (dataUnit->i_maxSizeIndex == -1) {
-            //只有在第一次它为数据默认值-1的时候才执行赋值
-            dataUnit->i_maxSizeIndex = maxSizeIndex;
-        }
+    auto data = (Data *) dataUnit->owner;
 
-        auto data = (Data *) dataUnit->owner;
-
-        DataUnitFusionData::MergeType mergeType;
-        if (data->isMerge) {
-            mergeType = DataUnitFusionData::Merge;
-        } else {
-            mergeType = DataUnitFusionData::NotMerge;
-        }
-        FindOneFrame(dataUnit, mergeType, dataUnit->cache / 2);
+    DataUnitFusionData::MergeType mergeType;
+    if (data->isMerge) {
+        mergeType = DataUnitFusionData::Merge;
+    } else {
+        mergeType = DataUnitFusionData::NotMerge;
     }
+
+    dataUnit->runTask(std::bind(DataUnitFusionData::FindOneFrame, dataUnit, mergeType, dataUnit->cache / 2));
     if (isProcessMerge) {
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
@@ -69,119 +55,19 @@ void DataUnitFusionData::task(void *local) {
 }
 
 void DataUnitFusionData::FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset) {
-    //1确定标定的时间戳
-    IType refer;
-    if (!dataUnit->getIOffset(refer, dataUnit->i_maxSizeIndex, offset)) {
-        VLOG(3) << "DataUnitFusionData 当前路" << dataUnit->i_maxSizeIndex << "取第" << offset << "失败，切换下一路";
-        dataUnit->i_maxSizeIndexNext();
-        return;
-    }
-    //判断上次取的时间戳和这次的一样吗
-    if ((dataUnit->timestampStore + dataUnit->fs_i) > ((uint64_t) refer.timstamp)) {
-        dataUnit->taskSearchCount++;
-        if ((dataUnit->taskSearchCount * dataUnit->timerBusiness->getPeriodMs()) >= (dataUnit->fs_i * 2.5)) {
-            VLOG(3) << "DataUnitFusionData 当前路" << dataUnit->i_maxSizeIndex << "取下一个时间戳超时，切换下一路";
-            //超过阈值，切下一路,重新计数,还得是下一路的满缓存情况
-            dataUnit->i_maxSizeIndexNext();
-        }
-        return;
-    }
-    isProcessMerge = true;
-    VLOG(3) << "DataUnitFusionData取同一帧时,标定路是:" << dataUnit->i_maxSizeIndex;
-    dataUnit->taskSearchCount = 0;
-    dataUnit->timestampStore = refer.timstamp;
 
-    dataUnit->curTimestamp = refer.timstamp;
-
-    std::time_t t((uint64_t) dataUnit->curTimestamp / 1000);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&t), "%F %T");
-
-    VLOG(3) << "DataUnitFusionData取同一帧时,标定时间戳为:" << (uint64_t) dataUnit->curTimestamp << " " << ss.str();
-    auto data = (Data *) dataUnit->owner;
-    data->isStartFusion = true;
-    //3取数
-    vector<IType>().swap(dataUnit->oneFrame);
-    dataUnit->oneFrame.resize(dataUnit->numI);
-    for (int i = 0; i < dataUnit->i_queue_vector.size(); i++) {
-        ThreadGetDataInRange(dataUnit, i, dataUnit->curTimestamp);
-    }
-
-    //将标定时间戳，和帧内时间戳输出到文件
-    string line = "";
-    line += to_string(dataUnit->curTimestamp);
-    line += ",";
-
-    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
-        auto iter = dataUnit->oneFrame.at(i);
-        line += to_string((uint64_t) iter.timstamp);
-        line += ",";
-        if (!iter.oprNum.empty()) {
-            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timstamp;
-        }
-    }
-    line += "\n";
-    //写入文件
-    if (0) {
-        ofstream ofs;
-        ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-        //判断大小是否超过最大值
-        uint64_t maxSize = 1024 * 1024 * 100;
-        if (ofs.tellp() >= maxSize) {
-            //清空
-            ofs.close();
-            ofstream ofs1;
-            ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
-            ofs1.flush();
-            ofs1.close();
-            ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-        }
-
-        if (ofs.is_open()) {
-            ofs << line;
-            ofs.flush();
-            ofs.close();
-        }
-    }
+    DataUnit::FindOneFrame(dataUnit, offset);
     //调用后续的处理
-    TaskProcessOneFrame(dataUnit, mergeType);
+    dataUnit->TaskProcessOneFrame(mergeType);
 }
 
-int
-DataUnitFusionData::ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, uint64_t curTimestamp) {
-    //找到时间戳在范围内的帧
-    if (dataUnit->emptyI(index)) {
-        VLOG(3) << "DataUnitFusionData第" << index << "路数据为空";
-    } else {
-        for (int i = 0; i < dataUnit->sizeI(index); i++) {
-            IType refer;
-            if (dataUnit->getIOffset(refer, index, i)) {
-                VLOG(3) << "DataUnitFusionData第" << index << "路时间戳:" << (uint64_t) refer.timstamp
-                        << ",标定时间戳:" << curTimestamp;
-                if (abs(((long long) refer.timstamp - (long long) curTimestamp)) < dataUnit->fs_i) {
-                    //在范围内
-                    //记录当前路的时间戳
-                    dataUnit->xRoadTimestamp[index] = (uint64_t) refer.timstamp;
-                    //将当前路的所有信息缓存入对应的索引
-                    dataUnit->oneFrame[index] = refer;
-                    VLOG(3) << "DataUnitFusionData第" << index << "路时间戳在范围内，取出来:"
-                            << (uint64_t) refer.timstamp;
-                    break;
-                }
-            }
-        }
-    }
-
-    return index;
-}
-
-int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType) {
+int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeType) {
     //1，将同一帧内待输入量存入集合
     DataUnitFusionData::RoadDataInSet roadDataInSet;
-    roadDataInSet.roadDataList.resize(dataUnit->numI);
-    roadDataInSet.timestamp = dataUnit->curTimestamp;
-    for (int i = 0; i < dataUnit->oneFrame.size(); i++) {
-        auto iter = dataUnit->oneFrame.at(i);
+    roadDataInSet.roadDataList.resize(numI);
+    roadDataInSet.timestamp = curTimestamp;
+    for (int i = 0; i < oneFrame.size(); i++) {
+        auto iter = oneFrame.at(i);
 
         DataUnitFusionData::RoadData item;
         item.hardCode = iter.hardCode;
@@ -200,11 +86,11 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUn
     int ret = 0;
     switch (mergeType) {
         case DataUnitFusionData::NotMerge: {
-            ret = dataUnit->TaskNotMerge(roadDataInSet);
+            ret = TaskNotMerge(roadDataInSet);
         }
             break;
         case DataUnitFusionData::Merge: {
-            ret = dataUnit->TaskMerge(roadDataInSet);
+            ret = TaskMerge(roadDataInSet);
         }
             break;
     }

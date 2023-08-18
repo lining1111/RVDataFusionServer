@@ -213,7 +213,7 @@ namespace common {
     public:
         string oprNum;// `json "oprNum"` uuid()
         string hardCode;// `json "hardCode"` 设备唯一标识
-        double timstamp = 0;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
+        double timestamp = 0;//`json "timstamp"` 自1970.1.1 00:00:00到当前的毫秒数
         string matrixNo;// `json "matrixNo"` 矩阵编号
         string cameraIp;// `json "cameraIp"` 相机编号
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间

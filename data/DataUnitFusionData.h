@@ -4,6 +4,7 @@
 
 #ifndef DATAUNITFUSIONDATA_H
 #define DATAUNITFUSIONDATA_H
+
 #include "DataUnit.h"
 
 using namespace common;
@@ -32,12 +33,9 @@ public:
         Merge,
     } MergeType;
 
-    static void
-    FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
+    static void FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
 
-    static int ThreadGetDataInRange(DataUnitFusionData *dataUnit, int index, uint64_t curTimestamp);
-
-    static int TaskProcessOneFrame(DataUnitFusionData *dataUnit, DataUnitFusionData::MergeType mergeType);
+    int TaskProcessOneFrame(DataUnitFusionData::MergeType mergeType);
 
     typedef struct {
         string hardCode;//图像对应的设备编号

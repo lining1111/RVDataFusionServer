@@ -65,7 +65,7 @@ void exampleJsonWatchData() {
 
     watchData.oprNum = random_uuid().data();
     watchData.hardCode = "hardCode";
-    watchData.timstamp = tv.tv_sec;
+    watchData.timestamp = tv.tv_sec;
     watchData.matrixNo = "matrixNo";
     watchData.cameraIp = "192.168.1.100";
     watchData.RecordDateTime = tv.tv_sec;

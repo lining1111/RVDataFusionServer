@@ -245,7 +245,7 @@ namespace common {
 
         out["oprNum"] = this->oprNum;
         out["hardCode"] = this->hardCode;
-        out["timstamp"] = this->timstamp;
+        out["timstamp"] = this->timestamp;
         out["matrixNo"] = this->matrixNo;
         out["cameraIp"] = this->cameraIp;
         out["RecordDateTime"] = this->RecordDateTime;
@@ -287,7 +287,7 @@ namespace common {
 
         this->oprNum = in["oprNum"].asString();
         this->hardCode = in["hardCode"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timstamp"].asDouble();
         this->matrixNo = in["matrixNo"].asString();
         this->cameraIp = in["cameraIp"].asString();
         this->RecordDateTime = in["RecordDateTime"].asDouble();
