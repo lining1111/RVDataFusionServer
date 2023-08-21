@@ -44,17 +44,6 @@ public:
 
 public:
     Timer timerKeep;
-    Timer timerFusionData;
-    Timer timerTrafficFlowGather;
-    Timer timerCrossTrafficJamAlarm;
-    Timer timerIntersectionOverflowAlarm;
-    Timer timerInWatchData_1_3_4;
-    Timer timerInWatchData_2;
-    Timer timerStopLinePassData;
-    Timer timerAbnormalStopData;
-    Timer timerLongDistanceOnSolidLineAlarm;
-    Timer timerHumanData;
-    Timer timerHumanLitPoleData;
 
     Timer timerCreateFusionData;
     Timer timerCreateTrafficFlowGather;
@@ -74,29 +63,6 @@ private:
     */
     static void Task_Keep(void *p);
 
-
-
-    static void Task_CrossTrafficJamAlarm(void *p);
-
-    static void Task_IntersectionOverflowAlarm(void *p);
-
-    static void Task_TrafficFlowGather(void *p);
-
-    static void Task_FusionData(void *p);
-
-    static void Task_InWatchData_1_3_4(void *p);
-
-    static void Task_InWatchData_2(void *p);
-
-    static void Task_StopLinePassData(void *p);
-
-    static void Task_HumanData(void *p);
-
-    static void Task_HumanLitPoleData(void *p);
-
-    static void Task_AbnormalStopData(void *p);
-
-    static void Task_LongDistanceOnSolidLineAlarm(void *p);
 
     //造数据的线程
     static void Task_CreateFusionData(void *p);

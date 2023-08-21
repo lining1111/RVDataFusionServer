@@ -11,15 +11,9 @@
 #include "data/Data.h"
 #include "signalControl/SignalControl.h"
 
-typedef struct {
-    std::string ip;
-    uint16_t port;
-    bool isEnable;
-} ConfigEnable;
 
 typedef struct {
-    std::vector<ConfigEnable> isSendPIC;
-    std::vector<ConfigEnable> isSendPICOnly;
+    bool isSendPIC;
     int roadNum;
     int mergeMode;
     bool isSaveOutObj = false;

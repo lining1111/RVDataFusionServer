@@ -22,7 +22,7 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
     typedef enum {
         NotMerge,
@@ -80,6 +80,8 @@ public:
     int TaskMerge(RoadDataInSet roadDataInSet);
 
     int GetFusionData(MergeData mergeData);
+
+    void taskO();
 };
 
 #endif //DATAUNITFUSIONDATA_H

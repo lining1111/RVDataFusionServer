@@ -298,7 +298,7 @@ namespace common {
     class FusionData : public PkgClass {
     public:
         string oprNum;// `json "oprNum"`
-        double timstamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
+        double timestamp;// `json "timstamp"`自1970.1.1 00:00:00到当前的毫秒数
         string crossID;// ``json "crossID"路口编号
         int isHasImage;//`json "isHasImage"` 是否包含图像
         vector<ObjMix> lstObjTarget;// `json "lstObjTarget"`目标分类

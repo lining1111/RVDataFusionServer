@@ -12,11 +12,12 @@
 #include <iomanip>
 #include "common/config.h"
 #include "DataUnitUtilty.h"
+#include "localBussiness/localBusiness.h"
 
 using namespace std;
 
 bool isProcessMerge = false;//task是否执行了融合流程
-void DataUnitFusionData::task() {
+void DataUnitFusionData::taskI() {
 
     uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
@@ -286,7 +287,7 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     auto data = (Data *) this->owner;
     OType fusionData;
     fusionData.oprNum = random_uuid();
-    fusionData.timstamp = mergeData.timestamp;
+    fusionData.timestamp = mergeData.timestamp;
     fusionData.crossID = data->plateId;
     VLOG(3) << "算法输出量到FusionData---算法输出量数组大小:" << mergeData.objOutput.size();
     //算法输出量到FusionData.lstObjTarget
@@ -353,11 +354,81 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     VLOG(3) << "算法输出量到FusionData---fusionData.lstVideos size:" << fusionData.lstVideos.size();
 
     if (!pushO(fusionData)) {
-        VLOG(2) << "DataUnitFusionData 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timstamp;
+        VLOG(2) << this->name << " 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timestamp;
     } else {
-        VLOG(2) << "DataUnitFusionData 数据存入 timestamp:" << (uint64_t) fusionData.timstamp;
+        VLOG(2) << this->name << " 数据存入 timestamp:" << (uint64_t) fusionData.timestamp;
     }
 
     return 0;
+}
+
+void DataUnitFusionData::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    //是否需要剔除图片
+    bool isSendPIC = localConfig.isSendPIC;
+    if (!isSendPIC) {
+        item.isHasImage = 0;
+        for (auto &iter: item.lstVideos) {
+            iter.imageData.clear();
+        }
+
+    }
+
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client1") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败,未获取锁 " << cli.second->server_ip << ":"
+                              << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":"
+                              << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
 }
 

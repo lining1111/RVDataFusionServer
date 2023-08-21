@@ -1784,14 +1784,14 @@ BLUE_TCP_STATE interval_callback(tcp_client_t* client)
                 }
                 else
                 {
-                    DBG("running task SYS_REBOOT");
+                    DBG("running taskI SYS_REBOOT");
                     sleep(5);
                     _exit(0);
                 }
             }
             else
             {
-                DBG("task = %d unsupport", (int)task);
+                DBG("taskI = %d unsupport", (int)task);
             }
         }
         

@@ -136,13 +136,21 @@ public:
         }
         this->intervalTask = _intervalTask;
         LOG(INFO) << this->name << " fs_i:" << this->fs_i << " intervalTask:" << intervalTask;
-        thread t([&]() {
+        thread tO([&]() {
             while (isTaskRun) {
-                usleep(1000 * intervalTask);
-                this->task();
+                usleep(1000 * intervalTask/2);
+                this->taskO();
             }
         });
-        t.detach();
+        tO.detach();
+
+        thread tI([&]() {
+            while (isTaskRun) {
+                usleep(1000 * intervalTask);
+                this->taskI();
+            }
+        });
+        tI.detach();
     }
 
     bool getIOffset(I &i, int index, int offset) {
@@ -288,7 +296,8 @@ public:
     bool isTaskRun = false;
     int intervalTask = 10;
 
-    virtual void task() = 0;
+    virtual void taskI() = 0;
+    virtual void taskO() = 0;
 
     void runTask(std::function<void()> task) {
         std::unique_lock<std::mutex> lock(*oneFrameMutex);
@@ -436,11 +445,13 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
     int TaskProcessOneFrame();
+
+    void taskO();
 };
 
 //交叉路口堵塞报警
@@ -455,9 +466,11 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
     static void specialBusiness(DataUnitCrossTrafficJamAlarm *dataUnit);
+
+    void taskO();
 };
 
 
@@ -473,8 +486,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
+    void taskO();
 };
 
 class DataUnitInWatchData_1_3_4 : public DataUnit<InWatchData_1_3_4, InWatchData_1_3_4> {
@@ -488,8 +502,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
+    void taskO();
 };
 
 class DataUnitInWatchData_2 : public DataUnit<InWatchData_2, InWatchData_2> {
@@ -503,8 +518,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
+    void taskO();
 };
 
 class DataUnitStopLinePassData : public DataUnit<StopLinePassData, StopLinePassData> {
@@ -518,7 +534,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
+
+    void taskO();
 };
 
 //异常停车报警
@@ -533,7 +551,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
+
+    void taskO();
 };
 
 //长距离压实线报警
@@ -549,7 +569,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
+
+    void taskO();
 };
 
 //行人数据
@@ -564,9 +586,11 @@ public:
 
     }
 
-    void task();
+    void taskI();
 
     static void specialBusiness(DataUnitHumanData *dataUnit);
+
+    void taskO();
 };
 
 
@@ -582,7 +606,9 @@ public:
 
     }
 
-    void task();
+    void taskI();
+
+    void taskO();
 };
 
 #endif //_DATAUNIT_H

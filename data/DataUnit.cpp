@@ -11,9 +11,10 @@
 #include <future>
 #include <glog/logging.h>
 #include "Data.h"
+#include "localBussiness/localBusiness.h"
 
 
-void DataUnitTrafficFlowGather::task() {
+void DataUnitTrafficFlowGather::taskI() {
     this->runTask(std::bind(DataUnitTrafficFlowGather::FindOneFrame, this, this->cache / 2));
 }
 
@@ -50,7 +51,65 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
     return 0;
 }
 
-void DataUnitCrossTrafficJamAlarm::task() {
+void DataUnitTrafficFlowGather::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+}
+
+void DataUnitCrossTrafficJamAlarm::taskI() {
     this->runTask(std::bind(DataUnitCrossTrafficJamAlarm::specialBusiness, this));
 }
 
@@ -82,23 +141,316 @@ void DataUnitCrossTrafficJamAlarm::specialBusiness(DataUnitCrossTrafficJamAlarm 
     }
 }
 
-void DataUnitIntersectionOverflowAlarm::task() {
+void DataUnitCrossTrafficJamAlarm::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+}
+
+void DataUnitIntersectionOverflowAlarm::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitInWatchData_1_3_4::task() {
+void DataUnitIntersectionOverflowAlarm::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+}
+
+void DataUnitInWatchData_1_3_4::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitInWatchData_2::task() {
+void DataUnitInWatchData_1_3_4::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitInWatchData_2::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitStopLinePassData::task() {
+void DataUnitInWatchData_2::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitStopLinePassData::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitHumanData::task() {
+void DataUnitStopLinePassData::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitHumanData::taskI() {
     this->runTask(std::bind(DataUnitHumanData::specialBusiness, this));
 }
 
@@ -137,14 +489,250 @@ void DataUnitHumanData::specialBusiness(DataUnitHumanData *dataUnit) {
     }
 }
 
-void DataUnitAbnormalStopData::task() {
+void DataUnitHumanData::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitAbnormalStopData::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitLongDistanceOnSolidLineAlarm::task() {
+void DataUnitAbnormalStopData::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitLongDistanceOnSolidLineAlarm::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-void DataUnitHumanLitPoleData::task() {
+void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
+}
+
+void DataUnitHumanLitPoleData::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
+}
+
+void DataUnitHumanLitPoleData::taskO() {
+    //1.取数组织发送内容
+    OType item;
+    if (!this->popO(item)) {
+        return;
+    }
+    auto data = (Data *) this->owner;
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    this->sn++;
+    //2.发送
+    auto local = LocalBusiness::instance();
+    for (auto cli: local->clientList) {
+        if (cli.first == "client2") {
+            if (!cli.second->isRun) {
+                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                return;
+            }
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            int ret = cli.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            switch (ret) {
+                case 0: {
+                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -1: {
+                    LOG(INFO) << this->name << " 发送失败,未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                case -2: {
+                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
+                              << ",发送开始时间:" << to_string(timestampStart)
+                              << ",发送结束时间:" << to_string(timestampEnd)
+                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
+                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
+                }
+                    break;
+                default: {
+
+                }
+                    break;
+            }
+        }
+    }
+
 }

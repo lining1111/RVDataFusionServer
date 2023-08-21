@@ -86,7 +86,7 @@ void Task_FusionData(int sock, FusionData fusionData) {
     uint64_t timestamp_u = std::chrono::duration_cast<std::chrono::milliseconds>(
             timestamp.time_since_epoch()).count();
 
-    fusionData.timstamp = timestamp_u;
+    fusionData.timestamp = timestamp_u;
     snFusionData++;
     Pkg pkg;
     fusionData.PkgWithoutCRC(snFusionData, 1030033983, pkg);
@@ -106,7 +106,7 @@ void Task_FusionData(int sock, FusionData fusionData) {
     uint64_t timestampSend = std::chrono::duration_cast<std::chrono::milliseconds>(
             now.time_since_epoch()).count();
     std::cout << "发送" << msgType << ",发送时间:" << to_string(timestampSend) << ",帧内时间:"
-              << to_string(fusionData.timstamp) << " " << buf_len << std::endl;
+              << to_string(fusionData.timestamp) << " " << buf_len << std::endl;
     auto cost = timestampSend - timestamp_u;
     if (cost > 80) {
         std::cout << msgType << "发送耗时" << cost << "ms" << std::endl;

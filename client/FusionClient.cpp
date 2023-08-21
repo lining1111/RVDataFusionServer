@@ -438,10 +438,10 @@ int FusionClient::SendBase(Pkg pkg) {
             if (errno == EPIPE) {
                 isRun = false;
             }
-            ret = -1;
+            ret = -2;
             break;
         } else if (nsend == 0) {
-            ret = -1;
+            ret = -2;
             isRun = false;
             break;                  /* EOF */
         }

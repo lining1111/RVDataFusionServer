@@ -462,7 +462,7 @@ namespace common {
 
     bool FusionData::JsonMarshal(Json::Value &out) {
         out["oprNum"] = this->oprNum;
-        out["timstamp"] = this->timstamp;
+        out["timstamp"] = this->timestamp;
         out["crossID"] = this->crossID;
         out["isHasImage"] = this->isHasImage;
 
@@ -498,7 +498,7 @@ namespace common {
     bool FusionData::JsonUnmarshal(Json::Value in) {
 
         this->oprNum = in["oprNum"].asString();
-        this->timstamp = in["timstamp"].asDouble();
+        this->timestamp = in["timstamp"].asDouble();
         this->crossID = in["crossID"].asString();
         this->isHasImage = in["isHasImage"].asInt();
 

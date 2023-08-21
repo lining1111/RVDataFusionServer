@@ -300,7 +300,7 @@ int main(int argc, char **argv) {
         printf("开始发送第%i帧\n", i);
         uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-        fusionData.timstamp = timestampStart;
+        fusionData.timestamp = timestampStart;
         fusionData.crossID = FLAGS_crossID;
         int ret = SendServer(sockfd, fusionData, matrixNo);
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -314,7 +314,7 @@ int main(int argc, char **argv) {
         cout << "发送" << result << server_ip << ":" << server_port
              << ",发送开始时间:" << to_string(timestampStart)
              << ",发送结束时间:" << to_string(timestampEnd)
-             << ",帧内时间:" << to_string((uint64_t) fusionData.timstamp)
+             << ",帧内时间:" << to_string((uint64_t) fusionData.timestamp)
              << ",耗时" << (timestampEnd - timestampStart) << "ms" << endl;
     }
 

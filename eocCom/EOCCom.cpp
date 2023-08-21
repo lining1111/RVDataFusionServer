@@ -1115,7 +1115,7 @@ int EOCCom::intervalPro(void *p) {
                     }
                         break;
                     default: {
-                        LOG(INFO) << "不支持的任务类型,task:" << task;
+                        LOG(INFO) << "不支持的任务类型,taskI:" << task;
                     }
                         break;
                 }
