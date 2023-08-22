@@ -8,7 +8,6 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
-#include <future>
 #include <glog/logging.h>
 #include "Data.h"
 #include "localBussiness/localBusiness.h"
@@ -66,7 +65,7 @@ void DataUnitTrafficFlowGather::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -156,7 +155,7 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -218,7 +217,7 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -280,7 +279,7 @@ void DataUnitInWatchData_1_3_4::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -343,7 +342,7 @@ void DataUnitInWatchData_2::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -406,7 +405,7 @@ void DataUnitStopLinePassData::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -504,7 +503,7 @@ void DataUnitHumanData::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -567,7 +566,7 @@ void DataUnitAbnormalStopData::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -630,7 +629,7 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
@@ -693,7 +692,7 @@ void DataUnitHumanLitPoleData::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }

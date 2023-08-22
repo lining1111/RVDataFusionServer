@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
         }
 
     } else {
-        StartEocCommon1();
+//        StartEocCommon1();
         if (!string(g_BaseSet.PlatformTcpPath).empty()) {
             cloudIp = string(g_BaseSet.PlatformTcpPath);
             LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
@@ -145,7 +145,6 @@ int main(int argc, char **argv) {
     } else {
         businessLocal->AddClient("client2", cloudIp, cloudPort);
     }
-//    local.AddClient("client2", cloudIp, cloudPort);
     //开启本地业务
     businessLocal->Run();
     LOG(INFO) << "通信协议版本:" << GetComVersion();

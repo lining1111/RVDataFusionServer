@@ -26,13 +26,12 @@ LocalBusiness *LocalBusiness::instance() {
 }
 
 void LocalBusiness::AddServer(string name, int port) {
-    FusionServer *server = new FusionServer(port);
-    server->port = port;
+    MyTcpServer *server = new MyTcpServer(port);
     serverList.insert(make_pair(name, server));
 }
 
 void LocalBusiness::AddClient(string name, string cloudIp, int cloudPort) {
-    FusionClient *client = new FusionClient(cloudIp, cloudPort);//端口号和ip依实际情况而变
+    MyTcpClient *client = new MyTcpClient(cloudIp, cloudPort);//端口号和ip依实际情况而变
     clientList.insert(make_pair(name, client));
 }
 
@@ -41,22 +40,16 @@ void LocalBusiness::Run() {
     isRun = true;
     for (auto &iter: serverList) {
         if (iter.second->Open() == 0) {
-            iter.second->Run();
+//            iter.second->Run();
         }
+        iter.second->Run();
     }
     for (auto &iter: clientList) {
         if (iter.second->Open() == 0) {
-            iter.second->Run();
+//            iter.second->Run();
         }
+        iter.second->Run();
 
-    }
-    if (0) {
-        string dirName1 = savePath;
-        int isCreate1 = mkdir(dirName1.data(), S_IRUSR | S_IWUSR | S_IXUSR | S_IRWXG | S_IRWXO);
-        if (!isCreate1)
-            LOG(INFO) << "create path:" << dirName1;
-        else
-            LOG(INFO) << "create path failed! error _code:" << isCreate1;
     }
 
     StartTimerTask();
@@ -100,25 +93,27 @@ void LocalBusiness::Task_Keep(void *p) {
 
     if (local->isRun) {
         for (auto &iter: local->serverList) {
-            if (!iter.second->isRun) {
-                iter.second->Close();
-                if (iter.second->Open() == 0) {
-                    LOG(WARNING) << "服务端:" << iter.first << " 重启";
-                    iter.second->Run();
+            if (!iter.second->isListen) {
+                iter.second->ReOpen();
+                if (iter.second->isListen) {
+//                    iter.second->Run();
+                    LOG(WARNING) << "服务端:" << iter.first << " port:" << iter.second->_port << " 重启";
                 } else {
-                    LOG(WARNING) << "服务端:" << iter.first << " 重启失败";
+                    LOG(WARNING) << "服务端:" << iter.first << " port:" << iter.second->_port << " 重启失败";
                 }
             }
         }
 
         for (auto &iter: local->clientList) {
-            if (!iter.second->isRun) {
-                iter.second->Close();
-                if (iter.second->Open() == 0) {
-                    LOG(WARNING) << "客户端:" << iter.first << " 重启";
-                    iter.second->Run();
+            if (iter.second->isNeedReconnect) {
+                iter.second->Reconnect();
+                if (!iter.second->isNeedReconnect) {
+//                    iter.second->Run();
+                    LOG(WARNING) << "客户端:" << iter.first <<
+                                 " ip_port" << iter.second->server_ip << "_" << iter.second->server_port << " 重启";
                 } else {
-                    LOG(WARNING) << "客户端:" << iter.first << " 重启失败";
+                    LOG(WARNING) << "客户端:" << iter.first <<
+                                 " ip_port" << iter.second->server_ip << "_" << iter.second->server_port << " 重启失败";
                 }
             }
         }
@@ -128,34 +123,6 @@ void LocalBusiness::Task_Keep(void *p) {
 uint64_t getSendTimestamp() {
     return (uint64_t) std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
-}
-
-/**
- * 发送输出队列
- * @param client
- * @param msgType
- * @param pkg
- * @return 0:成功，未连接 -2 失败 -1
- */
-int LocalBusiness::SendDataUnitO(FusionClient *client, string msgType, Pkg pkg) {
-
-    int ret = 0;
-
-    if (client->isRun) {
-        ret = client->SendBase(pkg);
-        if (ret < 0) {
-            VLOG(2) << msgType << " 发送失败:" << client->server_ip << ":" << client->server_port;
-            ret = -1;
-        } else {
-            VLOG(2) << msgType << " 发送成功:" << client->server_ip << ":" << client->server_port;
-            ret = 0;
-        }
-    } else {
-        VLOG(2) << "未连接上层:" << client->server_ip << ":" << client->server_port;
-        ret = -2;
-    }
-
-    return ret;
 }
 
 void LocalBusiness::Task_CreateFusionData(void *p) {

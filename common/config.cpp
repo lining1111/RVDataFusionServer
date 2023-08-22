@@ -11,6 +11,8 @@ string savePath = "/mnt/mnt_hd/save/";
 
 SignalControl *signalControl = nullptr;
 
+vector<void *> conns;
+
 int getAlgorithmParam(string file, AlgorithmParam &out) {
     //打开文件
     std::ifstream ifs;

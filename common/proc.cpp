@@ -50,12 +50,12 @@ void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
     pthread_mutex_unlock(&mtx);
 }
 
-int PkgProcessFun_CmdResponse(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdResponse(string ip, string content) {
     VLOG(2) << "应答指令";
     return 0;
 }
 
-int PkgProcessFun_CmdControl(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdControl(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -73,7 +73,7 @@ int PkgProcessFun_CmdControl(string ip, uint16_t port, string content) {
 
 }
 
-int PkgProcessFun_CmdHeartBeat(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdHeartBeat(string ip, string content) {
     VLOG(2) << "心跳指令";
     return 0;
 }
@@ -83,7 +83,7 @@ bool issave = false;
 
 CacheTimestamp CT_fusionData;
 
-int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -112,10 +112,6 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
             break;
         }
     }
-    if (index == -1) {
-        return -1;
-    }
-
     //存到帧率缓存
     auto ct = &CT_fusionData;
     ct->update(watchData.direction, watchData.timestamp, 15);
@@ -129,6 +125,10 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
     //存入队列
     if (!dataUnit->pushI(watchData, index)) {
         VLOG(2) << "client ip:" << ip << " WatchData,丢弃消息";
@@ -144,7 +144,7 @@ int PkgProcessFun_CmdFusionData(string ip, uint16_t port, string content) {
 }
 
 
-int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -155,10 +155,15 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, uint16_t port, string conte
     CrossTrafficJamAlarm crossTrafficJamAlarm;
     crossTrafficJamAlarm.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitCrossTrafficJamAlarm;
     int index = dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
+
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(crossTrafficJamAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " CrossTrafficJamAlarm,丢弃消息";
         ret = -1;
@@ -171,7 +176,7 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, uint16_t port, string conte
     return ret;
 }
 
-int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -186,6 +191,11 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string 
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitIntersectionOverflowAlarm;
     int index = dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(intersectionOverflowAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " IntersectionOverflowAlarm,丢弃消息";
         ret = -1;
@@ -201,7 +211,7 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, uint16_t port, string 
 
 CacheTimestamp CT_trafficFlowGather;
 
-int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -231,6 +241,10 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
     }
     pthread_mutex_unlock(&ct->mtx);
 
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
     if (!dataUnit->pushI(trafficFlow, index)) {
         VLOG(2) << "client ip:" << ip << " TrafficFlowGather,丢弃消息";
         ret = -1;
@@ -243,7 +257,7 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, uint16_t port, string content)
     return ret;
 }
 
-int PkgProcessFun_CmdInWatchData_1_3_4(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -258,6 +272,11 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, uint16_t port, string content)
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_1_3_4;
     int index = dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(inWatchData134, index)) {
         VLOG(2) << "client ip:" << ip << " InWatchData_1_3_4,丢弃消息";
         ret = -1;
@@ -270,7 +289,7 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, uint16_t port, string content)
     return ret;
 }
 
-int PkgProcessFun_CmdInWatchData_2(string ip, uint16_t port, string content) {
+int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -285,6 +304,11 @@ int PkgProcessFun_CmdInWatchData_2(string ip, uint16_t port, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_2;
     int index = dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(inWatchData2, index)) {
         VLOG(2) << "client ip:" << ip << " InWatchData_2,丢弃消息";
         ret = -1;
@@ -297,7 +321,7 @@ int PkgProcessFun_CmdInWatchData_2(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
+int PkgProcessFun_StopLinePassData(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -312,6 +336,11 @@ int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitStopLinePassData;
     int index = dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(stopLinePassData, index)) {
         VLOG(2) << "client ip:" << ip << " StopLinePassData,丢弃消息";
         ret = -1;
@@ -324,7 +353,7 @@ int PkgProcessFun_StopLinePassData(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_AbnormalStopData(string ip, uint16_t port, string content) {
+int PkgProcessFun_AbnormalStopData(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -339,6 +368,11 @@ int PkgProcessFun_AbnormalStopData(string ip, uint16_t port, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitAbnormalStopData;
     int index = dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(abnormalStopData, index)) {
         VLOG(2) << "client ip:" << ip << " AbnormalStopData,丢弃消息";
         ret = -1;
@@ -351,7 +385,7 @@ int PkgProcessFun_AbnormalStopData(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, uint16_t port, string content) {
+int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -366,6 +400,10 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, uint16_t port, string 
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitLongDistanceOnSolidLineAlarm;
     int index = dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
     if (!dataUnit->pushI(longDistanceOnSolidLineAlarm, index)) {
         VLOG(2) << "client ip:" << ip << " LongDistanceOnSolidLineAlarm,丢弃消息";
         ret = -1;
@@ -379,7 +417,7 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, uint16_t port, string 
     return ret;
 }
 
-int PkgProcessFun_HumanData(string ip, uint16_t port, string content) {
+int PkgProcessFun_HumanData(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -394,6 +432,11 @@ int PkgProcessFun_HumanData(string ip, uint16_t port, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanData;
     int index = dataUnit->FindIndexInUnOrder(humanData.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(humanData, index)) {
         VLOG(2) << "client ip:" << ip << " HumanData,丢弃消息";
         ret = -1;
@@ -406,7 +449,7 @@ int PkgProcessFun_HumanData(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
+int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -421,6 +464,11 @@ int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanLitPoleData;
     int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
+    if (index == -1 || index > dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+        return -1;
+    }
+
     if (!dataUnit->pushI(humanLitPoleData, index)) {
         VLOG(2) << "client ip:" << ip << " HumanLitPoleData,丢弃消息";
         ret = -1;
@@ -434,7 +482,7 @@ int PkgProcessFun_HumanLitPoleData(string ip, uint16_t port, string content) {
 }
 
 
-int PkgProcessFun_0xf1(string ip, uint16_t port, string content) {
+int PkgProcessFun_0xf1(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -507,7 +555,7 @@ int PkgProcessFun_0xf1(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_0xf2(string ip, uint16_t port, string content) {
+int PkgProcessFun_0xf2(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;
@@ -560,7 +608,7 @@ int PkgProcessFun_0xf2(string ip, uint16_t port, string content) {
     return ret;
 }
 
-int PkgProcessFun_0xf3(string ip, uint16_t port, string content) {
+int PkgProcessFun_0xf3(string ip, string content) {
     int ret = 0;
     Json::Reader reader;
     Json::Value in;

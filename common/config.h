@@ -14,7 +14,7 @@
 
 typedef struct {
     bool isSendPIC;
-    int roadNum;
+    int roadNum = 8;
     int mergeMode;
     bool isSaveOutObj = false;
     bool isSaveInObj = false;
@@ -37,5 +37,7 @@ extern string savePath;
 extern int getAlgorithmParam(string file,AlgorithmParam &out);
 
 extern SignalControl *signalControl;
+
+extern vector<void *> conns;
 
 #endif //CONFIG_H

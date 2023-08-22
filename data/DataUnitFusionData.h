@@ -24,6 +24,8 @@ public:
 
     void taskI();
 
+    int haveDataRoadNum = 0;
+
     typedef enum {
         NotMerge,
         Merge,

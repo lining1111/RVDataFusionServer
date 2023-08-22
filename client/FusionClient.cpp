@@ -347,7 +347,7 @@ int FusionClient::ThreadGetPkgContent(void *p) {
             //按照cmd分别处理
             auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
             if (iter != PkgProcessMap.end()) {
-                iter->second(client->server_ip, client->server_port, pkg.body);
+                iter->second(client->server_ip, pkg.body);
                 LOG(INFO) << "server,content:" << pkg.body << " exe over";
             } else {
                 //最后没有对应的方法名

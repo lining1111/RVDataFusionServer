@@ -216,7 +216,7 @@ int ClientInfo::ThreadGetPkgContent(void *pClientInfo) {
             //按照cmd分别处理
             auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
             if (iter != PkgProcessMap.end()) {
-                iter->second(string(inet_ntoa(client->addr.sin_addr)), client->addr.sin_port, pkg.body);
+                iter->second(string(inet_ntoa(client->addr.sin_addr)) , pkg.body);
             } else {
                 //最后没有对应的方法名
 //                VLOG(2) << "client:" << inet_ntoa(client->addr.sin_addr)

@@ -135,7 +135,7 @@ public:
             iter->clear();
         }
         this->intervalTask = _intervalTask;
-        LOG(INFO) << this->name << " fs_i:" << this->fs_i << " intervalTask:" << intervalTask;
+        LOG(WARNING) << this->name << " fs_i:" << this->fs_i << " intervalTask:" << intervalTask;
         thread tO([&]() {
             while (isTaskRun) {
                 usleep(1000 * intervalTask/2);
@@ -375,7 +375,7 @@ public:
     int ThreadGetDataInRange(int index, uint64_t curTimestamp) {
         //找到时间戳在范围内的帧
         if (emptyI(index)) {
-            VLOG(3) << name << " 第" << index << "路数据为空";
+            VLOG(4) << name << " 第" << index << "路数据为空";
         } else {
             for (int i = 0; i < sizeI(index); i++) {
                 IType refer;
@@ -386,7 +386,7 @@ public:
                         xRoadTimestamp[index] = (uint64_t) refer.timestamp;
                         //将当前路的所有信息缓存入对应的索引
                         oneFrame[index] = refer;
-                        VLOG(3) << name << " 第" << index << "路时间戳在范围内，取出来:" << (uint64_t) refer.timestamp;
+                        VLOG(4) << name << " 第" << index << "路时间戳在范围内，取出来:" << (uint64_t) refer.timestamp;
                         break;
                     }
                 }

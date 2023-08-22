@@ -187,13 +187,45 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
     mergeData.objInput = roadDataInSet;
 
     //如果只有一路数据，不走融合
-    int haveOneRoadDataCount = 0;
-    for (auto iter: mergeData.objInput.roadDataList) {
-        if (!iter.listObjs.empty()) {
-            haveOneRoadDataCount++;
+    //将标定时间戳，和帧内时间戳输出到文件
+    string line = "";
+    line += to_string(this->curTimestamp);
+    line += ",";
+    this->haveDataRoadNum = 0;
+    for (int i = 0; i < this->oneFrame.size(); i++) {
+        auto iter = this->oneFrame.at(i);
+        line += to_string((uint64_t) iter.timestamp);
+        line += ",";
+        if (!iter.oprNum.empty()) {
+            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timestamp;
+            this->haveDataRoadNum++;
         }
     }
-    VLOG(3) << "融合算法细节---有数据的路数:" << haveOneRoadDataCount;
+    line += "\n";
+    //写入文件
+    if (0) {
+        ofstream ofs;
+        ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+        //判断大小是否超过最大值
+        uint64_t maxSize = 1024 * 1024 * 100;
+        if (ofs.tellp() >= maxSize) {
+            //清空
+            ofs.close();
+            ofstream ofs1;
+            ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
+            ofs1.flush();
+            ofs1.close();
+            ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+        }
+
+        if (ofs.is_open()) {
+            ofs << line;
+            ofs.flush();
+            ofs.close();
+        }
+    }
+
+    VLOG(3) << "融合算法细节---有数据的路数:" << this->haveDataRoadNum;
     //存输入的目标数据元素到文件
     if (localConfig.isSaveInObj) {
         for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
@@ -205,7 +237,7 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
 
     VLOG(3) << "融合算法细节---从原始数据拷贝到算法输入量的数组容量:" << mergeData.objInput.roadDataList.size();
     //这里是根据含有识别数据路数来操作输出量
-    switch (haveOneRoadDataCount) {
+    switch (this->haveDataRoadNum) {
         case 0 : {
             VLOG(3) << "融合算法细节---全部路都没有数据";
         }
@@ -326,7 +358,7 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
 
         fusionData.lstObjTarget.push_back(objMix);
     }
-    VLOG(3) << "算法输出量到FusionData---fusionData.lstObjTarget size :" << fusionData.lstObjTarget.size();
+
     bool isSendPicData = true;
     if (isSendPicData) {
         fusionData.isHasImage = 1;
@@ -351,7 +383,6 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
         fusionData.isHasImage = 0;
         fusionData.lstVideos.resize(0);
     }
-    VLOG(3) << "算法输出量到FusionData---fusionData.lstVideos size:" << fusionData.lstVideos.size();
 
     if (!pushO(fusionData)) {
         VLOG(2) << this->name << " 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timestamp;
@@ -387,7 +418,7 @@ void DataUnitFusionData::taskO() {
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
         if (cli.first == "client1") {
-            if (!cli.second->isRun) {
+            if (cli.second->isNeedReconnect) {
                 LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }

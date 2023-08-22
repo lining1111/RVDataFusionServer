@@ -5,11 +5,15 @@
 #ifndef _LOCALBUSINESS_H
 #define _LOCALBUSINESS_H
 
-#include <server/FusionServer.h>
-#include <client/FusionClient.h>
+//#include <server/FusionServer.h>
+//#include <client/FusionClient.h>
+#include "myTcp/MyTcpClient.hpp"
+#include "myTcp/MyTcpServer.hpp"
+
 #include <map>
 #include <functional>
 #include "os/nonCopyable.hpp"
+#include "os/timeTask.hpp"
 
 class LocalBusiness : public NonCopyable {
 public:
@@ -17,8 +21,10 @@ public:
     static LocalBusiness *m_pInstance;
 
     bool isRun = false;
-    std::map<string, FusionServer *> serverList;
-    std::map<string, FusionClient *> clientList;
+//    std::map<string, FusionServer *> serverList;
+//    std::map<string, FusionClient *> clientList;
+    std::map<string, MyTcpServer *> serverList;
+    std::map<string, MyTcpClient *> clientList;
 public:
     static LocalBusiness *instance();
 
@@ -43,19 +49,19 @@ public:
     void Run();
 
 public:
-    Timer timerKeep;
+    os::Timer timerKeep;
 
-    Timer timerCreateFusionData;
-    Timer timerCreateTrafficFlowGather;
-    Timer timerCreateAbnormalStopData;
-    Timer timerCreateLongDistanceOnSolidLineAlarm;
-    Timer timerCreateHumanData;
+    os::Timer timerCreateFusionData;
+    os::Timer timerCreateTrafficFlowGather;
+    os::Timer timerCreateAbnormalStopData;
+    os::Timer timerCreateLongDistanceOnSolidLineAlarm;
+    os::Timer timerCreateHumanData;
 
     void StartTimerTask();
 
     void StopTimerTaskAll();
 
-    static int SendDataUnitO(FusionClient *client, string msgType, Pkg pkg);
+//    static int SendDataUnitO(FusionClient *client, string msgType, Pkg pkg);
 private:
     /**
     * 查看服务端和客户端状态，并执行断线重连
