@@ -16,9 +16,8 @@ typedef struct {
     bool isSendPIC;
     int roadNum = 8;
     int mergeMode;
-    bool isSaveOutObj = false;
     bool isSaveInObj = false;
-    bool isSaveOutJSON = false;
+    bool isSaveOutObj = false;
     AlgorithmParam algorithmParam;
 } LocalConfig;
 

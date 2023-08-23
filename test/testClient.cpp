@@ -136,12 +136,12 @@ static void Task_FusionData1(MyTcpClient *client, FusionData fusionData) {
 
 //    auto ret = send(sock, buf, buf_len, 0);
 
-    if (client->_socket.isNull() || client->isNeedReconnect){
+    if (client->_s.isNull() || client->isNeedReconnect){
         return;
     }
 
     try {
-        auto ret = client->_socket.sendBytes(buf, buf_len);
+        auto ret = client->_s.sendBytes(buf, buf_len);
 
         if (ret < 0) {
             std::cout << "发送失败" << msgType << std::endl;
@@ -221,26 +221,11 @@ void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
 
 }
 
-
-int signalIgnPipe() {
-    struct sigaction act;
-
-    memset(&act, 0, sizeof(act));
-    sigemptyset(&act.sa_mask);
-    act.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &act, NULL) < 0) {
-        printf("call sigaction fail, %s\n", strerror(errno));
-        return errno;
-    }
-
-    return 0;
-}
-
 DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
 DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 
 int main(int argc, char **argv) {
-    signalIgnPipe();
+
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 //    //初始化一个client
 //    int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -315,8 +300,8 @@ int main(int argc, char **argv) {
 
     MyTcpClient *client = new MyTcpClient(FLAGS_cloudIp, FLAGS_cloudPort);
     if (client->Open() == 0) {
-        client->Run();
     }
+    client->Run();
 
 //获取实时数据和统计数据
     FusionData fusionData;

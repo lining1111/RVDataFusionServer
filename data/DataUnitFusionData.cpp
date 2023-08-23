@@ -35,8 +35,8 @@ void DataUnitFusionData::taskI() {
     if (isProcessMerge) {
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
-        auto cost = timestampEnd - timestampStart;
-        LOG(INFO) << "DataUnitFusionData 取同一帧完成融合耗时" << cost << "ms";
+        totalCost = timestampEnd - timestampStart;
+        LOG(INFO) << "DataUnitFusionData 取同一帧完成融合耗时" << totalCost << "ms";
     }
 }
 
@@ -51,6 +51,15 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeT
     //1，将同一帧内待输入量存入集合
     DataUnitFusionData::RoadDataInSet roadDataInSet;
     roadDataInSet.roadDataList.resize(numI);
+    for (auto &iter: roadDataInSet.roadDataList) {
+        iter.imageData.clear();
+        iter.listObjs.clear();
+        iter.hardCode.clear();
+        iter.direction = -1;
+        iter.timestamp = 0;
+    }
+
+
     roadDataInSet.timestamp = curTimestamp;
     for (int i = 0; i < oneFrame.size(); i++) {
         auto iter = oneFrame.at(i);
@@ -59,6 +68,7 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeT
         item.hardCode = iter.hardCode;
         item.imageData = iter.imageData;
         item.direction = iter.direction;
+        item.timestamp = iter.timestamp;
         for (int j = 0; j < iter.lstObjTarget.size(); j++) {
             auto iter1 = iter.lstObjTarget.at(j);
             OBJECT_INFO_T objectInfoT;
@@ -72,11 +82,22 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeT
     int ret = 0;
     switch (mergeType) {
         case DataUnitFusionData::NotMerge: {
+            auto startTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
             ret = TaskNotMerge(roadDataInSet);
+            auto endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            algorithmCost = endTime - startTime;
         }
             break;
         case DataUnitFusionData::Merge: {
+            auto startTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
             ret = TaskMerge(roadDataInSet);
+            auto endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            algorithmCost = endTime - startTime;
+            VLOG(3) << name << " 融合算法耗时:" << algorithmCost << " ms";
         }
             break;
     }
@@ -197,7 +218,6 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         line += to_string((uint64_t) iter.timestamp);
         line += ",";
         if (!iter.oprNum.empty()) {
-            VLOG(3) << "DataUnitFusionData 第" << i << "路取到的时间戳为" << (uint64_t) iter.timestamp;
             this->haveDataRoadNum++;
         }
     }
@@ -225,7 +245,6 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         }
     }
 
-    VLOG(3) << "融合算法细节---有数据的路数:" << this->haveDataRoadNum;
     //存输入的目标数据元素到文件
     if (localConfig.isSaveInObj) {
         for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
@@ -235,7 +254,6 @@ int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
         }
     }
 
-    VLOG(3) << "融合算法细节---从原始数据拷贝到算法输入量的数组容量:" << mergeData.objInput.roadDataList.size();
     //这里是根据含有识别数据路数来操作输出量
     switch (this->haveDataRoadNum) {
         case 0 : {
@@ -321,7 +339,6 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     fusionData.oprNum = random_uuid();
     fusionData.timestamp = mergeData.timestamp;
     fusionData.crossID = data->plateId;
-    VLOG(3) << "算法输出量到FusionData---算法输出量数组大小:" << mergeData.objOutput.size();
     //算法输出量到FusionData.lstObjTarget
     for (auto iter: mergeData.objOutput) {
         ObjMix objMix;
@@ -384,6 +401,9 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
         fusionData.lstVideos.resize(0);
     }
 
+    //做这次融合的总结
+    Summary(&mergeData, &fusionData);
+
     if (!pushO(fusionData)) {
         VLOG(2) << this->name << " 队列已满，未存入数据 timestamp:" << (uint64_t) fusionData.timestamp;
     } else {
@@ -391,6 +411,54 @@ int DataUnitFusionData::GetFusionData(MergeData mergeData) {
     }
 
     return 0;
+}
+
+void DataUnitFusionData::Summary(MergeData *mergeData, FusionData *fusionData) {
+
+    stringstream content;
+    content << "\n";
+    //1.打印表头
+    content << "------------------Summary---------------\n";
+    //2.打印标定时间戳
+    content << "标定时间戳: " << (uint64_t) mergeData->timestamp << "\n";
+    //3.打印输入数据
+    content << "输入数据:\n";
+    content << "\t" << std::setw(8) << "序号"
+            << "\t" << std::setw(8) << "设备号"
+            << "\t" << std::setw(8) << "方向"
+            << "\t" << std::setw(8) << "时间戳"
+            << "\t" << std::setw(8) << "目标数"
+            << "\t" << std::setw(8) << "图片大小(base64)"
+            << "\n";
+    for (int i = 0; i < mergeData->objInput.roadDataList.size(); i++) {
+        auto &iter = mergeData->objInput.roadDataList[i];
+        content << "\t" << std::setw(8) << i
+                << "\t" << std::setw(8) << iter.hardCode
+                << "\t" << std::setw(8) << iter.direction
+                << "\t" << std::setw(8) << iter.timestamp
+                << "\t" << std::setw(8) << iter.listObjs.size()
+                << "\t" << std::setw(8) << iter.imageData.size()
+                << "\n";
+    }
+    //4.打印输出数据
+    content << "输出数据:\n";
+    content << "\t" << std::setw(8) << "设备号"
+            << "\t" << std::setw(8) << "时间戳"
+            << "\t" << std::setw(8) << "目标数"
+            << "\n";
+    content << "\t" << std::setw(8) << fusionData->crossID
+            << "\t" << std::setw(8) << (uint64_t) fusionData->timestamp
+            << "\t" << std::setw(8) << fusionData->lstObjTarget.size()
+            << "\n";
+    //5.打印耗时
+    content << "耗时:\n";
+    content << "\t" << std::setw(8) << "算法耗时"
+            << "\t" << std::setw(8) << "总耗时"
+            << "\n";
+    content << "\t" << std::setw(8) << algorithmCost
+            << "\t" << std::setw(8) << totalCost
+            << "\n";
+    LOG(INFO) << content.str();
 }
 
 void DataUnitFusionData::taskO() {
@@ -462,4 +530,6 @@ void DataUnitFusionData::taskO() {
         }
     }
 }
+
+
 

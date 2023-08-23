@@ -97,7 +97,7 @@ public:
     Poco::Net::ServerSocket _s;
     Poco::Net::SocketReactor _reactor;
     Poco::Thread _t;
-    Poco::Net::SocketAcceptor<MyTcpServerHandler> *_acceptor;
+    Poco::Net::SocketAcceptor<MyTcpServerHandler> *_acceptor = nullptr;
     bool isListen = false;
 public:
     MyTcpServer(int port) : _port(port) {
@@ -132,6 +132,9 @@ public:
             isListen = false;
             return -1;
         }
+        if (_acceptor != nullptr) {
+            delete _acceptor;
+        }
         _acceptor = new Poco::Net::SocketAcceptor<MyTcpServerHandler>(_s, _reactor);
         isListen = true;
         return 0;
@@ -141,8 +144,8 @@ public:
     int Run() {
         //Starting TCP Server
         _t.start(_reactor);
-        LOG(WARNING) << _port << "Server Started";
-        LOG(WARNING) << _port << "Ready To Accept the connections";
+        LOG(WARNING) << _port << "-Server Started";
+        LOG(WARNING) << _port << "-Ready To Accept the connections";
         return 0;
     }
 

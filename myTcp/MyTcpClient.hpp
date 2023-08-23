@@ -39,13 +39,10 @@ using Poco::TimeoutException;
 
 class MyTcpClient :public MyTcpHandler{
 public:
-    enum {
-        BUFFER_SIZE = 1024 * 1024 * 64
-    };
     std::mutex *mtx= nullptr;
     string server_ip;
     int server_port;
-    StreamSocket _socket;
+    StreamSocket _s;
     std::string _peerAddress;
     char *recvBuf = nullptr;
     bool isNeedReconnect = true;
@@ -69,7 +66,7 @@ public:
         SocketAddress sa(server_ip, server_port);
         try {
             Poco::Timespan ts(1000 * 1000);
-            _socket.connect(sa, ts);
+            _s.connect(sa, ts);
         } catch (ConnectionRefusedException&)
         {
             std::cout<<server_ip<<":"<<server_port<<"connect refuse"<<std::endl;
@@ -86,28 +83,28 @@ public:
             return -1;
         }
 
-        _peerAddress = _socket.peerAddress().toString();
+        _peerAddress = _s.peerAddress().toString();
         LOG(WARNING) << "connection to " << _peerAddress << " ...";
         Poco::Timespan ts1(1000 * 100);
-        _socket.setSendTimeout(ts1);
+        _s.setSendTimeout(ts1);
         isNeedReconnect = false;
 
         return 0;
     }
 
     int Reconnect() {
-        _socket.close();
+        _s.close();
         SocketAddress sa(server_ip, server_port);
         try {
             Poco::Timespan ts(1000 * 1000);
-            _socket.connect(sa, ts);
+            _s.connect(sa, ts);
         } catch (...) {
             return -1;
         }
-        _peerAddress = _socket.peerAddress().toString();
+        _peerAddress = _s.peerAddress().toString();
         LOG(WARNING) << "reconnection to " << _peerAddress << " ...";
         Poco::Timespan ts1(1000 * 100);
-        _socket.setSendTimeout(ts1);
+        _s.setSendTimeout(ts1);
         isNeedReconnect = false;
 
         return 0;
@@ -122,7 +119,7 @@ public:
                     bzero(recvBuf, 1024 * 1024);
                     int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
                     try {
-                        int len = _socket.receiveBytes(recvBuf, recvLen);
+                        int len = _s.receiveBytes(recvBuf, recvLen);
                         if (len <= 0) {
                             isNeedReconnect = true;
                         } else {
@@ -155,7 +152,7 @@ public:
         //pack
         common::Pack(pkg, buf_send, &len_send);
         try {
-            auto len = _socket.sendBytes(buf_send, len_send);
+            auto len = _s.sendBytes(buf_send, len_send);
 
             if (len < 0) {
                 isNeedReconnect = true;
@@ -181,7 +178,7 @@ public:
         }
         len_send = 0;
         try {
-            auto len = _socket.sendBytes(buf_send, len_send);
+            auto len = _s.sendBytes(buf_send, len_send);
 
             if (len < 0) {
                 isNeedReconnect = true;

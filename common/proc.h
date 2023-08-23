@@ -6,10 +6,11 @@
 #define PROC_H
 
 #include <string>
-#include <server/ClientInfo.h>
 #include <vector>
+#include <common/common.h>
 
 using namespace std;
+using namespace common;
 
 class CacheTimestamp {
 private:
@@ -56,12 +57,13 @@ int PkgProcessFun_HumanData(string ip, string content);
 
 int PkgProcessFun_HumanLitPoleData(string ip, string content);
 
-
 int PkgProcessFun_0xf1(string ip, string content);
 
 int PkgProcessFun_0xf2(string ip, string content);
 
 int PkgProcessFun_0xf3(string ip, string content);
+
+int PkgProcessFun_TrafficDetectorStatus(string ip, string content);
 
 typedef int (*PkgProcessFun)(string ip, string content);
 

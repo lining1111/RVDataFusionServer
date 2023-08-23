@@ -6,6 +6,7 @@
 #include "common.h"
 #include "config.h"
 #include "data/Data.h"
+#include "localBussiness/localBusiness.h"
 #include <glog/logging.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
@@ -661,6 +662,47 @@ int PkgProcessFun_0xf3(string ip, string content) {
     return ret;
 }
 
+static uint16_t sn_TrafficDetectorStatus = 0;
+
+int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
+    //透传
+    int ret = 0;
+    Json::Reader reader;
+    Json::Value in;
+    if (!reader.parse(content, in, false)) {
+        VLOG(2) << "TrafficDetectorStatus json 解析失败:" << reader.getFormattedErrorMessages();
+        return -1;
+    }
+    TrafficDetectorStatus trafficDetectorStatus;
+    trafficDetectorStatus.JsonUnmarshal(in);
+    //直接发送给第2个client
+    auto data = Data::instance();
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    trafficDetectorStatus.PkgWithoutCRC(sn_TrafficDetectorStatus, deviceNo, pkg);
+    sn_TrafficDetectorStatus++;
+    auto business = LocalBusiness::instance();
+    if (business->isRun) {
+        string msgType = "TrafficDetectorStatus";
+        if (business->clientList.empty()) {
+            LOG(ERROR) << "client list empty";
+            return -1;
+        }
+        for (auto iter: business->clientList) {
+            if (iter.first != "client2") {
+                continue;
+            }
+
+            auto ret = iter.second->SendBase(pkg);
+        }
+    }
+
+    VLOG(2) << "client ip:" << ip << " TrafficDetectorStatus,消息透传";
+
+    return ret;
+}
+
+
 map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdResponse, PkgProcessFun_CmdResponse),
         make_pair(CmdControl, PkgProcessFun_CmdControl),
@@ -681,6 +723,8 @@ map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair((CmdType) 0xf1, PkgProcessFun_0xf1),
         make_pair((CmdType) 0xf2, PkgProcessFun_0xf2),
         make_pair((CmdType) 0xf3, PkgProcessFun_0xf3),
+
+        make_pair(CmdTrafficDetectorStatus, PkgProcessFun_TrafficDetectorStatus),
 };
 
 

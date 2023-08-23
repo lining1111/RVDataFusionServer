@@ -9,6 +9,7 @@
 #include "common/CRC.h"
 #include "common/proc.h"
 #include "common/config.h"
+#include "ringbuffer/RingBuffer.h"
 #include "Queue.hpp"
 #include <glog/logging.h>
 #include <thread>

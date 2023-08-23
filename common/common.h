@@ -23,13 +23,6 @@ namespace common {
 #define STR(p) p?p:""
 
     /**
-    * 打印hex输出
-    * @param data
-    * @param len
-    */
-    void PrintHex(uint8_t *data, uint32_t len);
-
-    /**
      * 产生uuid
      * @return uuid的string
      */
@@ -43,7 +36,7 @@ namespace common {
      */
 
 
-#define ComVersion "1.1.1"
+#define ComVersion "1.1.2"
 
     string GetComVersion();
 
@@ -63,6 +56,7 @@ namespace common {
         CmdLongDistanceOnSolidLineAlarm = 0x0b,//长距离压实线报警
         CmdHumanData = 0x0c,//3516相机预警信息 行人感知
         CmdHumanLitPoleData = 0x0d,//人形灯杆数据
+        CmdTrafficDetectorStatus = 0x0e,//检测器状态
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -219,8 +213,8 @@ namespace common {
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间
         int isHasImage;//`json "isHasImage"` 是否包含图像
         string imageData;//`json "imageData"` 当前的视频图像数据
-        int direction;//方向，枚举类型 enum Direction
-        int roadDirection;
+        int direction =-1;//方向，枚举类型 enum Direction
+        int roadDirection =-1;
         vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     public:
@@ -661,6 +655,7 @@ namespace common {
         int direction;
         int humanNum;//等待区人数
         int humanFlow;//穿行人数
+        int waitingTime;//等待时间
         int lightStatus;
         string imageData;
 
@@ -742,6 +737,34 @@ namespace common {
     public:
         UrgentPriority() {
             this->cmdType = (CmdType) 0xf3;
+        }
+
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    //检测器状态上传
+    class SignalControlList_item {
+    public:
+        string signalControlCode;//检测器编码
+        int vehicleCount;//检测器占有的车辆数
+    public:
+        bool JsonMarshal(Json::Value &out);
+
+        bool JsonUnmarshal(Json::Value in);
+    };
+
+    class TrafficDetectorStatus : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        vector<SignalControlList_item> signalControlList;
+    public:
+        TrafficDetectorStatus() {
+            this->cmdType = CmdTrafficDetectorStatus;
         }
 
         bool JsonMarshal(Json::Value &out);

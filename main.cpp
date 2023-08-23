@@ -43,9 +43,8 @@ DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 DEFINE_int32(roadNum, 8, "外设路数，默认8");
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 
-DEFINE_bool(isSaveOutObj, false, "存算法输出，默认false");
 DEFINE_bool(isSaveInObj, false, "存算法输入，默认false");
-DEFINE_bool(isSaveOutJSON, false, "存发送json，默认false");
+DEFINE_bool(isSaveOutObj, false, "存算法输出，默认false");
 
 DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,默认./algorithmParam.json");
 
@@ -121,9 +120,8 @@ int main(int argc, char **argv) {
     localConfig.isSendPIC = FLAGS_isSendPIC;
     localConfig.mergeMode = FLAGS_mergeMode;
     localConfig.roadNum = FLAGS_roadNum;
-    localConfig.isSaveOutObj = FLAGS_isSaveOutObj;
     localConfig.isSaveInObj = FLAGS_isSaveInObj;
-    localConfig.isSaveOutJSON = FLAGS_isSaveOutJSON;
+    localConfig.isSaveOutObj = FLAGS_isSaveOutObj;
 
     //读取默认的算法配置文件
     if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {

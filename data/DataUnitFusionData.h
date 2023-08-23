@@ -25,6 +25,8 @@ public:
     void taskI();
 
     int haveDataRoadNum = 0;
+    uint64_t totalCost = 0;
+    uint64_t algorithmCost = 0;
 
     typedef enum {
         NotMerge,
@@ -40,6 +42,7 @@ public:
         vector<OBJECT_INFO_T> listObjs;
         string imageData;
         int direction;
+        uint64_t timestamp;
     } RoadData;//路口数据，包含目标集合、路口设备编号
 
     typedef struct {
@@ -82,6 +85,8 @@ public:
     int TaskMerge(RoadDataInSet roadDataInSet);
 
     int GetFusionData(MergeData mergeData);
+
+    void Summary(MergeData *mergeData, FusionData *fusionData);
 
     void taskO();
 };

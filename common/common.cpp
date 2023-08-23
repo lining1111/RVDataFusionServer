@@ -10,19 +10,6 @@
 
 namespace common {
 
-    void PrintHex(uint8_t *data, uint32_t len) {
-        int count = 0;
-        for (int i = 0; i < len; i++) {
-            printf("%02x ", data[i]);
-            count++;
-            if (count == 16) {
-                printf("\n");
-                count = 0;
-            }
-        }
-        printf("\n");
-    }
-
     /*
  * 函数功能：产生uuid
  * 参数：无
@@ -1142,6 +1129,7 @@ namespace common {
         out["direction"] = this->direction;
         out["humanNum"] = this->humanNum;
         out["humanFlow"] = this->humanFlow;
+        out["waitingTime"] = this->waitingTime;
         out["lightStatus"] = this->lightStatus;
         out["imageData"] = this->imageData;
 
@@ -1157,6 +1145,7 @@ namespace common {
         this->direction = in["direction"].asInt();
         this->humanNum = in["humanNum"].asInt();
         this->humanFlow = in["humanFlow"].asInt();
+        this->waitingTime = in["waitingTime"].asInt();
         this->lightStatus = in["lightStatus"].asInt();
         this->imageData = in["imageData"].asString();
 
@@ -1287,5 +1276,60 @@ namespace common {
         return true;
     }
 
+    bool SignalControlList_item::JsonMarshal(Json::Value &out) {
+        out["signalControlCode"] = this->signalControlCode;
+        out["vehicleCount"] = this->vehicleCount;
+        return true;
+    }
+
+    bool SignalControlList_item::JsonUnmarshal(Json::Value in) {
+        this->signalControlCode = in["signalControlCode"].asString();
+        this->vehicleCount = in["vehicleCount"].asInt();
+
+        return true;
+    }
+
+    bool TrafficDetectorStatus::JsonMarshal(Json::Value &out) {
+        out["oprNum"] = this->oprNum;
+        out["timestamp"] = this->timestamp;
+        out["crossID"] = this->crossID;
+        out["hardCode"] = this->hardCode;
+
+        Json::Value signalControlList = Json::arrayValue;
+        if (!this->signalControlList.empty()) {
+            for (auto iter: this->signalControlList) {
+                Json::Value item;
+                iter.JsonMarshal(item);
+                signalControlList.append(item);
+            }
+        } else {
+            signalControlList.resize(0);
+        }
+
+        out["signalControlList"] = signalControlList;
+
+        return true;
+    }
+
+    bool TrafficDetectorStatus::JsonUnmarshal(Json::Value in) {
+        this->oprNum = in["oprNum"].asString();
+        this->timestamp = in["timestamp"].asDouble();
+        this->crossID = in["crossID"].asString();
+        this->hardCode = in["hardCode"].asString();
+
+        Json::Value signalControlList = in["signalControlList"];
+        if (signalControlList.isArray()) {
+            for (auto iter: signalControlList) {
+                SignalControlList_item item;
+                if (item.JsonUnmarshal(iter)) {
+                    this->signalControlList.push_back(item);
+                }
+            }
+        } else {
+            return false;
+        }
+
+        return true;
+    }
 }
 
