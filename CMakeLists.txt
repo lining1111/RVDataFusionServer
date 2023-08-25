@@ -8,7 +8,6 @@ configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/versi
 add_definitions(-D${ARCH})
 
 find_package(gflags REQUIRED)
-find_package(jsoncpp REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
@@ -17,9 +16,10 @@ find_package(libuuid REQUIRED)
 find_package(glog REQUIRED)
 find_package(fmt REQUIRED)
 find_package(Poco REQUIRED)
+find_package(xpack REQUIRED)
 
-set(3rdLibs gflags::gflags JsonCpp::JsonCpp SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
-        libuuid::libuuid glog::glog fmt::fmt Poco::Poco)
+set(3rdLibs gflags::gflags SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
+        libuuid::libuuid glog::glog fmt::fmt Poco::Poco xpack::xpack)
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")

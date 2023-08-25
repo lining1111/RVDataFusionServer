@@ -10,7 +10,6 @@ list(TRANSFORM SRC_FILES PREPEND ../)
 add_executable(testCommon testCommon.cpp
         ../common/common.cpp
         ../data/merge/mergeStruct.cpp
-        ../data/merge/AlgorithmParam.cpp
         ../common/CRC.cpp
         ../ringbuffer/RingBuffer.cpp)
 target_link_libraries(testCommon ${LIBS})

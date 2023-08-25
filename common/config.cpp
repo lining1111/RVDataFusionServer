@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include <fstream>
+#include <glog/logging.h>
 
 LocalConfig localConfig;
 int fixrPort = 9977;
@@ -24,16 +25,13 @@ int getAlgorithmParam(string file, AlgorithmParam &out) {
         buf << ifs.rdbuf();
         std::string content(buf.str());
         ifs.close();
-        Json::Reader reader;
-        Json::Value in;
-        if (!reader.parse(content, in, false)) {
-            printf("json parse err");
+
+        try {
+            json::decode(content, out);
+        } catch (std::exception &e) {
+            LOG(ERROR) << e.what();
             return -1;
         }
-        if (out.JsonUnmarshal(in)) {
-            return 0;
-        } else {
-            return -1;
-        }
+        return 0;
     }
 }

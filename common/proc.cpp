@@ -10,7 +10,9 @@
 #include <glog/logging.h>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
+#include "common.h"
 
+using namespace common;
 
 void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
     pthread_mutex_lock(&mtx);
@@ -58,14 +60,13 @@ int PkgProcessFun_CmdResponse(string ip, string content) {
 
 int PkgProcessFun_CmdControl(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "Control json 解析失败:" << reader.getFormattedErrorMessages();
+    Control control;
+    try {
+        json::decode(content, control);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    Control control;
-    control.JsonUnmarshal(in);
     LOG(INFO) << "control:" << content << "," << control.isSendVideoInfo;
     //处理控制命令
     localConfig.isSendPIC = control.isSendVideoInfo;
@@ -86,23 +87,14 @@ CacheTimestamp CT_fusionData;
 
 int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-//    if (!issave){
-//        std::ofstream	OsWrite("recv.json",std::ofstream::app);
-//        OsWrite<<content;
-//        OsWrite<<std::endl;
-//        OsWrite.close();
-//        issave=true;
-//    }
 
-
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "watchData json 解析失败:" << reader.getFormattedErrorMessages();
+    WatchData watchData;
+    try {
+        json::decode(content, watchData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    WatchData watchData;
-    watchData.JsonUnmarshal(in);
 
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitFusionData;
@@ -147,14 +139,14 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
 
 int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "CrossTrafficJamAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+
+    CrossTrafficJamAlarm crossTrafficJamAlarm;
+    try {
+        json::decode(content, crossTrafficJamAlarm);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    CrossTrafficJamAlarm crossTrafficJamAlarm;
-    crossTrafficJamAlarm.JsonUnmarshal(in);
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitCrossTrafficJamAlarm;
@@ -179,16 +171,15 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
 
 int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "IntersectionOverflowAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+
+    IntersectionOverflowAlarm intersectionOverflowAlarm;
+    try {
+        json::decode(content, intersectionOverflowAlarm);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    IntersectionOverflowAlarm intersectionOverflowAlarm;
-    intersectionOverflowAlarm.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitIntersectionOverflowAlarm;
     int index = dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
@@ -214,17 +205,14 @@ CacheTimestamp CT_trafficFlowGather;
 
 int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "TrafficFlowGather json 解析失败:" << reader.getFormattedErrorMessages();
+    TrafficFlow trafficFlow;
+    try {
+        json::decode(content, trafficFlow);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    TrafficFlow trafficFlow;
-    trafficFlow.JsonUnmarshal(in);
-
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitTrafficFlowGather;
     int index = dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
@@ -260,16 +248,15 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
 
 int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "InWatchData_1_3_4 json 解析失败:" << reader.getFormattedErrorMessages();
+
+    InWatchData_1_3_4 inWatchData134;
+    try {
+        json::decode(content, inWatchData134);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    InWatchData_1_3_4 inWatchData134;
-    inWatchData134.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_1_3_4;
     int index = dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
@@ -292,16 +279,15 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
 
 int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "InWatchData_2 json 解析失败:" << reader.getFormattedErrorMessages();
+
+    InWatchData_2 inWatchData2;
+    try {
+        json::decode(content, inWatchData2);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    InWatchData_2 inWatchData2;
-    inWatchData2.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_2;
     int index = dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
@@ -324,14 +310,14 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
 
 int PkgProcessFun_StopLinePassData(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "StopLinePassData json 解析失败:" << reader.getFormattedErrorMessages();
+
+    StopLinePassData stopLinePassData;
+    try {
+        json::decode(content, stopLinePassData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    StopLinePassData stopLinePassData;
-    stopLinePassData.JsonUnmarshal(in);
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
@@ -356,16 +342,15 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
 
 int PkgProcessFun_AbnormalStopData(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "AbnormalStopData json 解析失败:" << reader.getFormattedErrorMessages();
+
+    AbnormalStopData abnormalStopData;
+    try {
+        json::decode(content, abnormalStopData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    AbnormalStopData abnormalStopData;
-    abnormalStopData.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitAbnormalStopData;
     int index = dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
@@ -388,16 +373,15 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
 
 int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "LongDistanceOnSolidLineAlarm json 解析失败:" << reader.getFormattedErrorMessages();
+
+    LongDistanceOnSolidLineAlarm longDistanceOnSolidLineAlarm;
+    try {
+        json::decode(content, longDistanceOnSolidLineAlarm);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    LongDistanceOnSolidLineAlarm longDistanceOnSolidLineAlarm;
-    longDistanceOnSolidLineAlarm.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitLongDistanceOnSolidLineAlarm;
     int index = dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
@@ -420,16 +404,15 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
 
 int PkgProcessFun_HumanData(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "HumanData json 解析失败:" << reader.getFormattedErrorMessages();
+
+    HumanData humanData;
+    try {
+        json::decode(content, humanData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    HumanData humanData;
-    humanData.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanData;
     int index = dataUnit->FindIndexInUnOrder(humanData.hardCode);
@@ -452,16 +435,15 @@ int PkgProcessFun_HumanData(string ip, string content) {
 
 int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "HumanLitPoleData json 解析失败:" << reader.getFormattedErrorMessages();
+
+    HumanLitPoleData humanLitPoleData;
+    try {
+        json::decode(content, humanLitPoleData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    HumanLitPoleData humanLitPoleData;
-    humanLitPoleData.JsonUnmarshal(in);
     //存入队列
-//    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanLitPoleData;
     int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
@@ -485,14 +467,14 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
 
 int PkgProcessFun_0xf1(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "TrafficData json 解析失败:" << reader.getFormattedErrorMessages();
+
+    TrafficData trafficData;
+    try {
+        json::decode(content, trafficData);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    TrafficData trafficData;
-    trafficData.JsonUnmarshal(in);
     VLOG(2) << "0xf1 cmd recv:vehicleCount " << trafficData.vehicleCount;
     //根据人数和车数进行设置
     uint8_t num = 0;
@@ -558,14 +540,14 @@ int PkgProcessFun_0xf1(string ip, string content) {
 
 int PkgProcessFun_0xf2(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "AlarmBroken json 解析失败:" << reader.getFormattedErrorMessages();
+
+    AlarmBroken alarmBroken;
+    try {
+        json::decode(content, alarmBroken);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    AlarmBroken alarmBroken;
-    alarmBroken.JsonUnmarshal(in);
     VLOG(2) << "0xf2 cmd recv";
     //根据
 
@@ -611,14 +593,14 @@ int PkgProcessFun_0xf2(string ip, string content) {
 
 int PkgProcessFun_0xf3(string ip, string content) {
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "UrgentPriority json 解析失败:" << reader.getFormattedErrorMessages();
+
+    UrgentPriority urgentPriority;
+    try {
+        json::decode(content, urgentPriority);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    UrgentPriority urgentPriority;
-    urgentPriority.JsonUnmarshal(in);
     VLOG(2) << "0xf3 cmd recv";
     //根据
 
@@ -667,14 +649,14 @@ static uint16_t sn_TrafficDetectorStatus = 0;
 int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     //透传
     int ret = 0;
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(content, in, false)) {
-        VLOG(2) << "TrafficDetectorStatus json 解析失败:" << reader.getFormattedErrorMessages();
+
+    TrafficDetectorStatus trafficDetectorStatus;
+    try {
+        json::decode(content, trafficDetectorStatus);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
         return -1;
     }
-    TrafficDetectorStatus trafficDetectorStatus;
-    trafficDetectorStatus.JsonUnmarshal(in);
     //直接发送给第2个client
     auto data = Data::instance();
     uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));

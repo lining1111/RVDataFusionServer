@@ -17,6 +17,7 @@
 #include "os/timeTask.hpp"
 #include "myTcp/MyTcpClient.hpp"
 
+
 using namespace std;
 using namespace common;
 
@@ -32,12 +33,13 @@ int getFusionData(FusionData &out) {
         buffer << ifs.rdbuf();
         string content(buffer.str());
         ifs.close();
-        Json::Reader reader;
-        Json::Value in;
-        if (!reader.parse(content, in, false)) {
+
+        try {
+            json::decode(content, out);
+        } catch (std::exception &e) {
+            LOG(ERROR) << e.what();
             return -1;
         }
-        out.JsonUnmarshal(in);
 
         return 0;
     }
@@ -227,76 +229,6 @@ DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 int main(int argc, char **argv) {
 
     gflags::ParseCommandLineFlags(&argc, &argv, true);
-//    //初始化一个client
-//    int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-//
-//    if (sockfd <= 0) {
-//        printf("client <=0\n");
-//        return -1;
-//    }
-//
-//    int opt = 1;
-//    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-////    timeval timeout;
-////    timeout.tv_sec = 3;
-////    timeout.tv_usec = 0;
-////    setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
-////    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
-////
-////    int recvSize = 0;
-////    int sendSize = 0;
-////    socklen_t optlen = sizeof(int);
-////
-////    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
-////    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
-////
-////    printf("原始缓存大小，接收%d 发送%d\n", recvSize, sendSize);
-////
-////
-////    int recvBufSize = 256 * 1024;
-////    int sendBufSize = 256 * 1024;
-////    setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvBufSize, sizeof(int));
-////    setsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendBufSize, sizeof(int));
-////
-////    getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *) &recvSize, &optlen);
-////    getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (char *) &sendSize, &optlen);
-////
-////    printf("设置后缓存大小，接收%d 发送%d\n", recvSize, sendSize);
-////
-////    string server_ip = "127.0.0.1";
-////    uint16_t server_port = 9000;
-//
-//    string server_ip = FLAGS_cloudIp;
-//    uint16_t server_port = FLAGS_cloudPort;
-//
-//    struct sockaddr_in server_addr;
-//    int ret = 0;
-//    memset(&server_addr, 0, sizeof(server_addr));
-//    server_addr.sin_family = AF_INET;
-//    server_addr.sin_port = htons(server_port);
-//
-//    server_addr.sin_addr.s_addr = inet_addr(server_ip.c_str());
-//    ret = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(struct sockaddr));
-//
-//    if (ret == -1) {
-//        printf("connect server:%s-%d fail\n", server_ip.c_str(), server_port);
-//        close(sockfd);
-//        return -1;
-//    }
-//    printf("connect server:%s-%d success\n", server_ip.c_str(), server_port);
-
-
-//    //获取指定目录下的文件列表
-//    int roadNum = 0;
-//    string path;
-//    GetData *getData = nullptr;
-//    if (argc > 3) {
-//        roadNum = atoi(argv[1]);
-//        path = string(argv[2]);
-//        Info("road:%d,path:%s", roadNum, path.c_str());
-//        getData = new GetData(path);
-//        getData->GetOrderListFileName(path);
-//    }
 
     MyTcpClient *client = new MyTcpClient(FLAGS_cloudIp, FLAGS_cloudPort);
     if (client->Open() == 0) {

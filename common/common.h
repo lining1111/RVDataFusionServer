@@ -5,12 +5,15 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 
-#include <json/json.h>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 using namespace std;
+
+#include <xpack/json.h>
+
+using namespace xpack;
 
 namespace common {
 
@@ -104,12 +107,6 @@ namespace common {
     class PkgClass {
     public:
         CmdType cmdType;
-
-        virtual bool JsonMarshal(Json::Value &out) = 0;
-
-        virtual bool JsonUnmarshal(Json::Value in) = 0;
-
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg);
     };
 
     /**
@@ -153,9 +150,28 @@ namespace common {
             this->cmdType = CmdControl;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, isSendVideoInfo, videoType));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
 
@@ -166,9 +182,7 @@ namespace common {
         string Light;//`json "Light"`
         int RT;//`json "RT"`
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(LightID, Light, RT));
     };//信号机属性
 
 
@@ -199,9 +213,9 @@ namespace common {
         double carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
         string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(objID, objCameraID, objRadarID, objSourceType, objType, plates, plateColor,
+            carType, left, top, right, bottom, locationX, locationY, distance,
+            directionAngle, speedX, speedY, longitude, latitude, laneCode, carLength, carFeaturePic));
     };//目标属性
 
 
@@ -224,9 +238,9 @@ namespace common {
             this->cmdType = CmdFusionData;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(A(timestamp, "timstamp"), O(oprNum, hardCode, timestamp, matrixNo,
+                                      cameraIp, RecordDateTime, isHasImage, imageData, direction, roadDirection,
+                                      listAnnuciatorInfo, lstObjTarget));
     };//监控数据,对应命令字DeviceData
 
 
@@ -236,9 +250,7 @@ namespace common {
         int roID;//雷达目标编号
         int voID;//视频目标编号
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(wayNo, roID, voID));
     };
 
     class VideoTargets {
@@ -249,9 +261,7 @@ namespace common {
         int right = 0;// 坐标 右
         int bottom = 0;//坐标 下
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(cameraObjID, left, top, right, bottom));
     };
 
     class VideoData {
@@ -261,9 +271,7 @@ namespace common {
         string imageData;//图像数据
         int direction;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(rvHardCode, lstVideoTargets, imageData, direction));
     };
 
     class ObjMix {
@@ -287,9 +295,8 @@ namespace common {
         string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
         int flagNew = 0;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(objID, rvWayObject, objType, objColor, carType, plates, plateColor, distance,
+            angle, speed, locationX, locationY, longitude, latitude, laneCode, carLength, carFeaturePic, flagNew));
     };//融合后的目标数据
 
     class FusionData : public PkgClass {
@@ -305,9 +312,28 @@ namespace common {
             this->cmdType = CmdFusionData;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(A(timestamp, "timstamp"), O(oprNum, timestamp,crossID, isHasImage, lstObjTarget, lstVideos));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };//多路融合数据,对应命令字DeviceData
 
     /**
@@ -333,9 +359,8 @@ namespace common {
         int queueLen;//排队长度
         int queueCars;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(laneCode, laneCode, laneDirection, flowDirection, inCars, inAverageSpeed, outCars, outAverageSpeed,
+            queueLen, queueCars));
     };
 
     class TrafficFlow : public PkgClass {
@@ -350,9 +375,27 @@ namespace common {
             this->cmdType = CmdTrafficFlowGather;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, crossID, hardCode, timestamp, flowData));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     class TrafficFlowGather : public PkgClass {
@@ -367,9 +410,27 @@ namespace common {
             this->cmdType = CmdTrafficFlowGather;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, crossID, timestamp, recordDateTime, trafficFlow));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
 
@@ -390,9 +451,28 @@ namespace common {
             this->cmdType = CmdCrossTrafficJamAlarm;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, crossID, hardCode, timestamp, alarmType, alarmStatus, alarmTime, imageData));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //--路口溢出报警上传--//
@@ -412,9 +492,27 @@ namespace common {
             this->cmdType = CmdIntersectionOverflowAlarm;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, crossID, hardCode, timestamp, alarmType, alarmStatus, alarmTime, imageData));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //透传类型
@@ -437,9 +535,28 @@ namespace common {
             this->cmdType = CmdInWatchData_1_3_4;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, timestamp, crossID, hardCode,
+            laneCode, laneDirection, flowDirection, detectLocation, vehicleID, vehicleType, vehicleLen, vehicleSpeed));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
 
@@ -451,9 +568,7 @@ namespace common {
         int vehicleLen;//车辆长度
         int vehicleSpeed;//车辆速度
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(vehicleID, vehicleType, vehicleLen, vehicleSpeed));
     };
 
     class InWatchData_2_trafficFlowListItem {
@@ -463,9 +578,7 @@ namespace common {
         int flowDirection;//流向方向 1=直行车道，2=左转车道，3=右转车道，4=掉头车道，5=直行-左转车道，6=直行右转车道，7=直行-掉头车道，8=左转-掉头车道，9=直行-左转-掉头车道 同EOC一致
         vector<InWatchData_2_trafficFlowListItem_vehicleIDListItem> vehicleIDList;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(laneCode, laneDirection, flowDirection, vehicleIDList));
     };
 
     class InWatchData_2 : public PkgClass {
@@ -481,9 +594,27 @@ namespace common {
             this->cmdType = CmdInWatchData_2;
         }
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, recordLaneSum, trafficFlowList));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //停止线过车数据
@@ -497,10 +628,10 @@ namespace common {
         int vehicleID;//车辆ID
         int vehicleType;//车辆类型
         int vehicleSpeed;//车辆速度
+    public:
+    XPACK(O(laneCode, laneDirection, flowDirection, vehiclePlate, vehiclePlateColor, vehicleID, vehicleType,
+            vehicleSpeed));
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
     };
 
 
@@ -516,9 +647,28 @@ namespace common {
             this->cmdType = CmdStopLinePassData;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, vehicleList));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //异常停车报警
@@ -538,9 +688,29 @@ namespace common {
             this->cmdType = CmdAbnormalStopData;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, crossID, hardCode,
+            laneCode, alarmType, alarmStatus, alarmTime, imageData));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //长距离压实线报警上传
@@ -561,9 +731,29 @@ namespace common {
             this->cmdType = CmdLongDistanceOnSolidLineAlarm;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, crossID, hardCode,
+            laneCode, longitude, latitude, alarmType, alarmStatus, alarmTime));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //行人数据
@@ -571,9 +761,7 @@ namespace common {
         int x;
         int y;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(x, y));
     };
 
     class HumanData_areaListItem {
@@ -588,9 +776,8 @@ namespace common {
         int humanType;
         int bicycleNum;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(pointList, deviceCode, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,
+            humanType, bicycleNum));
     };
 
 
@@ -607,10 +794,28 @@ namespace common {
         HumanData() {
             this->cmdType = CmdHumanData;
         };
+    XPACK(O(oprNum, timestamp, crossID, hardCode, location, direction, areaList));
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     class HumanDataGather_deviceListItem {
@@ -625,9 +830,8 @@ namespace common {
         int humanType;
         int bicycleNum;
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(deviceCode, deviceLocation, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,
+            humanType, bicycleNum));
     };
 
     class HumanDataGather : public PkgClass {
@@ -642,9 +846,28 @@ namespace common {
             this->cmdType = CmdHumanData;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, deviceList));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //人形灯杆数据，透传
@@ -661,10 +884,9 @@ namespace common {
         int waitingTime;//等待时间
         int lightStatus;
         string imageData;
-
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    public:
+    XPACK(O(deviceCode, deviceLocation, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,
+            humanFlow, waitingTime, lightStatus, imageData));
     };
 
     class HumanLitPoleData : public PkgClass {
@@ -679,9 +901,28 @@ namespace common {
             this->cmdType = CmdHumanLitPoleData;
         }
 
-        bool JsonMarshal(Json::Value &out);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, deviceList));
 
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //信控机测试相关
@@ -700,10 +941,28 @@ namespace common {
         TrafficData() {
             this->cmdType = (CmdType) 0xf1;
         }
+    XPACK(O(oprNum, timestamp, crossID, hardCode, direction, personCount, vehicleCount, time));
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //报警故障0xf2
@@ -721,10 +980,28 @@ namespace common {
         AlarmBroken() {
             this->cmdType = (CmdType) 0xf2;
         }
+    XPACK(O(oprNum, timestamp, crossID, hardCode, alarmType, alarmValue, deviceType, time));
 
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //紧急优先0xf3
@@ -741,10 +1018,27 @@ namespace common {
         UrgentPriority() {
             this->cmdType = (CmdType) 0xf3;
         }
-
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, direction, type, time));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     //检测器状态上传
@@ -753,9 +1047,7 @@ namespace common {
         string signalControlCode;//检测器编码
         int vehicleCount;//检测器占有的车辆数
     public:
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(signalControlCode, vehicleCount));
     };
 
     class TrafficDetectorStatus : public PkgClass {
@@ -769,10 +1061,27 @@ namespace common {
         TrafficDetectorStatus() {
             this->cmdType = CmdTrafficDetectorStatus;
         }
-
-        bool JsonMarshal(Json::Value &out);
-
-        bool JsonUnmarshal(Json::Value in);
+    XPACK(O(oprNum, timestamp, crossID, hardCode, signalControlList));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
 }

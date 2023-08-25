@@ -11,10 +11,12 @@
 #include <fstream>
 #include <iomanip>
 #include "common/config.h"
+#include "common/common.h"
 #include "DataUnitUtilty.h"
 #include "localBussiness/localBusiness.h"
 
 using namespace std;
+using namespace xpack;
 
 bool isProcessMerge = false;//task是否执行了融合流程
 void DataUnitFusionData::taskI() {
@@ -478,6 +480,8 @@ void DataUnitFusionData::taskO() {
     uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
+    printf("%s\n", pkg.body.c_str());
+    //2.发送
     this->sn++;
     //2.发送
     auto local = LocalBusiness::instance();

@@ -128,20 +128,18 @@ void exampleJsonWatchData() {
     watchData.lstObjTarget.push_back(objTarget1);
     watchData.lstObjTarget.push_back(objTarget2);
 
-    string jsonMarshal;
-    Json::FastWriter fastWriter;
-    Json::Value root;
-    watchData.JsonMarshal(root);
-    jsonMarshal = fastWriter.write(root);
+    string jsonMarshal = json::encode(watchData);
+
     std::cout << jsonMarshal << std::endl;
 
     WatchData watchData1;
     string jsonMarshal1;
-    Json::Value root1;
-    watchData1.JsonMarshal(root1);
-    jsonMarshal1 = fastWriter.write(root);
-
-
+    try {
+        json::decode(jsonMarshal, watchData1);
+    } catch (std::exception &e) {
+        cout << e.what() << endl;
+    }
+    jsonMarshal1 = json::encode(watchData1);
 
 }
 
@@ -299,11 +297,7 @@ void exampleAlgorithm() {
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(3, 0.000035, 0.00002));
 
 
-    Json::FastWriter fastWriter;
-    Json::Value out;
-    algorithmParam.JsonMarshal(out);
-    std::string plainJson;
-    plainJson = fastWriter.write(out);
+    std::string plainJson = json::encode(algorithmParam);
     std::cout << plainJson << std::endl;
 
     //写入文件
@@ -315,14 +309,13 @@ void exampleAlgorithm() {
         file.close();
     }
 
-    Json::Reader reader;
-    Json::Value in;
-    if (!reader.parse(plainJson, in, false)) {
-        std::cout << "json parse fail" << std::endl;
-    }
 
     AlgorithmParam algorithmParam1;
-    algorithmParam1.JsonUnmarshal(in);
+    try {
+        json::decode(plainJson, algorithmParam1);
+    } catch (std::exception &e) {
+        cout << e.what() << endl;
+    }
     std::cout << "angle:" << algorithmParam1.angle.at(0).value << std::endl;
 }
 

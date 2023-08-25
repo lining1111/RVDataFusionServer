@@ -10,6 +10,7 @@ glog/0.6.0
 protobuf/3.20.0
 fmt/10.0.0
 poco/1.12.4
+xpack/1.0.4
 [options]
 poco*:enable_data_mysql=False
 [generators]
