@@ -37,9 +37,9 @@ using Poco::TimeoutException;
 
 #include "MyTcpHandler.hpp"
 
-class MyTcpClient :public MyTcpHandler{
+class MyTcpClient : public MyTcpHandler {
 public:
-    std::mutex *mtx= nullptr;
+    std::mutex *mtx = nullptr;
     string server_ip;
     int server_port;
     StreamSocket _s;
@@ -51,7 +51,7 @@ public:
     MyTcpClient(string serverip, int serverport) :
             server_ip(serverip), server_port(serverport) {
         recvBuf = new char[1024 * 1024];
-        if (mtx == nullptr){
+        if (mtx == nullptr) {
             mtx = new std::mutex();
         }
     }
@@ -67,19 +67,16 @@ public:
         try {
             Poco::Timespan ts(1000 * 1000);
             _s.connect(sa, ts);
-        } catch (ConnectionRefusedException&)
-        {
-            std::cout<<server_ip<<":"<<server_port<<"connect refuse"<<std::endl;
+        } catch (ConnectionRefusedException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse" << std::endl;
             return -1;
         }
-        catch (NetException&)
-        {
-            std::cout<<server_ip<<":"<<server_port<<"net exception"<<std::endl;
+        catch (NetException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "net exception" << std::endl;
             return -1;
         }
-        catch (TimeoutException&)
-        {
-            std::cout<<server_ip<<":"<<server_port<<"connect time out"<<std::endl;
+        catch (TimeoutException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "connect time out";
             return -1;
         }
 
@@ -112,10 +109,10 @@ public:
 
     int Run() {
         _t = std::thread([this]() {
-            LOG(INFO)<<"_t start";
-            while(this->_isRun){
+            LOG(INFO) << "_t start";
+            while (this->_isRun) {
                 usleep(10);
-                if(!this->isNeedReconnect){
+                if (!this->isNeedReconnect) {
                     bzero(recvBuf, 1024 * 1024);
                     int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
                     try {
@@ -131,10 +128,9 @@ public:
                     }
                 }
             }
-            LOG(INFO)<<"_t end";
+            LOG(INFO) << "_t end";
         });
         _t.detach();
-        cout << "Client Started" << endl;
         return 0;
     }
 

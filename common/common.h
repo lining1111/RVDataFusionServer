@@ -171,6 +171,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };//信号机属性
 
+
     class ObjTarget {
     public:
         string objID;//目标ID
@@ -203,6 +204,7 @@ namespace common {
         bool JsonUnmarshal(Json::Value in);
     };//目标属性
 
+
     class WatchData : public PkgClass {
     public:
         string oprNum;// `json "oprNum"` uuid()
@@ -213,9 +215,9 @@ namespace common {
         double RecordDateTime;//`json "RecordDateTime"` 抓拍时间
         int isHasImage;//`json "isHasImage"` 是否包含图像
         string imageData;//`json "imageData"` 当前的视频图像数据
-        int direction =-1;//方向，枚举类型 enum Direction
-        int roadDirection =-1;
-        vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "AnnuciatorInfo"` 信号机列表
+        int direction = -1;//方向，枚举类型 enum Direction
+        int roadDirection = -1;
+        vector<AnnuciatorInfo> listAnnuciatorInfo;//`json "listAnnuciatorInfo"` 信号机列表
         vector<ObjTarget> lstObjTarget;//`json "lstObjTarget"` 目标分类
     public:
         WatchData() {
@@ -226,6 +228,7 @@ namespace common {
 
         bool JsonUnmarshal(Json::Value in);
     };//监控数据,对应命令字DeviceData
+
 
     class OneRvWayObject {
     public:

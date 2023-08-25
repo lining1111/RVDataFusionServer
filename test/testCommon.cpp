@@ -10,6 +10,8 @@
 #include "common/CRC.h"
 #include "Queue.hpp"
 #include "ringbuffer/RingBuffer.h"
+#include "data/merge/AlgorithmParam.h"
+
 
 using namespace common;
 
@@ -65,12 +67,11 @@ void exampleJsonWatchData() {
 
     watchData.oprNum = random_uuid().data();
     watchData.hardCode = "hardCode";
-    watchData.timestamp = tv.tv_sec;
+    watchData.timestamp = double(tv.tv_sec);
     watchData.matrixNo = "matrixNo";
     watchData.cameraIp = "192.168.1.100";
     watchData.RecordDateTime = tv.tv_sec;
     watchData.isHasImage = 1;
-    uint8_t img[4] = {1, 2, 3, 4};
 
     //AnnuciatorInfo
 
@@ -95,7 +96,7 @@ void exampleJsonWatchData() {
     //lstObjTarget
 
     ObjTarget objTarget1;
-    objTarget1.objID = 1;
+    objTarget1.objID = "1";
     objTarget1.objType = 1;
     objTarget1.plates = "冀A123456";
     objTarget1.plateColor = "BLUE";
@@ -103,14 +104,14 @@ void exampleJsonWatchData() {
     objTarget1.top = 2;
     objTarget1.right = 3;
     objTarget1.bottom = 4;
-    objTarget1.locationX = 5;
-    objTarget1.locationY = 6;
+    objTarget1.locationX = 5.0;
+    objTarget1.locationY = 6.0;
     objTarget1.distance = "很近";
-    objTarget1.directionAngle = -45;
+    objTarget1.directionAngle = -45.0;
 //    objTarget1.speed = "很快";
 
     ObjTarget objTarget2;
-    objTarget2.objID = 2;
+    objTarget2.objID = "2";
     objTarget2.objType = 2;
     objTarget2.plates = "冀A234567";
     objTarget2.plateColor = "BLUE";
@@ -118,10 +119,10 @@ void exampleJsonWatchData() {
     objTarget2.top = 2;
     objTarget2.right = 3;
     objTarget2.bottom = 4;
-    objTarget2.locationX = 5;
-    objTarget2.locationY = 6;
+    objTarget2.locationX = 5.0;
+    objTarget2.locationY = 6.0;
     objTarget2.distance = "很近";
-    objTarget2.directionAngle = -45;
+    objTarget2.directionAngle = -45.0;
 //    objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
@@ -132,12 +133,14 @@ void exampleJsonWatchData() {
     Json::Value root;
     watchData.JsonMarshal(root);
     jsonMarshal = fastWriter.write(root);
+    std::cout << jsonMarshal << std::endl;
 
     WatchData watchData1;
     string jsonMarshal1;
     Json::Value root1;
     watchData1.JsonMarshal(root1);
     jsonMarshal1 = fastWriter.write(root);
+
 
 
 }
@@ -351,18 +354,18 @@ typedef struct S1 {
 
 int main(int argc, char **argv) {
 
-    Json::Reader reader;
-    Json::Value in;
-    string content = R"({"loactionX":null})";
-    if (!reader.parse(content,in,false)){
-        return -1;
-    }
-    ObjMix objMix;
-    objMix.JsonUnmarshal(in);
-    Json::FastWriter fastWriter;
-    Json::Value out;
-    objMix.JsonMarshal(out);
-    std::cout << fastWriter.write(out) << std::endl;
+//    Json::Reader reader;
+//    Json::Value in;
+//    string content = R"({"loactionX":null})";
+//    if (!reader.parse(content,in,false)){
+//        return -1;
+//    }
+//    ObjMix objMix;
+//    objMix.JsonUnmarshal(in);
+//    Json::FastWriter fastWriter;
+//    Json::Value out;
+//    objMix.JsonMarshal(out);
+//    std::cout << fastWriter.write(out) << std::endl;
 
 
 //    vector<S1> vs;
@@ -385,7 +388,7 @@ int main(int argc, char **argv) {
 //    }
 
 
-
+    exampleJsonWatchData();
 //    aysntest();
     exampleAlgorithm();
 //    exampleJsonTrafficFlow();

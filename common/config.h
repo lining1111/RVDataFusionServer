@@ -8,8 +8,8 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
-#include "data/Data.h"
 #include "signalControl/SignalControl.h"
+#include "data/merge/AlgorithmParam.h"
 
 
 typedef struct {

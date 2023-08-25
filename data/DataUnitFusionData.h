@@ -55,7 +55,8 @@ public:
         vector<OBJECT_INFO_NEW> objOutput;//融合输出量
         RoadDataInSet objInput;//融合输入量
     } MergeData;
-
+    MergeData mergeData;
+    OType fusionData;
     queue<vector<OBJECT_INFO_NEW>> cacheAlgorithmMerge;//一直存的是上帧和上上帧的输出
     //算法用的参量
     double repateX = 10;//fix 不变
@@ -84,9 +85,9 @@ public:
 
     int TaskMerge(RoadDataInSet roadDataInSet);
 
-    int GetFusionData(MergeData mergeData);
+    int GetFusionData();
 
-    void Summary(MergeData *mergeData, FusionData *fusionData);
+    void Summary();
 
     void taskO();
 };
