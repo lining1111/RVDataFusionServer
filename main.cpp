@@ -48,6 +48,7 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 
 #include "configure_eoc_init.h"
 #include "os/os.h"
+#include "eocCom/db/DBCom.h"
 
 int main(int argc, char **argv) {
 
@@ -95,6 +96,23 @@ int main(int argc, char **argv) {
             LOG(INFO) << "xh采用程序参数配置,cloud port:" << cloudPort;
         }
 
+    } else {
+        StartEocCommon1();
+        if (!string(g_BaseSet.PlatformTcpPath).empty()) {
+            cloudIp = string(g_BaseSet.PlatformTcpPath);
+            LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
+        } else {
+            cloudIp = FLAGS_cloudIp;
+            LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
+        }
+
+        if (g_BaseSet.PlatformTcpPort != 0) {
+            cloudPort = g_BaseSet.PlatformTcpPort;
+            LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
+        } else {
+            cloudPort = FLAGS_cloudPort;
+            LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
+        }
     }
     //将配置写入
     localConfig.isSendPIC = FLAGS_isSendPIC;

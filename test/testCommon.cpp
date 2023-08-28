@@ -119,14 +119,17 @@ void exampleJsonWatchData() {
     objTarget2.top = 2;
     objTarget2.right = 3;
     objTarget2.bottom = 4;
-    objTarget2.locationX = 5.0;
-    objTarget2.locationY = 6.0;
+    objTarget2.locationX = 5.12345678745;
+    objTarget2.locationY = 6.98974545451;
     objTarget2.distance = "很近";
     objTarget2.directionAngle = -45.0;
 //    objTarget2.speed = "很快";
 
     watchData.lstObjTarget.push_back(objTarget1);
     watchData.lstObjTarget.push_back(objTarget2);
+
+    Pkg pkg;
+    watchData.PkgWithoutCRC(1,12,pkg);
 
     string jsonMarshal = json::encode(watchData);
 

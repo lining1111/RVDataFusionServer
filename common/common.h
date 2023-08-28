@@ -107,6 +107,27 @@ namespace common {
     class PkgClass {
     public:
         CmdType cmdType;
+        XPACK(O(cmdType));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };
 
     /**
@@ -241,6 +262,26 @@ namespace common {
     XPACK(A(timestamp, "timstamp"), O(oprNum, hardCode, timestamp, matrixNo,
                                       cameraIp, RecordDateTime, isHasImage, imageData, direction, roadDirection,
                                       listAnnuciatorInfo, lstObjTarget));
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
     };//监控数据,对应命令字DeviceData
 
 

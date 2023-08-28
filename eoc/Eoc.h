@@ -6,5 +6,6 @@
 #define _EOC_H
 int StartEocCommon();
 
+int StartEocCommon1();
 
 #endif //_EOC_H
