@@ -7,11 +7,7 @@ list(TRANSFORM SRC_FILES PREPEND ../)
 #redefine_file_macro(testIni)
 
 ##测试通讯
-add_executable(testCommon testCommon.cpp
-        ../common/common.cpp
-        ../data/merge/mergeStruct.cpp
-        ../common/CRC.cpp
-        ../ringbuffer/RingBuffer.cpp)
+add_executable(testCommon testCommon.cpp ${SRC_FILES})
 target_link_libraries(testCommon ${LIBS})
 redefine_file_macro(testCommon)
 

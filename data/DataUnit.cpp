@@ -42,12 +42,71 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
             }
         }
     }
+    //根据车道号取排队长度最大
+    getMaxQueueLenByLaneCode(item.trafficFlow);
+
     if (!pushO(item)) {
         VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
     } else {
         VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
     }
     return 0;
+}
+
+void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v) {
+    //1.先打印下原始数据
+    string src;
+    for (auto iter:v) {
+        src +="lancode:";
+        src +=iter.laneCode;
+        src +=",queueLen:";
+        src +=iter.queueLen;
+        src +="\n";
+    }
+    VLOG(3)<<src;
+    //2.遍历，根据车道号筛选出最大的排队长度
+    // (原理就是：遍历数组，设当前的索引应该被引用，然后和数组内的其他元素对比，如果车道号相同且小于对方的排队长度，则不应该被引用，退出当前循环，如果该索引能够被引用，则记录到数组，到最后一起拷贝到新的结构体数组)
+    //2.1遍历获取索引
+    vector<int> indices;
+    indices.clear();
+    for (int i = 0; i < v.size(); i++) {
+        auto iter = v.at(i);
+        auto curLaneCode = iter.laneCode;
+        auto curQueueLen = iter.queueLen;
+        bool isRef = true;
+        for (int j = 0; j < v.size(); j++) {
+            if (i!=j){
+                auto iter_t = v.at(j);
+                auto laneCode_t = iter_t.laneCode;
+                auto queueLen_t = iter_t.queueLen;
+                if (curLaneCode == laneCode_t && curQueueLen < queueLen_t) {
+                    isRef = false;
+                    break;
+                }
+            }
+        }
+        if (isRef) {
+         indices.push_back(i);
+        }
+    }
+    //2.1 根据所有拷贝数组
+    vector<OneFlowData> v_copy;
+    v_copy.clear();
+    for (auto iter:indices) {
+        v_copy.push_back(v.at(iter));
+    }
+    //3.打印下拷贝出的数组
+    string src_cpoy;
+    for (auto iter:v_copy) {
+        src_cpoy +="lancode:";
+        src_cpoy +=iter.laneCode;
+        src_cpoy +=",queueLen:";
+        src_cpoy +=iter.queueLen;
+        src_cpoy +="\n";
+    }
+    VLOG(3)<<src_cpoy;
+    //4.将拷贝数组设置到输出
+    v = v_copy;
 }
 
 void DataUnitTrafficFlowGather::taskO() {

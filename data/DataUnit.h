@@ -17,6 +17,8 @@
 #include <glog/logging.h>
 #include <iomanip>
 #include "merge/mergeStruct.h"
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 
 using namespace common;
 using namespace std;
@@ -136,6 +138,7 @@ public:
         }
         this->intervalTask = _intervalTask;
         LOG(WARNING) << this->name << " fs_i:" << this->fs_i << " intervalTask:" << intervalTask;
+        LOG(WARNING) << this->name << " 开启输出处理线程";
         thread tO([&]() {
             while (isTaskRun) {
                 usleep(1000 * intervalTask/2);
@@ -143,7 +146,7 @@ public:
             }
         });
         tO.detach();
-
+        LOG(WARNING) << this->name << " 开启输入处理线程";
         thread tI([&]() {
             while (isTaskRun) {
                 usleep(1000 * intervalTask);
@@ -262,8 +265,9 @@ public:
     }
 
     int FindIndexInUnOrder(const string in) {
-//        printf("in :%s\n", in.c_str());
+        VLOG(3) << "对比的字符串:" << in;
         int index = -1;
+        VLOG(3) << "已存在的:" << fmt::format("{}", unOrder);
         //首先遍历是否已经存在
         int alreadyExistIndex = -1;
         for (int i = 0; i < unOrder.size(); i++) {
@@ -274,7 +278,7 @@ public:
                 break;
             }
         }
-//        printf("alreadyExistIndex:%d\n", alreadyExistIndex);
+
         if (alreadyExistIndex >= 0) {
             index = alreadyExistIndex;
         } else {
@@ -283,13 +287,12 @@ public:
                 auto &iter = unOrder.at(i);
                 if (iter.empty()) {
                     iter = in;
-//                    printf("iter1 :%s\n", iter.c_str());
                     index = i;
                     break;
                 }
             }
         }
-
+        VLOG(3) << "找到的位置(可能是新加的):" << index;
         return index;
     }
 
@@ -450,6 +453,8 @@ public:
     static void FindOneFrame(DataUnitTrafficFlowGather *dataUnit, int offset);
 
     int TaskProcessOneFrame();
+
+    static void getMaxQueueLenByLaneCode(vector<OneFlowData> &v);
 
     void taskO();
 };

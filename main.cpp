@@ -52,14 +52,12 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 
 int main(int argc, char **argv) {
 
-    char curPath[512];
+    char *curPath;
+    curPath = new char[512];
     getcwd(curPath, 512);
     printf("cur path:%s\n", curPath);
-//    if (opendir(FLAGS_logDir.c_str()) == nullptr) {
-//        if (mkdir(FLAGS_logDir.c_str(), 0644)) {
-//            printf("create %s fail\n", FLAGS_logDir.c_str());
-//        }
-//    }
+    LOG(WARNING) << "程序工作目录:" << string(curPath) << ",版本号:" << VERSION_BUILD_TIME;
+    delete[]curPath;
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -74,7 +72,7 @@ int main(int argc, char **argv) {
     uint16_t cloudPort;
 
     //初始化本地数据和数据库
-    LOG(INFO) << "开启eoc通信，同时读取本地数据库到缓存";
+    LOG(WARNING) << "开启eoc通信，同时读取本地数据库到缓存";
 
     bool isUseOldEOC = true;
 
@@ -82,36 +80,36 @@ int main(int argc, char **argv) {
         StartEocCommon();
         if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
             cloudIp = string(g_eoc_base_set.PlatformTcpPath);
-            LOG(INFO) << "xh采用数据库配置,cloud ip:" << cloudIp;
+            LOG(WARNING) << "xh采用数据库配置,cloud ip:" << cloudIp;
         } else {
             cloudIp = FLAGS_cloudIp;
-            LOG(INFO) << "xh采用程序参数配置,cloud ip:" << cloudIp;
+            LOG(WARNING) << "xh采用程序参数配置,cloud ip:" << cloudIp;
         }
 
         if (g_eoc_base_set.PlatformTcpPort != 0) {
             cloudPort = g_eoc_base_set.PlatformTcpPort;
-            LOG(INFO) << "xh采用数据库配置,cloud port:" << cloudPort;
+            LOG(WARNING) << "xh采用数据库配置,cloud port:" << cloudPort;
         } else {
             cloudPort = FLAGS_cloudPort;
-            LOG(INFO) << "xh采用程序参数配置,cloud port:" << cloudPort;
+            LOG(WARNING) << "xh采用程序参数配置,cloud port:" << cloudPort;
         }
 
     } else {
         StartEocCommon1();
         if (!string(g_BaseSet.PlatformTcpPath).empty()) {
             cloudIp = string(g_BaseSet.PlatformTcpPath);
-            LOG(INFO) << "采用数据库配置,cloud ip:" << cloudIp;
+            LOG(WARNING) << "采用数据库配置,cloud ip:" << cloudIp;
         } else {
             cloudIp = FLAGS_cloudIp;
-            LOG(INFO) << "采用程序参数配置,cloud ip:" << cloudIp;
+            LOG(WARNING) << "采用程序参数配置,cloud ip:" << cloudIp;
         }
 
         if (g_BaseSet.PlatformTcpPort != 0) {
             cloudPort = g_BaseSet.PlatformTcpPort;
-            LOG(INFO) << "采用数据库配置,cloud port:" << cloudPort;
+            LOG(WARNING) << "采用数据库配置,cloud port:" << cloudPort;
         } else {
             cloudPort = FLAGS_cloudPort;
-            LOG(INFO) << "采用程序参数配置,cloud port:" << cloudPort;
+            LOG(WARNING) << "采用程序参数配置,cloud port:" << cloudPort;
         }
     }
     //将配置写入
@@ -125,11 +123,12 @@ int main(int argc, char **argv) {
     if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {
         LOG(ERROR) << "读取算法配置文件失败:" << FLAGS_algorithmParamFile;
     }
+    LOG(WARNING) << "通信协议版本:" << GetComVersion();
 
     auto dataLocal = Data::instance();
     dataLocal->isMerge = FLAGS_isMerge;
-    LOG(INFO) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
-    LOG(INFO) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
+    LOG(WARNING) << "初始化本地数据，Data地址:" << dataLocal->m_pInstance;
+    LOG(WARNING) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
     auto businessLocal = LocalBusiness::instance();
     businessLocal->AddServer("server1", port);
@@ -143,7 +142,6 @@ int main(int argc, char **argv) {
     }
     //开启本地业务
     businessLocal->Run();
-    LOG(INFO) << "通信协议版本:" << GetComVersion();
 
     //信控机测试，打开信控机
     signalControl = new SignalControl("172.16.1.1", 15050, 12345);

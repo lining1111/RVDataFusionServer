@@ -137,6 +137,9 @@ DEFINE_int32(localPort, 16000, "端口号，默认16000");
 
 int main(int argc, char **argv) {
     std::cout << __cplusplus << std::endl;
+    vector<string> unOrder= {"a","avddd","dada","dadas"};
+    std::cout<<fmt::format("{}",unOrder)<< std::endl;
+
 //    crc16_test();
 //    ComTest();
 //    ComFrame_GBT20999_2017Test();

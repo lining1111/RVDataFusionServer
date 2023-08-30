@@ -11,6 +11,7 @@
 #include "Queue.hpp"
 #include "ringbuffer/RingBuffer.h"
 #include "data/merge/AlgorithmParam.h"
+#include "data/DataUnit.h"
 
 
 using namespace common;
@@ -348,42 +349,33 @@ typedef struct S1 {
     string b;
 };
 
+void example1(){
+    vector<OneFlowData> v_src;
+    OneFlowData item;
+    item.laneCode = "l1";
+    item.queueLen = 2;
+    v_src.push_back(item);
+    OneFlowData item1;
+    item1.laneCode = "l2";
+    item1.queueLen = 5;
+    v_src.push_back(item1);
+    OneFlowData item2;
+    item2.laneCode = "l1";
+    item2.queueLen = 6;
+    v_src.push_back(item2);
+    OneFlowData item3;
+    item3.laneCode = "l2";
+    item3.queueLen = 2;
+    v_src.push_back(item3);
+
+    DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(v_src);
+}
+
 int main(int argc, char **argv) {
 
-//    Json::Reader reader;
-//    Json::Value in;
-//    string content = R"({"loactionX":null})";
-//    if (!reader.parse(content,in,false)){
-//        return -1;
-//    }
-//    ObjMix objMix;
-//    objMix.JsonUnmarshal(in);
-//    Json::FastWriter fastWriter;
-//    Json::Value out;
-//    objMix.JsonMarshal(out);
-//    std::cout << fastWriter.write(out) << std::endl;
 
 
-//    vector<S1> vs;
-//    vs.resize(4);
-//    S1 s1;
-//    s1.a = 1;
-//    s1.b = "b";
-//    vs[0]=s1;
-//    S1 s2;
-//    s2.a = 2;
-//    s2.b = "2b";
-//    vs[1]=s2;
-//    S1 s3;
-//    s3.a = 3;
-//    s3.b = "3b";
-//    vs[2]=s3;
-//    for (int i = 0; i < vs.size(); i++) {
-//        auto iter = &vs.at(i);
-//        printf("a:%d b:%s\n",iter->a,iter->b.c_str());
-//    }
-
-
+    example1();
     exampleJsonWatchData();
 //    aysntest();
     exampleAlgorithm();
