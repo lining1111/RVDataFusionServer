@@ -83,7 +83,7 @@ public:
 
     int TaskNotMerge(RoadDataInSet roadDataInSet);
 
-    int TaskMerge(RoadDataInSet roadDataInSet);
+//    int TaskMerge(RoadDataInSet roadDataInSet);
 
     int GetFusionData();
 

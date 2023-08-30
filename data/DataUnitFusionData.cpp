@@ -97,7 +97,7 @@ int DataUnitFusionData::TaskProcessOneFrame(DataUnitFusionData::MergeType mergeT
         case DataUnitFusionData::Merge: {
             auto startTime = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            ret = TaskMerge(roadDataInSet);
+            ret = TaskNotMerge(roadDataInSet);
             auto endTime = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
             algorithmCost = endTime - startTime;
@@ -202,138 +202,138 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
     return GetFusionData();
 }
 
-int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
-    VLOG(3) << "DataUnitFusionData融合:数据选取的时间戳:" << roadDataInSet.timestamp;
-
-    //将取同一帧结果按要求存入算法输入量,后续算法部分输入量用MergeData变量
-    mergeData.timestamp = roadDataInSet.timestamp;
-    mergeData.objOutput.clear();
-    mergeData.objInput = roadDataInSet;
-
-    //如果只有一路数据，不走融合
-    //将标定时间戳，和帧内时间戳输出到文件
-    string line = "";
-    line += to_string(this->curTimestamp);
-    line += ",";
-    this->haveDataRoadNum = 0;
-    for (int i = 0; i < this->oneFrame.size(); i++) {
-        auto iter = this->oneFrame.at(i);
-        line += to_string((uint64_t) iter.timestamp);
-        line += ",";
-        if (!iter.oprNum.empty()) {
-            this->haveDataRoadNum++;
-        }
-    }
-    line += "\n";
-    //写入文件
-    if (0) {
-        ofstream ofs;
-        ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-        //判断大小是否超过最大值
-        uint64_t maxSize = 1024 * 1024 * 100;
-        if (ofs.tellp() >= maxSize) {
-            //清空
-            ofs.close();
-            ofstream ofs1;
-            ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
-            ofs1.flush();
-            ofs1.close();
-            ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
-        }
-
-        if (ofs.is_open()) {
-            ofs << line;
-            ofs.flush();
-            ofs.close();
-        }
-    }
-
-    //存输入的目标数据元素到文件
-    if (localConfig.isSaveInObj) {
-        for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
-            auto iter = mergeData.objInput.roadDataList.at(i);
-            string path = "/mnt/mnt_hd/save/FusionData/In/" + to_string(i) + "/";
-            SaveDataIn(iter.listObjs, mergeData.timestamp, path);
-        }
-    }
-
-    //这里是根据含有识别数据路数来操作输出量
-    switch (this->haveDataRoadNum) {
-        case 0 : {
-            VLOG(3) << "融合算法细节---全部路都没有数据";
-        }
-            break;
-        case 1 : {
-            VLOG(3) << "融合算法细节---只有1路有数据,不走融合";
-            for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
-                auto iter = mergeData.objInput.roadDataList.at(i);
-                if (!iter.listObjs.empty()) {
-                    //输出量直接取输入量
-                    for (auto iter1: iter.listObjs) {
-                        OBJECT_INFO_NEW item;
-                        OBJECT_INFO_T2OBJECT_INFO_NEW(iter1, item);
-                        mergeData.objOutput.push_back(item);
-                    }
-                }
-            }
-        }
-            break;
-        default : {
-            VLOG(3) << "融合算法细节---多于1路有数据,走融合";
-            OBJECT_INFO_NEW dataOut[1000];
-            memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
-            bool isFirstFrame = true;//如果算法缓存内有数则为假
-            if (!cacheAlgorithmMerge.empty()) {
-                isFirstFrame = false;
-            }
-            vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
-            vector<OBJECT_INFO_NEW> l2_obj;//上上帧输出的
-            if (isFirstFrame) {
-                l1_obj.clear();
-                l2_obj.clear();
-            } else {
-                switch (cacheAlgorithmMerge.size()) {
-                    case 1: {
-                        //只有1帧的话，只能取到上帧
-                        l2_obj.clear();
-                        l1_obj = cacheAlgorithmMerge.front();
-                    }
-                        break;
-                    case 2: {
-                        //2帧的话，可以取到上帧和上上帧，这里有上上帧出缓存的动作
-                        l2_obj = cacheAlgorithmMerge.front();
-                        cacheAlgorithmMerge.pop();
-                        l1_obj = cacheAlgorithmMerge.front();
-                    }
-                        break;
-                }
-            }
-            int num = merge_total(repateX, widthX, widthY, Xmax, Ymax, gatetx, gatety, gatex, gatey, isFirstFrame,
-                                  mergeData.objInput.roadDataList.at(0).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(0).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(1).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(1).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(2).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(2).listObjs.size(),
-                                  mergeData.objInput.roadDataList.at(3).listObjs.data(),
-                                  mergeData.objInput.roadDataList.at(3).listObjs.size(),
-                                  l1_obj.data(), l1_obj.size(), l2_obj.data(), l2_obj.size(),
-                                  dataOut, angle_value);
-            //将输出存入缓存
-            vector<OBJECT_INFO_NEW> out;
-            for (int i = 0; i < num; i++) {
-                out.push_back(dataOut[i]);
-            }
-            cacheAlgorithmMerge.push(out);
-
-            //将输出存入mergeData
-            mergeData.objOutput.assign(out.begin(), out.end());
-        }
-            break;
-    }
-
-    return GetFusionData();
-}
+//int DataUnitFusionData::TaskMerge(RoadDataInSet roadDataInSet) {
+//    VLOG(3) << "DataUnitFusionData融合:数据选取的时间戳:" << roadDataInSet.timestamp;
+//
+//    //将取同一帧结果按要求存入算法输入量,后续算法部分输入量用MergeData变量
+//    mergeData.timestamp = roadDataInSet.timestamp;
+//    mergeData.objOutput.clear();
+//    mergeData.objInput = roadDataInSet;
+//
+//    //如果只有一路数据，不走融合
+//    //将标定时间戳，和帧内时间戳输出到文件
+//    string line = "";
+//    line += to_string(this->curTimestamp);
+//    line += ",";
+//    this->haveDataRoadNum = 0;
+//    for (int i = 0; i < this->oneFrame.size(); i++) {
+//        auto iter = this->oneFrame.at(i);
+//        line += to_string((uint64_t) iter.timestamp);
+//        line += ",";
+//        if (!iter.oprNum.empty()) {
+//            this->haveDataRoadNum++;
+//        }
+//    }
+//    line += "\n";
+//    //写入文件
+//    if (0) {
+//        ofstream ofs;
+//        ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+//        //判断大小是否超过最大值
+//        uint64_t maxSize = 1024 * 1024 * 100;
+//        if (ofs.tellp() >= maxSize) {
+//            //清空
+//            ofs.close();
+//            ofstream ofs1;
+//            ofs1.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::trunc);
+//            ofs1.flush();
+//            ofs1.close();
+//            ofs.open("/mnt/mnt_hd/timestamp.csv", ios::out | ios::app);
+//        }
+//
+//        if (ofs.is_open()) {
+//            ofs << line;
+//            ofs.flush();
+//            ofs.close();
+//        }
+//    }
+//
+//    //存输入的目标数据元素到文件
+//    if (localConfig.isSaveInObj) {
+//        for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
+//            auto iter = mergeData.objInput.roadDataList.at(i);
+//            string path = "/mnt/mnt_hd/save/FusionData/In/" + to_string(i) + "/";
+//            SaveDataIn(iter.listObjs, mergeData.timestamp, path);
+//        }
+//    }
+//
+//    //这里是根据含有识别数据路数来操作输出量
+//    switch (this->haveDataRoadNum) {
+//        case 0 : {
+//            VLOG(3) << "融合算法细节---全部路都没有数据";
+//        }
+//            break;
+//        case 1 : {
+//            VLOG(3) << "融合算法细节---只有1路有数据,不走融合";
+//            for (int i = 0; i < mergeData.objInput.roadDataList.size(); i++) {
+//                auto iter = mergeData.objInput.roadDataList.at(i);
+//                if (!iter.listObjs.empty()) {
+//                    //输出量直接取输入量
+//                    for (auto iter1: iter.listObjs) {
+//                        OBJECT_INFO_NEW item;
+//                        OBJECT_INFO_T2OBJECT_INFO_NEW(iter1, item);
+//                        mergeData.objOutput.push_back(item);
+//                    }
+//                }
+//            }
+//        }
+//            break;
+//        default : {
+//            VLOG(3) << "融合算法细节---多于1路有数据,走融合";
+//            OBJECT_INFO_NEW dataOut[1000];
+//            memset(dataOut, 0, ARRAY_SIZE(dataOut) * sizeof(OBJECT_INFO_NEW));
+//            bool isFirstFrame = true;//如果算法缓存内有数则为假
+//            if (!cacheAlgorithmMerge.empty()) {
+//                isFirstFrame = false;
+//            }
+//            vector<OBJECT_INFO_NEW> l1_obj;//上帧输出的
+//            vector<OBJECT_INFO_NEW> l2_obj;//上上帧输出的
+//            if (isFirstFrame) {
+//                l1_obj.clear();
+//                l2_obj.clear();
+//            } else {
+//                switch (cacheAlgorithmMerge.size()) {
+//                    case 1: {
+//                        //只有1帧的话，只能取到上帧
+//                        l2_obj.clear();
+//                        l1_obj = cacheAlgorithmMerge.front();
+//                    }
+//                        break;
+//                    case 2: {
+//                        //2帧的话，可以取到上帧和上上帧，这里有上上帧出缓存的动作
+//                        l2_obj = cacheAlgorithmMerge.front();
+//                        cacheAlgorithmMerge.pop();
+//                        l1_obj = cacheAlgorithmMerge.front();
+//                    }
+//                        break;
+//                }
+//            }
+//            int num = merge_total(repateX, widthX, widthY, Xmax, Ymax, gatetx, gatety, gatex, gatey, isFirstFrame,
+//                                  mergeData.objInput.roadDataList.at(0).listObjs.data(),
+//                                  mergeData.objInput.roadDataList.at(0).listObjs.size(),
+//                                  mergeData.objInput.roadDataList.at(1).listObjs.data(),
+//                                  mergeData.objInput.roadDataList.at(1).listObjs.size(),
+//                                  mergeData.objInput.roadDataList.at(2).listObjs.data(),
+//                                  mergeData.objInput.roadDataList.at(2).listObjs.size(),
+//                                  mergeData.objInput.roadDataList.at(3).listObjs.data(),
+//                                  mergeData.objInput.roadDataList.at(3).listObjs.size(),
+//                                  l1_obj.data(), l1_obj.size(), l2_obj.data(), l2_obj.size(),
+//                                  dataOut, angle_value);
+//            //将输出存入缓存
+//            vector<OBJECT_INFO_NEW> out;
+//            for (int i = 0; i < num; i++) {
+//                out.push_back(dataOut[i]);
+//            }
+//            cacheAlgorithmMerge.push(out);
+//
+//            //将输出存入mergeData
+//            mergeData.objOutput.assign(out.begin(), out.end());
+//        }
+//            break;
+//    }
+//
+//    return GetFusionData();
+//}
 
 int DataUnitFusionData::GetFusionData() {
     const int INF = 0x7FFFFFFF;

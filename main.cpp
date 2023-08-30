@@ -33,7 +33,7 @@ DEFINE_int32(port, 9000, "本地服务端端口号，默认9000");
 DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
 DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
 DEFINE_bool(isSamePort, false, "是否发送同一端口，默认false");
-DEFINE_bool(isMerge, true, "是否融合多路数据，默认true");
+DEFINE_bool(isMerge, false, "是否融合多路数据，默认false");
 DEFINE_int32(mergeMode, 0, "多路融合模式，默认0,0:雷视 1:雷达 2:图像");
 DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
 DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");

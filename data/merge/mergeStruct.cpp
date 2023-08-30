@@ -10,18 +10,21 @@ const int INF = 0x7FFFFFFF;
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
     objTarget.objID = to_string(objectInfoT.objID);
     objTarget.objCameraID = objectInfoT.cameraID;
+    objTarget.objRadarID = objectInfoT.radarID;
     objTarget.objType = objectInfoT.objType;
+    objTarget.objSourceType = objectInfoT.objSourceType;
+
     objTarget.left = objectInfoT.left;
     objTarget.top = objectInfoT.top;
     objTarget.right = objectInfoT.right;
 
 
-//    objTarget.plates = objectInfoT.plates;
-//    objTarget.plateColor = objectInfoT.plateColor;
-//    objTarget.carFeaturePic = objectInfoT.carFeaturePic;
-//    objTarget.laneCode = objectInfoT.laneCode;
-//    objTarget.carLength = objectInfoT.carLength;
+    objTarget.plates = objectInfoT.plates;
+    objTarget.plateColor = objectInfoT.plateColor;
+    objTarget.carFeaturePic = objectInfoT.carFeaturePic;
+    objTarget.laneCode = objectInfoT.laneCode;
     objTarget.carType = objectInfoT.carType;
+    objTarget.carLength = objectInfoT.carLength;
 
     objTarget.bottom = objectInfoT.bottom;
     objTarget.locationX = objectInfoT.locationX;
@@ -36,11 +39,13 @@ void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget) {
 void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
 
     objectInfoT.objID = atoi(objTarget.objID.c_str());
+    objectInfoT.inputID = objTarget.objID;
 
     objectInfoT.cameraID = objTarget.objCameraID;
+    objectInfoT.radarID = objTarget.objRadarID;
 
     objectInfoT.objType = objTarget.objType;
-
+    objectInfoT.objSourceType = objTarget.objSourceType;
 
     objectInfoT.left = objTarget.left;
     objectInfoT.top = objTarget.top;
@@ -49,12 +54,12 @@ void ObjTarget2OBJECT_INFO_T(ObjTarget &objTarget, OBJECT_INFO_T &objectInfoT) {
     objectInfoT.locationX = objTarget.locationX;
     objectInfoT.locationY = objTarget.locationY;
 
-//    objectInfoT.plates = objTarget.plates;
-//    objectInfoT.plateColor = objTarget.plateColor;
-//    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
-//    objectInfoT.laneCode = objTarget.laneCode;
-//    objectInfoT.carLength = objTarget.carLength;
+    objectInfoT.plates = objTarget.plates;
+    objectInfoT.plateColor = objTarget.plateColor;
+    objectInfoT.carFeaturePic = objTarget.carFeaturePic;
+    objectInfoT.laneCode = objTarget.laneCode;
     objectInfoT.carType = objTarget.carType;
+    objectInfoT.carLength = objTarget.carLength;
 
     objectInfoT.directionAngle = objTarget.directionAngle;
 
@@ -85,12 +90,12 @@ void OBJECT_INFO_T2OBJECT_INFO_NEW(OBJECT_INFO_T &objectInfoT, OBJECT_INFO_NEW &
     objectInfoNew.locationX = objectInfoT.locationX;
     objectInfoNew.locationY = objectInfoT.locationY;
 
-//    objectInfoNew.plates = objectInfoT.plates;
-//    objectInfoNew.plateColor = objectInfoT.plateColor;
-//    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
-//    objectInfoNew.laneCode = objectInfoT.laneCode;
-//    objectInfoNew.carLength = objectInfoT.carLength;
+    objectInfoNew.plates = objectInfoT.plates;
+    objectInfoNew.plateColor = objectInfoT.plateColor;
+    objectInfoNew.carFeaturePic = objectInfoT.carFeaturePic;
+    objectInfoNew.laneCode = objectInfoT.laneCode;
     objectInfoNew.carType = objectInfoT.carType;
+    objectInfoNew.carLength = objectInfoT.carLength;
     objectInfoNew.directionAngle = objectInfoT.directionAngle;
     objectInfoNew.speed = sqrt(objectInfoT.speedX * objectInfoT.speedX + objectInfoT.speedY * objectInfoT.speedY);
     objectInfoNew.longitude = objectInfoT.longitude;
@@ -107,11 +112,12 @@ void OBJECT_INFO_NEW2ObjMix(OBJECT_INFO_NEW &objectInfoNew, ObjMix &objMix) {
     objMix.longitude = objectInfoNew.longitude;
     objMix.latitude = objectInfoNew.latitude;
     objMix.flagNew = objectInfoNew.flag_new;
+
     //添加属性
-//    objMix.laneCode = objectInfoNew.laneCode;
-//    objMix.carLength = objectInfoNew.carLength;
-//    objMix.carFeaturePic = objectInfoNew.carFeaturePic;
-//    objMix.plates = objectInfoNew.plates;
-//    objMix.plateColor = objectInfoNew.plateColor;
-//    objMix.carType = objectInfoNew.carType;
+    objMix.laneCode = objectInfoNew.laneCode;
+    objMix.carLength = objectInfoNew.carLength;
+    objMix.carFeaturePic = objectInfoNew.carFeaturePic;
+    objMix.plates = objectInfoNew.plates;
+    objMix.plateColor = objectInfoNew.plateColor;
+    objMix.carType = objectInfoNew.carType;
 }

@@ -14,35 +14,39 @@
 using namespace common;
 #define PI 3.1415926
 typedef struct {
-    int objID;
-    int cameraID;
-    int objType;
+    int objID = 0;
+    std::string inputID;
+    int cameraID = 0;
     int objSourceType = 0;//0:相机 1：雷达 2：多目
-    char plate_number[15];
-    char plate_color[7];
-    int carType;//车辆类型
-
+    int objType;//目标类型
     //添加属性
     string laneCode;
     float carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
     string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
     string plates;//车牌号
     string plateColor;//车牌颜色
-    int radarID;
-    int left;
-    int top;
-    int right;
-    int bottom;
-    double locationX;
-    double locationY;
-    char distance[10];
-    double directionAngle;
+    int carType = 0;//车辆类型
+
+    int left = 0;
+    int top = 0;
+    int right = 0;
+    int bottom = 0;
+    double locationX = 0.0;
+    double locationY = 0.0;
+    // char distance[10];
+    double directionAngle = 0.0;
 //    double speed;
-    double speedX;
-    double speedY;
-    double longitude;//经度
-    double latitude;//纬度
-    //斜路口再用
+    double speedX = 0.0;
+    double speedY = 0.0;
+    double longitude = 0.0;//经度
+    double latitude = 0.0;//纬度
+    //
+
+    int radarID = 0;
+    char plate_number[15];
+    char plate_color[7];
+    char distance[10];
+
 //    double dmerge_left_up_x;
 //    double dmerge_left_up_y;
 //    double dmerge_right_up_x;
@@ -54,41 +58,52 @@ typedef struct {
 } OBJECT_INFO_T;
 
 typedef struct {
-    int objID1;
-    int objID2;
-    int objID3;
-    int objID4;
-    int showID;
-    int cameraID1;
-    int cameraID2;
-    int cameraID3;
-    int cameraID4;
-    int objType;
-    char plate_number[15];
-    char plate_color[7];
-    int carType;//车辆类型
+    int objID1 = 0;
+    int objID2 = 0;
+    int objID3 = 0;
+    int objID4 = 0;
+    int cameraID1 = 0;
+    int cameraID2 = 0;
+    int cameraID3 = 0;
+    int cameraID4 = 0;
     int objSourceType = 0;//0:相机 1：雷达 2：多目
-    uint64_t time_stamp;//新增时间戳
+    uint64_t time_stamp = 0;//新增时间戳
+    int objType = 0;//目标类型
     //添加属性
     string laneCode;
-    float carLength;//车长,只会在停止线附近给一次估算值,其他时刻都是0
+    float carLength = 0.0;//车长,只会在停止线附近给一次估算值,其他时刻都是0
     string carFeaturePic;//车辆特写图（Base64编码）,只会在停止线附近清楚的位置从1920*1080分辨的原图上抠一张车辆特写图,不会重复发送。不发送的时刻都是空
     string plates;//车牌号
     string plateColor;//车牌颜色
-    int left;
-    int top;
-    int right;
-    int bottom;
-    double locationX;
-    double locationY;
+    int carType = 0;//车辆类型
+
+    int showID = 0;
+    int left = 0;
+    int top = 0;
+    int right = 0;
+    int bottom = 0;
+    double directionAngle = 0.0;
+    double speed = 0.0;
+    double longitude = 0.0;//经度
+    double latitude = 0.0;//纬度
+
+    double locationX = -1;
+    double locationY = -1;
+    int flag_new = -1;//判断当前目标id是否第一次出现
+
+    vector<int> objID;
+    vector<int> radarID;
+    vector<int> cameraID;
+    char plate_number[15];
+    char plate_color[7];
     char distance[10];
-    double directionAngle;
-    double speed;
-    double speedX;
-    double speedY;
-    double longitude;//经度
-    double latitude;//纬度
-    int flag_new = 0;//判断当前目标id是否第一次出现
+
+    double speedX = 0.0;
+    double speedY = 0.0;
+    int continue_num = 0;
+    int fail_num = 0;
+    int flag_track = 0;
+    int existFrame = 0;//同一ID出现的帧数
     //斜路口再用
 //    double dmerge_left_up_x;
 //    double dmerge_left_up_y;
@@ -100,21 +115,5 @@ typedef struct {
 //    double dmerge_right_down_y;
 } OBJECT_INFO_NEW;
 
-
-int merge_total(double repateX, double widthX, double widthY, double Xmax, double Ymax, double gatetx, double gatety,
-                double gatex, double gatey, bool time_flag, OBJECT_INFO_T *Data_one, int n1, OBJECT_INFO_T *Data_two,
-                int n2, OBJECT_INFO_T *Data_three, int n3, OBJECT_INFO_T *Data_four, int n4,
-                OBJECT_INFO_NEW *Data_before1, int n_before1, OBJECT_INFO_NEW *Data_before2, int n_before2,
-                OBJECT_INFO_NEW *Data_out, double angle_value);
-
-/*
-//斜路口
-int merge_total(int flag_view, double left_down_x, double left_down_y, double left_up_x, double left_up_y,
-                double right_up_x, double right_up_y, double right_down_x, double right_down_y, double repateX,
-                double repateY, double gatetx, double gatety, double gatex, double gatey, bool time_flag,
-                OBJECT_INFO_T *Data_one, int n1, OBJECT_INFO_T *Data_two, int n2, OBJECT_INFO_T *Data_three, int n3,
-                OBJECT_INFO_T *Data_four, int n4, OBJECT_INFO_NEW *Data_before1, int n_before1,
-                OBJECT_INFO_NEW *Data_before2, int n_before2, OBJECT_INFO_NEW *Data_out, double angle_value);
-*/
 
 #endif //_MERGE_H
