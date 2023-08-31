@@ -1,6 +1,5 @@
 [requires]
 gflags/2.2.2
-jsoncpp/1.9.2
 sqlite3/3.42.0
 libcurl/7.78.0
 openssl/3.0.5

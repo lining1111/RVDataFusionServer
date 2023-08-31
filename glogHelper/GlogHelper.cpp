@@ -72,7 +72,7 @@ int GlogHelper::cleaner(void *p) {
     }
     GlogHelper *local = (GlogHelper *) p;
     uint64_t keepSeconds = local->keepDays * 60 * 60 * 24;
-    LOG(INFO) << "开启日志定时清理任务";
+    LOG(WARNING) << "开启日志定时清理任务";
     while (local->isRun) {
         sleep(5);
         //获取符合条件的日志文件 {ProgramName-*.log}
@@ -109,7 +109,7 @@ int GlogHelper::cleaner(void *p) {
             }
         }
     }
-    LOG(INFO) << "关闭日志定时清理任务";
+    LOG(WARNING) << "关闭日志定时清理任务";
     return 0;
 }
 
@@ -118,5 +118,5 @@ void GlogHelper::FatalMessageDump(const char *data, unsigned long size) {
     std::string str = std::string(data, size);
     fs << str;
     fs.close();
-    LOG(INFO) << str;
+    LOG(FATAL) << str;
 }

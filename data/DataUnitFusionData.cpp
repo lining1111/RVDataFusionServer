@@ -473,7 +473,7 @@ void DataUnitFusionData::taskO() {
         for (auto &iter: item.lstVideos) {
             iter.imageData.clear();
         }
-
+        VLOG(3) << this->name << "剔除图片";
     }
 
     auto data = (Data *) this->owner;

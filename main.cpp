@@ -1,5 +1,4 @@
 #include <unistd.h>
-#include <fcntl.h>
 #include "version.h"
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -11,7 +10,6 @@
 
 #include <fstream>
 #include <dirent.h>
-#include <sys/stat.h>
 #include "glogHelper/GlogHelper.h"
 #include "common/config.h"
 
@@ -52,12 +50,7 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 
 int main(int argc, char **argv) {
 
-    char *curPath;
-    curPath = new char[512];
-    getcwd(curPath, 512);
-    printf("cur path:%s\n", curPath);
-    LOG(WARNING) << "程序工作目录:" << string(curPath) << ",版本号:" << VERSION_BUILD_TIME;
-    delete[]curPath;
+    LOG(WARNING) << "程序工作目录:" << string(get_current_dir_name()) << ",版本号:" << VERSION_BUILD_TIME;
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
