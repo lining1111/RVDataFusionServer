@@ -88,6 +88,7 @@ CacheTimestamp CT_fusionData;
 int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
 
+    string msgType = "WatchData";
     WatchData watchData;
     try {
         json::decode(content, watchData);
@@ -124,10 +125,10 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     }
     //存入队列
     if (!dataUnit->pushI(watchData, index)) {
-        VLOG(2) << "client ip:" << ip << " WatchData,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " WatchData,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
                 << "timestamp:" << (uint64_t) watchData.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -140,6 +141,7 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
 int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     int ret = 0;
 
+    string msgType = "CrossTrafficJamAlarm";
     CrossTrafficJamAlarm crossTrafficJamAlarm;
     try {
         json::decode(content, crossTrafficJamAlarm);
@@ -158,10 +160,10 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     }
 
     if (!dataUnit->pushI(crossTrafficJamAlarm, index)) {
-        VLOG(2) << "client ip:" << ip << " CrossTrafficJamAlarm,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " CrossTrafficJamAlarm,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << crossTrafficJamAlarm.hardCode << " crossID:" << crossTrafficJamAlarm.crossID
                 << "timestamp:" << (uint64_t) crossTrafficJamAlarm.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -172,6 +174,7 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
 int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     int ret = 0;
 
+    string msgType = "IntersectionOverflowAlarm";
     IntersectionOverflowAlarm intersectionOverflowAlarm;
     try {
         json::decode(content, intersectionOverflowAlarm);
@@ -189,10 +192,10 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     }
 
     if (!dataUnit->pushI(intersectionOverflowAlarm, index)) {
-        VLOG(2) << "client ip:" << ip << " IntersectionOverflowAlarm,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " IntersectionOverflowAlarm,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << intersectionOverflowAlarm.hardCode
                 << " crossID:" << intersectionOverflowAlarm.crossID
                 << "timestamp:" << (uint64_t) intersectionOverflowAlarm.timestamp << " dataUnit i_vector index:"
@@ -205,6 +208,8 @@ CacheTimestamp CT_trafficFlowGather;
 
 int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     int ret = 0;
+
+    string msgType = "TrafficFlow";
     TrafficFlow trafficFlow;
     try {
         json::decode(content, trafficFlow);
@@ -235,10 +240,10 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
         return -1;
     }
     if (!dataUnit->pushI(trafficFlow, index)) {
-        VLOG(2) << "client ip:" << ip << " TrafficFlowGather,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " TrafficFlow,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << trafficFlow.hardCode << " crossID:" << trafficFlow.crossID
                 << "timestamp:" << (uint64_t) trafficFlow.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -249,6 +254,7 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
 int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     int ret = 0;
 
+    string msgType = "InWatchData_1_3_4";
     InWatchData_1_3_4 inWatchData134;
     try {
         json::decode(content, inWatchData134);
@@ -266,10 +272,10 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     }
 
     if (!dataUnit->pushI(inWatchData134, index)) {
-        VLOG(2) << "client ip:" << ip << " InWatchData_1_3_4,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " InWatchData_1_3_4,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << inWatchData134.hardCode << " crossID:" << inWatchData134.crossID
                 << "timestamp:" << (uint64_t) inWatchData134.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -280,6 +286,7 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
 int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     int ret = 0;
 
+    string msgType = "InWatchData_2";
     InWatchData_2 inWatchData2;
     try {
         json::decode(content, inWatchData2);
@@ -297,10 +304,10 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     }
 
     if (!dataUnit->pushI(inWatchData2, index)) {
-        VLOG(2) << "client ip:" << ip << " InWatchData_2,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " InWatchData_2,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << inWatchData2.hardCode << " crossID:" << inWatchData2.crossID
                 << "timestamp:" << (uint64_t) inWatchData2.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -311,6 +318,7 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
 int PkgProcessFun_StopLinePassData(string ip, string content) {
     int ret = 0;
 
+    string msgType = "StopLinePassData";
     StopLinePassData stopLinePassData;
     try {
         json::decode(content, stopLinePassData);
@@ -329,10 +337,10 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(stopLinePassData, index)) {
-        VLOG(2) << "client ip:" << ip << " StopLinePassData,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " StopLinePassData,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << stopLinePassData.hardCode << " crossID:" << stopLinePassData.crossID
                 << "timestamp:" << (uint64_t) stopLinePassData.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -343,6 +351,7 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
 int PkgProcessFun_AbnormalStopData(string ip, string content) {
     int ret = 0;
 
+    string msgType = "AbnormalStopData";
     AbnormalStopData abnormalStopData;
     try {
         json::decode(content, abnormalStopData);
@@ -360,10 +369,10 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(abnormalStopData, index)) {
-        VLOG(2) << "client ip:" << ip << " AbnormalStopData,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " AbnormalStopData,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << abnormalStopData.hardCode << " crossID:" << abnormalStopData.crossID
                 << "timestamp:" << (uint64_t) abnormalStopData.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -374,6 +383,7 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
 int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     int ret = 0;
 
+    string msgType = "LongDistanceOnSolidLineAlarm";
     LongDistanceOnSolidLineAlarm longDistanceOnSolidLineAlarm;
     try {
         json::decode(content, longDistanceOnSolidLineAlarm);
@@ -390,10 +400,10 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
         return -1;
     }
     if (!dataUnit->pushI(longDistanceOnSolidLineAlarm, index)) {
-        VLOG(2) << "client ip:" << ip << " LongDistanceOnSolidLineAlarm,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " LongDistanceOnSolidLineAlarm,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << longDistanceOnSolidLineAlarm.hardCode << " crossID:"
                 << longDistanceOnSolidLineAlarm.crossID
                 << "timestamp:" << (uint64_t) longDistanceOnSolidLineAlarm.timestamp << " dataUnit i_vector index:"
@@ -405,6 +415,7 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
 int PkgProcessFun_HumanData(string ip, string content) {
     int ret = 0;
 
+    string msgType = "HumanData";
     HumanData humanData;
     try {
         json::decode(content, humanData);
@@ -422,10 +433,10 @@ int PkgProcessFun_HumanData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(humanData, index)) {
-        VLOG(2) << "client ip:" << ip << " HumanData,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " HumanData,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << humanData.hardCode << " crossID:" << humanData.crossID
                 << "timestamp:" << (uint64_t) humanData.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -436,6 +447,7 @@ int PkgProcessFun_HumanData(string ip, string content) {
 int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     int ret = 0;
 
+    string msgType = "HumanLitPoleData";
     HumanLitPoleData humanLitPoleData;
     try {
         json::decode(content, humanLitPoleData);
@@ -453,10 +465,10 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(humanLitPoleData, index)) {
-        VLOG(2) << "client ip:" << ip << " HumanLitPoleData,丢弃消息";
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " HumanLitPoleData,存入消息,"
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
                 << "hardCode:" << humanLitPoleData.hardCode << " crossID:" << humanLitPoleData.crossID
                 << "timestamp:" << (uint64_t) humanLitPoleData.timestamp << " dataUnit i_vector index:"
                 << index;
@@ -468,6 +480,7 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
 int PkgProcessFun_0xf1(string ip, string content) {
     int ret = 0;
 
+    string msgType = "TrafficData";
     TrafficData trafficData;
     try {
         json::decode(content, trafficData);
@@ -541,6 +554,7 @@ int PkgProcessFun_0xf1(string ip, string content) {
 int PkgProcessFun_0xf2(string ip, string content) {
     int ret = 0;
 
+    string msgType = "AlarmBroken";
     AlarmBroken alarmBroken;
     try {
         json::decode(content, alarmBroken);
@@ -594,6 +608,7 @@ int PkgProcessFun_0xf2(string ip, string content) {
 int PkgProcessFun_0xf3(string ip, string content) {
     int ret = 0;
 
+    string msgType = "UrgentPriority";
     UrgentPriority urgentPriority;
     try {
         json::decode(content, urgentPriority);
@@ -649,7 +664,7 @@ static uint16_t sn_TrafficDetectorStatus = 0;
 int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     //透传
     int ret = 0;
-
+    string msgType = "TrafficDetectorStatus";
     TrafficDetectorStatus trafficDetectorStatus;
     try {
         json::decode(content, trafficDetectorStatus);
@@ -665,7 +680,7 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     sn_TrafficDetectorStatus++;
     auto business = LocalBusiness::instance();
     if (business->isRun) {
-        string msgType = "TrafficDetectorStatus";
+
         if (business->clientList.empty()) {
             LOG(ERROR) << "client list empty";
             return -1;
@@ -675,7 +690,13 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
                 continue;
             }
 
+            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
             auto ret = iter.second->SendBase(pkg);
+            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+            PrintSendInfo(ret, iter.second->server_ip, iter.second->server_port,
+                          msgType, timestampStart, timestampEnd, trafficDetectorStatus.timestamp);
         }
     }
 

@@ -133,36 +133,8 @@ void DataUnitTrafficFlowGather::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 }
@@ -223,36 +195,8 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 }
@@ -285,36 +229,8 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 }
@@ -347,36 +263,8 @@ void DataUnitInWatchData_1_3_4::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -410,36 +298,8 @@ void DataUnitInWatchData_2::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -473,36 +333,8 @@ void DataUnitStopLinePassData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -571,36 +403,8 @@ void DataUnitHumanData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -634,36 +438,8 @@ void DataUnitAbnormalStopData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -697,36 +473,8 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败，未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 
@@ -760,36 +508,8 @@ void DataUnitHumanLitPoleData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            switch (ret) {
-                case 0: {
-                    LOG(INFO) << this->name << " 发送成功 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -1: {
-                    LOG(INFO) << this->name << " 发送失败,未获得锁 " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                case -2: {
-                    LOG(INFO) << this->name << " 发送失败,send fail " << cli.second->server_ip << ":" << cli.second->server_port
-                              << ",发送开始时间:" << to_string(timestampStart)
-                              << ",发送结束时间:" << to_string(timestampEnd)
-                              << ",帧内时间:" << to_string((uint64_t) item.timestamp)
-                              << ",耗时:" << (timestampEnd - timestampStart) << " ms";
-                }
-                    break;
-                default: {
-
-                }
-                    break;
-            }
+            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
+                          this->name,timestampStart,timestampEnd,item.timestamp);
         }
     }
 

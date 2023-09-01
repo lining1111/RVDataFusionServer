@@ -370,10 +370,18 @@ void example1(){
 
     DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(v_src);
 }
-
+class A{
+public:
+    vector<vector<vector<double>>> v;
+XPACK(O(v));
+};
 int main(int argc, char **argv) {
 
+    string dataStr =
+            "{\"v\":[[[1.0,2.0],[4.0,5.0]],[[7.0,8.0],[10.0,11.0]]]}";
 
+    A a1;
+    json::decode(dataStr, a1);
 
     example1();
     exampleJsonWatchData();

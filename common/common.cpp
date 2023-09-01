@@ -7,6 +7,7 @@
 #include <iostream>
 #include "common/common.h"
 #include "common/CRC.h"
+#include <glog/logging.h>
 
 namespace common {
 
@@ -112,6 +113,40 @@ namespace common {
             return -1;
         } else {
             return 0;
+        }
+    }
+
+    void PrintSendInfo(int s, string serverIp, int serverPort,
+                       string name, uint64_t timestampS, uint64_t timestampE, uint64_t timestamp) {
+        switch (s) {
+            case 0: {
+                LOG(INFO) << name << " 发送成功 " << serverIp << ":" << serverPort
+                          << ",发送开始时间:" << to_string(timestampS)
+                          << ",发送结束时间:" << to_string(timestampE)
+                          << ",帧内时间:" << to_string(timestamp)
+                          << ",耗时:" << (timestamp - timestampS) << " ms";
+            }
+                break;
+            case -1: {
+                LOG(INFO) << name << " 发送失败,未获取锁 " << serverIp << ":" << serverPort
+                          << ",发送开始时间:" << to_string(timestampS)
+                          << ",发送结束时间:" << to_string(timestampE)
+                          << ",帧内时间:" << to_string(timestamp)
+                          << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            case -2: {
+                LOG(INFO) << name << " 发送失败,send fail " << serverIp << ":" << serverPort
+                          << ",发送开始时间:" << to_string(timestampS)
+                          << ",发送结束时间:" << to_string(timestampE)
+                          << ",帧内时间:" << to_string(timestamp)
+                          << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            default: {
+
+            }
+                break;
         }
     }
 
