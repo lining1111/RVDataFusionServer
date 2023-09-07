@@ -137,4 +137,54 @@ void SaveDataOut(vector<OBJECT_INFO_NEW> data, uint64_t timestamp, string path) 
     }
 }
 
+int saveJson(string json, uint64_t timestamp, string path) {
+    os::CreatePath(path);
+    //存输出数据到文件
+    string fileName = path + to_string(timestamp) + ".txt";
+    std::fstream inDataFile;
+    inDataFile.open(fileName, ios::out | ios::binary | ios::trunc);
+    int ret = 0;
+//    string content;
+    if (inDataFile.is_open()) {
+        inDataFile << json;
+        inDataFile.close();
+        printf("write file %s\n", fileName.c_str());
+        ret = 0;
+    } else {
+        printf("打开文件失败:%s\n", fileName.c_str());
+        ret = -1;
+    }
+
+    return ret;
+}
+
+int savePic(string base64Pic, uint64_t timestamp, string path) {
+    os::CreatePath(path);
+    //存输出数据到文件
+    string fileName = path + to_string(timestamp) + ".jpeg";
+    std::fstream inDataFile;
+    inDataFile.open(fileName, ios::out | ios::binary | ios::trunc);
+
+    //将base64字符串转换为图片
+    uint8_t *pic = nullptr;
+    pic = new uint8_t[1024 * 1024];
+    unsigned int len = 1024 * 1024;
+    os::base64_decode((unsigned char *) base64Pic.data(), base64Pic.length(), pic, &len);
+
+    int ret = 0;
+//    string content;
+    if (inDataFile.is_open()) {
+        inDataFile.write((char *) pic, len);
+        inDataFile.close();
+        printf("write file %s\n", fileName.c_str());
+        ret = 0;
+    } else {
+        printf("打开文件失败:%s\n", fileName.c_str());
+        ret = -1;
+    }
+
+    delete[] pic;
+
+    return ret;
+}
 

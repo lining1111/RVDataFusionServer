@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(RVDataFusionServer VERSION 2.3.3)
+project(RVDataFusionServer VERSION 2.3.4)
 string(TIMESTAMP COMPILE_TIME ${CMAKE_PROJECT_VERSION}_%Y%m%d_%H.%M.%S)
 set(build_time ${COMPILE_TIME})
 configure_file("${PROJECT_SOURCE_DIR}/version.h.in" "${PROJECT_SOURCE_DIR}/version.h")
@@ -11,14 +11,13 @@ find_package(gflags REQUIRED)
 find_package(SQLite3 REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
-find_package(httplib REQUIRED)
 find_package(libuuid REQUIRED)
 find_package(glog REQUIRED)
 find_package(fmt REQUIRED)
 find_package(Poco REQUIRED)
 find_package(xpack REQUIRED)
 
-set(3rdLibs gflags::gflags SQLite::SQLite3 CURL::libcurl openssl::openssl httplib::httplib
+set(3rdLibs gflags::gflags SQLite::SQLite3 CURL::libcurl openssl::openssl
         libuuid::libuuid glog::glog fmt::fmt Poco::Poco xpack::xpack)
 
 

@@ -199,6 +199,11 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
         }
     }
 
+    if (!localConfig.isSendCloud) {
+        VLOG(3) << name << " 不发送融合数据到平台";
+        return 0;
+    }
+
     return GetFusionData();
 }
 
@@ -480,9 +485,19 @@ void DataUnitFusionData::taskO() {
     uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
-    printf("%s\n", pkg.body.c_str());
-    //2.发送
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveRVJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+
+        for (int i = 0; i < item.lstVideos.size(); i++) {
+            auto path1 = "/mnt/mnt_hd/save/Json/" + this->name + "/pic/" + to_string(i) + "/";
+            savePic(item.lstVideos[i].imageData, item.timestamp, path1);
+        }
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -496,8 +511,8 @@ void DataUnitFusionData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }

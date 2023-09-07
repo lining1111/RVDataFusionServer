@@ -18,7 +18,11 @@ typedef struct {
     int mergeMode;
     bool isSaveInObj = false;
     bool isSaveOutObj = false;
+    bool isSendCloud = true;
+    bool isSaveOtherJson = false;
+    bool isSaveRVJson = false;
     AlgorithmParam algorithmParam;
+    int mode = 0;
 } LocalConfig;
 
 typedef enum {

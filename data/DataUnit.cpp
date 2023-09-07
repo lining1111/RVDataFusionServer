@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <glog/logging.h>
 #include "Data.h"
+#include "DataUnitUtilty.h"
 #include "localBussiness/localBusiness.h"
 
 
@@ -56,14 +57,14 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
 void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v) {
     //1.先打印下原始数据
     string src;
-    for (auto iter:v) {
-        src +="lancode:";
-        src +=iter.laneCode;
-        src +=",queueLen:";
-        src +=iter.queueLen;
-        src +="\n";
+    for (auto iter: v) {
+        src += "lancode:";
+        src += iter.laneCode;
+        src += ",queueLen:";
+        src += iter.queueLen;
+        src += "\n";
     }
-    VLOG(3)<<src;
+    VLOG(3) << src;
     //2.遍历，根据车道号筛选出最大的排队长度
     // (原理就是：遍历数组，设当前的索引应该被引用，然后和数组内的其他元素对比，如果车道号相同且小于对方的排队长度，则不应该被引用，退出当前循环，如果该索引能够被引用，则记录到数组，到最后一起拷贝到新的结构体数组)
     //2.1遍历获取索引
@@ -75,7 +76,7 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
         auto curQueueLen = iter.queueLen;
         bool isRef = true;
         for (int j = 0; j < v.size(); j++) {
-            if (i!=j){
+            if (i != j) {
                 auto iter_t = v.at(j);
                 auto laneCode_t = iter_t.laneCode;
                 auto queueLen_t = iter_t.queueLen;
@@ -86,25 +87,25 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
             }
         }
         if (isRef) {
-         indices.push_back(i);
+            indices.push_back(i);
         }
     }
     //2.1 根据所有拷贝数组
     vector<OneFlowData> v_copy;
     v_copy.clear();
-    for (auto iter:indices) {
+    for (auto iter: indices) {
         v_copy.push_back(v.at(iter));
     }
     //3.打印下拷贝出的数组
     string src_cpoy;
-    for (auto iter:v_copy) {
-        src_cpoy +="lancode:";
-        src_cpoy +=iter.laneCode;
-        src_cpoy +=",queueLen:";
-        src_cpoy +=iter.queueLen;
-        src_cpoy +="\n";
+    for (auto iter: v_copy) {
+        src_cpoy += "lancode:";
+        src_cpoy += iter.laneCode;
+        src_cpoy += ",queueLen:";
+        src_cpoy += iter.queueLen;
+        src_cpoy += "\n";
     }
-    VLOG(3)<<src_cpoy;
+    VLOG(3) << src_cpoy;
     //4.将拷贝数组设置到输出
     v = v_copy;
 }
@@ -120,6 +121,13 @@ void DataUnitTrafficFlowGather::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -133,8 +141,8 @@ void DataUnitTrafficFlowGather::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
@@ -143,22 +151,34 @@ void DataUnitCrossTrafficJamAlarm::taskI() {
     this->runTask(std::bind(DataUnitCrossTrafficJamAlarm::specialBusiness, this));
 }
 
+//有状态变化才上报
+int alarmStatus = -1;
+
 void DataUnitCrossTrafficJamAlarm::specialBusiness(DataUnitCrossTrafficJamAlarm *dataUnit) {
-//第一次取到有报警的时间戳
-    uint64_t alarmTimestamp = 0;
 
     for (auto &iter: dataUnit->i_queue_vector) {
         while (!iter.empty()) {
             IType cur;
             iter.getIndex(cur, 0);
             iter.eraseBegin();
-            if (alarmTimestamp == 0) {
+            if (alarmStatus == -1) {
                 //如果第一次赋值
-                alarmTimestamp = cur.timestamp;
-            } else if (abs((long long) alarmTimestamp - (long long) cur.timestamp) <= (10 * 1000)) {
-                //查看当前的时间戳是否在第一次取到的10s内
+                alarmStatus = cur.alarmStatus;
+                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus"
+                        << " 状态第一次获取 timestamp:" << cur.timestamp;
+            } else if (alarmStatus != cur.alarmStatus) {
+                //状态不一致，获取状态，并上报
+                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus" << cur.alarmStatus
+                        << " 状态不一致上报 timestamp:" << cur.timestamp;
+                alarmStatus = cur.alarmStatus;
+
+            } else {
+                //状态一致不上报
+                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus" << cur.alarmStatus
+                        << " 状态一致不上报 timestamp:" << cur.timestamp;
                 continue;
             }
+
 
             OType item = cur;
             if (!dataUnit->pushO(item)) {
@@ -182,6 +202,16 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+
+        auto path1 = "/mnt/mnt_hd/save/Json/" + this->name + "/pic/";
+        savePic(item.imageData, item.timestamp, path1);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -195,8 +225,8 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
@@ -216,6 +246,16 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+
+        auto path1 = "/mnt/mnt_hd/save/Json/" + this->name + "/pic/";
+        savePic(item.imageData, item.timestamp, path1);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -229,8 +269,8 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
@@ -250,6 +290,13 @@ void DataUnitInWatchData_1_3_4::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -263,8 +310,8 @@ void DataUnitInWatchData_1_3_4::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -285,6 +332,13 @@ void DataUnitInWatchData_2::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -298,8 +352,8 @@ void DataUnitInWatchData_2::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -320,6 +374,13 @@ void DataUnitStopLinePassData::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -333,8 +394,8 @@ void DataUnitStopLinePassData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -390,6 +451,13 @@ void DataUnitHumanData::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -403,8 +471,8 @@ void DataUnitHumanData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -425,6 +493,16 @@ void DataUnitAbnormalStopData::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+
+        auto path1 = "/mnt/mnt_hd/save/Json/" + this->name + "/pic/";
+        savePic(item.imageData, item.timestamp, path1);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -438,8 +516,8 @@ void DataUnitAbnormalStopData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -460,6 +538,13 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -473,8 +558,8 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -495,6 +580,13 @@ void DataUnitHumanLitPoleData::taskO() {
     Pkg pkg;
     item.PkgWithoutCRC(this->sn, deviceNo, pkg);
     this->sn++;
+
+    //1.1是否存储json
+    if (localConfig.isSaveOtherJson) {
+        auto path = "/mnt/mnt_hd/save/Json/" + this->name + "/";
+        saveJson(pkg.body, item.timestamp, path);
+    }
+
     //2.发送
     auto local = LocalBusiness::instance();
     for (auto cli: local->clientList) {
@@ -508,8 +600,8 @@ void DataUnitHumanLitPoleData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret,cli.second->server_ip,cli.second->server_port,
-                          this->name,timestampStart,timestampEnd,item.timestamp);
+            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
+                          this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 

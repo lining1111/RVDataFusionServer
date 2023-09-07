@@ -88,6 +88,11 @@ CacheTimestamp CT_fusionData;
 int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
 
+    if (localConfig.mode == 2) {
+        LOG(ERROR)<<"程序模式2，不处理数据 WatchData";
+        return -1;
+    }
+
     string msgType = "WatchData";
     WatchData watchData;
     try {
@@ -119,8 +124,8 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
     //存入队列
@@ -154,8 +159,8 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     auto dataUnit = data->dataUnitCrossTrafficJamAlarm;
     int index = dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
 
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -186,8 +191,8 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitIntersectionOverflowAlarm;
     int index = dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -235,8 +240,8 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
     if (!dataUnit->pushI(trafficFlow, index)) {
@@ -266,8 +271,8 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_1_3_4;
     int index = dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -298,8 +303,8 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_2;
     int index = dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -331,8 +336,8 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitStopLinePassData;
     int index = dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -363,8 +368,8 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitAbnormalStopData;
     int index = dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -395,8 +400,8 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitLongDistanceOnSolidLineAlarm;
     int index = dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
     if (!dataUnit->pushI(longDistanceOnSolidLineAlarm, index)) {
@@ -427,8 +432,8 @@ int PkgProcessFun_HumanData(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanData;
     int index = dataUnit->FindIndexInUnOrder(humanData.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
@@ -459,8 +464,8 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanLitPoleData;
     int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
-    if (index == -1 || index > dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据时，index 错误" << index;
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 

@@ -41,8 +41,13 @@ DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 
 DEFINE_bool(isSaveInObj, false, "存算法输入，默认false");
 DEFINE_bool(isSaveOutObj, false, "存算法输出，默认false");
+DEFINE_bool(isSendCloud, true, "发送平台，默认true");
+DEFINE_bool(isSaveOtherJson, false, "是否保存除实时数据外其他json文件，默认false");
+DEFINE_bool(isSaveRVJson, false, "是否保存实时数据json文件，默认false");
 
 DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,默认./algorithmParam.json");
+
+DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口服务 2:起9001端口服务 默认 0");
 
 #include "configure_eoc_init.h"
 #include "os/os.h"
@@ -111,10 +116,17 @@ int main(int argc, char **argv) {
     localConfig.roadNum = FLAGS_roadNum;
     localConfig.isSaveInObj = FLAGS_isSaveInObj;
     localConfig.isSaveOutObj = FLAGS_isSaveOutObj;
+    localConfig.isSendCloud = FLAGS_isSendCloud;
+    localConfig.isSaveOtherJson = FLAGS_isSaveOtherJson;
+    localConfig.isSaveRVJson = FLAGS_isSaveRVJson;
+    localConfig.mode = FLAGS_mode;
 
-    //读取默认的算法配置文件
-    if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {
-        LOG(ERROR) << "读取算法配置文件失败:" << FLAGS_algorithmParamFile;
+    LOG(WARNING) << "程序模式:" << FLAGS_mode;
+    if (localConfig.mode == 0 || localConfig.mode == 1) {
+        //读取默认的算法配置文件
+        if (getAlgorithmParam(FLAGS_algorithmParamFile, localConfig.algorithmParam) != 0) {
+            LOG(ERROR) << "读取算法配置文件失败:" << FLAGS_algorithmParamFile;
+        }
     }
     LOG(WARNING) << "通信协议版本:" << GetComVersion();
 
@@ -124,8 +136,12 @@ int main(int argc, char **argv) {
     LOG(WARNING) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
     auto businessLocal = LocalBusiness::instance();
-    businessLocal->AddServer("server1", port);
-    businessLocal->AddServer("server2", port + 1);
+    if (localConfig.mode == 0 || localConfig.mode == 1) {
+        businessLocal->AddServer("server1", port);
+    }
+    if (localConfig.mode == 0 || localConfig.mode == 2) {
+        businessLocal->AddServer("server2", port + 1);
+    }
     businessLocal->AddClient("client1", cloudIp, cloudPort);
     //增加一个默认端口的客户端
     if (!FLAGS_isSamePort) {

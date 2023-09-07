@@ -23,14 +23,14 @@ Data *Data::instance() {
         int cliNum = localConfig.roadNum;
         //周期性数据放入自适应帧率
         m_pInstance->dataUnitFusionData = new DataUnitFusionData();
-        m_pInstance->dataUnitFusionData->setCapNumI(15,cliNum);
+        m_pInstance->dataUnitFusionData->setCapNumI(15, cliNum);
 //        m_pInstance->dataUnitFusionData.init(10, 80, cliNum, 10, m_pInstance);//80ms一帧
         m_pInstance->dataUnitTrafficFlowGather = new DataUnitTrafficFlowGather();
-        m_pInstance->dataUnitTrafficFlowGather->setCapNumI(3,cliNum);
+        m_pInstance->dataUnitTrafficFlowGather->setCapNumI(3, cliNum);
 //        m_pInstance->dataUnitTrafficFlowGather.init(30, 500, cliNum, 3, m_pInstance);//500ms一帧
         m_pInstance->dataUnitCrossTrafficJamAlarm = new DataUnitCrossTrafficJamAlarm();
         m_pInstance->dataUnitCrossTrafficJamAlarm->init(10, 500, cliNum, 1, m_pInstance,
-                                                        "DataUnitCrossTrafficJamAlarm", 10*1000);//1000ms一帧
+                                                        "DataUnitCrossTrafficJamAlarm", 10 * 1000);//1000ms一帧
 
         m_pInstance->dataUnitIntersectionOverflowAlarm = new DataUnitIntersectionOverflowAlarm();
         m_pInstance->dataUnitIntersectionOverflowAlarm->init(10, 500, cliNum, 1, m_pInstance,
@@ -108,7 +108,7 @@ int Data::getMatrixNo() {
     //处理下sn字符串中间可能带-的情况
     matrixNo.erase(std::remove(matrixNo.begin(), matrixNo.end(), '-'), matrixNo.end());
 
-    LOG(INFO) << "sn:" << matrixNo;
+    LOG(WARNING) << "sn:" << matrixNo;
     sqlite3_free_table(result);
     sqlite3_close(db);
     return 0;
@@ -146,7 +146,7 @@ int Data::getPlatId() {
             }
         }
     }
-    LOG(INFO) << "plateId:" << plateId;
+    LOG(WARNING) << "plateId:" << plateId;
     sqlite3_free_table(result);
     sqlite3_close(db);
     return 0;
