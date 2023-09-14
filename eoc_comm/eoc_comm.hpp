@@ -96,6 +96,30 @@ int add_eoc_download_event(EocDownloadsMsg &data, EocUpgradeDev &dev_data);
 //返回值：0添加成功；-1添加失败
 int add_eoc_upgrade_event(EocUpgradeDev &data);
 
+//主控机状态
+typedef struct PartsState{
+    int State =1;
+    int Size =0;
+    int ResidualSize =0;
+};
 
+typedef struct MainBoardState{
+    string MainboardGuid;
+    int State=1;
+    int CpuState=1;
+    double CpuUtilizationRatio=0.0;
+    double CpuTemperature=0.0;
+    int MemorySize = 0;
+    int ResidualMemorySize = 0;
+    string ModelVersion;
+    string MainboardType;
+    vector<PartsState> TFCardStates;
+    vector<PartsState> EmmcStates;
+    vector<PartsState> ExternalHardDisk;
+};
+
+//获取主控机状态
+//返回值：0获取成功；-1获取失败
+int GetMainBoardState(MainBoardState &mainBoardState);
 
 #endif

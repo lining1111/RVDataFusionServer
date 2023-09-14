@@ -616,4 +616,25 @@ public:
     void taskO();
 };
 
+//检测器状态
+class DataUnitTrafficDetectorStatus :public DataUnit<TrafficDetectorStatus, TrafficDetectorStatus> {
+public:
+    int saveCount = 0;// 测试存包用
+    DataUnitTrafficDetectorStatus() {
+
+    }
+
+    ~DataUnitTrafficDetectorStatus() {
+
+    }
+
+    void taskI();
+
+//    static void FindOneFrame(DataUnitTrafficDetectorStatus *dataUnit, int offset);
+//
+//    int TaskProcessOneFrame();
+
+    void taskO();
+};
+
 #endif //_DATAUNIT_H

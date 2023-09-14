@@ -53,9 +53,13 @@ DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口
 #include "os/os.h"
 #include "eocCom/db/DBCom.h"
 
+#include "eoc_comm/eoc_comm.hpp"
 int main(int argc, char **argv) {
 
-    LOG(WARNING) << "程序工作目录:" << string(get_current_dir_name()) << ",版本号:" << VERSION_BUILD_TIME;
+
+    MainBoardState state;
+    GetMainBoardState(state);
+
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -68,7 +72,7 @@ int main(int argc, char **argv) {
     uint16_t port = FLAGS_port;
     string cloudIp;
     uint16_t cloudPort;
-
+    LOG(WARNING) << "程序工作目录:" << string(get_current_dir_name()) << ",版本号:" << VERSION_BUILD_TIME;
     //初始化本地数据和数据库
     LOG(WARNING) << "开启eoc通信，同时读取本地数据库到缓存";
 

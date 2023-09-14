@@ -64,10 +64,11 @@ Data *Data::instance() {
         m_pInstance->dataUnitHumanLitPoleData->init(10, 500, cliNum, 1, m_pInstance,
                                                     "DataUnitHumanLitPoleData", 10);//这个cliNum待定
 
-        //开启数据时间戳历史监听线程
-        m_pInstance->isRun = true;
-//        std::thread(startDataUnitHistoryPrint, m_pInstance, 10).detach();
+        m_pInstance->dataUnitTrafficDetectorStatus = new DataUnitTrafficDetectorStatus();
+        m_pInstance->dataUnitTrafficDetectorStatus->init(10, 500, cliNum, 1, m_pInstance,
+                                                         "DataUnitTrafficDetectorStatus", 10);//这个cliNum待定
 
+        m_pInstance->isRun = true;
         lck.unlock();
     }
     return m_pInstance;

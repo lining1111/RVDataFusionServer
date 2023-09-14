@@ -39,6 +39,8 @@ public:
     DataUnitHumanData *dataUnitHumanData;
     //-----行人灯杆数据----//
     DataUnitHumanLitPoleData *dataUnitHumanLitPoleData;
+    //-----检测器状态----//
+    DataUnitTrafficDetectorStatus *dataUnitTrafficDetectorStatus;
 public:
     //本地参数
     //FusionData相关

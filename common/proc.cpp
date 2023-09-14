@@ -664,11 +664,13 @@ int PkgProcessFun_0xf3(string ip, string content) {
     return ret;
 }
 
-static uint16_t sn_TrafficDetectorStatus = 0;
+//CacheTimestamp CT_trafficDetectorStatus;
 
 int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
+    VLOG(4) << content;
     //透传
     int ret = 0;
+
     string msgType = "TrafficDetectorStatus";
     TrafficDetectorStatus trafficDetectorStatus;
     try {
@@ -677,36 +679,38 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
         LOG(ERROR) << e.what();
         return -1;
     }
-    //直接发送给第2个client
-    auto data = Data::instance();
-    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
-    Pkg pkg;
-    trafficDetectorStatus.PkgWithoutCRC(sn_TrafficDetectorStatus, deviceNo, pkg);
-    sn_TrafficDetectorStatus++;
-    auto business = LocalBusiness::instance();
-    if (business->isRun) {
+    //存入队列
+    auto *data = Data::instance();
+    auto dataUnit = data->dataUnitTrafficDetectorStatus;
+    int index = dataUnit->FindIndexInUnOrder(trafficDetectorStatus.hardCode);
 
-        if (business->clientList.empty()) {
-            LOG(ERROR) << "client list empty";
-            return -1;
-        }
-        for (auto iter: business->clientList) {
-            if (iter.first != "client2") {
-                continue;
-            }
+//    //存到帧率缓存
+//    auto ct = &CT_trafficDetectorStatus;
+//    ct->update(index, trafficDetectorStatus.timestamp, 3);
+//    pthread_mutex_lock(&ct->mtx);
+//    if (ct->isSetInterval) {
+//        if (!ct->isStartTask) {
+//            ct->isStartTask = true;
+//            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+//                           "DataUnitTrafficDetectorStatus", 10);
+//        }
+//    }
+//    pthread_mutex_unlock(&ct->mtx);
 
-            uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count();
-            auto ret = iter.second->SendBase(pkg);
-            uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret, iter.second->server_ip, iter.second->server_port,
-                          msgType, timestampStart, timestampEnd, trafficDetectorStatus.timestamp);
-        }
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
+        return -1;
     }
 
-    VLOG(2) << "client ip:" << ip << " TrafficDetectorStatus,消息透传";
-
+    if (!dataUnit->pushI(trafficDetectorStatus, index)) {
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        ret = -1;
+    } else {
+        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                << "hardCode:" << trafficDetectorStatus.hardCode << " crossID:" << trafficDetectorStatus.crossID
+                << "timestamp:" << (uint64_t) trafficDetectorStatus.timestamp << " dataUnit i_vector index:"
+                << index;
+    }
     return ret;
 }
 
