@@ -53,13 +53,7 @@ DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口
 #include "os/os.h"
 #include "eocCom/db/DBCom.h"
 
-#include "eoc_comm/eoc_comm.hpp"
 int main(int argc, char **argv) {
-
-
-    MainBoardState state;
-    GetMainBoardState(state);
-
 
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);

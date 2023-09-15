@@ -120,7 +120,7 @@ int getipaddr(char *ethip, char *n2nip) {
  * 0：成功
  * -1：失败
  * */
-int splitstr2vector(const char *str, const char *delimiters, std::vector <std::string> &sv) {
+int splitstr2vector(const char *str, const char *delimiters, std::vector<std::string> &sv) {
     sv.clear();
 
     char *ptr = NULL;
@@ -1431,7 +1431,7 @@ static int s110_mainBoard_status_send(tcp_client_t *client) {
     }
 
     cJSON_AddStringToObject(root, "Guid", random_uuid().data());
-    cJSON_AddStringToObject(root, "Code", EOC_COMM_SEND_105);
+    cJSON_AddStringToObject(root, "Code", EOC_COMM_SEND_110);
     cJSON_AddStringToObject(root, "Version", EOC_COMMUNICATION_VERSION);
     cJSON_AddItemToObject(root, "Data", data);
     //填充data
@@ -1450,30 +1450,35 @@ static int s110_mainBoard_status_send(tcp_client_t *client) {
     cJSON_AddStringToObject(data, "ModelVersion", mainBoardState.ModelVersion.c_str());
     cJSON_AddStringToObject(data, "MainboardType", mainBoardState.MainboardType.c_str());
 
+    cJSON *array_tf = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.TFCardStates.size(); i++) {
-        cJSON *array = cJSON_CreateArray();
-        cJSON_AddNumberToObject(array, "State", mainBoardState.TFCardStates[i].State);
-        cJSON_AddNumberToObject(array, "Size", mainBoardState.TFCardStates[i].Size);
-        cJSON_AddNumberToObject(array, "ResidualSize", mainBoardState.TFCardStates[i].ResidualSize);
-        cJSON_AddItemToObject(data, "TFCardStates", array);
+        cJSON *array_tf_item =  cJSON_CreateObject();
+        cJSON_AddNumberToObject(array_tf_item, "State", mainBoardState.TFCardStates[i].State);
+        cJSON_AddNumberToObject(array_tf_item, "Size", mainBoardState.TFCardStates[i].Size);
+        cJSON_AddNumberToObject(array_tf_item, "ResidualSize", mainBoardState.TFCardStates[i].ResidualSize);
+        cJSON_AddItemToArray(array_tf, array_tf_item);
     }
+    cJSON_AddItemToObject(data, "TFCardStates", array_tf);
 
+    cJSON *array_emmc = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.EmmcStates.size(); i++) {
-        cJSON *array = cJSON_CreateArray();
-        cJSON_AddNumberToObject(array, "State", mainBoardState.EmmcStates[i].State);
-        cJSON_AddNumberToObject(array, "Size", mainBoardState.EmmcStates[i].Size);
-        cJSON_AddNumberToObject(array, "ResidualSize", mainBoardState.EmmcStates[i].ResidualSize);
-        cJSON_AddItemToObject(data, "EmmcStates", array);
+        cJSON *array_emmc_item =  cJSON_CreateObject();
+        cJSON_AddNumberToObject(array_emmc_item, "State", mainBoardState.EmmcStates[i].State);
+        cJSON_AddNumberToObject(array_emmc_item, "Size", mainBoardState.EmmcStates[i].Size);
+        cJSON_AddNumberToObject(array_emmc_item, "ResidualSize", mainBoardState.EmmcStates[i].ResidualSize);
+        cJSON_AddItemToArray(array_emmc, array_emmc_item);
     }
+    cJSON_AddItemToObject(data, "EmmcStates", array_emmc);
 
+    cJSON *array_externalHardDisk = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.ExternalHardDisk.size(); i++) {
-        cJSON *array = cJSON_CreateArray();
-        cJSON_AddNumberToObject(array, "State", mainBoardState.ExternalHardDisk[i].State);
-        cJSON_AddNumberToObject(array, "Size", mainBoardState.ExternalHardDisk[i].Size);
-        cJSON_AddNumberToObject(array, "ResidualSize", mainBoardState.ExternalHardDisk[i].ResidualSize);
-        cJSON_AddItemToObject(data, "ExternalHardDisk", array);
+        cJSON *array_xternalHardDisk_item =  cJSON_CreateObject();
+        cJSON_AddNumberToObject(array_xternalHardDisk_item, "State", mainBoardState.ExternalHardDisk[i].State);
+        cJSON_AddNumberToObject(array_xternalHardDisk_item, "Size", mainBoardState.ExternalHardDisk[i].Size);
+        cJSON_AddNumberToObject(array_xternalHardDisk_item, "ResidualSize", mainBoardState.ExternalHardDisk[i].ResidualSize);
+        cJSON_AddItemToArray(array_externalHardDisk, array_xternalHardDisk_item);
     }
-
+    cJSON_AddItemToObject(data, "ExternalHardDisk", array_externalHardDisk);
 
     json_str = cJSON_PrintUnformatted(root);
     send_str = json_str;
@@ -1574,7 +1579,7 @@ BLUE_TCP_STATE datacoming_callback(tcp_client_t *client, char *data, size_t data
     eoc_rec_data += data;
 
     int ret = 0;
-    vector <string> sv;
+    vector<string> sv;
     //处理粘包
     ret = splitstr2vector(eoc_rec_data.c_str(), "*", sv);
     if (ret == 0) {
@@ -1859,6 +1864,9 @@ double getCpuUse(CPU_OCCUPY *o, CPU_OCCUPY *n) {
     nd = (unsigned long) (n->user + n->nice + n->system + n->idle + n->lowait + n->irq +
                           n->softirq); //第二次(用户+优先级+系统+空闲)的时间再赋给od
     double sum = nd - od;
+    if (sum == 0) {
+        return 0;
+    }
     double idle = n->idle - o->idle;
     return (sum - idle) / sum;
 }
