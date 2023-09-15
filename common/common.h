@@ -916,19 +916,20 @@ namespace common {
     class HumanLitPoleData_deviceListItem {
     public:
         string deviceCode;
-        string deviceLocation;
+        int deviceLocation;
         string waitingAreaLocation;
         string zebraCrossingCode;
         int detectDirection;
         int direction;
         int humanNum;//等待区人数
         int humanFlow;//穿行人数
+        vector<int> humanWaitList;
         int waitingTime;//等待时间
         int lightStatus;
         string imageData;
     public:
     XPACK(O(deviceCode, deviceLocation, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,
-            humanFlow, waitingTime, lightStatus, imageData));
+            humanFlow, humanWaitList,waitingTime, lightStatus, imageData));
     };
 
     class HumanLitPoleData : public PkgClass {

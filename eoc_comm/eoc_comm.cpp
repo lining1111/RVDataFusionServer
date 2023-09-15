@@ -1843,64 +1843,52 @@ int eoc_communication_start(const char *server_path, int server_port) {
     return 0;
 }
 
-// 定义一个cpu occupy的结构体，用来存放CPU的信息
-typedef struct CPUPACKED {
-    char name[20];       //定义一个char类型的数组名name有20个元素
-    unsigned int user;   //定义一个无符号的int类型的user
-    unsigned int nice;   //定义一个无符号的int类型的nice
-    unsigned int system; //定义一个无符号的int类型的system
-    unsigned int idle;   //定义一个无符号的int类型的idle
-    unsigned int lowait;
-    unsigned int irq;
-    unsigned int softirq;
-} CPU_OCCUPY;
-
-// 该函数，利用上述公式。计算出两段时间的之间的CPU占用率
-// 输入为：当前时刻和上一采样时刻cpu的信息
-double getCpuUse(CPU_OCCUPY *o, CPU_OCCUPY *n) {
-    unsigned long od, nd;
-    od = (unsigned long) (o->user + o->nice + o->system + o->idle + o->lowait + o->irq +
-                          o->softirq); //第一次(用户+优先级+系统+空闲)的时间再赋给od
-    nd = (unsigned long) (n->user + n->nice + n->system + n->idle + n->lowait + n->irq +
-                          n->softirq); //第二次(用户+优先级+系统+空闲)的时间再赋给od
-    double sum = nd - od;
-    if (sum == 0) {
-        return 0;
-    }
-    double idle = n->idle - o->idle;
-    return (sum - idle) / sum;
-}
-
 static double CpuUtilizationRatio() {
 
-    FILE *fd;       // 定义打开文件的指针
-    char buff[256]; // 定义个数组，用来存放从文件中读取CPU的信息
-    CPU_OCCUPY old_cpu_occupy;
-    CPU_OCCUPY cpu_occupy;
+    ifstream file("/proc/stat");
+    string line;
+    getline(file, line);
+    file.close();
 
-    fd = fopen("/proc/stat", "r");
-    if (fd == nullptr) {
-        std::cerr << "CpuUtilizationRatio fail" << std::endl;
-        return 0;
+    if (line.substr(0, 3) == "cpu"){
+        int pos = line.find(" ");
+        line = line.substr(pos + 1);
+        pos = line.find(" ");
+        line = line.substr(pos + 1);
+        pos = line.find(" ");
+        line = line.substr(pos + 1);
+        pos = line.find(" ");
+        line = line.substr(pos + 1);
+        pos = line.find(" ");
+        line = line.substr(pos + 1);
+
+        double total = 0;
+        for (char c : line){
+            if (isdigit(c)){
+                total *= 10;
+                total += c - '0';
+            }else
+                break;
+        }
+
+        double idle = 0;
+        pos = line.find(" ");
+        line = line.substr(pos + 1);
+        for (char c : line){
+            if (isdigit(c)){
+                idle *= 10;
+                idle += c - '0';
+            }
+            else
+                break;
+        }
+
+        double usage = (total - idle) / total * 100;
+        cout << "CPU Usage: " << usage << "%" << endl;
+        return usage;
     }
-    // 读取第一行的信息，cpu整体信息
-    memset(buff, 0, sizeof(buff));
-    fgets(buff, sizeof(buff), fd);
-    // 从字符串格式化输出
-    sscanf(buff, "%s %u %u %u %u %u %u %u", old_cpu_occupy.name, &old_cpu_occupy.user, &old_cpu_occupy.nice,
-           &old_cpu_occupy.system,
-           &old_cpu_occupy.idle, &old_cpu_occupy.lowait, &old_cpu_occupy.irq, &old_cpu_occupy.softirq);
-    // cpu的占用率 = （当前时刻的任务占用cpu总时间-前一时刻的任务占用cpu总时间）/ （当前时刻 - 前一时刻的总时间）
 
-    sleep(1); // 延时1s；
-    memset(buff, 0, sizeof(buff));
-    fgets(buff, sizeof(buff), fd);
-
-    sscanf(buff, "%s %u %u %u %u %u %u %u", cpu_occupy.name, &cpu_occupy.user, &cpu_occupy.nice, &cpu_occupy.system,
-           &cpu_occupy.idle, &cpu_occupy.lowait, &cpu_occupy.irq, &cpu_occupy.softirq);
-    // cpu的占用率 = （当前时刻的任务占用cpu总时间-前一时刻的任务占用cpu总时间）/ （当前时刻 - 前一时刻的总时间）
-    fclose(fd);
-    return (getCpuUse(&old_cpu_occupy, &cpu_occupy) * 100.0);
+    return 0;
 }
 
 
