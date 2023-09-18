@@ -428,7 +428,7 @@ static string eoc_rec_data; //接收到的数据
 #define EOC_COMM_SEND_106    "MCCS106"
 #define EOC_COMM_RECEIVE_107 "MCCR107"    //软件升级
 #define EOC_COMM_SEND_107    "MCCS107"
-#define EOC_COMM_SEND_110    "MCCS110"
+#define EOC_COMM_SEND_103    "MCCS103"
 
 
 //添加下载任务
@@ -1413,16 +1413,18 @@ static int send_download_msg(tcp_client_t *client, EocDownloadsMsg *downloade_ms
  * 0：成功
  * -1：失败
  * */
-static int s110_mainBoard_status_send(tcp_client_t *client) {
+static int s103_mainBoard_status_send(tcp_client_t *client) {
     int ret = 0;
     cJSON *root = NULL;
     cJSON *data = NULL;
+    cJSON *_MainBoardState = NULL;
     char *json_str = NULL;
     string send_str;
 
     //打包发送信息
     root = cJSON_CreateObject();
     data = cJSON_CreateObject();
+    _MainBoardState = cJSON_CreateObject();
     if (root == NULL || data == NULL) {
         ERR("%s:cJSON_CreateObject() ERR", __FUNCTION__);
         if (root)cJSON_Delete(root);
@@ -1431,59 +1433,62 @@ static int s110_mainBoard_status_send(tcp_client_t *client) {
     }
 
     cJSON_AddStringToObject(root, "Guid", random_uuid().data());
-    cJSON_AddStringToObject(root, "Code", EOC_COMM_SEND_110);
+    cJSON_AddStringToObject(root, "Code", EOC_COMM_SEND_103);
     cJSON_AddStringToObject(root, "Version", EOC_COMMUNICATION_VERSION);
     cJSON_AddItemToObject(root, "Data", data);
+    cJSON_AddStringToObject(data, "Code", EOC_COMM_SEND_103);
+
     //填充data
-    cJSON_AddStringToObject(data, "Code", EOC_COMM_SEND_110);
 
     MainBoardState mainBoardState;
     GetMainBoardState(mainBoardState);
 
-    cJSON_AddStringToObject(data, "MainboardGuid", mainBoardState.MainboardGuid.c_str());
-    cJSON_AddNumberToObject(data, "State", mainBoardState.State);
-    cJSON_AddNumberToObject(data, "CpuState", mainBoardState.CpuState);
-    cJSON_AddNumberToObject(data, "CpuUtilizationRatio", mainBoardState.CpuUtilizationRatio);
-    cJSON_AddNumberToObject(data, "CpuTemperature", mainBoardState.CpuTemperature);
-    cJSON_AddNumberToObject(data, "MemorySize", mainBoardState.MemorySize);
-    cJSON_AddNumberToObject(data, "ResidualMemorySize", mainBoardState.ResidualMemorySize);
-    cJSON_AddStringToObject(data, "ModelVersion", mainBoardState.ModelVersion.c_str());
-    cJSON_AddStringToObject(data, "MainboardType", mainBoardState.MainboardType.c_str());
+    cJSON_AddStringToObject(_MainBoardState, "MainboardGuid", mainBoardState.MainboardGuid.c_str());
+    cJSON_AddNumberToObject(_MainBoardState, "State", mainBoardState.State);
+    cJSON_AddNumberToObject(_MainBoardState, "CpuState", mainBoardState.CpuState);
+    cJSON_AddNumberToObject(_MainBoardState, "CpuUtilizationRatio", mainBoardState.CpuUtilizationRatio);
+    cJSON_AddNumberToObject(_MainBoardState, "CpuTemperature", mainBoardState.CpuTemperature);
+    cJSON_AddNumberToObject(_MainBoardState, "MemorySize", mainBoardState.MemorySize);
+    cJSON_AddNumberToObject(_MainBoardState, "ResidualMemorySize", mainBoardState.ResidualMemorySize);
+    cJSON_AddStringToObject(_MainBoardState, "ModelVersion", mainBoardState.ModelVersion.c_str());
+    cJSON_AddStringToObject(_MainBoardState, "MainboardType", mainBoardState.MainboardType.c_str());
 
     cJSON *array_tf = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.TFCardStates.size(); i++) {
-        cJSON *array_tf_item =  cJSON_CreateObject();
+        cJSON *array_tf_item = cJSON_CreateObject();
         cJSON_AddNumberToObject(array_tf_item, "State", mainBoardState.TFCardStates[i].State);
         cJSON_AddNumberToObject(array_tf_item, "Size", mainBoardState.TFCardStates[i].Size);
         cJSON_AddNumberToObject(array_tf_item, "ResidualSize", mainBoardState.TFCardStates[i].ResidualSize);
         cJSON_AddItemToArray(array_tf, array_tf_item);
     }
-    cJSON_AddItemToObject(data, "TFCardStates", array_tf);
+    cJSON_AddItemToObject(_MainBoardState, "TFCardStates", array_tf);
 
     cJSON *array_emmc = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.EmmcStates.size(); i++) {
-        cJSON *array_emmc_item =  cJSON_CreateObject();
+        cJSON *array_emmc_item = cJSON_CreateObject();
         cJSON_AddNumberToObject(array_emmc_item, "State", mainBoardState.EmmcStates[i].State);
         cJSON_AddNumberToObject(array_emmc_item, "Size", mainBoardState.EmmcStates[i].Size);
         cJSON_AddNumberToObject(array_emmc_item, "ResidualSize", mainBoardState.EmmcStates[i].ResidualSize);
         cJSON_AddItemToArray(array_emmc, array_emmc_item);
     }
-    cJSON_AddItemToObject(data, "EmmcStates", array_emmc);
+    cJSON_AddItemToObject(_MainBoardState, "EmmcStates", array_emmc);
 
     cJSON *array_externalHardDisk = cJSON_CreateArray();
     for (int i = 0; i < mainBoardState.ExternalHardDisk.size(); i++) {
-        cJSON *array_xternalHardDisk_item =  cJSON_CreateObject();
+        cJSON *array_xternalHardDisk_item = cJSON_CreateObject();
         cJSON_AddNumberToObject(array_xternalHardDisk_item, "State", mainBoardState.ExternalHardDisk[i].State);
         cJSON_AddNumberToObject(array_xternalHardDisk_item, "Size", mainBoardState.ExternalHardDisk[i].Size);
-        cJSON_AddNumberToObject(array_xternalHardDisk_item, "ResidualSize", mainBoardState.ExternalHardDisk[i].ResidualSize);
+        cJSON_AddNumberToObject(array_xternalHardDisk_item, "ResidualSize",
+                                mainBoardState.ExternalHardDisk[i].ResidualSize);
         cJSON_AddItemToArray(array_externalHardDisk, array_xternalHardDisk_item);
     }
-    cJSON_AddItemToObject(data, "ExternalHardDisk", array_externalHardDisk);
-
+    cJSON_AddItemToObject(_MainBoardState, "ExternalHardDisk", array_externalHardDisk);
+    cJSON_AddItemToObject(data, "MainBoardState", _MainBoardState);
     json_str = cJSON_PrintUnformatted(root);
     send_str = json_str;
     send_str += "*";
 
+    printf("s103 send %s\n", send_str.c_str());
     ret = tcp_client_write(client, (char *) send_str.c_str(), send_str.length());
     if (ret < 0) {
         ERR("%s cloud send failed!", __FUNCTION__);
@@ -1622,6 +1627,9 @@ BLUE_TCP_STATE datacoming_callback(tcp_client_t *client, char *data, size_t data
                 ret = r106_download_deal(client, get_json_string(json, "Guid").c_str(), json);
             } else if (strcmp(code, EOC_COMM_RECEIVE_107) == 0) {
                 ret = r107_upgrade_deal(client, get_json_string(json, "Guid").c_str(), json);
+            } else if (strcmp(code, "MCCR103") == 0) {
+                //打印下内容
+                DBG("%s:103:%s", __FUNCTION__, get_json_string(json, "Data").c_str());
             } else {
                 WARNING("%s:UNKNOWN _code[%s]", __FUNCTION__, code);
             }
@@ -1734,14 +1742,14 @@ BLUE_TCP_STATE interval_callback(tcp_client_t *client) {
             }
         }
         //主控机状态上传
-        if (now - send_mainBoard_state_time > 600) {
+        if (now - send_mainBoard_state_time > 60) {
             send_mainBoard_state_time = now;
-            ret = s110_mainBoard_status_send(client);
+            ret = s103_mainBoard_status_send(client);
             if (ret < 0) {
-                ERR("s110_mainBoard_status_send err, return %d", ret);
+                ERR("s103_mainBoard_status_send err, return %d", ret);
                 return (BLUE_TCP_STATE) 1;
             } else {
-                DBG("s110_mainBoard_status_send ok");
+                DBG("s103_mainBoard_status_send ok");
             }
         }
 
@@ -1850,7 +1858,7 @@ static double CpuUtilizationRatio() {
     getline(file, line);
     file.close();
 
-    if (line.substr(0, 3) == "cpu"){
+    if (line.substr(0, 3) == "cpu") {
         int pos = line.find(" ");
         line = line.substr(pos + 1);
         pos = line.find(" ");
@@ -1863,23 +1871,22 @@ static double CpuUtilizationRatio() {
         line = line.substr(pos + 1);
 
         double total = 0;
-        for (char c : line){
-            if (isdigit(c)){
+        for (char c: line) {
+            if (isdigit(c)) {
                 total *= 10;
                 total += c - '0';
-            }else
+            } else
                 break;
         }
 
         double idle = 0;
         pos = line.find(" ");
         line = line.substr(pos + 1);
-        for (char c : line){
-            if (isdigit(c)){
+        for (char c: line) {
+            if (isdigit(c)) {
                 idle *= 10;
                 idle += c - '0';
-            }
-            else
+            } else
                 break;
         }
 
