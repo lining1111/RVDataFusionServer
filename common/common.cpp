@@ -124,7 +124,7 @@ namespace common {
                           << ",发送开始时间:" << to_string(timestampS)
                           << ",发送结束时间:" << to_string(timestampE)
                           << ",帧内时间:" << to_string(timestamp)
-                          << ",耗时:" << (timestamp - timestampS) << " ms";
+                          << ",耗时:" << (timestampE - timestampS) << " ms";
             }
                 break;
             case -1: {

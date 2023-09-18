@@ -1851,50 +1851,70 @@ int eoc_communication_start(const char *server_path, int server_port) {
     return 0;
 }
 
-static double CpuUtilizationRatio() {
-
-    ifstream file("/proc/stat");
-    string line;
-    getline(file, line);
-    file.close();
-
-    if (line.substr(0, 3) == "cpu") {
-        int pos = line.find(" ");
-        line = line.substr(pos + 1);
-        pos = line.find(" ");
-        line = line.substr(pos + 1);
-        pos = line.find(" ");
-        line = line.substr(pos + 1);
-        pos = line.find(" ");
-        line = line.substr(pos + 1);
-        pos = line.find(" ");
-        line = line.substr(pos + 1);
-
-        double total = 0;
-        for (char c: line) {
-            if (isdigit(c)) {
-                total *= 10;
-                total += c - '0';
-            } else
-                break;
+std::string getValueBySystemCommand(std::string strCommand){
+    //printf("-----%s------\n",strCommand.c_str());
+    std::string strData = "";
+    FILE * fp = NULL;
+    char buffer[128];
+    fp=popen(strCommand.c_str(),"r");
+    if (fp) {
+        while(fgets(buffer,sizeof(buffer),fp)){
+            strData.append(buffer);
         }
+        pclose(fp);
+    }
+    //printf("-----%s------ end\n",strCommand.c_str());
+    return strData;
+}
 
-        double idle = 0;
-        pos = line.find(" ");
-        line = line.substr(pos + 1);
-        for (char c: line) {
-            if (isdigit(c)) {
-                idle *= 10;
-                idle += c - '0';
-            } else
-                break;
+
+int runSystemCommand(std::string strCommand){
+//    printf("-----%s------\n",strCommand.c_str());
+    return system(strCommand.c_str());
+}
+
+string trim(string str)
+{
+    if (str.empty())
+    {
+        return str;
+    }
+    str.erase(0,str.find_first_not_of(" "));
+    str.erase(str.find_last_not_of(" ") + 1);
+    return str;
+}
+
+std::vector<std::string> split(std::string str, std::string pattern)
+{
+    string::size_type pos;
+    vector<string> result;
+    str += pattern;
+    int size = str.size();
+
+    for (int i = 0; i < size; i++) {
+        pos = str.find(pattern, i);
+        if (pos < size) {
+            string s = str.substr(i, pos - i);
+            result.push_back(s);
+            i = pos + pattern.size() - 1;
         }
-
-        double usage = (total - idle) / total * 100;
-        cout << "CPU Usage: " << usage << "%" << endl;
-        return usage;
     }
 
+    return result;
+}
+
+
+static double CpuUtilizationRatio() {
+
+    std::string strRes = getValueBySystemCommand("top -b -n 1 |grep Cpu | cut -d \",\" -f 1 | cut -d \":\" -f 2");
+
+    strRes = trim(strRes);
+    printf("--%s--  strRes.size : %lu \n", strRes.c_str(),strRes.length());
+    std::vector<std::string> vecT = split(strRes," ");
+    if (vecT.size() == 2){
+        printf("%s\n", vecT.at(0).c_str());
+        return atof(vecT.at(0).c_str());
+    }
     return 0;
 }
 
