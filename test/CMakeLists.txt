@@ -20,13 +20,7 @@ redefine_file_macro(testServer)
 add_executable(testClient testClient.cpp ${SRC_FILES})
 target_link_libraries(testClient ${LIBS})
 redefine_file_macro(testClient)
-#
-###testGetData
-#add_executable(testGetData testGetData.cpp
-#        ../getData/GetData.cpp)
-#target_link_libraries(testGetData ${LIBS})
-#redefine_file_macro(testGetData)
-#
+
 ###testGetData
 #add_executable(testFusionClient testFusionClient.cpp
 #        ../client/FusionClient.cpp

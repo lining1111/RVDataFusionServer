@@ -15,6 +15,7 @@
 #include <thread>
 #include <vector>
 #include <string>
+#include <future>
 
 using namespace std;
 
@@ -40,6 +41,10 @@ public:
     uint8_t *pkgBuffer = nullptr;
     int pkgBufferIndex = 0;
 
+    bool isLocalThreadRun = false;
+    shared_future<int> future_t1;
+    shared_future<int> future_t2;
+
     MyTcpHandler() {
         rb = new RingBuffer(BUFFER_SIZE);
         startBussness();
@@ -47,22 +52,39 @@ public:
 
     ~MyTcpHandler() {
         _isRun = false;
+
+        if (isLocalThreadRun == true) {
+            isLocalThreadRun = false;
+            try {
+                future_t1.wait();
+            } catch (exception &e) {
+                LOG(ERROR) << e.what();
+            }
+            try {
+                future_t2.wait();
+            } catch (exception &e) {
+                LOG(ERROR) << e.what();
+            }
+        }
+
         if (rb != nullptr) {
             delete rb;
             rb = nullptr;
         }
+        LOG(WARNING) << _peerAddress << " release";
     }
 
     void startBussness() {
         _isRun = true;
-        thread tsm(ThreadStateMachine, this);
-        tsm.detach();
-        thread tpp(ThreadProcessPkg, this);
-        tpp.detach();
+        LOG(WARNING) << _peerAddress << "start business";
+        isLocalThreadRun = true;
+        future_t1 = std::async(std::launch::async, ThreadStateMachine, this);
+        future_t2 = std::async(std::launch::async, ThreadProcessPkg, this);
+
     }
 
-    static void ThreadStateMachine(MyTcpHandler *local) {
-        LOG(INFO) << " ThreadStateMachine start";
+    static int ThreadStateMachine(MyTcpHandler *local) {
+        LOG(WARNING) << local->_peerAddress << " ThreadStateMachine start";
         while (local->_isRun) {
             usleep(10);
             if (local->rb == nullptr) {
@@ -175,11 +197,12 @@ public:
                     break;
             }
         }
-        LOG(INFO) << " ThreadStateMachine end";
+        LOG(WARNING) << local->_peerAddress << " ThreadStateMachine end";
+        return 0;
     }
 
-    static void ThreadProcessPkg(MyTcpHandler *local) {
-        LOG(INFO) << " ThreadProcessPkg start";
+    static int ThreadProcessPkg(MyTcpHandler *local) {
+        LOG(WARNING) << local->_peerAddress << " ThreadProcessPkg start";
         while (local->_isRun) {
             usleep(10);
             common::Pkg pkg;
@@ -195,7 +218,8 @@ public:
                 }
             }
         }
-        LOG(INFO) << " ThreadProcessPkg end";
+        LOG(WARNING) << local->_peerAddress << " ThreadProcessPkg end";
+        return 0;
     }
 
 };

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <stdint.h>
+#include <mutex>
 #include "signalControl/SignalControl.h"
 #include "data/merge/AlgorithmParam.h"
 
@@ -41,6 +42,7 @@ extern int getAlgorithmParam(string file,AlgorithmParam &out);
 
 extern SignalControl *signalControl;
 
+extern mutex conns_mutex;
 extern vector<void *> conns;
 
 #endif //CONFIG_H

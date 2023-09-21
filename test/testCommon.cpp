@@ -184,6 +184,8 @@ void testCRC() {
 
 void exampleAlgorithm() {
     AlgorithmParam algorithmParam;
+    algorithmParam.intersectionName = "测试路口";
+    DoubleValueArray transformMatrixItem;
     //H_south
     double h_sourth[9] = {-0.007128362730, -0.583855347756, 114.889396729743,
                           -0.002529960713, -0.207213146406, 40.775908214483,
@@ -192,7 +194,8 @@ void exampleAlgorithm() {
     for (auto iter: h_sourth) {
         h_sourth_values.push_back(iter);
     }
-    algorithmParam.setH_XX(algorithmParam.H_south, h_sourth_values);
+    transformMatrixItem.set(0, h_sourth_values);
+    algorithmParam.transformMatrix.push_back(transformMatrixItem);
     //H_north
     double h_north[9] = {-0.016188874511, -0.740660413078, 114.891390365757,
                          -0.005745262581, -0.262856666713, 40.772950713216,
@@ -201,7 +204,8 @@ void exampleAlgorithm() {
     for (auto iter: h_north) {
         h_north_values.push_back(iter);
     }
-    algorithmParam.setH_XX(algorithmParam.H_north, h_north_values);
+    transformMatrixItem.set(1, h_north_values);
+    algorithmParam.transformMatrix.push_back(transformMatrixItem);
     //H_east
     double h_east[9] = {1.465148321114, -23.003566173151, 114.847388807580,
                         0.519995524511, -8.163997188248, 40.762179835812,
@@ -210,7 +214,8 @@ void exampleAlgorithm() {
     for (auto iter: h_east) {
         h_east_values.push_back(iter);
     }
-    algorithmParam.setH_XX(algorithmParam.H_east, h_east_values);
+    transformMatrixItem.set(2, h_east_values);
+    algorithmParam.transformMatrix.push_back(transformMatrixItem);
 
     //H_west
     double h_west[9] = {-1.038881614089, 30.397104706610, 114.824762733410,
@@ -220,40 +225,48 @@ void exampleAlgorithm() {
     for (auto iter: h_west) {
         h_west_values.push_back(iter);
     }
-    algorithmParam.setH_XX(algorithmParam.H_west, h_west_values);
+    transformMatrixItem.set(3, h_west_values);
+    algorithmParam.transformMatrix.push_back(transformMatrixItem);
 
-    algorithmParam.crossroad_mid_longitude = 114.8901745;
-    algorithmParam.crossroad_mid_latitude = 40.7745085;
+    algorithmParam.midLongitude = 114.8901745;
+    algorithmParam.midLatitude = 40.7745085;
 
-    algorithmParam.piexl_type = 1;
-    algorithmParam.min_track_distance = 80;// 600 / dst_ratio;// 600;
-    algorithmParam.max_track_distance = 120;// 2000 / dst_ratio;// 1400;
+    algorithmParam.piexlType = 1;
+    algorithmParam.minTrackDistance = 80;// 600 / dst_ratio;// 600;
+    algorithmParam.maxTrackDistance = 120;// 2000 / dst_ratio;// 1400;
     algorithmParam.failCount1 = 50;
     algorithmParam.failCount2 = 2;
-    algorithmParam.min_area_threshold = 0.3;
-    algorithmParam.piexlbymeter_x = 10.245;
-    algorithmParam.piexlbymeter_y = 7.76;
-    algorithmParam.road_length = 150;
+    algorithmParam.minAreaThreshold = 0.3;
+    algorithmParam.piexlByMeterX = 10.245;
+    algorithmParam.piexlByMeterY = 7.76;
+    algorithmParam.roadLength = 150;
 
     vector<double> angles = {180, 270, 0, 103};
-    algorithmParam.setAngle(angles);
+    for (int i = 0; i < angles.size(); i++) {
+        DoubleValue value;
+        value.index = i;
+        value.value = angles[i];
+        algorithmParam.angle.push_back(value);
+    }
 
 
-    algorithmParam.max_stop_speed_threshold = 2.0;//  test
-    algorithmParam.shaking_pixel_threshold = 0.3;
-    algorithmParam.stopline_length = 5;
-    algorithmParam.track_in_length = 120;
-    algorithmParam.track_out_length = 20;
+    algorithmParam.maxStopSpeedThreshold = 2.0;//  test
+    algorithmParam.shakingPixelThreshold = 0.3;
+    algorithmParam.stoplineLength = 5;
+    algorithmParam.trackInLength = 120;
+    algorithmParam.trackOutLength = 20;
 
 
-    algorithmParam.max_speed_by_piexl = 20; //新增 速度限制
-    algorithmParam.car_match_count = 3;
-    algorithmParam.max_center_distance_threshold = 0.4;// 0.45f; // 0.4
-    algorithmParam.min_center_distance_threshold = 0.2;// 0.25f; //0.2
-    algorithmParam.min_area_threshold = 0.1;// 0.45f; //0.5
-    algorithmParam.max_area_threshold = 0.3f; // 0.8
-    algorithmParam.middle_area_threshold = 0.2;
+    algorithmParam.maxSpeedByPiexl = 20; //新增 速度限制
+    algorithmParam.carMatchCount = 3;
+    algorithmParam.maxCenterDistanceThreshold = 0.4;// 0.45f; // 0.4
+    algorithmParam.minCenterDistanceThreshold = 0.2;// 0.25f; //0.2
+    algorithmParam.minAreaThreshold = 0.1;// 0.45f; //0.5
+    algorithmParam.maxAreaThreshold = 0.3f; // 0.8
+    algorithmParam.middleAreaThreshold = 0.2;
     //south_north_driving_area
+
+    PointFArrayArray pointFArrayArrayItem;
     vector<PointF> values_tmp;
     vector<vector<PointF>> values_driving_area;
 
@@ -274,7 +287,8 @@ void exampleAlgorithm() {
     values_tmp.push_back(PointF(1631, 285));
     values_tmp.push_back(PointF(1793, 437));
     values_driving_area.push_back(values_tmp);
-    algorithmParam.setXX_driving_are(algorithmParam.south_north_driving_area, values_driving_area);
+    pointFArrayArrayItem.set(0, values_driving_area);
+    algorithmParam.drivingArea.push_back(pointFArrayArrayItem);
     //north_south_driving_area
     values_driving_area.clear();
     values_tmp.clear();
@@ -293,7 +307,20 @@ void exampleAlgorithm() {
     values_tmp.push_back(PointF(1297, 309));
     values_tmp.push_back(PointF(1711, 453));
     values_driving_area.push_back(values_tmp);
-    algorithmParam.setXX_driving_are(algorithmParam.north_south_driving_area, values_driving_area);
+    pointFArrayArrayItem.set(1, values_driving_area);
+    algorithmParam.drivingArea.push_back(pointFArrayArrayItem);
+
+    RectFValueArray rectFValueArrayItem;
+    vector<RectF> values_tmp_rect;
+    values_tmp_rect.push_back(RectF( 0.000015, 0.000035,0.0002,0.2555));
+    values_tmp_rect.push_back(RectF( 0.000015, 0.00004,0.54545,0.2555));
+    values_tmp_rect.push_back(RectF( 0.000015, 0.000035,0.0002,0.2555));
+    rectFValueArrayItem.set(0, values_tmp_rect);
+    algorithmParam.drivingInArea.push_back(rectFValueArrayItem);
+    algorithmParam.drivingMissingArea.push_back(rectFValueArrayItem);
+    rectFValueArrayItem.set(1, values_tmp_rect);
+    algorithmParam.drivingInArea.push_back(rectFValueArrayItem);
+    algorithmParam.drivingMissingArea.push_back(rectFValueArrayItem);
 
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(0, 0.000015, 0.000035));
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(1, 0.000015, 0.00004));
@@ -312,7 +339,6 @@ void exampleAlgorithm() {
         file.flush();
         file.close();
     }
-
 
     AlgorithmParam algorithmParam1;
     try {

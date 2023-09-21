@@ -12,6 +12,7 @@ string savePath = "/mnt/mnt_hd/save/";
 
 SignalControl *signalControl = nullptr;
 
+mutex conns_mutex;
 vector<void *> conns;
 
 int getAlgorithmParam(string file, AlgorithmParam &out) {

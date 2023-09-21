@@ -43,6 +43,7 @@ public:
             _reactor(reactor) {
         _peerAddress = socket.peerAddress().toString();
         LOG(WARNING) << "connection from " << _peerAddress << " ...";
+        std::unique_lock<std::mutex> lock(conns_mutex);
         conns.push_back(this);
         _reactor.addEventHandler(_socket, Observer<MyTcpServerHandler, ReadableNotification>(*this,
                                                                                              &MyTcpServerHandler::onReadable));
@@ -58,6 +59,7 @@ public:
         _reactor.removeEventHandler(_socket, NObserver<MyTcpServerHandler, ShutdownNotification>(*this,
                                                                                                  &MyTcpServerHandler::onSocketShutdown));
         delete[]recvBuf;
+        std::unique_lock<std::mutex> lock(conns_mutex);
         for (int i = 0; i < conns.size(); i++) {
             auto conn = (MyTcpServerHandler *) conns.at(i);
             if (conn->_peerAddress == _peerAddress) {
@@ -65,7 +67,6 @@ public:
                 LOG(WARNING) << "从数组踢出客户端:" << conn->_peerAddress;
             }
         }
-        conns.shrink_to_fit();
     }
 
     void onReadable(ReadableNotification *pNf) {
@@ -87,6 +88,7 @@ public:
     }
 
     void onSocketShutdown(const AutoPtr<ShutdownNotification> &pNf) {
+        pNf->release();
         delete this;
     }
 };
