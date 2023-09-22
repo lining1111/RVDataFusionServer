@@ -128,7 +128,7 @@ namespace common {
             }
                 break;
             case -1: {
-                LOG(INFO) << name << " 发送失败,未获取锁 " << serverIp << ":" << serverPort
+                LOG(INFO) << name << " 发送失败,未连接 " << serverIp << ":" << serverPort
                           << ",发送开始时间:" << to_string(timestampS)
                           << ",发送结束时间:" << to_string(timestampE)
                           << ",帧内时间:" << to_string(timestamp)
@@ -137,6 +137,14 @@ namespace common {
                 break;
             case -2: {
                 LOG(INFO) << name << " 发送失败,send fail " << serverIp << ":" << serverPort
+                          << ",发送开始时间:" << to_string(timestampS)
+                          << ",发送结束时间:" << to_string(timestampE)
+                          << ",帧内时间:" << to_string(timestamp)
+                          << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            case -3: {
+                LOG(INFO) << name << " 发送失败,发送超时 " << serverIp << ":" << serverPort
                           << ",发送开始时间:" << to_string(timestampS)
                           << ",发送结束时间:" << to_string(timestampE)
                           << ",帧内时间:" << to_string(timestamp)

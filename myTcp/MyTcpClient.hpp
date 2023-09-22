@@ -17,6 +17,7 @@
 #include "Poco/Observer.h"
 #include "Poco/NObserver.h"
 #include <glog/logging.h>
+#include <iostream>
 
 using Poco::Net::SocketReactor;
 using Poco::Net::SocketConnector;
@@ -68,15 +69,15 @@ public:
             Poco::Timespan ts(1000 * 1000);
             _s.connect(sa, ts);
         } catch (ConnectionRefusedException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse" << std::endl;
-            return -1;
-        }
-        catch (NetException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "net exception" << std::endl;
+            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse";
             return -1;
         }
         catch (TimeoutException &) {
             LOG(ERROR) << server_ip << ":" << server_port << "connect time out";
+            return -1;
+        }
+        catch (NetException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "net exception";
             return -1;
         }
 
@@ -95,9 +96,19 @@ public:
         try {
             Poco::Timespan ts(1000 * 1000);
             _s.connect(sa, ts);
-        } catch (...) {
+        } catch (ConnectionRefusedException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse";
             return -1;
         }
+        catch (TimeoutException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "connect time out";
+            return -1;
+        }
+        catch (NetException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << "net exception";
+            return -1;
+        }
+
         _peerAddress = _s.peerAddress().toString();
         LOG(WARNING) << "reconnection to " << _peerAddress << " ...";
         Poco::Timespan ts1(1000 * 100);
@@ -117,14 +128,19 @@ public:
                     int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
                     try {
                         int len = _s.receiveBytes(recvBuf, recvLen);
-                        if (len <= 0) {
+                        if (len < 0) {
+                            LOG(ERROR) << server_ip << ":" << server_port << " receive len <0";
                             isNeedReconnect = true;
-                        } else {
+                        } else if (len > 0) {
                             rb->Write(recvBuf, len);
                         }
                     }
                     catch (Poco::Exception &exc) {
-                        isNeedReconnect = true;
+                        LOG(ERROR) << server_ip << ":" << server_port << " receive error:" << exc.code()
+                                   << exc.displayText();
+                        if (exc.code() != POCO_ETIMEDOUT) {
+                            isNeedReconnect = true;
+                        }
                     }
                 }
             }
@@ -139,7 +155,7 @@ public:
         //阻塞调用，加锁
         std::unique_lock<std::mutex> lock(*mtx);
         if (isNeedReconnect) {
-            return -3;
+            return -1;
         }
 
         uint8_t *buf_send = new uint8_t[1024 * 1024];
@@ -149,18 +165,27 @@ public:
         common::Pack(pkg, buf_send, &len_send);
         try {
             auto len = _s.sendBytes(buf_send, len_send);
-
+            VLOG(2) << server_ip << ":" << server_port << " send len:" << len << " len_send:" << len_send;
             if (len < 0) {
+                LOG(ERROR) << server_ip << ":" << server_port << " send len < 0";
                 isNeedReconnect = true;
                 ret = -2;
             } else if (len != len_send) {
+                LOG(ERROR) << server_ip << ":" << server_port << " send len !=len_send";
                 isNeedReconnect = true;
                 ret = -2;
             }
-        } catch (...) {
-            isNeedReconnect = true;
-            ret = -2;
         }
+        catch (Poco::Exception &exc) {
+            LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
+            if (exc.code() != POCO_ETIMEDOUT) {
+                isNeedReconnect = true;
+                ret = -2;
+            }else{
+                ret = -3;
+            }
+        }
+
         delete[] buf_send;
         return ret;
     }
@@ -170,23 +195,31 @@ public:
         //阻塞调用，加锁
         std::unique_lock<std::mutex> lock(*mtx);
         if (isNeedReconnect) {
-            return -3;
+            return -1;
         }
-        len_send = 0;
         try {
             auto len = _s.sendBytes(buf_send, len_send);
-
+            VLOG(2) << server_ip << ":" << server_port << " send len:" << len << " len_send:" << len_send;
             if (len < 0) {
+                LOG(ERROR) << " send len < 0";
                 isNeedReconnect = true;
                 ret = -2;
             } else if (len != len_send) {
+                LOG(ERROR) << " send len !=len_send";
                 isNeedReconnect = true;
                 ret = -2;
             }
-        } catch (...) {
-            isNeedReconnect = true;
-            ret = -2;
         }
+        catch (Poco::Exception &exc) {
+            LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
+            if (exc.code() != POCO_ETIMEDOUT) {
+                isNeedReconnect = true;
+                ret = -2;
+            }else{
+                ret = -3;
+            }
+        }
+
         delete[] buf_send;
         return ret;
     }
