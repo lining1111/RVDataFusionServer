@@ -527,6 +527,8 @@ void DataUnitFusionData::taskO() {
                     std::chrono::system_clock::now().time_since_epoch()).count();
             PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
                           this->name, timestampStart, timestampEnd, item.timestamp);
+            //统计发送情况
+            CalNetStatus(ret);
         }
     }
 }

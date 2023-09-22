@@ -6,6 +6,7 @@
 #include "db/DBTable.h"
 #include <glog/logging.h>
 #include "fileFun.h"
+#include "common/config.h"
 
 EOCCom::EOCCom(string ip, int port, string caPath) : TlsClient(ip, port, caPath) {
 
@@ -966,6 +967,8 @@ int EOCCom::intervalPro(void *p) {
                 local->last_send_net_state_t = now;
 
                 S105 s105;
+                local->sendNetTotal = g_net_status_total;
+                local->sendNetSuccess = g_net_status_success;
                 int ret = s105.get(COMVersion, local->sendNetTotal, local->sendNetSuccess);
                 if (ret != 0) {
                     LOG(ERROR) << "s105 get fail";
@@ -977,19 +980,37 @@ int EOCCom::intervalPro(void *p) {
                 body = json::encode(s105);
                 body.push_back('*');
                 int len = local->Write(body.data(), body.size());
-                local->sendNetTotal++;
 
                 if (len < 0) {
                     LOG(ERROR) << "s105 send err, return:" << len;
                 } else {
                     LOG(INFO) << "s105 send ok";
-                    if (local->sendNetTotal == 0) {
-                        local->sendNetSuccess = 0;
-                    } else {
-                        local->sendNetSuccess++;
-                    }
                 }
             }
+            //主控机状态
+            if (now - local->last_send_state_t > 60) {
+                local->last_send_state_t = now;
+
+                S103 s103;
+                int ret = s103.get(COMVersion);
+                if (ret != 0) {
+                    LOG(ERROR) << "s103 get fail";
+                    continue;
+                }
+
+                //组json
+                std::string body;
+                body = json::encode(s103);
+                body.push_back('*');
+                int len = local->Write(body.data(), body.size());
+
+                if (len < 0) {
+                    LOG(ERROR) << "s103 send err, return:" << len;
+                } else {
+                    LOG(INFO) << "s103 send ok";
+                }
+            }
+
             //4.升级、下载
             //4.1处理下载消息
             auto msgDownload = &local->eocCloudData.downloads_msg;

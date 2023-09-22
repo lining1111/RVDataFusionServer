@@ -36,3 +36,18 @@ int getAlgorithmParam(string file, AlgorithmParam &out) {
         return 0;
     }
 }
+
+int g_net_status_total = 0;
+int g_net_status_success = 0;
+
+void CalNetStatus(int s) {
+    if (g_net_status_total == 0xffffffff) {
+        g_net_status_total = 0;
+        g_net_status_success = 0;
+    } else {
+        g_net_status_total++;
+        if (s == 0) {
+            g_net_status_success++;
+        }
+    }
+}

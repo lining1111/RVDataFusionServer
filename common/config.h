@@ -46,4 +46,10 @@ extern SignalControl *signalControl;
 extern mutex conns_mutex;
 extern vector<void *> conns;
 
+//发送实时数据的统计
+extern int g_net_status_total;
+extern int g_net_status_success;
+
+void CalNetStatus(int s);
+
 #endif //CONFIG_H

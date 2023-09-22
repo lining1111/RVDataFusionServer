@@ -28,6 +28,7 @@ public:
     time_t last_send_heart_t = time(nullptr);//上次发送心态时间
     time_t last_send_net_state_t = time(nullptr);//上次发送外围状态时间
     time_t last_get_config_t = time(nullptr);//上次获取配置时间
+    time_t last_send_state_t = time(nullptr);//上次发送主控机状态
 
     int sendNetTotal = 0;
     int sendNetSuccess = 0;

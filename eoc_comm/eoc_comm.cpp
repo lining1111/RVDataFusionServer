@@ -1851,7 +1851,7 @@ int eoc_communication_start(const char *server_path, int server_port) {
     return 0;
 }
 
-std::string getValueBySystemCommand(std::string strCommand){
+static std::string getValueBySystemCommand(std::string strCommand){
     //printf("-----%s------\n",strCommand.c_str());
     std::string strData = "";
     FILE * fp = NULL;
@@ -1868,12 +1868,7 @@ std::string getValueBySystemCommand(std::string strCommand){
 }
 
 
-int runSystemCommand(std::string strCommand){
-//    printf("-----%s------\n",strCommand.c_str());
-    return system(strCommand.c_str());
-}
-
-string trim(string str)
+static string trim(string str)
 {
     if (str.empty())
     {
@@ -1884,7 +1879,7 @@ string trim(string str)
     return str;
 }
 
-std::vector<std::string> split(std::string str, std::string pattern)
+static std::vector<std::string> split(std::string str, std::string pattern)
 {
     string::size_type pos;
     vector<string> result;
