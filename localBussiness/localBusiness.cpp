@@ -10,7 +10,8 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "glog/logging.h"
+#include <glog/logging.h>
+#include <uuid/uuid.h>
 #include "data/Data.h"
 #include "common/config.h"
 
@@ -134,7 +135,12 @@ void LocalBusiness::Task_CreateFusionData(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitFusionData;
     FusionData inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
@@ -154,7 +160,12 @@ void LocalBusiness::Task_CreateCrossTrafficJamAlarm(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitCrossTrafficJamAlarm;
     CrossTrafficJamAlarm inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
@@ -182,7 +193,12 @@ void LocalBusiness::Task_CreateTrafficFlowGather(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitTrafficFlowGather;
     TrafficFlowGather inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
@@ -219,7 +235,12 @@ void LocalBusiness::Task_CreateAbnormalStopData(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitAbnormalStopData;
     AbnormalStopData inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
@@ -249,7 +270,12 @@ void LocalBusiness::Task_CreateLongDistanceOnSolidLineAlarm(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitLongDistanceOnSolidLineAlarm;
     LongDistanceOnSolidLineAlarm inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";
@@ -281,7 +307,12 @@ void LocalBusiness::Task_CreateHumanData(void *p) {
     auto dataLocal = Data::instance();
     auto dataUnit = dataLocal->dataUnitHumanData;
     HumanDataGather inData;
-    inData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    inData.oprNum = string(uuid_str);
     inData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
     inData.crossID = "crossID";

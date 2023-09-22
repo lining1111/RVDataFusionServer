@@ -25,12 +25,6 @@ namespace common {
     sizeof(((type *)0)->member)
 #define STR(p) p?p:""
 
-    /**
-     * 产生uuid
-     * @return uuid的string
-     */
-    string random_uuid(string seed = "89ab");
-
     void PrintSendInfo(int s, string serverIp, int serverPort,
                        string name, uint64_t timestampS, uint64_t timestampE, uint64_t timestamp);
     /**

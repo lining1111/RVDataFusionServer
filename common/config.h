@@ -22,6 +22,7 @@ typedef struct {
     bool isSendCloud = true;
     bool isSaveOtherJson = false;
     bool isSaveRVJson = false;
+    string algorithmParamFile;
     AlgorithmParam algorithmParam;
     int mode = 0;
 } LocalConfig;

@@ -138,7 +138,7 @@ public:
                     catch (Poco::Exception &exc) {
                         LOG(ERROR) << server_ip << ":" << server_port << " receive error:" << exc.code()
                                    << exc.displayText();
-                        if (exc.code() != POCO_ETIMEDOUT) {
+                        if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
                             isNeedReconnect = true;
                         }
                     }
@@ -178,7 +178,7 @@ public:
         }
         catch (Poco::Exception &exc) {
             LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
-            if (exc.code() != POCO_ETIMEDOUT) {
+            if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
                 isNeedReconnect = true;
                 ret = -2;
             } else {
@@ -212,7 +212,7 @@ public:
         }
         catch (Poco::Exception &exc) {
             LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
-            if (exc.code() != POCO_ETIMEDOUT) {
+            if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
                 isNeedReconnect = true;
                 ret = -2;
             } else {

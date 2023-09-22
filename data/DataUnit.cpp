@@ -9,6 +9,7 @@
 #include <chrono>
 #include <iomanip>
 #include <glog/logging.h>
+#include <uuid/uuid.h>
 #include "Data.h"
 #include "DataUnitUtilty.h"
 #include "localBussiness/localBusiness.h"
@@ -28,7 +29,12 @@ void DataUnitTrafficFlowGather::FindOneFrame(DataUnitTrafficFlowGather *dataUnit
 int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
     auto data = (Data *) owner;
     OType item;
-    item.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    item.oprNum = string(uuid_str);
     item.timestamp = curTimestamp;
     item.crossID = data->plateId;
     std::time_t t(item.timestamp / 1000);
@@ -97,15 +103,15 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
         v_copy.push_back(v.at(iter));
     }
     //3.打印下拷贝出的数组
-    string src_cpoy;
+    string src_copy;
     for (auto iter: v_copy) {
-        src_cpoy += "lancode:";
-        src_cpoy += iter.laneCode;
-        src_cpoy += ",queueLen:";
-        src_cpoy += iter.queueLen;
-        src_cpoy += "\n";
+        src_copy += "lancode:";
+        src_copy += iter.laneCode;
+        src_copy += ",queueLen:";
+        src_copy += iter.queueLen;
+        src_copy += "\n";
     }
-    VLOG(3) << src_cpoy;
+    VLOG(3) << src_copy;
     //4.将拷贝数组设置到输出
     v = v_copy;
 }

@@ -33,7 +33,12 @@ int StartEocCommon() {
     if (eoc_host.empty()) {
         eoc_host = "116.63.162.151";
     }
-    string ipaddr;
+//    eoc_host = "eoctrofile-zjk.aipark.com";
+    if (isIP((char *) eoc_host.c_str()) == 0) {
+        string ipaddr;
+        url_get(eoc_host, ipaddr);
+        eoc_host = ipaddr;
+    }
 //    url_get(eoc_host,ipaddr);
     eoc_communication_start(eoc_host.c_str(), eoc_port);//主控机端口固定为6526
 }

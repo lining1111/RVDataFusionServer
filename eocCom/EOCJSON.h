@@ -17,47 +17,8 @@ using namespace xpack;
 #include <arpa/inet.h>
 #include "db/DBTable.h"
 #include "../version.h"
+#include <uuid/uuid.h>
 
-/*
- * 函数功能：产生uuid
- * 参数：无
- * 返回值：uuid的string
- * */
-static std::string random_uuid() {
-    char buf[37] = {0};
-    struct timeval tmp;
-    const char *c = "89ab";
-    char *p = buf;
-    unsigned int n, b;
-    gettimeofday(&tmp, nullptr);
-    srand(tmp.tv_usec);
-
-    for (n = 0; n < 16; ++n) {
-        b = rand() % 65536;
-        switch (n) {
-            case 6:
-                sprintf(p, "4%x", b % 15);
-                break;
-            case 8:
-                sprintf(p, "%c%x", c[rand() % strlen(c)], b % 15);
-                break;
-            default:
-                sprintf(p, "%02x", b);
-                break;
-        }
-        p += 2;
-        switch (n) {
-            case 3:
-            case 5:
-            case 7:
-            case 9:
-                *p++ = '-';
-                break;
-        }
-    }
-    *p = 0;
-    return std::string(buf);
-}
 
 /*取板卡本地ip地址和n2n地址 */
 static int getipaddr(char *ethip, char *n2nip) {
@@ -143,7 +104,13 @@ public:
     int get(std::string comVersion) {
         this->Version = comVersion;
         this->Code = this->_code;
-        this->Guid = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+
+        this->Guid = string(uuid_str);
 
         return 0;
     };
@@ -207,7 +174,12 @@ XPACK(O(Version, Code, Guid, Data));
         int ret = 0;
         this->Version = comVersion;
         this->Code = this->_code;
-        this->Guid = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        this->Guid = string(uuid_str);
 
         //获取设备sn
         ret = dbGetUname(this->Data.EquipNumber);
@@ -495,7 +467,12 @@ XPACK(O(Version, Code, Guid, Data));
 
         this->Version = comVersion;
         this->Code = this->_code;
-        this->Guid = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        this->Guid = string(uuid_str);
         return 0;
     };
 
@@ -528,7 +505,12 @@ XPACK(O(Version, Code, Guid, Data));
 
         this->Version = comVersion;
         this->Code = this->_code;
-        this->Guid = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        this->Guid = string(uuid_str);
         return 0;
     };
 
@@ -758,7 +740,12 @@ XPACK(O(Version, Code, Guid, Data));
     int get(std::string comVersion){
         this->Version = comVersion;
         this->Code = this->_code;
-        this->Guid = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        this->Guid = string(uuid_str);
         return 0;
     };
 

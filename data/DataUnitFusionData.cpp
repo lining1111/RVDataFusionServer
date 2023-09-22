@@ -10,6 +10,7 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <uuid/uuid.h>
 #include "common/config.h"
 #include "common/common.h"
 #include "DataUnitUtilty.h"
@@ -17,6 +18,14 @@
 
 using namespace std;
 using namespace xpack;
+
+void DataUnitFusionData::init(int c, int fs, int i_num, int _cache, void *_owner, string _name, int _intervalTask) {
+    //读取默认的算法配置文件
+    if (getAlgorithmParam(localConfig.algorithmParamFile, localConfig.algorithmParam) != 0) {
+        LOG(ERROR) << "读取算法配置文件失败:" << localConfig.algorithmParamFile;
+    }
+    DataUnit::init(c, fs, i_num, _cache, _owner, _name, _intervalTask);
+}
 
 bool isProcessMerge = false;//task是否执行了融合流程
 void DataUnitFusionData::taskI() {
@@ -343,7 +352,12 @@ int DataUnitFusionData::TaskNotMerge(DataUnitFusionData::RoadDataInSet roadDataI
 int DataUnitFusionData::GetFusionData() {
     const int INF = 0x7FFFFFFF;
     auto data = (Data *) this->owner;
-    fusionData.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    fusionData.oprNum = string(uuid_str);
     fusionData.timestamp = mergeData.timestamp;
     fusionData.crossID = data->plateId;
     //算法输出量到FusionData.lstObjTarget

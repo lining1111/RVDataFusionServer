@@ -33,6 +33,8 @@ public:
         Merge,
     } MergeType;
 
+    void init(int c, int fs, int i_num, int _cache, void *_owner, string _name, int _intervalTask);
+
     static void FindOneFrame(DataUnitFusionData *dataUnit, MergeType mergeType, int offset);
 
     int TaskProcessOneFrame(DataUnitFusionData::MergeType mergeType);
