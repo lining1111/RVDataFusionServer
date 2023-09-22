@@ -181,7 +181,7 @@ public:
             if (exc.code() != POCO_ETIMEDOUT) {
                 isNeedReconnect = true;
                 ret = -2;
-            }else{
+            } else {
                 ret = -3;
             }
         }
@@ -215,7 +215,7 @@ public:
             if (exc.code() != POCO_ETIMEDOUT) {
                 isNeedReconnect = true;
                 ret = -2;
-            }else{
+            } else {
                 ret = -3;
             }
         }
