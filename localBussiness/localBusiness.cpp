@@ -111,10 +111,10 @@ void LocalBusiness::Task_Keep(void *p) {
                 if (!iter.second->isNeedReconnect) {
 //                    iter.second->Run();
                     LOG(WARNING) << "客户端:" << iter.first <<
-                                 " ip_port" << iter.second->server_ip << "_" << iter.second->server_port << " 重启";
+                                 " " << iter.second->server_ip << "_" << iter.second->server_port << " 重启";
                 } else {
                     LOG(WARNING) << "客户端:" << iter.first <<
-                                 " ip_port" << iter.second->server_ip << "_" << iter.second->server_port << " 重启失败";
+                                 " " << iter.second->server_ip << "_" << iter.second->server_port << " 重启失败";
                 }
             }
         }
