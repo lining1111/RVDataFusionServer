@@ -15,7 +15,8 @@ GlogHelper::GlogHelper(std::string _program, uint _keep, std::string _logDir, bo
     google::InstallFailureSignalHandler();
     google::InstallFailureWriter(&FatalMessageDump);
     FLAGS_log_dir = logDir;
-    FLAGS_logbufsecs = 0;//刷新日志buffer的时间，0就是立即刷新
+    FLAGS_logbufsecs = 5;//刷新日志buffer的时间，0就是立即刷新
+    FLAGS_max_log_size = 300;
     FLAGS_stop_logging_if_full_disk = true; //设置是否在磁盘已满时避免日志记录到磁盘
     if (isSendSTDOUT) {
         FLAGS_logtostdout = true;

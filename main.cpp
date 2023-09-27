@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
                 summary += "\n";
             }
         }
-        LOG(INFO) << summary;
+        LOG(WARNING) << summary;
 
     }
     delete businessLocal;
