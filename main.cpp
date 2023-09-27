@@ -175,8 +175,22 @@ int main(int argc, char **argv) {
                 LOG(ERROR) << "data fusion not send 10s";
                 exit(-1);
             }
-
         }
+
+        //打印下连入客户端信息
+        string summary;
+        summary += "client num:";
+        summary += conns.size();
+        summary += "\n";
+        for (auto &iter: conns) {
+            if (iter != nullptr) {
+                auto client = (MyTcpServerHandler *) iter;
+                summary += "client :" + client->_peerAddress;
+                summary += "\n";
+            }
+        }
+        LOG(INFO) << summary;
+
     }
     delete businessLocal;
     delete dataLocal;

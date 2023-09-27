@@ -69,15 +69,15 @@ public:
             Poco::Timespan ts(1000 * 1000);
             _s.connect(sa, ts);
         } catch (ConnectionRefusedException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse";
+            LOG(ERROR) << server_ip << ":" << server_port << " connect refuse";
             return -1;
         }
         catch (TimeoutException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "connect time out";
+            LOG(ERROR) << server_ip << ":" << server_port << " connect time out";
             return -1;
         }
         catch (NetException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "net exception";
+            LOG(ERROR) << server_ip << ":" << server_port << " net exception";
             return -1;
         }
 
