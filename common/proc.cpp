@@ -89,7 +89,7 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
 
     if (localConfig.mode == 2) {
-        LOG(ERROR)<<"程序模式2，不处理数据 WatchData";
+        LOG(ERROR) << "程序模式2，不处理数据 WatchData";
         return -1;
     }
 
@@ -118,8 +118,14 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data,
-                           "DataUnitFusionData", 10);
+//            dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data,
+//                           "DataUnitFusionData", 10);
+            //以线程方式开启处理流程
+            std::thread tp([&] {
+                dataUnit->init(15, ct->interval, localConfig.roadNum, 15, data,
+                               "DataUnitFusionData", 10);
+            });
+            tp.detach();
         }
     }
     pthread_mutex_unlock(&ct->mtx);
@@ -234,8 +240,14 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
             ct->isStartTask = true;
-            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
-                           "DataUnitTrafficFlowGather", 10);
+//            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+//                           "DataUnitTrafficFlowGather", 10);
+            //以线程方式开启处理流程
+            std::thread tp([&] {
+                dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+                               "DataUnitTrafficFlowGather", 10);
+            });
+            tp.detach();
         }
     }
     pthread_mutex_unlock(&ct->mtx);

@@ -47,6 +47,7 @@ public:
 
     MyTcpHandler() {
         rb = new RingBuffer(BUFFER_SIZE);
+        pkgs.setMax(30);
         startBussness();
     }
 
@@ -167,12 +168,12 @@ public:
                         local->pkgBufferIndex = 0;//分包缓冲的索引
                         local->status = Start;
                     } else {
-
+                        VLOG(4) << local->_peerAddress << " 包内容：" << pkg.body;
                         //存入分包队列
                         if (!local->pkgs.push(pkg)) {
-
+                            VLOG(2) << local->_peerAddress << " 包缓存压入失败";
                         } else {
-
+                            VLOG(2) << local->_peerAddress << " 包缓存压入成功";
                         }
                         local->bodyLen = 0;//获取分包头后，得到的包长度
                         if (local->pkgBuffer != nullptr) {
@@ -213,8 +214,7 @@ public:
                     iter->second(local->_peerAddress, pkg.body);
                 } else {
                     //最后没有对应的方法名
-//                VLOG(2) << "client:" << inet_ntoa(client->addr.sin_addr)
-//                        << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
+                    VLOG(2) << local->_peerAddress << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;
                 }
             }
         }
