@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     //初始化本地数据和数据库
     LOG(WARNING) << "开启eoc通信，同时读取本地数据库到缓存";
 
-    bool isUseOldEOC = true;
+    bool isUseOldEOC = false;
 
     if (isUseOldEOC) {
         StartEocCommon();

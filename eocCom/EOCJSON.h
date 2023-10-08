@@ -330,11 +330,11 @@ public:
     float YLength;
     int LaneNumber;
     std::string Latitude;
-    std::string Longitude;
+    std::string longitude;
     IntersectionBaseSettingEntity IntersectionBaseSetting;
 
 XPACK(O(Guid, Name, Type, PlatId, XLength, YLength, LaneNumber,
-        Latitude, Longitude, IntersectionBaseSetting));
+        Latitude, longitude, IntersectionBaseSetting));
 };
 
 class BaseSettingEntity {

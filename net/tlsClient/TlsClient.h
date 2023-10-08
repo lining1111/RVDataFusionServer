@@ -11,6 +11,7 @@
 #include <atomic>
 #include <queue>
 #include <openssl/ossl_typ.h>
+#include <mutex>
 
 using namespace std;
 
@@ -20,7 +21,7 @@ private:
     string serverIp;
     int serverPort;
     int sock;
-    pthread_mutex_t lockSend = PTHREAD_MUTEX_INITIALIZER;
+    mutex lockSend;
     string serverCAPath;
 //    string CertificateFilePath;
 //    string privateKeyPath;

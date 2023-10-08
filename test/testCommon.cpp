@@ -12,6 +12,7 @@
 #include "ringbuffer/RingBuffer.h"
 #include "data/merge/AlgorithmParam.h"
 #include "data/DataUnit.h"
+#include <uuid/uuid.h>
 
 
 using namespace common;
@@ -66,7 +67,12 @@ void exampleJsonWatchData() {
     timeval tv;
     gettimeofday(&tv, nullptr);
 
-    watchData.oprNum = random_uuid().data();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    watchData.oprNum = uuid_str;
     watchData.hardCode = "hardCode";
     watchData.timestamp = double(tv.tv_sec);
     watchData.matrixNo = "matrixNo";

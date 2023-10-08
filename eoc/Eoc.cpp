@@ -48,7 +48,7 @@ int StartEocCommon() {
 #include "eocCom/db/DBCom.h"
 
 static void ThreadEOCCom(std::string ip, int port, std::string cert) {
-    LOG(INFO) << "eoc thread:" << ip << ":" << port << "cert:" << cert;
+    LOG(WARNING) << "eoc thread:" << ip << ":" << port << "cert:" << cert;
     EOCCom *eocCom = new EOCCom(ip, port, cert);
 //    EOCCom *eocCom = new EOCCom("127.0.0.1",8000,"./cert.pem");
     if (eocCom->Open() == 0) {
@@ -56,10 +56,11 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
     }
     while (true) {
         sleep(60);
-        if (!eocCom->isLive) {
+        if (!eocCom->isLive.load()) {
+            LOG(WARNING) << "eoc thread restart eocCom";
             eocCom->Close();
             if (eocCom->Open() == 0) {
-                LOG(INFO) << "eoc thread restart eocCom";
+                LOG(WARNING) << "eoc thread restart eocCom success";
                 eocCom->Run();
             }
         }

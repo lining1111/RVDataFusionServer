@@ -139,7 +139,7 @@ void DataUnitTrafficFlowGather::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -223,7 +223,7 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -267,7 +267,7 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -308,7 +308,7 @@ void DataUnitInWatchData_1_3_4::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -350,7 +350,7 @@ void DataUnitInWatchData_2::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -392,7 +392,7 @@ void DataUnitStopLinePassData::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -469,7 +469,7 @@ void DataUnitHumanData::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -514,7 +514,7 @@ void DataUnitAbnormalStopData::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -556,7 +556,7 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -598,7 +598,7 @@ void DataUnitHumanLitPoleData::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -669,7 +669,7 @@ void DataUnitTrafficDetectorStatus::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client2") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(

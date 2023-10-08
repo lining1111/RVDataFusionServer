@@ -517,7 +517,7 @@ void DataUnitFusionData::taskO() {
     for (auto cli: local->clientList) {
         if (cli.first == "client1") {
             if (cli.second->isNeedReconnect) {
-                LOG(ERROR) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
+                LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(

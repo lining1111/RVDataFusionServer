@@ -18,6 +18,7 @@ int EOCCom::Open() {
     if (ret != 0) {
         LOG(ERROR) << "eoc server connect fail";
     }
+    LOG(WARNING) << "eoc server connect success";
     return ret;
 }
 
@@ -64,7 +65,7 @@ int EOCCom::getPkgs(void *p) {
         return -1;
     }
     EOCCom *local = (EOCCom *) p;
-    LOG(INFO) << __FUNCTION__ << "run";
+    LOG(WARNING) << __FUNCTION__ << "run";
     char *buf = new char[4096];
     int index = 0;
     memset(buf, 0, 4096);
@@ -87,7 +88,7 @@ int EOCCom::getPkgs(void *p) {
         }
     }
     delete[] buf;
-    LOG(INFO) << __FUNCTION__ << "exit";
+    LOG(WARNING) << __FUNCTION__ << "exit";
     return 0;
 }
 
@@ -106,6 +107,7 @@ void processS100(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -122,6 +124,7 @@ void processR100(void *p, string content, string cmd) {
         return;
     }
     LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc 收到心跳回复,重置心跳计数";
     local->heartFlag = 0;
 }
 
@@ -138,6 +141,7 @@ void processS101(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -155,7 +159,6 @@ void processR101(void *p, string content, string cmd) {
     }
     LOG(INFO) << "recv:" << cmd;
     //登录分析
-
     switch (data.Data.State) {
         case 1: {
             LOG(INFO) << "登录成功,信息：" << data.Data.Message;
@@ -163,7 +166,7 @@ void processR101(void *p, string content, string cmd) {
         }
             break;
         default: {
-            LOG(INFO) << "登录失败，信息：" << data.Data.Message;
+            LOG(ERROR) << "登录失败，信息：" << data.Data.Message;
         }
             break;
     }
@@ -183,6 +186,7 @@ void processS102(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -200,6 +204,7 @@ void processR102(void *p, string content, string cmd) {
         result = -1;
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     //处理配置下发
 
     //核心板基础配置
@@ -326,6 +331,7 @@ void processS103(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -341,6 +347,7 @@ void processR103(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -357,6 +364,7 @@ void processS104(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -372,6 +380,7 @@ void processR104(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     //接收到下发后，按r102处理
     LOG(INFO) << "接受到R104配置下发，按R102处理";
     processR102(local, content, cmd);
@@ -391,6 +400,7 @@ void processS105(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -406,6 +416,7 @@ void processR105(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     int state = data.Data.State;
     switch (state) {
         case 0: {
@@ -437,6 +448,7 @@ void processS106(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -520,6 +532,7 @@ void processR106(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     //处理软件下载文件指令，将会把文件下载到指定目录下
     LOG(INFO) << "处理软件下载文件指令，将会把文件下载到指定目录下";
 
@@ -636,6 +649,7 @@ void processS107(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -651,7 +665,7 @@ void processR107(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-
+    LOG(INFO) << "recv:" << cmd;
     //回送接收到升级命令
     S107 s107;
     s107.get(COMVersion, data.Guid, 1, 1, 0, "接收到升级命令");
@@ -766,6 +780,7 @@ void processS108(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -782,6 +797,7 @@ void processR108(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
+    LOG(INFO) << "recv:" << cmd;
     return;
 }
 
@@ -833,15 +849,14 @@ int EOCCom::proPkgs(void *p) {
         return -1;
     }
     EOCCom *local = (EOCCom *) p;
-    LOG(INFO) << __FUNCTION__ << "run";
+    LOG(WARNING) << __FUNCTION__ << "run";
     local->isLogIn = false;
     while (local->isLive.load()) {
-        usleep(1000);
+        usleep(1000 * 100);
         std::string pkg;
         if (local->pkgs.pop(pkg)) {
             //接收到一包数据
             LOG(INFO) << "eoc recv json:" << pkg;
-
 
             std::string code = parseCode(pkg);
             if (code.empty()) {
@@ -863,7 +878,7 @@ int EOCCom::proPkgs(void *p) {
 
         }
     }
-    LOG(INFO) << __FUNCTION__ << "exit";
+    LOG(WARNING) << __FUNCTION__ << "exit";
     return 0;
 }
 
@@ -872,7 +887,9 @@ int EOCCom::intervalPro(void *p) {
         return -1;
     }
     EOCCom *local = (EOCCom *) p;
-    LOG(INFO) << __FUNCTION__ << "run";
+    LOG(WARNING) << __FUNCTION__ << "run";
+    local->heartFlag = 0;
+    std::string version;
     while (local->isLive.load()) {
         sleep(1);
         time_t now = time(NULL);
@@ -884,7 +901,7 @@ int EOCCom::intervalPro(void *p) {
                 S101 s101;
                 int ret = s101.get(COMVersion);
                 if (ret != 0) {
-                    LOG(ERROR) << "s101 get fail";
+                    LOG(ERROR) << "eoc s101 get fail";
                     continue;
                 }
 
@@ -895,9 +912,9 @@ int EOCCom::intervalPro(void *p) {
                 int len = local->Write(body.data(), body.size());
 
                 if (len < 0) {
-                    LOG(ERROR) << "s101_login_send err, return:" << len;
+                    LOG(ERROR) << "eoc s101_login_send err, return:" << len;
                 } else {
-                    LOG(INFO) << "s101_login_send ok";
+                    LOG(INFO) << "eoc s101_login_send ok";
                 }
                 local->last_send_heart_t = now - 20;
             }
@@ -906,10 +923,11 @@ int EOCCom::intervalPro(void *p) {
             //同时处理一些升级下载任务
 
             //1.获取配置
-            std::string version;
-            DBDataVersion dbDataVersion;
-            dbDataVersion.selectFromDB();
-            version = dbDataVersion.version;
+            if (version.empty()) {
+                DBDataVersion dbDataVersion;
+                dbDataVersion.selectFromDB();
+                version = dbDataVersion.version;
+            }
             if (version.empty()) {
                 if (now - local->last_get_config_t > 180) {
                     local->last_get_config_t = now;
@@ -917,7 +935,7 @@ int EOCCom::intervalPro(void *p) {
                     S104 s104;
                     int ret = s104.get(COMVersion);
                     if (ret != 0) {
-                        LOG(ERROR) << "s104 get fail";
+                        LOG(ERROR) << "eoc s104 get fail";
                         continue;
                     }
 
@@ -928,9 +946,9 @@ int EOCCom::intervalPro(void *p) {
                     int len = local->Write(body.data(), body.size());
 
                     if (len < 0) {
-                        LOG(ERROR) << "s104 send err, return:" << len;
+                        LOG(ERROR) << "eoc s104 send err, return:" << len;
                     } else {
-                        LOG(INFO) << "s104 send ok";
+                        LOG(INFO) << "eoc s104 send ok";
                     }
                 }
             }
@@ -941,7 +959,7 @@ int EOCCom::intervalPro(void *p) {
                 S100 s100;
                 int ret = s100.get(COMVersion);
                 if (ret != 0) {
-                    LOG(ERROR) << "s100 get fail";
+                    LOG(ERROR) << "eoc s100 get fail";
                     continue;
                 }
 
@@ -952,13 +970,15 @@ int EOCCom::intervalPro(void *p) {
                 int len = local->Write(body.data(), body.size());
 
                 if (len < 0) {
-                    LOG(ERROR) << "s100 send err, return:" << len;
+                    LOG(ERROR) << "eoc s100 send err, return:" << len;
                 } else {
-                    LOG(INFO) << "s100 send ok";
+                    LOG(INFO) << "eoc s100 send ok";
                 }
                 local->heartFlag++;
                 if (local->heartFlag > 10) {
+                    LOG(ERROR) << "eoc 10次未收到心跳回复,设置重连标志";
                     local->isLive.store(false);
+                    local->heartFlag = 0;
                 }
             }
 
@@ -971,7 +991,7 @@ int EOCCom::intervalPro(void *p) {
                 local->sendNetSuccess = g_net_status_success;
                 int ret = s105.get(COMVersion, local->sendNetTotal, local->sendNetSuccess);
                 if (ret != 0) {
-                    LOG(ERROR) << "s105 get fail";
+                    LOG(ERROR) << "eoc s105 get fail";
                     continue;
                 }
 
@@ -982,9 +1002,9 @@ int EOCCom::intervalPro(void *p) {
                 int len = local->Write(body.data(), body.size());
 
                 if (len < 0) {
-                    LOG(ERROR) << "s105 send err, return:" << len;
+                    LOG(ERROR) << "eoc s105 send err, return:" << len;
                 } else {
-                    LOG(INFO) << "s105 send ok";
+                    LOG(INFO) << "eoc s105 send ok";
                 }
             }
             //主控机状态
@@ -994,7 +1014,7 @@ int EOCCom::intervalPro(void *p) {
                 S103 s103;
                 int ret = s103.get(COMVersion);
                 if (ret != 0) {
-                    LOG(ERROR) << "s103 get fail";
+                    LOG(ERROR) << "eoc s103 get fail";
                     continue;
                 }
 
@@ -1005,9 +1025,9 @@ int EOCCom::intervalPro(void *p) {
                 int len = local->Write(body.data(), body.size());
 
                 if (len < 0) {
-                    LOG(ERROR) << "s103 send err, return:" << len;
+                    LOG(ERROR) << "eoc s103 send err, return:" << len;
                 } else {
-                    LOG(INFO) << "s103 send ok";
+                    LOG(INFO) << "eoc s103 send ok";
                 }
             }
 
@@ -1059,11 +1079,11 @@ int EOCCom::intervalPro(void *p) {
                             int len = local->Write(body.data(), body.size());
 
                             if (len < 0) {
-                                LOG(ERROR) << "s106 send err, return:" << len;
+                                LOG(ERROR) << "eoc s106 send err, return:" << len;
                                 //发送失败立即退出循环
                                 break;
                             } else {
-                                LOG(INFO) << "s106 send ok";
+                                LOG(INFO) << "eoc s106 send ok";
                             }
                         }
                     }
@@ -1087,24 +1107,24 @@ int EOCCom::intervalPro(void *p) {
                         //判断是否有其他任务以及未传送完的信息
                         if (!tasks->empty() || !msgDownload->empty() || !msgDownload->empty()) {
                             //在后续添加重启任务
-                            LOG(INFO) << "有未完成的任务，添加稍后重启任务";
+                            LOG(INFO) << "eoc 有未完成的任务，添加稍后重启任务";
                             tasks->push_back(EOCCom::SYS_REBOOT);
                         } else {
-                            LOG(INFO) << "5秒后重启";
+                            LOG(INFO) << "eoc 5秒后重启";
                             sleep(5);
                             exit(0);
                         }
                     }
                         break;
                     default: {
-                        LOG(INFO) << "不支持的任务类型,taskI:" << task;
+                        LOG(INFO) << "eoc 不支持的任务类型,taskI:" << task;
                     }
                         break;
                 }
             }
         }
     }
-    LOG(INFO) << __FUNCTION__ << "exit";
+    LOG(WARNING) << __FUNCTION__ << "exit";
     return 0;
 }
 
@@ -1142,7 +1162,7 @@ void EOCCom::convertIntersectionS2DB(class IntersectionEntity in, DBIntersection
     out.YLength = in.YLength;
     out.LaneNumber = in.LaneNumber;
     out.Latitude = in.Latitude;
-    out.Longitude = in.Longitude;
+    out.Longitude = in.longitude;
 
     out.FlagEast = in.IntersectionBaseSetting.FlagEast;
     out.FlagSouth = in.IntersectionBaseSetting.FlagSouth;

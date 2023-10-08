@@ -16,6 +16,7 @@
 #include <iomanip>
 #include "os/timeTask.hpp"
 #include "myTcp/MyTcpClient.hpp"
+#include <uuid/uuid.h>
 
 
 using namespace std;
@@ -46,7 +47,12 @@ int getFusionData(FusionData &out) {
 }
 
 int getTrafficFlowGather(TrafficFlowGather &out) {
-    out.oprNum = random_uuid();
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    out.oprNum = string(uuid_str);
     out.crossID = "crossID";
     auto now = std::chrono::system_clock::now();
     uint64_t timestampNow = std::chrono::duration_cast<std::chrono::milliseconds>(

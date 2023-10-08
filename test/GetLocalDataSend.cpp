@@ -16,6 +16,7 @@
 #include <chrono>
 #include "os/os.h"
 #include <algorithm>
+#include <uuid/uuid.h>
 
 using namespace std;
 using namespace common;
@@ -97,7 +98,12 @@ void readTXT(std::string txt_path_, std::vector<FusionData> &fusionDatas) {
     } ElementIndex;
     for (auto iter: frames) {
         FusionData item;
-        item.oprNum = random_uuid();
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        item.oprNum = string(uuid_str);
         item.crossID = "123456ts";
         item.isHasImage = false;
         for (int i = iter.start; i < iter.end + 1; i++) {

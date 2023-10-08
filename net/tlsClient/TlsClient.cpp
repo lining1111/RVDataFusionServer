@@ -140,7 +140,7 @@ int TlsClient::ThreadDump(void *pClient) {
             };
             int ret = select(client->sock + 1, &fds, nullptr, nullptr, &tv);
             if (ret < 0) {
-                client->isLive.store(false);
+//                client->isLive.store(false);
             } else if (ret == 0) {
                 // time out
             } else {
@@ -157,9 +157,9 @@ int TlsClient::ThreadDump(void *pClient) {
                         }
                     } else if (len == 0) {
                         //断开链接
-                        client->isLive.store(false);
+//                        client->isLive.store(false);
                     } else {
-                        if (len == -1) {
+                        if (len < 0) {
                             printf("recv sock %d err:%s\n", client->sock, strerror(errno));
                             //向服务端抛出应该关闭
                             client->isLive.store(false);
@@ -292,7 +292,7 @@ int TlsClient::Write(const char *data, int len) {
     int nleft = 0;
     int nsend = 0;
     if (sock) {
-        pthread_mutex_lock(&lockSend);
+        std::unique_lock<std::mutex> lock(lockSend);
         const char *ptr = data;
         nleft = len;
         while (nleft > 0) {
@@ -302,7 +302,6 @@ int TlsClient::Write(const char *data, int len) {
                 } else {
                     printf("消息data='%s' nsend=%d, 错误代码是%d, 错误信息是'%s'\n", data, nsend, errno,
                            strerror(errno));
-                    pthread_mutex_unlock(&lockSend);
                     return (-1);
                 }
             } else if (nsend == 0) {
@@ -311,7 +310,6 @@ int TlsClient::Write(const char *data, int len) {
             nleft -= nsend;
             ptr += nsend;
         }
-        pthread_mutex_unlock(&lockSend);
     }
 
     return nsend;
