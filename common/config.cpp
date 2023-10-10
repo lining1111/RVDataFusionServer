@@ -51,3 +51,5 @@ void CalNetStatus(int s) {
         }
     }
 }
+
+string homePath ="/home/nvidianx";

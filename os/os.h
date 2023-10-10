@@ -14,8 +14,8 @@
 namespace os {
     using namespace std;
 
-    int execute_command(const std::string &command, std::string *output = nullptr,
-                        bool redirect_stderr = false);
+    int runCmd(const std::string &command, std::string *output = nullptr,
+               bool redirect_stderr = false);
 
     // 取文件夹名字 无后缀
     string g_getFolderPath(string str);

@@ -52,4 +52,6 @@ extern int g_net_status_success;
 
 void CalNetStatus(int s);
 
+extern string homePath;
+
 #endif //CONFIG_H

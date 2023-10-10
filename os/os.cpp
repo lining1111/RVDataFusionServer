@@ -15,12 +15,12 @@ using namespace std;
 
 namespace os {
 
-    int execute_command(const std::string &command, std::string *output, bool redirect_stderr) {
+    int runCmd(const std::string &command, std::string *output, bool redirect_stderr) {
         const auto &cmd = redirect_stderr ? command + " 2>&1" : command;
         auto pipe = popen(cmd.c_str(), "r");
         if (!pipe) {
             //记录日志
-            return -1;
+            return errno == 0 ? -1 : errno;
         }
         {
             char buffer[1024] = {0};

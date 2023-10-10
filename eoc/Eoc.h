@@ -4,8 +4,16 @@
 
 #ifndef _EOC_H
 #define _EOC_H
+
+#include <string>
+
+using namespace std;
+
 int StartEocCommon();
 
 int StartEocCommon1();
+
+//设置ntp服务地址
+int SetNtpServer(string serverIp);
 
 #endif //_EOC_H

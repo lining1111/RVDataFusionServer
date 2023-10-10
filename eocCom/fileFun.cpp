@@ -172,7 +172,7 @@ int extractFile(std::string filePath) {
     memset(cmd, 0, 512);
     sprintf(cmd, "rm -rf %s", UPDATEUNZIPFILE);
     LOG(INFO) << "删除临时目录,cmd=" << cmd;
-    ret = os::execute_command(cmd);
+    ret = os::runCmd(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         delete[] cmd;
@@ -181,7 +181,7 @@ int extractFile(std::string filePath) {
     memset(cmd, 0, 512);
     sprintf(cmd, "mkdir -p %s", UPDATEUNZIPFILE);
     LOG(INFO) << "新建临时目录,cmd=" << cmd;
-    ret = os::execute_command(cmd);
+    ret = os::runCmd(cmd);
     if (ret != 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         delete[] cmd;
@@ -190,7 +190,7 @@ int extractFile(std::string filePath) {
     memset(cmd, 0, 512);
     sprintf(cmd, "tar -zxf %s -C %s", filePath.c_str(), UPDATEUNZIPFILE);
     LOG(INFO) << "解压到指定目录,cmd=" << cmd;
-    ret = os::execute_command(cmd);
+    ret = os::runCmd(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         delete[] cmd;
@@ -217,7 +217,7 @@ int startUpgrade() {
     memset(cmd, 0, 256);
     sprintf(cmd, "chmod +x %s/%s", UPDATEUNZIPFILE, INSTALLSH);
     LOG(INFO) << "修改权限,cmd=" << cmd;
-    ret = os::execute_command(cmd);
+    ret = os::runCmd(cmd);
     if (ret < 0) {
         LOG(ERROR) << "exec cmd err" << cmd;
         return -1;
@@ -231,7 +231,7 @@ int startUpgrade() {
     memset(cmd, 0, 256);
     sprintf(cmd, "sh %s/%s %s", UPDATEUNZIPFILE, INSTALLSH, exePath.c_str());
     LOG(INFO) << "执行脚本,cmd=" << cmd;
-    ret = os::execute_command(cmd);
+    ret = os::runCmd(cmd);
     if (ret < 0) {
         LOG(ERROR) << "升级失败，exec cmd err" << cmd;
         return -1;

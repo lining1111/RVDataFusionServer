@@ -234,12 +234,12 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     }
     //检查数据库文件是否存在
     if (access(dbFile.c_str(), R_OK | W_OK | F_OK) != 0) {
-        LOG(ERROR) << "db file not exsit:" << dbFile;
+        LOG(ERROR) << "db file not exist:" << dbFile;
         char *cmd = new char[512];
         memset(cmd, 0, 512);
         sprintf(cmd, "sqlite3 %s", dbFile.c_str());
         LOG(INFO) << "create db file,cmd=" << cmd;
-        int result = os::execute_command(cmd);
+        int result = os::runCmd(cmd);
         if (result < 0) {
             LOG(ERROR) << "exec cmd err" << cmd;
             delete[] cmd;

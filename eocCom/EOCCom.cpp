@@ -107,7 +107,7 @@ void processS100(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -123,7 +123,7 @@ void processR100(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     LOG(INFO) << "eoc 收到心跳回复,重置心跳计数";
     local->heartFlag = 0;
 }
@@ -141,7 +141,7 @@ void processS101(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -157,16 +157,16 @@ void processR101(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     //登录分析
     switch (data.Data.State) {
         case 1: {
-            LOG(INFO) << "登录成功,信息：" << data.Data.Message;
+            LOG(INFO) << "eoc 登录成功,信息：" << data.Data.Message;
             local->isLogIn = true;
         }
             break;
         default: {
-            LOG(ERROR) << "登录失败，信息：" << data.Data.Message;
+            LOG(ERROR) << "eoc 登录失败，信息：" << data.Data.Message;
         }
             break;
     }
@@ -186,7 +186,7 @@ void processS102(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -204,7 +204,7 @@ void processR102(void *p, string content, string cmd) {
         result = -1;
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     //处理配置下发
 
     //核心板基础配置
@@ -212,9 +212,9 @@ void processR102(void *p, string content, string cmd) {
     dbBaseSet.deleteFromDB();
     EOCCom::convertBaseSetS2DB(data.Data.BaseSetting, dbBaseSet, data.Data.Index);
     if (dbBaseSet.insertToDB() == 0) {
-        LOG(INFO) << "核心板基础配置,写入成功";
+        LOG(INFO) << "eoc 核心板基础配置,写入成功";
     } else {
-        LOG(INFO) << "核心板基础配置,写入失败";
+        LOG(INFO) << "eoc 核心板基础配置,写入失败";
         result = -1;
     }
     //所属路口信息
@@ -222,9 +222,9 @@ void processR102(void *p, string content, string cmd) {
     dbIntersection.deleteFromDB();
     EOCCom::convertIntersectionS2DB(data.Data.IntersectionInfo, dbIntersection);
     if (dbIntersection.insertToDB() == 0) {
-        LOG(INFO) << "所属路口信息,写入成功";
+        LOG(INFO) << "eoc 所属路口信息,写入成功";
     } else {
-        LOG(INFO) << "所属路口信息,写入失败";
+        LOG(INFO) << "eoc 所属路口信息,写入失败";
         result = -1;
     }
     //融合参数
@@ -232,9 +232,9 @@ void processR102(void *p, string content, string cmd) {
     dbFusionParaSet.deleteFromDB();
     EOCCom::convertFusion_Para_SetS2DB(data.Data.FusionParaSetting, dbFusionParaSet);
     if (dbFusionParaSet.insertToDB() == 0) {
-        LOG(INFO) << "融合参数,写入成功";
+        LOG(INFO) << "eoc 融合参数,写入成功";
     } else {
-        LOG(INFO) << "融合参数,写入失败";
+        LOG(INFO) << "eoc 融合参数,写入失败";
         result = -1;
     }
     //关联设备
@@ -244,9 +244,9 @@ void processR102(void *p, string content, string cmd) {
         DBAssociatedEquip dbAssociatedEquip;
         EOCCom::convertAssociated_EquipS2DB(iter, dbAssociatedEquip);
         if (dbAssociatedEquip.insertToDB() == 0) {
-            LOG(INFO) << "关联设备,写入成功" << iter.EquipCode;
+            LOG(INFO) << "eoc 关联设备,写入成功" << iter.EquipCode;
         } else {
-            LOG(INFO) << "关联设备,写入失败" << iter.EquipCode;
+            LOG(INFO) << "eoc 关联设备,写入失败" << iter.EquipCode;
             result = -1;
         }
     }
@@ -270,10 +270,10 @@ void processR102(void *p, string content, string cmd) {
         dbDataVersion.time = std::string(time_p);
 
         if (dbDataVersion.insertToDB() == 0) {
-            LOG(INFO) << "write config version success:" << dbDataVersion.version << " ,"
+            LOG(INFO) << "eoc write config version success:" << dbDataVersion.version << " ,"
                       << dbDataVersion.time;
         } else {
-            LOG(INFO) << "write config version fail:" << dbDataVersion.version << " ,"
+            LOG(INFO) << "eoc write config version fail:" << dbDataVersion.version << " ,"
                       << dbDataVersion.time;
             result = -1;
         }
@@ -290,11 +290,11 @@ void processR102(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s102_send err, return:" << len;
+            LOG(ERROR) << "eoc s102_send err, return:" << len;
         } else {
-            LOG(INFO) << "s102_send ok";
+            LOG(INFO) << "eoc s102_send ok";
         }
-        LOG(INFO) << "配置写入失败";
+        LOG(INFO) << "eoc 配置写入失败";
     } else {
         S102 s102;
         s102.get(COMVersion, data.Guid, 1, "ok");
@@ -306,11 +306,11 @@ void processR102(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s102_send err, return:" << len;
+            LOG(ERROR) << "eoc s102_send err, return:" << len;
         } else {
-            LOG(INFO) << "s102_send ok";
+            LOG(INFO) << "eoc s102_send ok";
         }
-        LOG(INFO) << "配置写入成功，5s添加后重启任务";
+        LOG(INFO) << "eoc 配置写入成功，5s添加后重启任务";
         sleep(5);
         auto tasks = &local->eocCloudData.task;
         tasks->push_back(EOCCom::SYS_REBOOT);
@@ -331,7 +331,7 @@ void processS103(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -347,7 +347,7 @@ void processR103(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -364,7 +364,7 @@ void processS104(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -380,9 +380,9 @@ void processR104(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     //接收到下发后，按r102处理
-    LOG(INFO) << "接受到R104配置下发，按R102处理";
+    LOG(INFO) << "eoc 接收到R104配置下发，按R102处理";
     processR102(local, content, cmd);
 
 }
@@ -400,7 +400,7 @@ void processS105(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -416,19 +416,19 @@ void processR105(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     int state = data.Data.State;
     switch (state) {
         case 0: {
-            LOG(INFO) << "外网状态发送失败，信息：" << data.Data.Message;
+            LOG(INFO) << "eoc 外网状态发送失败，信息：" << data.Data.Message;
         }
             break;
         case 1: {
-            LOG(INFO) << "外网状态发送成功，信息：" << data.Data.Message;
+            LOG(INFO) << "eoc 外网状态发送成功，信息：" << data.Data.Message;
         }
             break;
         default: {
-            LOG(INFO) << "外网状态发送:" << data.Data.State << "，信息：" << data.Data.Message;
+            LOG(INFO) << "eoc 外网状态发送:" << data.Data.State << "，信息：" << data.Data.Message;
         }
             break;
     }
@@ -448,7 +448,7 @@ void processS106(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -456,7 +456,7 @@ static void ThreadDownload(EOCCom *local, std::string url) {
     if (local == nullptr) {
         return;
     }
-    LOG(INFO) << "download thread,url:" << url << " start";
+    LOG(INFO) << "eoc download thread,url:" << url << " start";
     std::string updateFileName;
     auto msgDownload = &local->eocCloudData.downloads_msg;
     bool isUrlExist = false;
@@ -480,33 +480,33 @@ static void ThreadDownload(EOCCom *local, std::string url) {
                 }
             }
             //正式下载文件
-            LOG(INFO) << "正式下载文件";
+            LOG(INFO) << "eoc 正式下载文件";
             int result = downloadFile(iter->download_url, 8 * 60 * 1000,
                                       updateFileName, iter->download_file_size, iter->download_file_md5);
 
             switch (result) {
                 case 0: {
-                    LOG(INFO) << "下载完成:" << iter->download_url;
+                    LOG(INFO) << "eoc 下载完成:" << iter->download_url;
                     iter->download_status = EOCCom::DOWNLOAD_FINISHED;
                 }
                     break;
                 case -1: {
-                    LOG(ERROR) << "下载文件不存在:" << iter->download_url;
+                    LOG(ERROR) << "eoc 下载文件不存在:" << iter->download_url;
                     iter->download_status = EOCCom::DOWNLOAD_FILE_NOT_EXIST;
                 }
                     break;
                 case -2: {
-                    LOG(ERROR) << "下载超时:" << iter->download_url;
+                    LOG(ERROR) << "eoc 下载超时:" << iter->download_url;
                     iter->download_status = EOCCom::DOWNLOAD_TIMEOUT;
                 }
                     break;
                 case -3: {
-                    LOG(ERROR) << "下载本地剩余空间不足:" << iter->download_url;
+                    LOG(ERROR) << "eoc 下载本地剩余空间不足:" << iter->download_url;
                     iter->download_status = EOCCom::DOWNLOAD_SPACE_NOT_ENOUGH;
                 }
                     break;
                 case -4: {
-                    LOG(ERROR) << "下载失败MD5校验失败:" << iter->download_url;
+                    LOG(ERROR) << "eoc 下载失败MD5校验失败:" << iter->download_url;
                     iter->download_status = EOCCom::DOWNLOAD_MD5_FAILD;
                 }
                     break;
@@ -514,10 +514,10 @@ static void ThreadDownload(EOCCom *local, std::string url) {
         }
     }
     if (!isUrlExist) {
-        LOG(ERROR) << "search download url err";
+        LOG(ERROR) << "eoc search download url err";
     }
 
-    LOG(INFO) << "download thread,url:" << url << " exit";
+    LOG(INFO) << "eoc download thread,url:" << url << " exit";
 }
 
 void processR106(void *p, string content, string cmd) {
@@ -532,13 +532,13 @@ void processR106(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     //处理软件下载文件指令，将会把文件下载到指定目录下
-    LOG(INFO) << "处理软件下载文件指令，将会把文件下载到指定目录下";
+    LOG(INFO) << "eoc 处理软件下载文件指令，将会把文件下载到指定目录下";
 
     LOG(INFO) << "eoc download file:" << data.Data.DownloadPath <<
               ",file:" << data.Data.FileName << ",size:" << data.Data.FileSize << ",md5:" << data.Data.FileMD5;
-    LOG(INFO) << "file local store:" << UPDATEFILE;
+    LOG(INFO) << "eoc file local store:" << UPDATEFILE;
     //发送S106信息
     S106 s106;
     s106.get(COMVersion, data.Guid, 1, 1, 0, "Receive controller download msg succeed");
@@ -549,18 +549,18 @@ void processR106(void *p, string content, string cmd) {
     int len = local->Write(body.data(), body.size());
 
     if (len < 0) {
-        LOG(ERROR) << "s106_send err, return:" << len;
+        LOG(ERROR) << "eoc s106_send err, return:" << len;
     } else {
-        LOG(INFO) << "s106_send ok";
+        LOG(INFO) << "eoc s106_send ok";
     }
     //判断文件是否存在，已存在直接返回下载成功
     if (access(UPDATEFILE, R_OK | R_OK) == 0) {
-        LOG(INFO) << "文件已存在:" << UPDATEFILE;
+        LOG(INFO) << "eoc 文件已存在:" << UPDATEFILE;
         //判断md5
         std::string md5 = getFileMD5(UPDATEFILE);
-        LOG(INFO) << "MD5 cal:" << md5 << "," << data.Data.FileMD5;
+        LOG(INFO) << "eoc MD5 cal:" << md5 << "," << data.Data.FileMD5;
         if (md5 == data.Data.FileMD5) {
-            LOG(INFO) << "下载文件MD5校验通过";
+            LOG(INFO) << "eoc 下载文件MD5校验通过";
             //发送s106
             S106 s106_md5success;
             s106_md5success.get(COMVersion, data.Guid, 2, 1, 0, "下载完成 MD5 OK");
@@ -571,9 +571,9 @@ void processR106(void *p, string content, string cmd) {
             int len = local->Write(body.data(), body.size());
 
             if (len < 0) {
-                LOG(ERROR) << "s106_md5success_send err, return:" << len;
+                LOG(ERROR) << "eoc s106_md5success_send err, return:" << len;
             } else {
-                LOG(INFO) << "s106_md5success_send ok";
+                LOG(INFO) << "eoc s106_md5success_send ok";
             }
             return;
         }
@@ -597,10 +597,10 @@ void processR106(void *p, string content, string cmd) {
             if (iter.download_url == rcv_download_msg.download_url) {
                 //下载链接已存在
                 isDownloadExist = true;
-                LOG(INFO) << "download thread is running,add ip:" << rcv_dev_msg.dev_ip.c_str();
+                LOG(INFO) << "eoc download thread is running,add ip:" << rcv_dev_msg.dev_ip.c_str();
                 if (rcv_dev_msg.dev_type == EOCCom::EOC_UPGRADE_PARKINGAREA) {
                     //
-                    LOG(INFO) << "雷视机升级下载已添加";
+                    LOG(INFO) << "eoc 升级下载已添加";
                     return;
                 }
 
@@ -608,13 +608,13 @@ void processR106(void *p, string content, string cmd) {
                 for (int j = 0; j < iter.upgrade_dev.size(); j++) {
                     auto iter1 = iter.upgrade_dev.at(j);
                     if ((iter1.dev_ip == rcv_dev_msg.dev_ip) && (iter1.comm_guid == rcv_dev_msg.comm_guid)) {
-                        LOG(INFO) << "固件下载已添加";
+                        LOG(INFO) << "eoc 固件下载已添加";
                         isFirmwareDownloadExist = true;
                     }
                 }
                 if (!isFirmwareDownloadExist) {
                     //如果是固件下载但是任务不存在
-                    LOG(INFO) << "固件下载添加";
+                    LOG(INFO) << "eoc 固件下载添加";
                     iter.upgrade_dev.push_back(rcv_dev_msg);
                 }
                 break;
@@ -627,7 +627,7 @@ void processR106(void *p, string content, string cmd) {
             rcv_download_msg.upgrade_dev.push_back(rcv_dev_msg);
             local->eocCloudData.downloads_msg.push_back(rcv_download_msg);
             //创建一个下载的子线程
-            LOG(INFO) << "添加下载子线程 detach";
+            LOG(INFO) << "eoc 添加下载子线程 detach";
             std::thread downloadThread = std::thread(ThreadDownload, local, rcv_download_msg.download_url);
             local->eocCloudData.downloads_msg.back().download_thread_id = downloadThread.get_id();
             downloadThread.detach();
@@ -649,7 +649,7 @@ void processS107(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -665,7 +665,7 @@ void processR107(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     //回送接收到升级命令
     S107 s107;
     s107.get(COMVersion, data.Guid, 1, 1, 0, "接收到升级命令");
@@ -676,9 +676,9 @@ void processR107(void *p, string content, string cmd) {
     int len = local->Write(body.data(), body.size());
 
     if (len < 0) {
-        LOG(ERROR) << "s107_send err, return:" << len;
+        LOG(ERROR) << "eoc s107_send err, return:" << len;
     } else {
-        LOG(INFO) << "s107_send ok";
+        LOG(INFO) << "eoc s107_send ok";
     }
 
     //1 判断文件是否存在
@@ -693,16 +693,16 @@ void processR107(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s107_send err, return:" << len;
+            LOG(ERROR) << "eoc s107_send err, return:" << len;
         } else {
-            LOG(INFO) << "s107_send ok";
+            LOG(INFO) << "eoc s107_send ok";
         }
         return;
     }
     //2 MD5校验
     std::string md5 = getFileMD5(UPDATEFILE);
     if (md5 != data.Data.FileMD5) {
-        LOG(ERROR) << "md5 check fail,cal:" << md5 << "," << data.Data.FileMD5;
+        LOG(ERROR) << "eoc md5 check fail,cal:" << md5 << "," << data.Data.FileMD5;
         S107 s107_2;
         s107_2.get(COMVersion, data.Guid, 2, 0, 0, "MD5校验失败");
         //组json
@@ -712,19 +712,19 @@ void processR107(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s107_send err, return:" << len;
+            LOG(ERROR) << "eoc s107_send err, return:" << len;
         } else {
-            LOG(INFO) << "s107_send ok";
+            LOG(INFO) << "eoc s107_send ok";
         }
         return;
     }
     //3 版本校验... ...
 
     //校验完成开始升级
-    LOG(INFO) << "校验完成开始升级";
+    LOG(INFO) << "eoc 校验完成开始升级";
     //4 执行升级文件
     if (extractFile(UPDATEFILE) != 0) {
-        LOG(ERROR) << "解压缩失败:" << UPDATEFILE;
+        LOG(ERROR) << "eoc 解压缩失败:" << UPDATEFILE;
         S107 s107_3;
         s107_3.get(COMVersion, data.Guid, 2, 0, 0, "解压缩失败");
         //组json
@@ -734,9 +734,9 @@ void processR107(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s107_send err, return:" << len;
+            LOG(ERROR) << "eoc s107_send err, return:" << len;
         } else {
-            LOG(INFO) << "s107_send ok";
+            LOG(INFO) << "eoc s107_send ok";
         }
         return;
     }
@@ -752,9 +752,9 @@ void processR107(void *p, string content, string cmd) {
         int len = local->Write(body.data(), body.size());
 
         if (len < 0) {
-            LOG(ERROR) << "s107_send err, return:" << len;
+            LOG(ERROR) << "eoc s107_send err, return:" << len;
         } else {
-            LOG(INFO) << "s107_send ok";
+            LOG(INFO) << "eoc s107_send ok";
         }
     }
     //开始升级
@@ -780,7 +780,7 @@ void processS108(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -797,7 +797,7 @@ void processR108(void *p, string content, string cmd) {
         LOG(ERROR) << e.what();
         return;
     }
-    LOG(INFO) << "recv:" << cmd;
+    LOG(INFO) << "eoc recv:" << cmd;
     return;
 }
 
@@ -856,23 +856,23 @@ int EOCCom::proPkgs(void *p) {
         std::string pkg;
         if (local->pkgs.pop(pkg)) {
             //接收到一包数据
-            LOG(INFO) << "eoc recv json:" << pkg;
+            VLOG(2) << "eoc recv json:" << pkg;
 
             std::string code = parseCode(pkg);
             if (code.empty()) {
-                LOG(ERROR) << "recv code empty";
+                LOG(ERROR) << "eoc recv code empty";
             } else {
                 //按照code分别处理
                 auto iter = business.find(code);
                 if (iter != business.end()) {
                     //find
-                    LOG(INFO) << "code:" << code << ",content:" << pkg;
+                    LOG(INFO) << "eoc code:" << code << ",content:" << pkg;
                     //开启处理线程
 //                thread process = thread(iter->second, client, content, cmd);
 //                process.join();
                     iter->second(local, pkg, code);
                 } else {
-                    LOG(ERROR) << "code:" << code << " not find,content:" << pkg;
+                    LOG(ERROR) << "eoc code:" << code << " not find,content:" << pkg;
                 }
             }
 
@@ -895,7 +895,7 @@ int EOCCom::intervalPro(void *p) {
         time_t now = time(NULL);
         if (!local->isLogIn) {
             //未登录的话，一直申请登录
-            if (now - local->last_login_t > 10) {
+            if (now - local->last_login_t >= 10) {
                 local->last_login_t = now;
 
                 S101 s101;
@@ -929,7 +929,7 @@ int EOCCom::intervalPro(void *p) {
                 version = dbDataVersion.version;
             }
             if (version.empty()) {
-                if (now - local->last_get_config_t > 180) {
+                if (now - local->last_get_config_t >= 180) {
                     local->last_get_config_t = now;
                     //主动发起一次获取配置的请求
                     S104 s104;
@@ -954,7 +954,7 @@ int EOCCom::intervalPro(void *p) {
             }
 
             //2.心跳
-            if (now - local->last_send_heart_t > 30) {
+            if (now - local->last_send_heart_t >= 30) {
                 local->last_send_heart_t = now;
                 S100 s100;
                 int ret = s100.get(COMVersion);
@@ -976,14 +976,14 @@ int EOCCom::intervalPro(void *p) {
                 }
                 local->heartFlag++;
                 if (local->heartFlag > 10) {
-                    LOG(ERROR) << "eoc 10次未收到心跳回复,设置重连标志";
+                    LOG(WARNING) << "eoc 10次未收到心跳回复,设置重连标志";
                     local->isLive.store(false);
                     local->heartFlag = 0;
                 }
             }
 
             //3.外网状态上传
-            if (now - local->last_send_net_state_t > 300) {
+            if (now - local->last_send_net_state_t >= 300) {
                 local->last_send_net_state_t = now;
 
                 S105 s105;
@@ -1008,7 +1008,7 @@ int EOCCom::intervalPro(void *p) {
                 }
             }
             //主控机状态
-            if (now - local->last_send_state_t > 60) {
+            if (now - local->last_send_state_t >= 60) {
                 local->last_send_state_t = now;
 
                 S103 s103;
