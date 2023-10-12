@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <mutex>
 #include "signalControl/SignalControl.h"
-#include "data/merge/AlgorithmParam.h"
+#include "lib/AlgorithmParam.h"
 
 
 typedef struct {

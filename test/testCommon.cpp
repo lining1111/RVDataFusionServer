@@ -10,7 +10,7 @@
 #include "common/CRC.h"
 #include "Queue.hpp"
 #include "ringbuffer/RingBuffer.h"
-#include "data/merge/AlgorithmParam.h"
+#include "lib/AlgorithmParam.h"
 #include "data/DataUnit.h"
 #include <uuid/uuid.h>
 

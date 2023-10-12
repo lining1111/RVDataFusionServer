@@ -7,7 +7,7 @@
 
 #include <string>
 #include <vector>
-#include "merge/merge.h"
+#include "lib/merge.h"
 using namespace std;
 
 void SaveDataIn(vector<OBJECT_INFO_T> data, uint64_t timestamp, string path);

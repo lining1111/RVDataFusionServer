@@ -5,7 +5,7 @@
 #ifndef _MERGESTRUCT_H
 #define _MERGESTRUCT_H
 
-#include "merge.h"
+#include "lib/merge.h"
 
 void OBJECT_INFO_T2ObjTarget(OBJECT_INFO_T &objectInfoT, ObjTarget &objTarget);
 
