@@ -19,7 +19,7 @@ using namespace xpack;
 #include "../version.h"
 #include <uuid/uuid.h>
 #include <iostream>
-#include <sys/statfs.h>
+#include "os/os.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
 
@@ -494,16 +494,13 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         CpuState = 1;
 
         //TODO cpu利用率
-        CpuUtilizationRatio = cpuUtilizationRatio();
+        CpuUtilizationRatio = os::cpuUtilizationRatio();
 
         //cpu温度
-        CpuTemperature = cpuTemperature();
+        CpuTemperature = os::cpuTemperature();
 
-        //内存大小
-        MemorySize = memorySize();
-
-        //剩余内存大小
-        ResidualMemorySize = residualMemorySize();
+        //内存大小 剩余内存大小
+        os::memoryInfo(MemorySize, ResidualMemorySize);
 
         //模型版本
         ModelVersion = "NX";
@@ -515,8 +512,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            state.Size = TF_Size();
-            state.ResidualSize = TF_ResidualSize();
+            os::dirInfo("~/mnt_tf",state.Size,state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
@@ -528,8 +524,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            state.Size = EMMC_Size();
-            state.ResidualSize = EMMC_ResidualSize();
+            os::dirInfo("/",state.Size,state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
@@ -540,8 +535,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            state.Size = ExternalHardDisk_Size();
-            state.ResidualSize = ExternalHardDisk_ResidualSize();
+            os::dirInfo("/mnt/mnt_hd",state.Size,state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
@@ -550,241 +544,6 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
 
         return 0;
     }
-
-
-private:
-    std::string getValueBySystemCommand(std::string strCommand) {
-        //printf("-----%s------\n",strCommand.c_str());
-        std::string strData = "";
-        FILE *fp = NULL;
-        char buffer[128];
-        fp = popen(strCommand.c_str(), "r");
-        if (fp) {
-            while (fgets(buffer, sizeof(buffer), fp)) {
-                strData.append(buffer);
-            }
-            pclose(fp);
-        }
-        //printf("-----%s------ end\n",strCommand.c_str());
-        return strData;
-    };
-
-    string trim(string str) {
-        if (str.empty()) {
-            return str;
-        }
-        str.erase(0, str.find_first_not_of(" "));
-        str.erase(str.find_last_not_of(" ") + 1);
-        return str;
-    };
-
-    std::vector<std::string> split(std::string str, std::string pattern) {
-        string::size_type pos;
-        vector<string> result;
-        str += pattern;
-        int size = str.size();
-
-        for (int i = 0; i < size; i++) {
-            pos = str.find(pattern, i);
-            if (pos < size) {
-                string s = str.substr(i, pos - i);
-                result.push_back(s);
-                i = pos + pattern.size() - 1;
-            }
-        }
-
-        return result;
-    };
-
-
-    double cpuUtilizationRatio() {
-
-        std::string strRes = getValueBySystemCommand("top -b -n 1 |grep Cpu | cut -d \",\" -f 1 | cut -d \":\" -f 2");
-
-        strRes = trim(strRes);
-        printf("--%s--  strRes.size : %lu \n", strRes.c_str(), strRes.length());
-        std::vector<std::string> vecT = split(strRes, " ");
-        if (vecT.size() == 2) {
-            printf("%s\n", vecT.at(0).c_str());
-            return atof(vecT.at(0).c_str());
-        }
-        return 0;
-    };
-
-
-    double cpuTemperature() {
-        FILE *fp = NULL;
-        int temp = 0;
-        fp = fopen("/sys/devices/virtual/thermal/thermal_zone0/temp", "r");
-        if (fp == nullptr) {
-            std::cerr << "CpuTemperature fail" << std::endl;
-            return 0;
-        }
-
-        fscanf(fp, "%d", &temp);
-        fclose(fp);
-        return (double) temp / 1000;
-    };
-
-    double memorySize() {
-        int mem_free = -1;//空闲的内存，=总内存-使用了的内存
-        int mem_total = -1; //当前系统可用总内存
-        int mem_buffers = -1;//缓存区的内存大小
-        int mem_cached = -1;//缓存区的内存大小
-        char name[20];
-
-        FILE *fp;
-        char buf1[128], buf2[128], buf3[128], buf4[128], buf5[128];
-        int buff_len = 128;
-        fp = fopen("/proc/meminfo", "r");
-        if (fp == NULL) {
-            std::cerr << "GetSysMemInfo() error! file not exist" << std::endl;
-            return -1;
-        }
-        if (NULL == fgets(buf1, buff_len, fp) ||
-            NULL == fgets(buf2, buff_len, fp) ||
-            NULL == fgets(buf3, buff_len, fp) ||
-            NULL == fgets(buf4, buff_len, fp) ||
-            NULL == fgets(buf5, buff_len, fp)) {
-            std::cerr << "GetSysMemInfo() error! fail to read!" << std::endl;
-            fclose(fp);
-            return -1;
-        }
-        fclose(fp);
-        sscanf(buf1, "%s%d", name, &mem_total);
-        sscanf(buf2, "%s%d", name, &mem_free);
-        sscanf(buf4, "%s%d", name, &mem_buffers);
-        sscanf(buf5, "%s%d", name, &mem_cached);
-        return (double) mem_total / 1024.0;
-    };
-
-    double residualMemorySize() {
-        int mem_free = -1;//空闲的内存，=总内存-使用了的内存
-        int mem_total = -1; //当前系统可用总内存
-        int mem_buffers = -1;//缓存区的内存大小
-        int mem_cached = -1;//缓存区的内存大小
-        char name[20];
-
-        FILE *fp;
-        char buf1[128], buf2[128], buf3[128], buf4[128], buf5[128];
-        int buff_len = 128;
-        fp = fopen("/proc/meminfo", "r");
-        if (fp == NULL) {
-            std::cerr << "GetSysMemInfo() error! file not exist" << std::endl;
-            return -1;
-        }
-        if (NULL == fgets(buf1, buff_len, fp) ||
-            NULL == fgets(buf2, buff_len, fp) ||
-            NULL == fgets(buf3, buff_len, fp) ||
-            NULL == fgets(buf4, buff_len, fp) ||
-            NULL == fgets(buf5, buff_len, fp)) {
-            std::cerr << "GetSysMemInfo() error! fail to read!" << std::endl;
-            fclose(fp);
-            return -1;
-        }
-        fclose(fp);
-        sscanf(buf1, "%s%d", name, &mem_total);
-        sscanf(buf2, "%s%d", name, &mem_free);
-        sscanf(buf4, "%s%d", name, &mem_buffers);
-        sscanf(buf5, "%s%d", name, &mem_cached);
-        return (double) mem_free / 1024.0;
-    };
-
-    static double TF_Size() {
-        string devStr = "~/mnt_tf";
-        struct statfs diskInfo;
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) totalsize / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
-    static double TF_ResidualSize() {
-        string devStr = "~/mnt_tf";
-        struct statfs diskInfo;
-
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) freeDisk / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
-    static double EMMC_Size() {
-        string devStr = "/";
-        struct statfs diskInfo;
-
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) totalsize / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
-    static double EMMC_ResidualSize() {
-        string devStr = "/";
-        struct statfs diskInfo;
-
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) freeDisk / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
-    static double ExternalHardDisk_Size() {
-        string devStr = "/mnt/mnt_hd";
-        struct statfs diskInfo;
-
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) totalsize / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
-    static double ExternalHardDisk_ResidualSize() {
-        string devStr = "/mnt/mnt_hd";
-        struct statfs diskInfo;
-
-        // 设备挂载的节点
-        if (statfs(devStr.c_str(), &diskInfo) == 0) {
-            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
-            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
-            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
-            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
-            return (double) freeDisk / (1024.0 * 1024.0);
-        } else {
-            return 0;
-        }
-    }
-
 };
 
 class DataS103 {

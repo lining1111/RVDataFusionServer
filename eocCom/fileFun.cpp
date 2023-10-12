@@ -212,7 +212,6 @@ std::string exePath;
 
 int startUpgrade() {
     int ret = 0;
-    LOG(INFO) << "开始升级";
     char cmd[256] = {0};
     memset(cmd, 0, 256);
     sprintf(cmd, "chmod +x %s/%s", UPDATEUNZIPFILE, INSTALLSH);

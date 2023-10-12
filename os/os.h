@@ -89,6 +89,14 @@ namespace os {
 
     //创建路径文件夹
     void CreatePath(const std::string path);
+
+    double cpuUtilizationRatio();
+
+    double cpuTemperature();
+
+    int memoryInfo(int &total, int &free);
+
+    int dirInfo(string dir,int &total, int &free);
 };
 
 

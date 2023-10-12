@@ -717,7 +717,22 @@ void processR107(void *p, string content, string cmd) {
             LOG(INFO) << "eoc s107_send ok";
         }
         return;
+    } else {
+        S107 s107_2;
+        s107_2.get(COMVersion, data.Guid, 2, 1, 25, "校验完成开始升级");
+        //组json
+        std::string body;
+        body = json::encode(s107_2);
+        body.push_back('*');
+        int len = local->Write(body.data(), body.size());
+
+        if (len < 0) {
+            LOG(ERROR) << "eoc s107_send err, return:" << len;
+        } else {
+            LOG(INFO) << "eoc s107_send ok";
+        }
     }
+
     //3 版本校验... ...
 
     //校验完成开始升级
@@ -739,6 +754,8 @@ void processR107(void *p, string content, string cmd) {
             LOG(INFO) << "eoc s107_send ok";
         }
         return;
+    } else {
+        LOG(INFO) << "eoc 解压缩成功:" << UPDATEFILE;
     }
 
     //发送升级完成
@@ -758,7 +775,12 @@ void processR107(void *p, string content, string cmd) {
         }
     }
     //开始升级
-    startUpgrade();
+    LOG(INFO) << "eoc 开始升级";
+    if (startUpgrade() != 0) {
+        LOG(ERROR) << "eoc 升级失败";
+    } else {
+        LOG(INFO) << "eoc 升级成功";
+    }
 
     EOCCom::EocUpgradeDev eocUpgradeDev;
     eocUpgradeDev.sw_version = data.Data.FileVersion;

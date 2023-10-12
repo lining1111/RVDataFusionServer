@@ -10,6 +10,8 @@
 #include "os.h"
 #include <sys/stat.h>
 #include <errno.h>
+#include <iostream>
+#include <sys/statfs.h>
 
 using namespace std;
 
@@ -419,5 +421,90 @@ namespace os {
             closedir(dir);
         }
     }
+
+    double cpuUtilizationRatio() {
+
+        std::string strRes;
+        runCmd("top -b -n 1 |grep Cpu | cut -d \",\" -f 1 | cut -d \":\" -f 2", &strRes);
+
+        Trim(strRes, ' ');
+        printf("--%s--  strRes.size : %lu \n", strRes.c_str(), strRes.length());
+        std::vector<std::string> vecT = split(strRes, " ");
+        if (vecT.size() == 2) {
+            printf("%s\n", vecT.at(0).c_str());
+            return atof(vecT.at(0).c_str());
+        }
+        return 0;
+    };
+
+
+    double cpuTemperature() {
+        FILE *fp = NULL;
+        int temp = 0;
+        fp = fopen("/sys/devices/virtual/thermal/thermal_zone0/temp", "r");
+        if (fp == nullptr) {
+            std::cerr << "CpuTemperature fail" << std::endl;
+            return 0;
+        }
+
+        fscanf(fp, "%d", &temp);
+        fclose(fp);
+        return (double) temp / 1000;
+    };
+
+    int memoryInfo(int &total, int &free) {
+        int mem_free = -1;//空闲的内存，=总内存-使用了的内存
+        int mem_total = -1; //当前系统可用总内存
+        int mem_buffers = -1;//缓存区的内存大小
+        int mem_cached = -1;//缓存区的内存大小
+        char name[20];
+
+        FILE *fp;
+        char buf1[128], buf2[128], buf3[128], buf4[128], buf5[128];
+        int buff_len = 128;
+        fp = fopen("/proc/meminfo", "r");
+        if (fp == NULL) {
+            std::cerr << "GetSysMemInfo() error! file not exist" << std::endl;
+            return -1;
+        }
+        if (NULL == fgets(buf1, buff_len, fp) ||
+            NULL == fgets(buf2, buff_len, fp) ||
+            NULL == fgets(buf3, buff_len, fp) ||
+            NULL == fgets(buf4, buff_len, fp) ||
+            NULL == fgets(buf5, buff_len, fp)) {
+            std::cerr << "GetSysMemInfo() error! fail to read!" << std::endl;
+            fclose(fp);
+            return -1;
+        }
+        fclose(fp);
+        sscanf(buf1, "%s%d", name, &mem_total);
+        sscanf(buf2, "%s%d", name, &mem_free);
+        sscanf(buf4, "%s%d", name, &mem_buffers);
+        sscanf(buf5, "%s%d", name, &mem_cached);
+
+        total = (double) mem_total / 1024.0;
+        free = (double) mem_free / 1024.0;
+
+        return 0;
+    }
+
+    int dirInfo(string dir, int &total, int &free) {
+        struct statfs diskInfo;
+        // 设备挂载的节点
+        if (statfs(dir.c_str(), &diskInfo) == 0) {
+            uint64_t blocksize = diskInfo.f_bsize;                   // 每一个block里包含的字节数
+            uint64_t totalsize = blocksize * diskInfo.f_blocks;      // 总的字节数，f_blocks为block的数目
+            uint64_t freeDisk = diskInfo.f_bfree * blocksize;       // 剩余空间的大小
+            uint64_t availableDisk = diskInfo.f_bavail * blocksize; // 可用空间大小
+            total = (double) totalsize / (1024.0 * 1024.0);
+            free = (double) freeDisk / (1024.0 * 1024.0);
+            return 0;
+        } else {
+            total = 0;
+            free = 0;
+            return -1;
+        }
+    }
+
 
 }
