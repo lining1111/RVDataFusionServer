@@ -423,21 +423,14 @@ namespace os {
     }
 
     double cpuUtilizationRatio() {
-
+        string cmd = R"(top -bn1 |sed -n '3p' | awk -F 'ni,' '{print $2}' |cut -d. -f1 | sed 's/ //g')";
         std::string strRes;
-        runCmd("top -b -n 1 |grep Cpu | cut -d \",\" -f 1 | cut -d \":\" -f 2", &strRes);
+        runCmd(cmd, &strRes);
 
         Trim(strRes, ' ');
-        printf("--%s--  strRes.size : %lu \n", strRes.c_str(), strRes.length());
-        std::vector<std::string> vecT = split(strRes, " ");
-        if (vecT.size() == 2) {
-            printf("%s\n", vecT.at(0).c_str());
-            return atof(vecT.at(0).c_str());
-        }
-        return 0;
-    };
+        return 100.0 - atof(strRes.c_str());
 
-
+    }
     double cpuTemperature() {
         FILE *fp = NULL;
         int temp = 0;
@@ -450,7 +443,7 @@ namespace os {
         fscanf(fp, "%d", &temp);
         fclose(fp);
         return (double) temp / 1000;
-    };
+    }
 
     int memoryInfo(int &total, int &free) {
         int mem_free = -1;//空闲的内存，=总内存-使用了的内存

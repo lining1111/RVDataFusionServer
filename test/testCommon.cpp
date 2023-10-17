@@ -191,7 +191,7 @@ void testCRC() {
 void exampleAlgorithm() {
     AlgorithmParam algorithmParam;
     algorithmParam.intersectionName = "测试路口";
-    DoubleValueArray transformMatrixItem;
+    TransMatrixItem transformMatrixItem;
     //H_south
     double h_sourth[9] = {-0.007128362730, -0.583855347756, 114.889396729743,
                           -0.002529960713, -0.207213146406, 40.775908214483,
@@ -234,45 +234,39 @@ void exampleAlgorithm() {
     transformMatrixItem.set(3, h_west_values);
     algorithmParam.transformMatrix.push_back(transformMatrixItem);
 
-    algorithmParam.midLongitude = 114.8901745;
-    algorithmParam.midLatitude = 40.7745085;
-
-    algorithmParam.piexlType = 1;
-    algorithmParam.minTrackDistance = 80;// 600 / dst_ratio;// 600;
-    algorithmParam.maxTrackDistance = 120;// 2000 / dst_ratio;// 1400;
-    algorithmParam.failCount1 = 50;
-    algorithmParam.failCount2 = 2;
-    algorithmParam.minAreaThreshold = 0.3;
-    algorithmParam.piexlByMeterX = 10.245;
-    algorithmParam.piexlByMeterY = 7.76;
-    algorithmParam.roadLength = 150;
-
     vector<double> angles = {180, 270, 0, 103};
     for (int i = 0; i < angles.size(); i++) {
-        DoubleValue value;
-        value.index = i;
+        AngleItem value;
+        value.faceDirection = i;
         value.value = angles[i];
         algorithmParam.angle.push_back(value);
     }
 
+    //distanceOfStoplineFromRoadcenter
+    {
+        Distance value;
+        value.faceDirection = 0;
+        value.value = 20;
+        algorithmParam.distanceOfStoplineFromRoadcenter.push_back(value);
 
-    algorithmParam.maxStopSpeedThreshold = 2.0;//  test
-    algorithmParam.shakingPixelThreshold = 0.3;
-    algorithmParam.stoplineLength = 5;
-    algorithmParam.trackInLength = 120;
-    algorithmParam.trackOutLength = 20;
+        value.faceDirection = 1;
+        value.value = 20;
 
+        algorithmParam.distanceOfStoplineFromRoadcenter.push_back(value);
+    }
 
-    algorithmParam.maxSpeedByPiexl = 20; //新增 速度限制
-    algorithmParam.carMatchCount = 3;
-    algorithmParam.maxCenterDistanceThreshold = 0.4;// 0.45f; // 0.4
-    algorithmParam.minCenterDistanceThreshold = 0.2;// 0.25f; //0.2
-    algorithmParam.minAreaThreshold = 0.1;// 0.45f; //0.5
-    algorithmParam.maxAreaThreshold = 0.3f; // 0.8
-    algorithmParam.middleAreaThreshold = 0.2;
+    //trackList
+    {
+        TrackDistanceRegionDivision value;
+        value.faceDirection = 0;
+        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
+        value.faceDirection = 1;
+        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
+    }
+
     //south_north_driving_area
 
-    PointFArrayArray pointFArrayArrayItem;
+    DrivingAreaItem pointFArrayArrayItem;
     vector<PointF> values_tmp;
     vector<vector<PointF>> values_driving_area;
 
@@ -282,16 +276,12 @@ void exampleAlgorithm() {
     values_tmp.push_back(PointF(575, 315));
     values_tmp.push_back(PointF(727, 250));
     values_tmp.push_back(PointF(916, 244));
-    values_tmp.push_back(PointF(941, 309));
-    values_tmp.push_back(PointF(996, 432));
     values_driving_area.push_back(values_tmp);
     values_tmp.clear();
     values_tmp.push_back(PointF(941, 391));
     values_tmp.push_back(PointF(1245, 293));
     values_tmp.push_back(PointF(1401, 233));
     values_tmp.push_back(PointF(1681, 189));
-    values_tmp.push_back(PointF(1631, 285));
-    values_tmp.push_back(PointF(1793, 437));
     values_driving_area.push_back(values_tmp);
     pointFArrayArrayItem.set(0, values_driving_area);
     algorithmParam.drivingArea.push_back(pointFArrayArrayItem);
@@ -302,24 +292,19 @@ void exampleAlgorithm() {
     values_tmp.push_back(PointF(766, 293));
     values_tmp.push_back(PointF(1102, 222));
     values_tmp.push_back(PointF(1401, 233));
-    values_tmp.push_back(PointF(1245, 293));
-    values_tmp.push_back(PointF(941, 391));
     values_driving_area.push_back(values_tmp);
     values_tmp.clear();
     values_tmp.push_back(PointF(996, 432));
     values_tmp.push_back(PointF(941, 309));
     values_tmp.push_back(PointF(916, 244));
     values_tmp.push_back(PointF(1113, 247));
-    values_tmp.push_back(PointF(1297, 309));
-    values_tmp.push_back(PointF(1711, 453));
     values_driving_area.push_back(values_tmp);
     pointFArrayArrayItem.set(1, values_driving_area);
     algorithmParam.drivingArea.push_back(pointFArrayArrayItem);
 
-    RectFValueArray rectFValueArrayItem;
+    DrivingAreaX rectFValueArrayItem;
     vector<RectF> values_tmp_rect;
-    values_tmp_rect.push_back(RectF( 0.000015, 0.000035,0.0002,0.2555));
-    values_tmp_rect.push_back(RectF( 0.000015, 0.00004,0.54545,0.2555));
+    values_tmp_rect.clear();
     values_tmp_rect.push_back(RectF( 0.000015, 0.000035,0.0002,0.2555));
     rectFValueArrayItem.set(0, values_tmp_rect);
     algorithmParam.drivingInArea.push_back(rectFValueArrayItem);
@@ -328,6 +313,7 @@ void exampleAlgorithm() {
     algorithmParam.drivingInArea.push_back(rectFValueArrayItem);
     algorithmParam.drivingMissingArea.push_back(rectFValueArrayItem);
 
+    //correctedValueGPSs
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(0, 0.000015, 0.000035));
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(1, 0.000015, 0.00004));
     algorithmParam.correctedValueGPSs.push_back(CorrectedValueGPS(2, 0.000015, 0.000035));

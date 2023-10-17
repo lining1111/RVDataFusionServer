@@ -16,87 +16,34 @@ using namespace std;
 using namespace xpack;
 
 //算法配置相关
-class PointF {
+
+/**
+ * 基础类说明
+ * 基础类分类，依据包裹的层级关系进行分类，基础0类被基础1类包裹，基础1类被基础2类包裹，以此类推
+ * 包裹的含义：A包裹B，说明A内有一个vector<B>,同时可能伴随一个int型枚举数值(如 direction,index等)
+ *
+ */
+
+//----基础0类-----//
+
+//angleItem
+class AngleItem {
 public:
-    double x = 0.0;
-    double y = 0.0;
+    int faceDirection;
+    double value;
 
-    PointF() {
-
-    }
-
-    PointF(double x, double y) : x(x), y(y) {
+    AngleItem(){
 
     }
 
-XPACK(O(x, y));
+    AngleItem(int faceDirection, double value):faceDirection(faceDirection),value(value){
+
+    }
+
+    XPACK(O(faceDirection,value));
 };
 
-//带坐标的点信息
-class PointFArray {
-public:
-    int index = 0;
-    vector<PointF> value;
-
-    PointFArray() {
-
-    }
-
-XPACK(O(index, value));
-
-};
-
-//带坐标的点集合信息
-class PointFArrayArray {
-public:
-    int index = 0;
-    vector<PointFArray> value;
-
-    PointFArrayArray() {
-
-    }
-
-XPACK(O(index, value));
-
-    void set(int index, vector<vector<PointF>> values) {
-        this->index = index;
-        for (int i = 0; i < values.size(); i++) {
-            PointFArray pointFArray;
-            pointFArray.index = i;
-            auto iter = values.at(i);
-            for (auto iter1: iter) {
-                pointFArray.value.push_back(iter1);
-            }
-            this->value.push_back(pointFArray);
-        }
-    };
-
-    void get(int &index, vector<vector<PointF>> &values) {
-        this->index = index;
-        if (this->value.empty()) {
-            return;
-        }
-        //先将xx排序
-        if (this->value.size() > 1) {
-            std::sort(this->value.begin(), this->value.end(), [](PointFArray a, PointFArray b) {
-                return a.index < b.index;
-            });
-        }
-
-        for (auto iter: this->value) {
-            vector<PointF> v_pointF;
-            vector<PointF>().swap(v_pointF);
-            for (auto iter1: iter.value) {
-                v_pointF.push_back(iter1);
-            }
-            values.push_back(v_pointF);
-        }
-    };
-
-};
-
-
-//带坐标的double
+//浮点数+index
 class DoubleValue {
 public:
     int index = 0;
@@ -114,7 +61,23 @@ XPACK(O(index, value));
 
 };
 
-//带坐标的int
+class Distance{
+public:
+    int faceDirection;
+    double value;
+
+    Distance(){
+
+    }
+
+    Distance(int faceDirection, double value):faceDirection(faceDirection),value(value){
+
+    }
+
+    XPACK(O(faceDirection, value));
+};
+
+//整型+index
 class IntValue {
 public:
     int index = 0;
@@ -131,52 +94,27 @@ public:
 XPACK(O(index, value));
 };
 
-
-//3X3转换矩阵
-class DoubleValueArray {
+//点
+class PointF {
 public:
-    int index = 0;
-    vector<DoubleValue> value;
+    double x = 0.0;
+    double y = 0.0;
 
-    DoubleValueArray() {
+    PointF() {
 
     }
 
-XPACK(O(index, value));
+    PointF(double x, double y) : x(x), y(y) {
 
-    //将数组设置到类内变量
-    void set(int index, vector<double> values) {
-        this->index = index;
-        for (int i = 0; i < values.size(); i++) {
-            DoubleValue dv;
-            dv.index = i;
-            dv.value = values.at(i);
-            this->value.push_back(dv);
-        }
-    };
+    }
 
-    //将类内变量设置到数组
-    void get(int &index, vector<double> &values) {
-        index = this->index;
-        if (this->value.empty()) {
-            return;
-        }
-        //先将H_xx排序
-        if (this->value.size() > 1) {
-            std::sort(this->value.begin(), this->value.end(), [](DoubleValue a, DoubleValue b) {
-                return a.index < b.index;
-            });
-        }
-        for (auto iter: this->value) {
-            values.push_back(iter.value);
-        }
-    };
+XPACK(O(x, y));
 };
 
-
+//gps+index
 class CorrectedValueGPS {
 public:
-    int index = 0;
+    int faceDirection = 0;
     double latitude = 0.0;
     double longitude = 0.0;
 
@@ -185,13 +123,14 @@ public:
     }
 
     CorrectedValueGPS(int index, double latitude, double longitude)
-            : index(index), latitude(latitude), longitude(longitude) {
+            : faceDirection(index), latitude(latitude), longitude(longitude) {
 
     }
 
-XPACK(O(index, latitude, longitude));
+XPACK(O(faceDirection, latitude, longitude));
 };
 
+//矩形
 class RectF {
 public:
     double x = 0.0;
@@ -212,7 +151,7 @@ XPACK(O(x, y, width, height));
 
 };
 
-
+//矩形+index
 class RectFValue {
 public:
     int index = 0;
@@ -234,20 +173,98 @@ XPACK(O(index, x, y, width, height));
 
 };
 
-class RectFValueArray {
+//阈值
+class Threshold {
+public:
+    double min = 0.0;
+    double max = 0.0;
+    double mid = 0.0;
+
+    Threshold(){
+
+    }
+
+    Threshold(double min, double max, double mid) : min(min), max(max), mid(mid) {
+
+    }
+
+XPACK(O(min, max, mid));
+};
+
+//midCar
+class MidCar {
+public:
+    int rangeLeftX = 0;
+    int rangeRightX = 0;
+    int mergeWithLeftcarLeftx = 0;
+    int mergeWithRightcarRightx = 0;
+
+    MidCar(){
+
+    }
+
+    MidCar(int rangeLeftX, int rangeRightX, int mergeWithLeftcarLeftx, int mergeWithRightcarRightx)
+            : rangeLeftX(rangeLeftX), rangeRightX(rangeRightX),
+              mergeWithLeftcarLeftx(mergeWithLeftcarLeftx), mergeWithRightcarRightx(mergeWithRightcarRightx) {
+
+    }
+
+XPACK(O(rangeLeftX, rangeRightX, mergeWithLeftcarLeftx, mergeWithRightcarRightx));
+};
+
+//TrackDistanceRegionDivision
+class TrackDistanceRegionDivision {
+public:
+    int faceDirection = 0;
+    PointF in;
+    PointF out;
+    int carRangeUpX = 0;
+    int carRangeBottomY = 0;
+
+    TrackDistanceRegionDivision(){
+
+    }
+
+    TrackDistanceRegionDivision(int direction, PointF in, PointF out, int carRangeUpX, int carRangeBottomY)
+            : faceDirection(direction), in(in), out(out), carRangeUpX(carRangeUpX), carRangeBottomY(carRangeBottomY) {
+
+    }
+
+XPACK(O(faceDirection, in, out, carRangeUpX, carRangeBottomY));
+};
+
+//-----基础1类---//
+
+//点数组+index
+class PointFArray {
 public:
     int index = 0;
-    vector<RectFValue> value;
+    vector<PointF> value;
 
-    RectFValueArray() {
+    PointFArray() {
 
     }
 
 XPACK(O(index, value));
 
+};
+
+//矩形数组+index
+class DrivingAreaX {
+public:
+    int flowDirection = 0;
+    vector<RectFValue> value;
+
+    DrivingAreaX() {
+
+    }
+
+XPACK(O(flowDirection, value));
+
 //将数组设置到类内变量
     void set(int index, vector<RectF> values) {
-        this->index = index;
+        this->flowDirection = index;
+        this->value.clear();
         for (int i = 0; i < values.size(); i++) {
             RectFValue item;
             item.index = i;
@@ -262,7 +279,7 @@ XPACK(O(index, value));
 
     //将类内变量设置到数组
     void get(int &index, vector<RectF> &values) {
-        index = this->index;
+        index = this->flowDirection;
 
         if (this->value.empty()) {
             return;
@@ -287,281 +304,175 @@ XPACK(O(index, value));
 };
 
 
-//class AlgorithmParam {
-//public:
-//    //各个路口的矩阵
-//    vector<DoubleValue> H_east;//西向东侧路口
-//    vector<DoubleValue> H_north;//南向北侧路口
-//    vector<DoubleValue> H_west;//东向西侧路口
-//    vector<DoubleValue> H_south;//北向南侧路口
-//    //将数组设置到类内变量
-//    void setH_XX(vector<DoubleValue> &H_xx, vector<double> values){
-//        for (int i = 0; i < values.size(); i++) {
-//            DoubleValue dv;
-//            dv.index = i;
-//            dv.value = values.at(i);
-//            H_xx.push_back(dv);
-//        }
-//    };
-//
-//
-//    //将类内变量设置到数组
-//    void getH_XX(vector<DoubleValue> H_xx, vector<double> &values){
-//        if (H_xx.empty()) {
-//            return;
-//        }
-//        //先将H_xx排序
-//        if (H_xx.size() > 1) {
-//            std::sort(H_xx.begin(), H_xx.end(), [](DoubleValue a, DoubleValue b) {
-//                return a.index < b.index;
-//            });
-//        }
-//        for (auto iter: H_xx) {
-//            values.push_back(iter.value);
-//        }
-//    };
-//
-//
-//    //每个路口的中心经纬度
-//    int start_utm_x = 325235;
-//    int start_utm_y = 4512985;
-//    double crossroad_mid_longitude;//经度
-//    double crossroad_mid_latitude;//纬度
-//    //路口中心距离每侧停止线的距离（m）
-//    int distance_of_east_stopline_from_roadcenter = 20;
-//    int distance_of_west_stopline_from_roadcenter = 20;
-//    int distance_of_north_stopline_from_roadcenter = 20;
-//    int distance_of_south_stopline_from_roadcenter = 20;
-//    int east_west_selection_criteria = 0;
-//    //每侧路口的倾斜角度
-//    vector<DoubleValue> angle;
-//
-//    void setAngle(vector<double> values){
-//        for (int i = 0; i < values.size(); i++) {
-//            DoubleValue dv;
-//            dv.index = i;
-//            dv.value = values.at(i);
-//            this->angle.push_back(dv);
-//        }
-//    };
-//
-//    void getAngle(vector<double> &values){
-//        if (angle.empty()) {
-//            return;
-//        }
-//        //先将angle排序
-//        if (angle.size() > 1) {
-//            std::sort(angle.begin(), angle.end(), [](DoubleValue a, DoubleValue b) {
-//                return a.index < b.index;
-//            });
-//        }
-//
-//        for (auto iter: angle) {
-//            values.push_back(iter.value);
-//        }
-//    };
-//
-//    //有倾斜路口时需要划定区域
-//    vector<PointFArray> east_west_driving_area;   //东向西行驶的车辆
-//    vector<PointFArray> west_east_driving_area;   //西向东行驶的车辆
-//    vector<PointFArray> north_south_driving_area; //北向南行驶的车辆
-//    vector<PointFArray> south_north_driving_area; //南向北行驶的车辆
-//
-//    void setXX_driving_are(vector<PointFArray> &xx, vector<vector<PointF>> values){
-//        for (int i = 0; i < values.size(); i++) {
-//            PointFArray pointFArray;
-//            pointFArray.index = i;
-//            auto iter = values.at(i);
-//            for (auto iter1: iter) {
-//                pointFArray.points.push_back(iter1);
-//            }
-//            xx.push_back(pointFArray);
-//        }
-//    };
-//
-//
-//    void getXX_driving_are(vector<PointFArray> xx, vector<vector<PointF>> &values){
-//        if (xx.empty()) {
-//            return;
-//        }
-//        //先将xx排序
-//        if (xx.size() > 1) {
-//            std::sort(xx.begin(), xx.end(), [](PointFArray a, PointFArray b) {
-//                return a.index < b.index;
-//            });
-//        }
-//
-//        for (auto iter: xx) {
-//            vector<PointF> v_pointF;
-//            vector<PointF>().swap(v_pointF);
-//            for (auto iter1: iter.points) {
-//                v_pointF.push_back(iter1);
-//            }
-//            values.push_back(v_pointF);
-//        }
-//    };
-//
-//
-//    int piexl_type = 0;
-//    int min_track_distance = 200;
-//    int max_track_distance = 400;
-//    double area_ratio = 0.8;
-//    int failCount1 = 10;
-//    int failCount2 = 2;
-//    double piexlbymeter_x = 10.245;
-//    double piexlbymeter_y = 7.76;
-//    double speed_moving_average = 0.1;
-//    int min_intersection_area = 50;
-//    int road_length = 100;
-//    double shaking_pixel_threshold = 0.1;
-//    int stopline_length = 5;
-//    int track_in_length = 50;
-//    int track_out_length = 20;
-//    double fusion_min_distance = 130;
-//    double fusion_max_distance = 180;
-//    int max_speed_by_piexl = 20;
-//    int car_match_count = 2;
-//    double max_center_distance_threshold = 0.5;
-//    double min_center_distance_threshold = 0.3;
-//    double min_area_threshold = 0.3;
-//    double max_area_threshold = 0.7;
-//    double middle_area_threshold = 0.6;
-//    double max_stop_speed_threshold = 0.6;
-//    double min_stop_speed_threshold = 0.4;
-//
-//
-//    vector<CorrectedValueGPS> correctedValueGPSs;
-//
-//
-//    vector<RectFValue> north_west_driving_missing_area;
-//    vector<RectFValue> east_north_driving_missing_area;
-//
-//    vector<RectFValue> west_south_driving_missing_area;
-//    vector<RectFValue> south_east_driving_missing_area;
-//
-//    vector<RectFValue> north_west_driving_in_area;
-//    vector<RectFValue> east_north_driving_in_area;
-//
-//    vector<RectFValue> west_south_driving_in_area;
-//    vector<RectFValue> south_east_driving_in_area;
-//
-//    //将数组设置到类内变量
-//    void set_area(vector<RectFValue> &xx, vector<RectF> values){
-//        for (int i = 0; i < values.size(); i++) {
-//            RectFValue item;
-//            item.index = i;
-//            item.x = values.at(i).x;
-//            item.y = values.at(i).y;
-//            item.width = values.at(i).width;
-//            item.height = values.at(i).height;
-//            xx.push_back(item);
-//        }
-//    };
-//
-//
-//    //将类内变量设置到数组
-//    void get_area(vector<RectFValue> xx, vector<RectF> &values){
-//        if (xx.empty()) {
-//            return;
-//        }
-//        //先将xx排序
-//        if (xx.size() > 1) {
-//            std::sort(xx.begin(), xx.end(), [](RectFValue a, RectFValue b) {
-//                return a.index < b.index;
-//            });
-//        }
-//
-//        for (auto iter: xx) {
-//            RectF item;
-//            item.x = iter.x;
-//            item.y = iter.y;
-//            item.width = iter.width;
-//            item.height = iter.height;
-//            values.push_back(item);
-//        }
-//    };
-//
-//
-//
-//XPACK(O(H_east, H_north, H_west, H_south,
-//        start_utm_x, start_utm_y, crossroad_mid_longitude, crossroad_mid_latitude,
-//        distance_of_east_stopline_from_roadcenter,
-//        distance_of_west_stopline_from_roadcenter,
-//        distance_of_north_stopline_from_roadcenter,
-//        distance_of_south_stopline_from_roadcenter,
-//        east_west_selection_criteria,
-//        angle,
-//        east_west_driving_area, west_east_driving_area, north_south_driving_area, south_north_driving_area,
-//        piexl_type, min_track_distance, max_track_distance, area_ratio, failCount1, failCount2,
-//        piexlbymeter_x, piexlbymeter_y, speed_moving_average, min_intersection_area, road_length,
-//        shaking_pixel_threshold, stopline_length, track_in_length, track_out_length,
-//        fusion_min_distance, fusion_max_distance, max_speed_by_piexl, car_match_count,
-//        max_center_distance_threshold, min_center_distance_threshold,
-//        min_area_threshold, max_area_threshold, middle_area_threshold,
-//        max_stop_speed_threshold, min_stop_speed_threshold,
-//        correctedValueGPSs,
-//        north_west_driving_missing_area, east_north_driving_missing_area,
-//        west_south_driving_missing_area, south_east_driving_missing_area,
-//        north_west_driving_in_area, east_north_driving_in_area,
-//        west_south_driving_in_area, south_east_driving_in_area));
-//};
+//-----基础2类------//
+//drivingArea Item
+class DrivingAreaItem {
+public:
+    int flowDirection = 0;
+    vector<PointFArray> value;
 
+    DrivingAreaItem() {
+
+    }
+
+XPACK(O(flowDirection, value));
+
+    void set(int index, vector<vector<PointF>> values) {
+        this->flowDirection = index;
+        this->value.clear();
+        for (int i = 0; i < values.size(); i++) {
+            PointFArray pointFArray;
+            pointFArray.index = i;
+            auto iter = values.at(i);
+            for (auto iter1: iter) {
+                pointFArray.value.push_back(iter1);
+            }
+            this->value.push_back(pointFArray);
+        }
+    };
+
+    void get(int &index, vector<vector<PointF>> &values) {
+        this->flowDirection = index;
+        if (this->value.empty()) {
+            return;
+        }
+        //先将xx排序
+        if (this->value.size() > 1) {
+            std::sort(this->value.begin(), this->value.end(), [](PointFArray a, PointFArray b) {
+                return a.index < b.index;
+            });
+        }
+
+        for (auto iter: this->value) {
+            vector<PointF> v_pointF;
+            vector<PointF>().swap(v_pointF);
+            for (auto iter1: iter.value) {
+                v_pointF.push_back(iter1);
+            }
+            values.push_back(v_pointF);
+        }
+    };
+
+};
+
+//3X3转换矩阵 item
+class TransMatrixItem {
+public:
+    int faceDirection = 0;
+    vector<DoubleValue> value;
+
+    TransMatrixItem() {
+
+    }
+
+XPACK(O(faceDirection, value));
+
+    //将数组设置到类内变量
+    void set(int index, vector<double> values) {
+        this->faceDirection = index;
+        this->value.clear();
+        for (int i = 0; i < values.size(); i++) {
+            DoubleValue dv;
+            dv.index = i;
+            dv.value = values.at(i);
+            this->value.push_back(dv);
+        }
+    };
+
+    //将类内变量设置到数组
+    void get(int &index, vector<double> &values) {
+        index = this->faceDirection;
+        if (this->value.empty()) {
+            return;
+        }
+        //先将H_xx排序
+        if (this->value.size() > 1) {
+            std::sort(this->value.begin(), this->value.end(), [](DoubleValue a, DoubleValue b) {
+                return a.index < b.index;
+            });
+        }
+        for (auto iter: this->value) {
+            values.push_back(iter.value);
+        }
+    };
+};
+
+//----基础3类-----//
 class AlgorithmParam {
 public:
     //0 路口名称
     string intersectionName;
     //1 路口转换矩阵
-    vector<DoubleValueArray> transformMatrix;//转换矩阵
+    vector<TransMatrixItem> transformMatrix;//转换矩阵
 
     //2 路口的倾斜角度
-    vector<DoubleValue> angle;
+    vector<AngleItem> angle;
 
-    //3 路口的中心经纬度
-    int startUTMX = 325235;
-    int startUTMY = 4512985;
-    double midLongitude;//经度
-    double midLatitude;//纬度
-    //4 路口中心距离每侧停止线的距离（m）
-    vector<IntValue> distanceOfStoplineFromRoadcenter;
-    //5 选中区域
-    vector<IntValue> selectionCriteria;
+    //3 路口中心距离每侧停止线的距离（m）
+    vector<Distance> distanceOfStoplineFromRoadcenter;
 
-    //6 驶入区域
-    vector<PointFArrayArray> drivingArea;
-    //7 盲区
-    vector<RectFValueArray> drivingMissingArea;
-    //8 驶入
-    vector<RectFValueArray> drivingInArea;
-    int piexlType = 0;
-    int minTrackDistance = 200;
-    int maxTrackDistance = 400;
-    double areaRatio = 0.8;
-    int failCount1 = 10;
-    int failCount2 = 2;
-    double piexlByMeterX = 10.245;
-    double piexlByMeterY = 7.76;
-    double speedMovingAverage = 0.1;
-    int minIntersectionArea = 50;
-    int roadLength = 100;
-    double shakingPixelThreshold = 0.1;
-    int stoplineLength = 5;
-    int trackInLength = 50;
-    int trackOutLength = 20;
-    double fusionMinDistance = 130;
-    double fusionMaxDistance = 180;
-    int maxSpeedByPiexl = 20;
-    int carMatchCount = 2;
-    double maxCenterDistanceThreshold = 0.5;
-    double minCenterDistanceThreshold = 0.3;
-    double minAreaThreshold = 0.3;
-    double maxAreaThreshold = 0.7;
-    double middleAreaThreshold = 0.6;
-    double maxStopSpeedThreshold = 0.6;
-    double minStopSpeedThreshold = 0.4;
-
-    //9 GPS修正
+    //4 驶入区域
+    vector<DrivingAreaItem> drivingArea;
+    //5 盲区
+    vector<DrivingAreaX> drivingMissingArea;
+    //6 驶入
+    vector<DrivingAreaX> drivingInArea;
+    //7 GPS修正
     vector<CorrectedValueGPS> correctedValueGPSs;
 
+    int startUTMX = 325235;
+    int startUTMY = 4512985;
+    double midLongitude = 114.8901745;//经度
+    double midLatitude = 40.7745085;//纬度
+    int piexlType = 1;
+    int minTrackDistance = 80;
+    int maxTrackDistance = 120;
+    double areaRatio = 0.8;
+    int failCount1 = 5;
+    int failCount2 = 5;
+    int imageWidth = 1920;
+    int imageHeight = 1080;
+    double piexlByMeterX = 10.245;
+    double piexlByMeterY = 7.76;
+    double speedMovingAverage = 0.3;
+    int minIntersectionArea = 50;
+    int roadLength = 300;
+    double shakingPixelThreshold = 0.5;
+    int stoplineLength = 5;
+    int trackInLength = 0;
+    int trackOutLength = 20;
+    int maxSpeedByPiexl = 30;
+    int carMatchCount = 3;
+    Threshold centerDistanceThreshold;
+    Threshold areaThreshold;
+    Threshold stopSpeedThreshold;
+    int selectionCriteria = 1;
+    MidCar midCar;
+    vector<TrackDistanceRegionDivision> trackDistanceRegionDivisionList;
+    int zone = 50;
+    double maxMatchDistance = 2.5;
+    int minSize = 25;
+    double distanceThresh = 4.0;
+    double maxRadarInvisiblePeriod = 0.5;
+    double maxCameraInvisiblePeriod = 0.5;
+    double fusionMinDistance = 60.0;
+    double fusionMaxDistance = 100.0;
+    int associateDistanceCamera = 20;
+    int associateDistanceRadar = 20;
+
+
+    AlgorithmParam(){
+        centerDistanceThreshold.max = 0.4;
+        centerDistanceThreshold.min = 0.2;
+
+        areaThreshold.max = 0.3;
+        areaThreshold.min = 0.1;
+        areaThreshold.mid = 0.2;
+
+        stopSpeedThreshold.max = 2.0;
+        stopSpeedThreshold.min = 0.4;
+
+    }
 
 XPACK(O(intersectionName,
         transformMatrix,
@@ -572,13 +483,14 @@ XPACK(O(intersectionName,
         selectionCriteria,
         drivingArea, drivingMissingArea, drivingInArea,
         piexlType, minTrackDistance, maxTrackDistance, areaRatio,
-        failCount1, failCount2, piexlByMeterX, piexlByMeterY,
+        failCount1, failCount2, imageWidth, imageHeight, piexlByMeterX, piexlByMeterY,
         speedMovingAverage, minIntersectionArea, roadLength, shakingPixelThreshold,
         stoplineLength, trackInLength, trackOutLength,
         fusionMinDistance, fusionMaxDistance, maxSpeedByPiexl, carMatchCount,
-        maxCenterDistanceThreshold, minCenterDistanceThreshold,
-        minAreaThreshold, maxAreaThreshold, middleAreaThreshold,
-        maxStopSpeedThreshold, minStopSpeedThreshold));
+        centerDistanceThreshold, areaThreshold, stopSpeedThreshold,
+        correctedValueGPSs, zone, midCar,trackDistanceRegionDivisionList,maxMatchDistance,minSize,
+        distanceThresh,maxRadarInvisiblePeriod,maxCameraInvisiblePeriod,
+        associateDistanceCamera,associateDistanceRadar));
 
 };
 
