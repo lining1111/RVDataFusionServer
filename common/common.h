@@ -20,7 +20,7 @@ namespace common {
 #define ARRAY_SIZE(x) \
     (sizeof(x)/sizeof(x[0]))
 #define OFFSET(type, member)      \
-    ( (size_t)( &( ((type*)0)->member)  ) )
+    ((size_t)(&(((type*)0)->member)))
 #define MEMBER_SIZE(type, member) \
     sizeof(((type *)0)->member)
 #define STR(p) p?p:""
@@ -102,8 +102,9 @@ namespace common {
     class PkgClass {
     public:
         CmdType cmdType;
-        XPACK(O(cmdType));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+    XPACK(O(cmdType));
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -168,7 +169,7 @@ namespace common {
 
     XPACK(O(oprNum, timestamp, isSendVideoInfo, videoType));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -257,7 +258,8 @@ namespace common {
     XPACK(A(timestamp, "timstamp"), O(oprNum, hardCode, timestamp, matrixNo,
                                       cameraIp, RecordDateTime, isHasImage, imageData, direction, roadDirection,
                                       listAnnuciatorInfo, lstObjTarget));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -348,9 +350,9 @@ namespace common {
             this->cmdType = CmdFusionData;
         }
 
-    XPACK(A(timestamp, "timstamp"), O(oprNum, timestamp,crossID, isHasImage, lstObjTarget, lstVideos));
+    XPACK(A(timestamp, "timstamp"), O(oprNum, timestamp, crossID, isHasImage, lstObjTarget, lstVideos));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -412,7 +414,8 @@ namespace common {
         }
 
     XPACK(O(oprNum, crossID, hardCode, timestamp, flowData));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -447,7 +450,8 @@ namespace common {
         }
 
     XPACK(O(oprNum, crossID, timestamp, recordDateTime, trafficFlow));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -489,7 +493,7 @@ namespace common {
 
     XPACK(O(oprNum, crossID, hardCode, timestamp, alarmType, alarmStatus, alarmTime, imageData));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -529,7 +533,8 @@ namespace common {
         }
 
     XPACK(O(oprNum, crossID, hardCode, timestamp, alarmType, alarmStatus, alarmTime, imageData));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -573,7 +578,8 @@ namespace common {
 
     XPACK(O(oprNum, timestamp, crossID, hardCode,
             laneCode, laneDirection, flowDirection, detectLocation, vehicleID, vehicleType, vehicleLen, vehicleSpeed));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -631,7 +637,8 @@ namespace common {
         }
 
     XPACK(O(oprNum, timestamp, crossID, hardCode, recordLaneSum, trafficFlowList));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -685,7 +692,7 @@ namespace common {
 
     XPACK(O(oprNum, timestamp, crossID, hardCode, vehicleList));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -727,7 +734,7 @@ namespace common {
     XPACK(O(oprNum, timestamp, crossID, hardCode,
             laneCode, alarmType, alarmStatus, alarmTime, imageData));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -770,7 +777,7 @@ namespace common {
     XPACK(O(oprNum, timestamp, crossID, hardCode,
             laneCode, longitude, latitude, alarmType, alarmStatus, alarmTime));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -832,7 +839,7 @@ namespace common {
         };
     XPACK(O(oprNum, timestamp, crossID, hardCode, location, direction, areaList));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -884,7 +891,7 @@ namespace common {
 
     XPACK(O(oprNum, timestamp, crossID, hardCode, deviceList));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -923,7 +930,7 @@ namespace common {
         string imageData;
     public:
     XPACK(O(deviceCode, deviceLocation, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,
-            humanFlow, humanWaitList,waitingTime, lightStatus, imageData));
+            humanFlow, humanWaitList, waitingTime, lightStatus, imageData));
     };
 
     class HumanLitPoleData : public PkgClass {
@@ -940,7 +947,7 @@ namespace common {
 
     XPACK(O(oprNum, timestamp, crossID, hardCode, deviceList));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -978,9 +985,10 @@ namespace common {
         TrafficData() {
             this->cmdType = (CmdType) 0xf1;
         }
+
     XPACK(O(oprNum, timestamp, crossID, hardCode, direction, personCount, vehicleCount, time));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -1017,9 +1025,10 @@ namespace common {
         AlarmBroken() {
             this->cmdType = (CmdType) 0xf2;
         }
+
     XPACK(O(oprNum, timestamp, crossID, hardCode, alarmType, alarmValue, deviceType, time));
 
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -1055,8 +1064,10 @@ namespace common {
         UrgentPriority() {
             this->cmdType = (CmdType) 0xf3;
         }
+
     XPACK(O(oprNum, timestamp, crossID, hardCode, direction, type, time));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';
@@ -1098,8 +1109,10 @@ namespace common {
         TrafficDetectorStatus() {
             this->cmdType = CmdTrafficDetectorStatus;
         }
+
     XPACK(O(oprNum, timestamp, crossID, hardCode, signalControlList));
-        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg){
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;
             //1.头部
             pkg.head.tag = '$';

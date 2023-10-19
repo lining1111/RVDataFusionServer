@@ -97,6 +97,10 @@ namespace os {
     int memoryInfo(int &total, int &free);
 
     int dirInfo(string dir,int &total, int &free);
+
+    int getMAC(string &mac);
+
+    int getIpaddr(string &ethIp, string &n2nIp);
 };
 
 

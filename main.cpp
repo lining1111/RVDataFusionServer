@@ -49,7 +49,6 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 
 DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口服务 2:起9001端口服务 默认 0");
 
-#include "configure_eoc_init.h"
 #include "os/os.h"
 #include "eocCom/db/DBCom.h"
 
@@ -70,44 +69,23 @@ int main(int argc, char **argv) {
     //初始化本地数据和数据库
     LOG(WARNING) << "开启eoc通信，同时读取本地数据库到缓存";
 
-    bool isUseOldEOC = false;
-
-    if (isUseOldEOC) {
-        StartEocCommon();
-        if (!string(g_eoc_base_set.PlatformTcpPath).empty()) {
-            cloudIp = string(g_eoc_base_set.PlatformTcpPath);
-            LOG(WARNING) << "xh采用数据库配置,cloud ip:" << cloudIp;
-        } else {
-            cloudIp = FLAGS_cloudIp;
-            LOG(WARNING) << "xh采用程序参数配置,cloud ip:" << cloudIp;
-        }
-
-        if (g_eoc_base_set.PlatformTcpPort != 0) {
-            cloudPort = g_eoc_base_set.PlatformTcpPort;
-            LOG(WARNING) << "xh采用数据库配置,cloud port:" << cloudPort;
-        } else {
-            cloudPort = FLAGS_cloudPort;
-            LOG(WARNING) << "xh采用程序参数配置,cloud port:" << cloudPort;
-        }
-
+    StartEocCommon1();
+    if (!string(g_BaseSet.PlatformTcpPath).empty()) {
+        cloudIp = string(g_BaseSet.PlatformTcpPath);
+        LOG(WARNING) << "采用数据库配置,cloud ip:" << cloudIp;
     } else {
-        StartEocCommon1();
-        if (!string(g_BaseSet.PlatformTcpPath).empty()) {
-            cloudIp = string(g_BaseSet.PlatformTcpPath);
-            LOG(WARNING) << "采用数据库配置,cloud ip:" << cloudIp;
-        } else {
-            cloudIp = FLAGS_cloudIp;
-            LOG(WARNING) << "采用程序参数配置,cloud ip:" << cloudIp;
-        }
-
-        if (g_BaseSet.PlatformTcpPort != 0) {
-            cloudPort = g_BaseSet.PlatformTcpPort;
-            LOG(WARNING) << "采用数据库配置,cloud port:" << cloudPort;
-        } else {
-            cloudPort = FLAGS_cloudPort;
-            LOG(WARNING) << "采用程序参数配置,cloud port:" << cloudPort;
-        }
+        cloudIp = FLAGS_cloudIp;
+        LOG(WARNING) << "采用程序参数配置,cloud ip:" << cloudIp;
     }
+
+    if (g_BaseSet.PlatformTcpPort != 0) {
+        cloudPort = g_BaseSet.PlatformTcpPort;
+        LOG(WARNING) << "采用数据库配置,cloud port:" << cloudPort;
+    } else {
+        cloudPort = FLAGS_cloudPort;
+        LOG(WARNING) << "采用程序参数配置,cloud port:" << cloudPort;
+    }
+
     //将配置写入
     localConfig.isSendPIC = FLAGS_isSendPIC;
     localConfig.mergeMode = FLAGS_mergeMode;

@@ -362,10 +362,10 @@ void aysntest() {
 }
 
 
-typedef struct S1 {
+typedef struct {
     int a = 0;
     string b;
-};
+}S1;
 
 void example1(){
     vector<OneFlowData> v_src;

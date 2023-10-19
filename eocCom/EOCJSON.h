@@ -23,98 +23,6 @@ using namespace xpack;
 #include <net/if.h>
 #include <sys/ioctl.h>
 
-static int get_mac(char * mac_buff)
-{
-    struct ifreq ifr;
-    struct ifconf ifc;
-    char buf[2048];
-    int success = 0;
-
-    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (sock == -1) {
-        return -1;
-    }
-
-    ifc.ifc_len = sizeof(buf);
-    ifc.ifc_buf = buf;
-    if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) {
-        close(sock);
-        return -1;
-    }
-
-    struct ifreq* it = ifc.ifc_req;
-    const struct ifreq* const end = it + (ifc.ifc_len / sizeof(struct ifreq));
-    char szMac[64];
-    int count = 0;
-    for (; it != end; ++it) {
-        strcpy(ifr.ifr_name, it->ifr_name);
-        if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0) {
-            if (! (ifr.ifr_flags & IFF_LOOPBACK)) { // don't count loopback
-                if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
-                    count++;
-                    unsigned char * ptr ;
-                    ptr = (unsigned char  *)&ifr.ifr_ifru.ifru_hwaddr.sa_data[0];
-                    snprintf(szMac,64,"%02x:%02x:%02x:%02x:%02x:%02x",*ptr,*(ptr+1),*(ptr+2),*(ptr+3),*(ptr+4),*(ptr+5));
-                    sprintf(mac_buff, "%s", szMac);
-                    break;
-                }
-            }
-        }else{
-            close(sock);
-            return -1;
-        }
-    }
-
-    close(sock);
-    return 0;
-}
-
-/*取板卡本地ip地址和n2n地址 */
-static int getipaddr(char *ethip, char *n2nip) {
-    int ret = 0;
-    struct ifaddrs *ifAddrStruct = NULL;
-    struct ifaddrs *pifAddrStruct = NULL;
-    void *tmpAddrPtr = NULL;
-
-    getifaddrs(&ifAddrStruct);
-
-    if (ifAddrStruct != NULL) {
-        pifAddrStruct = ifAddrStruct;
-    }
-
-    while (ifAddrStruct != NULL) {
-        if (ifAddrStruct->ifa_addr == NULL) {
-            ifAddrStruct = ifAddrStruct->ifa_next;
-            LOG(ERROR) << "addr null";
-            continue;
-        }
-
-        if (ifAddrStruct->ifa_addr->sa_family == AF_INET) { // check it is IP4
-            // is a valid IP4 Address
-            tmpAddrPtr = &((struct sockaddr_in *) ifAddrStruct->ifa_addr)->sin_addr;
-            char addressBuffer[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
-
-            if (strcmp(ifAddrStruct->ifa_name, "eth0") == 0) {
-                LOG(INFO) << "eth0 IP Address:" << addressBuffer;
-                sprintf(ethip, "%s", addressBuffer);
-            } else if (strcmp(ifAddrStruct->ifa_name, "n2n0") == 0) {
-                LOG(INFO) << "n2n0 IP Address:" << addressBuffer;
-                sprintf(n2nip, "%s", addressBuffer);
-            }
-        }
-
-        ifAddrStruct = ifAddrStruct->ifa_next;
-    }
-
-    if (pifAddrStruct != NULL) {
-        freeifaddrs(pifAddrStruct);
-    }
-
-    return ret;
-}
-
-
 class ReqHead {
 public:
     std::string Version;
@@ -237,19 +145,16 @@ XPACK(O(Version, Code, Guid, Data));
             return -1;
         }
         //获取ip信息 ip[n2n]
-        char ethip[32] = {0};
-        char n2nip[32] = {0};
-        char ipmsg[128] = {0};
-        memset(ethip, 0, 32);
-        memset(n2nip, 0, 32);
-        memset(ipmsg, 0, 128);
-        getipaddr(ethip, n2nip);
-        if(strlen(n2nip)==0){
-            get_mac(n2nip);
+        string ethip;
+        string n2nip;
+        string ipmsg;
+        os::getIpaddr(ethip, n2nip);
+        if (n2nip.empty()) {
+            os::getMAC(n2nip);
         }
 
-        sprintf(ipmsg, "%s[%s]", ethip, n2nip);
-        this->Data.EquipIp = std::string(ipmsg);
+        ipmsg = ethip + "[" + n2nip + "]";
+        this->Data.EquipIp = ipmsg;
         //获取dataVersion
         DBDataVersion dbDataVersion;
         dbDataVersion.selectFromDB();
@@ -451,6 +356,7 @@ XPACK(O(Version, Code, Guid, Data));
         this->Version = comVersion;
         this->Code = this->_code;
         this->Guid = guuid;
+        return 0;
     };
 
 private:
@@ -543,7 +449,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         }
 
         return 0;
-    }
+    };
 };
 
 class DataS103 {
@@ -895,6 +801,7 @@ XPACK(O(Version, Code, Guid, Data));
         this->Version = comVersion;
         this->Code = this->_code;
         this->Guid = guuid;
+        return 0;
     };
 
 private:

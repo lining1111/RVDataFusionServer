@@ -12,6 +12,12 @@
 #include <errno.h>
 #include <iostream>
 #include <sys/statfs.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -499,5 +505,91 @@ namespace os {
         }
     }
 
+    int getMAC(string &mac) {
+        struct ifreq ifr;
+        struct ifconf ifc;
+        char buf[2048];
+        int success = 0;
+
+        int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        if (sock == -1) {
+            return -1;
+        }
+
+        ifc.ifc_len = sizeof(buf);
+        ifc.ifc_buf = buf;
+        if (ioctl(sock, SIOCGIFCONF, &ifc) == -1) {
+            close(sock);
+            return -1;
+        }
+
+        struct ifreq *it = ifc.ifc_req;
+        const struct ifreq *const end = it + (ifc.ifc_len / sizeof(struct ifreq));
+        char szMac[64];
+        int count = 0;
+        for (; it != end; ++it) {
+            strcpy(ifr.ifr_name, it->ifr_name);
+            if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0) {
+                if (!(ifr.ifr_flags & IFF_LOOPBACK)) { // don't count loopback
+                    if (ioctl(sock, SIOCGIFHWADDR, &ifr) == 0) {
+                        count++;
+                        unsigned char *ptr;
+                        ptr = (unsigned char *) &ifr.ifr_ifru.ifru_hwaddr.sa_data[0];
+                        snprintf(szMac, 64, "%02x:%02x:%02x:%02x:%02x:%02x", *ptr, *(ptr + 1), *(ptr + 2), *(ptr + 3),
+                                 *(ptr + 4), *(ptr + 5));
+                        mac = string(szMac);
+                        break;
+                    }
+                }
+            } else {
+                close(sock);
+                return -1;
+            }
+        }
+
+        close(sock);
+        return 0;
+    }
+
+    /*取板卡本地ip地址和n2n地址 */
+    int getIpaddr(string &ethIp, string &n2nIp) {
+        int ret = 0;
+        struct ifaddrs *ifAddrStruct = NULL;
+        struct ifaddrs *pifAddrStruct = NULL;
+        void *tmpAddrPtr = NULL;
+
+        getifaddrs(&ifAddrStruct);
+
+        if (ifAddrStruct != NULL) {
+            pifAddrStruct = ifAddrStruct;
+        }
+
+        while (ifAddrStruct != NULL) {
+            if (ifAddrStruct->ifa_addr == NULL) {
+                ifAddrStruct = ifAddrStruct->ifa_next;
+                continue;
+            }
+
+            if (ifAddrStruct->ifa_addr->sa_family == AF_INET) { // check it is IP4
+                // is a valid IP4 Address
+                tmpAddrPtr = &((struct sockaddr_in *) ifAddrStruct->ifa_addr)->sin_addr;
+                char addressBuffer[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+                if (strcmp(ifAddrStruct->ifa_name, "eth0") == 0) {
+                    ethIp = string(addressBuffer);
+                } else if (strcmp(ifAddrStruct->ifa_name, "n2n0") == 0) {
+                    n2nIp = string(addressBuffer);
+                }
+            }
+
+            ifAddrStruct = ifAddrStruct->ifa_next;
+        }
+
+        if (pifAddrStruct != NULL) {
+            freeifaddrs(pifAddrStruct);
+        }
+
+        return ret;
+    }
 
 }
