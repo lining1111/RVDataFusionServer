@@ -50,3 +50,8 @@ redefine_file_macro(testSingalControl)
 add_executable(GetLocalDataSend GetLocalDataSend.cpp ${SRC_FILES})
 target_link_libraries(GetLocalDataSend ${LIBS})
 redefine_file_macro(GetLocalDataSend)
+
+##旧版参数文件转换为新版
+add_executable(algorithmParamExchange algorithmParamExchange.cpp ${SRC_FILES})
+target_link_libraries(algorithmParamExchange ${LIBS})
+redefine_file_macro(algorithmParamExchange)
