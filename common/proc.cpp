@@ -105,7 +105,7 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitFusionData;
     int index = -1;
-    for (int i = 0; i < ARRAY_SIZE(data->roadDirection); i++) {
+    for (int i = 0; i < data->roadDirection.size(); i++) {
         if (data->roadDirection[i] == watchData.direction) {
             index = i;
             break;

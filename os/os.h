@@ -18,19 +18,19 @@ namespace os {
                bool redirect_stderr = false);
 
     // 取文件夹名字 无后缀
-    string g_getFolderPath(string str);
+    string getFolderPath(string str);
 
     // 取后缀
-    string g_getFileSuffix(string str);
+    string getFileSuffix(string str);
 
     // 取文件名字 不包括后缀
-    string g_getFileName(string str);
+    string getFileName(string str);
 
     // 去掉后缀
-    string g_getRemoveSuffix(string str);
+    string getRemoveSuffix(string str);
 
     // 取文件名字 包括后缀
-    string g_getFileNameAll(string str);
+    string getFileNameAll(string str);
 
     int GetVectorFromFile(vector<uint8_t> &array, string filePath);
 
@@ -101,6 +101,8 @@ namespace os {
     int getMAC(string &mac);
 
     int getIpaddr(string &ethIp, string &n2nIp);
+
+    bool isProcessRun(string proc);
 };
 
 

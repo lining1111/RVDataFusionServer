@@ -18,7 +18,7 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
         eocCom->Run();
     }
     while (true) {
-        sleep(60);
+        sleep(10);
         if (!eocCom->isLive.load()) {
             LOG(WARNING) << "eoc thread restart eocCom";
             eocCom->Close();
@@ -32,7 +32,7 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
     delete eocCom;
 }
 
-int StartEocCommon1() {
+int StartEocCommon() {
     myDNS::DNSServerStart();  /*dns服务*/
     if (globalConfigInit() < 0) {
         LOG(ERROR) << "g_eoc_config_init err";

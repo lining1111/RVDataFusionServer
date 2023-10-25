@@ -12,16 +12,11 @@ using namespace xpack;
 #include <string>
 #include <sys/time.h>
 #include <glog/logging.h>
-#include <ifaddrs.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include "db/DBTable.h"
 #include "../version.h"
 #include <uuid/uuid.h>
 #include <iostream>
 #include "os/os.h"
-#include <net/if.h>
-#include <sys/ioctl.h>
 
 class ReqHead {
 public:
@@ -298,7 +293,7 @@ public:
 
 XPACK(O(EquipType, EquipCode));
 };
-
+#include "../lib/AlgorithmParam.h"
 class DataR102 {
     std::string Code = "MCCR102";
 public:
@@ -306,10 +301,11 @@ public:
     IntersectionEntity IntersectionInfo;
     int Index;
     BaseSettingEntity BaseSetting;
-    FusionParaEntity FusionParaSetting;
     std::vector<AssociatedEquip> AssociatedEquips;
+    //融合参数
+    AlgorithmParam FusionParas;
 
-XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, FusionParaSetting, AssociatedEquips));
+XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips,FusionParas));
 };
 
 class R102 {

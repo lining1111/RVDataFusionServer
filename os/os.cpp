@@ -44,21 +44,21 @@ namespace os {
 
 
     // 取文件夹名字 无后缀
-    string g_getFolderPath(string str) {
+    string getFolderPath(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string folder = str.substr(0, idx);
         return folder;
     }
 
     // 取后缀
-    string g_getFileSuffix(string str) {
+    string getFileSuffix(string str) {
         string::size_type idx = str.rfind('.', str.length());
         string suffix = str.substr(idx + 1, str.length());
         return suffix;
     }
 
     // 取文件名字 不包括后缀
-    string g_getFileName(string str) {
+    string getFileName(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string::size_type pidx = str.rfind('.', str.length());
         string filename = str.substr(idx + 1, pidx - (idx + 1));
@@ -66,14 +66,14 @@ namespace os {
     }
 
     // 去掉后缀
-    string g_getRemoveSuffix(string str) {
+    string getRemoveSuffix(string str) {
         string::size_type idx = str.rfind('.', str.length());
         string filename = str.substr(0, idx);
         return filename;
     }
 
     // 取文件名字 包括后缀
-    string g_getFileNameAll(string str) {
+    string getFileNameAll(string str) {
         string::size_type idx = str.rfind('/', str.length());
         string name_all = str.substr(idx + 1, str.length());
         return name_all;
@@ -437,6 +437,7 @@ namespace os {
         return 100.0 - atof(strRes.c_str());
 
     }
+
     double cpuTemperature() {
         FILE *fp = NULL;
         int temp = 0;
@@ -587,6 +588,21 @@ namespace os {
 
         if (pifAddrStruct != NULL) {
             freeifaddrs(pifAddrStruct);
+        }
+
+        return ret;
+    }
+
+    bool isProcessRun(string proc) {
+        bool ret = false;
+        string cmd = "ps -C " + proc + " |wc -l";
+        string output;
+        runCmd(cmd, &output);
+        if (!output.empty()) {
+            int num = atoi(output.c_str());
+            if (num > 1) {
+                ret = true;
+            }
         }
 
         return ret;

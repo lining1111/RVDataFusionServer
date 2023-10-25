@@ -11,7 +11,7 @@ using namespace std;
 
 int StartEocCommon();
 
-int StartEocCommon1();
+int StartEocCommon();
 
 //设置ntp服务地址
 int SetNtpServer(string serverIp);

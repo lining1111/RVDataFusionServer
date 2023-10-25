@@ -273,6 +273,7 @@ int main(int argc, char **argv) {
     //开启发送
     auto fs = FLAGS_fs;
     auto matrixNo = FLAGS_matrixNo;
+    label_resend:
     for (int i = 0; i < fusionDatas.size(); i++) {
         usleep(1000 * fs);
         //将图片放入对应的融合数据中
@@ -323,7 +324,7 @@ int main(int argc, char **argv) {
              << ",帧内时间:" << to_string((uint64_t) fusionData.timestamp)
              << ",耗时" << (timestampEnd - timestampStart) << "ms" << endl;
     }
-
+    goto label_resend;
     close(sockfd);
     return 0;
 }

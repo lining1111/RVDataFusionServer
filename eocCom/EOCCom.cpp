@@ -227,16 +227,16 @@ void processR102(void *p, string content, string cmd) {
         LOG(INFO) << "eoc 所属路口信息,写入失败";
         result = -1;
     }
-    //融合参数
-    DBFusionParaSet dbFusionParaSet;
-    dbFusionParaSet.deleteFromDB();
-    EOCCom::convertFusion_Para_SetS2DB(data.Data.FusionParaSetting, dbFusionParaSet);
-    if (dbFusionParaSet.insertToDB() == 0) {
-        LOG(INFO) << "eoc 融合参数,写入成功";
-    } else {
-        LOG(INFO) << "eoc 融合参数,写入失败";
-        result = -1;
-    }
+//    //融合参数
+//    DBFusionParaSet dbFusionParaSet;
+//    dbFusionParaSet.deleteFromDB();
+//    EOCCom::convertFusion_Para_SetS2DB(data.Data.FusionParaSetting, dbFusionParaSet);
+//    if (dbFusionParaSet.insertToDB() == 0) {
+//        LOG(INFO) << "eoc 融合参数,写入成功";
+//    } else {
+//        LOG(INFO) << "eoc 融合参数,写入失败";
+//        result = -1;
+//    }
     //关联设备
     DBAssociatedEquip dbAssociatedEquip1;
     dbAssociatedEquip1.deleteAllFromDB();
@@ -278,6 +278,21 @@ void processR102(void *p, string content, string cmd) {
             result = -1;
         }
     }
+
+    //写入算法融合参数
+    AlgorithmParam algorithmParam;
+    algorithmParam = data.Data.FusionParas;
+    //写入文件
+    string jsonStr;
+    jsonStr = json::encode(algorithmParam);
+    ofstream of;
+    of.open("algorithm.json", ios::out | ios::trunc);
+    if (of.is_open()) {
+        of << jsonStr;
+        of.close();
+        LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
+    }
+
     //配置处理完成后,发送S102信息 添加重启任务
     if (result != 0) {
         S102 s102;
@@ -913,7 +928,7 @@ int EOCCom::intervalPro(void *p) {
     local->heartFlag = 0;
     std::string version;
     while (local->isLive.load()) {
-        sleep(1);
+        sleep(10);
         time_t now = time(NULL);
         if (!local->isLogIn) {
             //未登录的话，一直申请登录

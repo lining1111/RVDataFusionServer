@@ -40,7 +40,7 @@ public:
 
     }
 
-    XPACK(O(faceDirection,value));
+XPACK(O(faceDirection,value));
 };
 
 //浮点数+index
@@ -74,7 +74,7 @@ public:
 
     }
 
-    XPACK(O(faceDirection, value));
+XPACK(O(faceDirection, value));
 };
 
 //整型+index

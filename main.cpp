@@ -36,7 +36,7 @@ DEFINE_int32(mergeMode, 0, "多路融合模式，默认0,0:雷视 1:雷达 2:图
 DEFINE_int32(keep, 5, "日志清理周期 单位day，默认5");
 DEFINE_bool(isSendPIC, true, "发送图片到云端，默认true");
 DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
-DEFINE_int32(roadNum, 8, "外设路数，默认8");
+
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 
 DEFINE_bool(isSaveInObj, false, "存算法输入，默认false");
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
     gflags::SetVersionString(VERSION_BUILD_TIME);
     gflags::ParseCommandLineFlags(&argc, &argv, true);
     std::string proFul = std::string(argv[0]);
-    std::string pro = os::g_getFileName(proFul);
+    std::string pro = os::getFileName(proFul);
 
     //日志系统类
     GlogHelper glogHelper(pro, FLAGS_keep, FLAGS_logDir, FLAGS_isSendSTDOUT);
@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
     //初始化本地数据和数据库
     LOG(WARNING) << "开启eoc通信，同时读取本地数据库到缓存";
 
-    StartEocCommon1();
+    StartEocCommon();
     if (!string(g_BaseSet.PlatformTcpPath).empty()) {
         cloudIp = string(g_BaseSet.PlatformTcpPath);
         LOG(WARNING) << "采用数据库配置,cloud ip:" << cloudIp;
@@ -89,7 +89,6 @@ int main(int argc, char **argv) {
     //将配置写入
     localConfig.isSendPIC = FLAGS_isSendPIC;
     localConfig.mergeMode = FLAGS_mergeMode;
-    localConfig.roadNum = FLAGS_roadNum;
     localConfig.isSaveInObj = FLAGS_isSaveInObj;
     localConfig.isSaveOutObj = FLAGS_isSaveOutObj;
     localConfig.isSendCloud = FLAGS_isSendCloud;
