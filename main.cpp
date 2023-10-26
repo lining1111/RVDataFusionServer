@@ -50,7 +50,7 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口服务 2:起9001端口服务 默认 0");
 
 #include "os/os.h"
-#include "eocCom/db/DBCom.h"
+#include "eocCom/dbCom/DBCom.h"
 
 int main(int argc, char **argv) {
 

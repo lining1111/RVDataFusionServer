@@ -12,11 +12,13 @@ using namespace xpack;
 #include <string>
 #include <sys/time.h>
 #include <glog/logging.h>
-#include "db/DBTable.h"
 #include "../version.h"
 #include <uuid/uuid.h>
 #include <iostream>
 #include "os/os.h"
+#include "db/CLParking.h"
+#include "db/eoc_configure.h"
+using namespace eoc_configure;
 
 class ReqHead {
 public:
@@ -134,7 +136,7 @@ XPACK(O(Version, Code, Guid, Data));
         this->Guid = string(uuid_str);
 
         //获取设备sn
-        ret = dbGetUname(this->Data.EquipNumber);
+        ret = CLParking::dbGetUname(this->Data.EquipNumber);
         if (ret != 0) {
             LOG(ERROR) << "get uname err";
             return -1;
@@ -388,7 +390,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
 
     int get() {
         string equip_num;
-        dbGetUname(equip_num);
+        CLParking::dbGetUname(equip_num);
         MainboardGuid = equip_num;
 
         State = 1;
@@ -569,7 +571,7 @@ XPACK(O(Version, Code, Guid, Data));
     int get(std::string comVersion) {
         int ret = 0;
         //获取设备sn
-        ret = dbGetUname(this->Data.MainboardGuid);
+        ret = CLParking::dbGetUname(this->Data.MainboardGuid);
         if (ret != 0) {
             LOG(ERROR) << "get uname err";
             return -1;

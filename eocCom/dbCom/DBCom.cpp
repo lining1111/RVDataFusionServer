@@ -3,10 +3,8 @@
 //
 
 #include "DBCom.h"
-#include "sqliteApi.h"
 #include <glog/logging.h>
-
-#include "DBTable.h"
+#include "db/RoadsideParking.h"
 
 DBBaseSet g_BaseSet;
 DBIntersection g_Intersection;
@@ -68,7 +66,7 @@ int globalConfigInit(void) {
     int ret = 0;
 
     //1.初始化数据库表
-    if (tableInit(eoc_configure.path, eoc_configure.version) != 0) {
+    if (eoc_configure::tableInit() != 0) {
         LOG(ERROR) << "eoc db table init err";
         return -1;
     }
@@ -93,6 +91,6 @@ int globalConfigInit(void) {
 int getEOCInfo(std::string &server_path, int &server_port, std::string &file_server_path, int &file_server_port) {
     server_port = 0;
     file_server_port = 0;
-    dbGetCloudInfo(server_path, server_port, file_server_path, file_server_port);
+    RoadsideParking::dbGetCloudInfo(server_path, server_port, file_server_path, file_server_port);
     return 0;
 }

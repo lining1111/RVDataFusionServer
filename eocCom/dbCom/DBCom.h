@@ -6,9 +6,9 @@
 #define DBCOM_H
 
 #include <string>
-
-#include "DBTable.h"
-#include "sqliteApi.h"
+#include <vector>
+#include "db/eoc_configure.h"
+using namespace eoc_configure;
 /**
  * 数据库通信类
  *

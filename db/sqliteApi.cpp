@@ -72,7 +72,7 @@ int dbFileExecSql(std::string dbFile, char *sql_string, SQLITE3_CALLBACK sql_cal
 int dbFileExecSqlTable(std::string dbFile, char *sql_string, char ***data, int *row, int *col) {
     int ret = 0;
     sqlite3 *db;
-    ret = sqlite3_open(dbFile.c_str(), &db);
+    ret = sqlite3_open(dbFile.c_str(), &db);//这步如果db文件不存在，则会创建一个sqlite的db文件
     if (ret != SQLITE_OK) {
         LOG(ERROR) << "can not open db file:" << dbFile;
         return -1;

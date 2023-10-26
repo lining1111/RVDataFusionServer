@@ -8,7 +8,15 @@
 #include "os/os.h"
 #include "eocCom/EOCCom.h"
 #include "eocCom/dns/DNSServer.h"
-#include "eocCom/db/DBCom.h"
+#include "eocCom/dbCom/DBCom.h"
+
+//在登录EOC的时候，主要是获取 HOME_PATH"/bin/RoadsideParking.db"内的 TB_ParkingLot表的 CloudServerPath、CloudServerPort 用于登录EOC
+
+#define EocCommonVersion "1.0.6"
+
+string GetEocCommonVersion(){
+    return EocCommonVersion;
+}
 
 static void ThreadEOCCom(std::string ip, int port, std::string cert) {
     LOG(WARNING) << "eoc thread:" << ip << ":" << port << "cert:" << cert;
@@ -42,7 +50,7 @@ int StartEocCommon() {
     string eoc_host = "116.63.162.151";
     int file_port = 7000;
     string file_host = "ehctest.eoc.aipark.com";
-    int ret = dbGetCloudInfo(eoc_host, eoc_port, file_host, file_port);
+    int ret = getEOCInfo(eoc_host, eoc_port, file_host, file_port);
     if (ret == 0) {
         printf("db_parking_lot_get_cloud_addr_from_factory eoc_host:%s eoc_port:%d\n", eoc_host.c_str(), eoc_port);
     }

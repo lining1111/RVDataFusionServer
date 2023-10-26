@@ -9,6 +9,8 @@
 
 using namespace std;
 
+string GetEocCommonVersion();
+
 int StartEocCommon();
 
 int StartEocCommon();

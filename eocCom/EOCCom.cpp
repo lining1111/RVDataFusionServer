@@ -3,7 +3,6 @@
 //
 
 #include "EOCCom.h"
-#include "db/DBTable.h"
 #include <glog/logging.h>
 #include "fileFun.h"
 #include "common/config.h"

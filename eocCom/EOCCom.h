@@ -8,7 +8,8 @@
 #include "Queue.hpp"
 #include "net/tlsClient/TlsClient.h"
 #include "EOCJSON.h"
-#include "db/DBTable.h"
+#include "db/eoc_configure.h"
+using namespace eoc_configure;
 /**
  * EOC 通信类
  */
