@@ -6,13 +6,17 @@
 #include <glog/logging.h>
 #include "sqliteApi.h"
 
-namespace CLParking{
+namespace CLParking {
 
 #define HOME_PATH "/home/nvidianx"
 
-    DatabaseInfo dbInfo = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/CLParking.db", "V_1_0_0"};
+    DBInfo dbInfo = {
+            .mtx = new std::mutex(),
+            .path=HOME_PATH"/bin/CLParking.db",
+            .version="V_1_0_0"};
 
     int dbGetUname(std::string &uname) {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << dbInfo.path;
         int rtn = 0;
         char *sqlstr = new char[1024];

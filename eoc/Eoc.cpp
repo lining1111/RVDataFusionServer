@@ -8,7 +8,7 @@
 #include "os/os.h"
 #include "eocCom/EOCCom.h"
 #include "eocCom/dns/DNSServer.h"
-#include "eocCom/dbCom/DBCom.h"
+#include "eocCom/DBCom.h"
 
 //在登录EOC的时候，主要是获取 HOME_PATH"/bin/RoadsideParking.db"内的 TB_ParkingLot表的 CloudServerPath、CloudServerPort 用于登录EOC
 

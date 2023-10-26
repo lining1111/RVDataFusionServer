@@ -16,7 +16,6 @@ using namespace eoc_configure;
 
 extern DBBaseSet g_BaseSet;
 extern DBIntersection g_Intersection;
-extern DBFusionParaSet g_FusionParaSet;
 extern std::vector<DBAssociatedEquip> g_AssociatedEquips;
 
 /**
@@ -26,8 +25,6 @@ extern std::vector<DBAssociatedEquip> g_AssociatedEquips;
 int g_BaseSetInit(void);
 
 int g_IntersectionInit(void);
-
-int g_FusionParaSetInit(void);
 
 int g_AssociatedEquipsInit(void);
 

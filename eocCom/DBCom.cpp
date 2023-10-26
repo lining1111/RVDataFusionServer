@@ -8,7 +8,6 @@
 
 DBBaseSet g_BaseSet;
 DBIntersection g_Intersection;
-DBFusionParaSet g_FusionParaSet;
 std::vector<DBAssociatedEquip> g_AssociatedEquips;
 
 
@@ -42,16 +41,6 @@ int g_IntersectionInit(void) {
     return 0;
 }
 
-int g_FusionParaSetInit(void) {
-    int ret = 0;
-    ret = g_FusionParaSet.selectFromDB();
-    if (ret == 0) {
-        LOG(INFO) << "get g_FusionParaSet success";
-    }
-
-    return 0;
-}
-
 int g_AssociatedEquipsInit(void) {
     int ret = 0;
     ret = getAssociatedEquips(g_AssociatedEquips);
@@ -73,7 +62,6 @@ int globalConfigInit(void) {
     //初始化全局变量
     g_BaseSetInit();
     g_IntersectionInit();
-    g_FusionParaSetInit();
     g_AssociatedEquipsInit();
 
     std::string version;
@@ -89,8 +77,6 @@ int globalConfigInit(void) {
 }
 
 int getEOCInfo(std::string &server_path, int &server_port, std::string &file_server_path, int &file_server_port) {
-    server_port = 0;
-    file_server_port = 0;
     RoadsideParking::dbGetCloudInfo(server_path, server_port, file_server_path, file_server_port);
     return 0;
 }

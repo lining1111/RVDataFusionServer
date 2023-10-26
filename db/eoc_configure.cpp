@@ -9,7 +9,10 @@
 namespace eoc_configure {
 
     //整个eoc_configure的数据库，就是靠表V_XX来区别数据库的版本，靠表config_version中的字段来表示配置的下发时间和版本的
-    DatabaseInfo dbInfo = {PTHREAD_MUTEX_INITIALIZER, "./eoc_configure.db", "V_1_0_0"};
+    DBInfo dbInfo = {
+            .mtx = new std::mutex(),
+            .path="./eoc_configure.db",
+            .version="V_1_0_0"};
 
 //核心板基础配置
     static DBTableInfo base_set_table[] = {
@@ -83,6 +86,7 @@ namespace eoc_configure {
     };
 
     int tableInit() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         int ret = 0;
         LOG(INFO) << "using database file path:" << dbInfo.path << ",version:" << dbInfo.version;
         bool isFindVersion = false;
@@ -117,7 +121,8 @@ namespace eoc_configure {
 
         //没找到版本号
         if (!isFindVersion) {
-            LOG(ERROR) << "check db version from" << dbInfo.path << "fail,get:" << cur_version << "local:" << dbInfo.version;
+            LOG(ERROR) << "check db version from" << dbInfo.path << "fail,get:" << cur_version << "local:"
+                       << dbInfo.version;
 
             //判断表是否存在创建表，并检查补充字段
             memset(sqlStr, 0, 1024 * 2);
@@ -199,6 +204,7 @@ namespace eoc_configure {
     }
 
     int DBDataVersion::deleteFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char sqlstr[1024] = {0};
@@ -214,6 +220,7 @@ namespace eoc_configure {
     }
 
     int DBDataVersion::insertToDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char sqlstr[1024] = {0};
@@ -230,6 +237,7 @@ namespace eoc_configure {
     }
 
     int DBDataVersion::selectFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char sqlstr[1024] = {0};
@@ -256,8 +264,9 @@ namespace eoc_configure {
 
         return 0;
     }
-    
+
     int DBBaseSet::deleteFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -276,6 +285,7 @@ namespace eoc_configure {
     }
 
     int DBBaseSet::insertToDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -324,6 +334,7 @@ namespace eoc_configure {
     }
 
     int DBBaseSet::selectFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -380,6 +391,7 @@ namespace eoc_configure {
     }
 
     int DBIntersection::deleteFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -398,6 +410,7 @@ namespace eoc_configure {
     }
 
     int DBIntersection::insertToDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024 * 2];
@@ -445,6 +458,7 @@ namespace eoc_configure {
     }
 
     int DBIntersection::selectFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024 * 4];
@@ -499,6 +513,7 @@ namespace eoc_configure {
     }
 
     int DBFusionParaSet::deleteFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -517,6 +532,7 @@ namespace eoc_configure {
     }
 
     int DBFusionParaSet::insertToDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -547,6 +563,7 @@ namespace eoc_configure {
     }
 
     int DBFusionParaSet::selectFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -586,6 +603,7 @@ namespace eoc_configure {
     }
 
     int DBAssociatedEquip::deleteAllFromDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -603,6 +621,7 @@ namespace eoc_configure {
     }
 
     int DBAssociatedEquip::insertToDB() {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << this->db;
         int ret = 0;
         char *sqlstr = new char[1024];
@@ -625,6 +644,7 @@ namespace eoc_configure {
     }
 
     int getAssociatedEquips(std::vector<DBAssociatedEquip> &data) {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
         char *sqlstr = new char[1024];

@@ -5,14 +5,14 @@
 #ifndef TABLEINFO_H
 #define TABLEINFO_H
 
-#include <pthread.h>
+#include <mutex>
 #include <string>
 
 typedef struct {
-    pthread_mutex_t db_mutex;
+    std::mutex *mtx;
     std::string path;
     std::string version;
-} DatabaseInfo;
+} DBInfo;
 
 typedef struct {
     std::string tableName;            //数据库表名

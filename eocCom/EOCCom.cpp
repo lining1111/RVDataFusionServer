@@ -243,9 +243,9 @@ void processR102(void *p, string content, string cmd) {
         DBAssociatedEquip dbAssociatedEquip;
         EOCCom::convertAssociated_EquipS2DB(iter, dbAssociatedEquip);
         if (dbAssociatedEquip.insertToDB() == 0) {
-            LOG(INFO) << "eoc 关联设备,写入成功" << iter.EquipCode;
+            LOG(INFO) << "eoc 关联设备,写入成功:" << iter.EquipCode;
         } else {
-            LOG(INFO) << "eoc 关联设备,写入失败" << iter.EquipCode;
+            LOG(INFO) << "eoc 关联设备,写入失败:" << iter.EquipCode;
             result = -1;
         }
     }

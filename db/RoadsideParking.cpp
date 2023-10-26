@@ -10,10 +10,14 @@ namespace RoadsideParking {
 
 #define HOME_PATH "/home/nvidianx"
 
-    DatabaseInfo dbInfo = {PTHREAD_MUTEX_INITIALIZER, HOME_PATH"/bin/RoadsideParking.db", "V1_0"};
+    DBInfo dbInfo = {
+            .mtx = new std::mutex(),
+            .path=HOME_PATH"/bin/RoadsideParking.db",
+            .version="V1_0"};
 
     int
     dbGetCloudInfo(std::string &server_path, int &server_port, std::string &file_server_path, int &file_server_port) {
+        std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << dbInfo.path;
         int rtn = 0;
         char *sqlstr = new char[1024];
