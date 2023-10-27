@@ -40,14 +40,16 @@ static void ThreadEOCCom(std::string ip, int port, std::string cert) {
     delete eocCom;
 }
 
+#define EOC_ADDR "116.63.162.151"
+#define EOC_PORT 6526
 int StartEocCommon() {
     myDNS::DNSServerStart();  /*dns服务*/
     if (globalConfigInit() < 0) {
         LOG(ERROR) << "g_eoc_config_init err";
         return -1;
     }
-    int eoc_port = 6526;
-    string eoc_host = "116.63.162.151";
+    int eoc_port = EOC_PORT;
+    string eoc_host = EOC_ADDR;
     int file_port = 7000;
     string file_host = "ehctest.eoc.aipark.com";
     int ret = getEOCInfo(eoc_host, eoc_port, file_host, file_port);
@@ -55,15 +57,18 @@ int StartEocCommon() {
         printf("db_parking_lot_get_cloud_addr_from_factory eoc_host:%s eoc_port:%d\n", eoc_host.c_str(), eoc_port);
     }
     if (eoc_port == 0) {
-        eoc_port = 6526;
+        eoc_port = EOC_PORT;
     }
     if (eoc_host.empty()) {
-        eoc_host = "116.63.162.151";
+        eoc_host = EOC_ADDR;
     }
     if (myDNS::isIP((char *) eoc_host.c_str()) == 0) {
         string ipaddr;
         myDNS::url_get(eoc_host, ipaddr);
         eoc_host = ipaddr;
+    }
+    if (eoc_host.empty()) {
+        eoc_host = EOC_ADDR;
     }
     std::thread(ThreadEOCCom, eoc_host, eoc_port, "./eoc.pem").detach();
     return 0;

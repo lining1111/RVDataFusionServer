@@ -616,36 +616,6 @@ void DataUnitTrafficDetectorStatus::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
 }
 
-//void DataUnitTrafficDetectorStatus::FindOneFrame(DataUnitTrafficDetectorStatus *dataUnit, int offset) {
-//    if (DataUnit::FindOneFrame(dataUnit, offset) == 0) {
-//        //调用后续的处理
-//        dataUnit->TaskProcessOneFrame();
-//    }
-//}
-//
-//int DataUnitTrafficDetectorStatus::TaskProcessOneFrame() {
-//    auto data = (Data *) owner;
-//    OType item;
-//    item.oprNum = random_uuid();
-//    item.timestamp = curTimestamp;
-//    item.crossID = data->plateId;
-//
-//    for (auto iter: oneFrame) {
-//        if (!iter.signalControlList.empty()) {
-//            for (auto iter1: iter.signalControlList) {
-//                item.signalControlList.push_back(iter1);
-//            }
-//        }
-//    }
-//    if (!pushO(item)) {
-//        VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
-//    } else {
-//        VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
-//    }
-//
-//    return 0;
-//}
-
 void DataUnitTrafficDetectorStatus::taskO() {
     //1.取数组织发送内容
     OType item;

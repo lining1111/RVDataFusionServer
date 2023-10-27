@@ -12,6 +12,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <net/com.h>
+#include <glog/logging.h>
 #include "TlsClient.h"
 
 TlsClient::TlsClient(string ip, int port, string caPath) {
@@ -39,8 +40,10 @@ int TlsClient::connectServer() {
     int ret = connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr));
     if (ret < 0) {
         close(sock);
+        LOG(ERROR) << "tls connect server failed:" << serverIp << ":" << serverPort;
         return -1;
     }
+    LOG(WARNING) << "tls connect server success:" << serverIp << ":" << serverPort;
     return 0;
 }
 
@@ -48,8 +51,10 @@ void TlsClient::printErrorString(unsigned long err, const char *const label) {
     const char *const str = ERR_reason_error_string(err);
     if (str) {
         printf("%s\n", str);
+        LOG(ERROR) << str;
     } else {
         printf("%s failed: %lu (0x%lx)\n", label, err, err);
+        LOG(ERROR) << label << " failed: " << err << " (0x" << err << ")";
     }
 }
 
@@ -178,9 +183,11 @@ int TlsClient::ThreadDump(void *pClient) {
 int TlsClient::Open() {
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
+        LOG(ERROR) << "tls sock err";
         return -1;
     }
     if (connectServer() < 0) {
+        LOG(ERROR) << "tls connect server err";
         return -1;
     }
     int ret;
@@ -193,7 +200,7 @@ int TlsClient::Open() {
     method = SSLv23_method();
     ctx = SSL_CTX_new(method);
     if (!ctx) {
-        printf("unable to create ssl ctx");
+        LOG(ERROR) << "tls unable to create ssl ctx";
         return -1;
     }
     //设置ssl及证书
@@ -275,6 +282,7 @@ int TlsClient::Close() {
         delete rb;
         rb = nullptr;
     }
+
 
     EVP_cleanup();
     if (ssl) {

@@ -354,9 +354,6 @@ public:
 
         VLOG(3) << dataUnit->name << " 取同一帧时,标定时间戳为:" << dataUnit->curTimestamp << " " << ss.str();
 
-        uint64_t leftTimestamp = dataUnit->curTimestamp - dataUnit->thresholdFrame;
-        uint64_t rightTimestamp = dataUnit->curTimestamp + dataUnit->thresholdFrame;
-
         //2取数
         vector<IType>().swap(dataUnit->oneFrame);
         dataUnit->oneFrame.resize(dataUnit->numI);
@@ -416,25 +413,6 @@ public:
         }
     }
 };
-
-//车辆轨迹
-//class DataUnitCarTrackGather : public DataUnit<CarTrack, CarTrackGather> {
-//public:
-//    int saveCount = 0;// 测试存包用
-//    DataUnitCarTrackGather();
-//
-//    ~DataUnitCarTrackGather();
-//
-//    DataUnitCarTrackGather(int c, int threshold_ms, int i_num, int cache);
-//
-//    static void FindOneFrame(DataUnitCarTrackGather *dataUnit, uint64_t toCacheCha, bool isFront);
-//
-//    static int ThreadGetDataInRange(DataUnitCarTrackGather *dataUnit,
-//                                    int index, uint64_t leftTimestamp, uint64_t rightTimestamp);
-//
-//    static int TaskProcessOneFrame(DataUnitCarTrackGather *dataUnit);
-//};
-
 
 //车流量统计
 class DataUnitTrafficFlowGather : public DataUnit<TrafficFlow, TrafficFlowGather> {

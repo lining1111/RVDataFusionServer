@@ -8,6 +8,7 @@
 
 DBBaseSet g_BaseSet;
 DBIntersection g_Intersection;
+std::mutex mtx_g_AssociatedEquips;
 std::vector<DBAssociatedEquip> g_AssociatedEquips;
 
 
@@ -43,6 +44,7 @@ int g_IntersectionInit(void) {
 
 int g_AssociatedEquipsInit(void) {
     int ret = 0;
+    std::unique_lock<std::mutex> lock(mtx_g_AssociatedEquips);
     ret = getAssociatedEquips(g_AssociatedEquips);
     if (ret == 0) {
         LOG(INFO) << "get g_AssociatedEquips success";

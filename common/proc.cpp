@@ -53,6 +53,58 @@ void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
     pthread_mutex_unlock(&mtx);
 }
 
+#include "eocCom/DBCom.h"
+
+static bool isAssociatedEquip(string hardCode) {
+    VLOG(2) << "hardCode:" << hardCode;
+    //判断配置项是否为空
+    if (g_AssociatedEquips.empty()) {
+        LOG(ERROR) << "关联设备组为空,需要获取配置";
+        return false;
+    }
+
+    bool isExist = false;
+    std::unique_lock<std::mutex> lock(mtx_g_AssociatedEquips);
+    vector<string> hardCodes;
+    for (auto iter: g_AssociatedEquips) {
+        hardCodes.push_back(iter.EquipCode);
+    }
+    VLOG(2) << "关联设备列表:" << fmt::format("{}", hardCodes);
+    for (auto iter: g_AssociatedEquips) {
+        if (iter.EquipCode == hardCode) {
+            isExist = true;
+            break;
+        }
+    }
+    return isExist;
+}
+
+#include "config.h"
+
+static void deleteFromConns(string peerAddress) {
+    for (auto iter: conns) {
+        auto conn = (MyTcpServerHandler *) iter;
+        if (conn->_peerAddress == peerAddress) {
+            conn->_socket.shutdown();
+        }
+    }
+}
+
+
+static int judge(string hardCode, string peerAddress) {
+    int ret = 0;
+    //判断是否在关联设备中
+    if (!isAssociatedEquip(hardCode)) {
+        //不在关联设备中就踢掉
+        LOG(WARNING) << "应该踢掉设备,hardCode:" << hardCode;
+        deleteFromConns(peerAddress);
+        ret = -1;
+    }
+    return ret;
+}
+
+
+
 int PkgProcessFun_CmdResponse(string ip, string content) {
     VLOG(2) << "应答指令";
     return 0;
@@ -60,16 +112,16 @@ int PkgProcessFun_CmdResponse(string ip, string content) {
 
 int PkgProcessFun_CmdControl(string ip, string content) {
     int ret = 0;
-    Control control;
+    Control msg;
     try {
-        json::decode(content, control);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
-    LOG(INFO) << "control:" << content << "," << control.isSendVideoInfo;
+    LOG(INFO) << "control:" << content << "," << msg.isSendVideoInfo;
     //处理控制命令
-    localConfig.isSendPIC = control.isSendVideoInfo;
+    localConfig.isSendPIC = msg.isSendVideoInfo;
 
     return ret;
 
@@ -94,11 +146,21 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     }
 
     string msgType = "WatchData";
-    WatchData watchData;
+    WatchData msg;
     try {
-        json::decode(content, watchData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
+        return -1;
+    }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
         return -1;
     }
 
@@ -106,14 +168,14 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     auto dataUnit = data->dataUnitFusionData;
     int index = -1;
     for (int i = 0; i < data->roadDirection.size(); i++) {
-        if (data->roadDirection[i] == watchData.direction) {
+        if (data->roadDirection[i] == msg.direction) {
             index = i;
             break;
         }
     }
     //存到帧率缓存
     auto ct = &CT_fusionData;
-    ct->update(watchData.direction, watchData.timestamp, 15);
+    ct->update(msg.direction, msg.timestamp, 15);
     pthread_mutex_lock(&ct->mtx);
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
@@ -135,13 +197,13 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
         return -1;
     }
     //存入队列
-    if (!dataUnit->pushI(watchData, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << watchData.hardCode << " crossID:" << watchData.matrixNo
-                << "timestamp:" << (uint64_t) watchData.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.matrixNo
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
 
@@ -153,30 +215,40 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     int ret = 0;
 
     string msgType = "CrossTrafficJamAlarm";
-    CrossTrafficJamAlarm crossTrafficJamAlarm;
+    CrossTrafficJamAlarm msg;
     try {
-        json::decode(content, crossTrafficJamAlarm);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitCrossTrafficJamAlarm;
-    int index = dataUnit->FindIndexInUnOrder(crossTrafficJamAlarm.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
 
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(crossTrafficJamAlarm, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << crossTrafficJamAlarm.hardCode << " crossID:" << crossTrafficJamAlarm.crossID
-                << "timestamp:" << (uint64_t) crossTrafficJamAlarm.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -186,30 +258,40 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     int ret = 0;
 
     string msgType = "IntersectionOverflowAlarm";
-    IntersectionOverflowAlarm intersectionOverflowAlarm;
+    IntersectionOverflowAlarm msg;
     try {
-        json::decode(content, intersectionOverflowAlarm);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitIntersectionOverflowAlarm;
-    int index = dataUnit->FindIndexInUnOrder(intersectionOverflowAlarm.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(intersectionOverflowAlarm, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << intersectionOverflowAlarm.hardCode
-                << " crossID:" << intersectionOverflowAlarm.crossID
-                << "timestamp:" << (uint64_t) intersectionOverflowAlarm.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode
+                << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -221,21 +303,31 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     int ret = 0;
 
     string msgType = "TrafficFlow";
-    TrafficFlow trafficFlow;
+    TrafficFlow msg;
     try {
-        json::decode(content, trafficFlow);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitTrafficFlowGather;
-    int index = dataUnit->FindIndexInUnOrder(trafficFlow.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
 
     //存到帧率缓存
     auto ct = &CT_trafficFlowGather;
-    ct->update(index, trafficFlow.timestamp, 3);
+    ct->update(index, msg.timestamp, 3);
     pthread_mutex_lock(&ct->mtx);
     if (ct->isSetInterval) {
         if (!ct->isStartTask) {
@@ -256,13 +348,13 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
-    if (!dataUnit->pushI(trafficFlow, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << trafficFlow.hardCode << " crossID:" << trafficFlow.crossID
-                << "timestamp:" << (uint64_t) trafficFlow.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -272,29 +364,39 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     int ret = 0;
 
     string msgType = "InWatchData_1_3_4";
-    InWatchData_1_3_4 inWatchData134;
+    InWatchData_1_3_4 msg;
     try {
-        json::decode(content, inWatchData134);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_1_3_4;
-    int index = dataUnit->FindIndexInUnOrder(inWatchData134.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(inWatchData134, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << inWatchData134.hardCode << " crossID:" << inWatchData134.crossID
-                << "timestamp:" << (uint64_t) inWatchData134.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -304,29 +406,39 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     int ret = 0;
 
     string msgType = "InWatchData_2";
-    InWatchData_2 inWatchData2;
+    InWatchData_2 msg;
     try {
-        json::decode(content, inWatchData2);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitInWatchData_2;
-    int index = dataUnit->FindIndexInUnOrder(inWatchData2.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(inWatchData2, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << inWatchData2.hardCode << " crossID:" << inWatchData2.crossID
-                << "timestamp:" << (uint64_t) inWatchData2.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -336,30 +448,40 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
     int ret = 0;
 
     string msgType = "StopLinePassData";
-    StopLinePassData stopLinePassData;
+    StopLinePassData msg;
     try {
-        json::decode(content, stopLinePassData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
 //    auto server = (FusionServer *) client->super;
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitStopLinePassData;
-    int index = dataUnit->FindIndexInUnOrder(stopLinePassData.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(stopLinePassData, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << stopLinePassData.hardCode << " crossID:" << stopLinePassData.crossID
-                << "timestamp:" << (uint64_t) stopLinePassData.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -369,29 +491,39 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
     int ret = 0;
 
     string msgType = "AbnormalStopData";
-    AbnormalStopData abnormalStopData;
+    AbnormalStopData msg;
     try {
-        json::decode(content, abnormalStopData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitAbnormalStopData;
-    int index = dataUnit->FindIndexInUnOrder(abnormalStopData.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(abnormalStopData, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << abnormalStopData.hardCode << " crossID:" << abnormalStopData.crossID
-                << "timestamp:" << (uint64_t) abnormalStopData.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -401,29 +533,39 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     int ret = 0;
 
     string msgType = "LongDistanceOnSolidLineAlarm";
-    LongDistanceOnSolidLineAlarm longDistanceOnSolidLineAlarm;
+    LongDistanceOnSolidLineAlarm msg;
     try {
-        json::decode(content, longDistanceOnSolidLineAlarm);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitLongDistanceOnSolidLineAlarm;
-    int index = dataUnit->FindIndexInUnOrder(longDistanceOnSolidLineAlarm.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
-    if (!dataUnit->pushI(longDistanceOnSolidLineAlarm, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << longDistanceOnSolidLineAlarm.hardCode << " crossID:"
-                << longDistanceOnSolidLineAlarm.crossID
-                << "timestamp:" << (uint64_t) longDistanceOnSolidLineAlarm.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:"
+                << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -433,29 +575,39 @@ int PkgProcessFun_HumanData(string ip, string content) {
     int ret = 0;
 
     string msgType = "HumanData";
-    HumanData humanData;
+    HumanData msg;
     try {
-        json::decode(content, humanData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanData;
-    int index = dataUnit->FindIndexInUnOrder(humanData.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(humanData, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << humanData.hardCode << " crossID:" << humanData.crossID
-                << "timestamp:" << (uint64_t) humanData.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -465,29 +617,39 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     int ret = 0;
 
     string msgType = "HumanLitPoleData";
-    HumanLitPoleData humanLitPoleData;
+    HumanLitPoleData msg;
     try {
-        json::decode(content, humanLitPoleData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanLitPoleData;
-    int index = dataUnit->FindIndexInUnOrder(humanLitPoleData.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
 
-    if (!dataUnit->pushI(humanLitPoleData, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << humanLitPoleData.hardCode << " crossID:" << humanLitPoleData.crossID
-                << "timestamp:" << (uint64_t) humanLitPoleData.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;
@@ -498,17 +660,27 @@ int PkgProcessFun_0xf1(string ip, string content) {
     int ret = 0;
 
     string msgType = "TrafficData";
-    TrafficData trafficData;
+    TrafficData msg;
     try {
-        json::decode(content, trafficData);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
-    VLOG(2) << "0xf1 cmd recv:vehicleCount " << trafficData.vehicleCount;
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
+    VLOG(2) << "0xf1 cmd recv:vehicleCount " << msg.vehicleCount;
     //根据人数和车数进行设置
     uint8_t num = 0;
-    if (trafficData.vehicleCount > 0) {
+    if (msg.vehicleCount > 0) {
         num = 1;
     }
 
@@ -572,13 +744,24 @@ int PkgProcessFun_0xf2(string ip, string content) {
     int ret = 0;
 
     string msgType = "AlarmBroken";
-    AlarmBroken alarmBroken;
+    AlarmBroken msg;
     try {
-        json::decode(content, alarmBroken);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
+
     VLOG(2) << "0xf2 cmd recv";
     //根据
 
@@ -626,13 +809,22 @@ int PkgProcessFun_0xf3(string ip, string content) {
     int ret = 0;
 
     string msgType = "UrgentPriority";
-    UrgentPriority urgentPriority;
+    UrgentPriority msg;
     try {
-        json::decode(content, urgentPriority);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     VLOG(2) << "0xf3 cmd recv";
     //根据
 
@@ -684,17 +876,27 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     int ret = 0;
 
     string msgType = "TrafficDetectorStatus";
-    TrafficDetectorStatus trafficDetectorStatus;
+    TrafficDetectorStatus msg;
     try {
-        json::decode(content, trafficDetectorStatus);
+        json::decode(content, msg);
     } catch (std::exception &e) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (judge(msg.hardCode, ip) != 0) {
+        return -1;
+    }
+
     //存入队列
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitTrafficDetectorStatus;
-    int index = dataUnit->FindIndexInUnOrder(trafficDetectorStatus.hardCode);
+    int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
 
 //    //存到帧率缓存
 //    auto ct = &CT_trafficDetectorStatus;
@@ -714,13 +916,13 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
         return -1;
     }
 
-    if (!dataUnit->pushI(trafficDetectorStatus, index)) {
+    if (!dataUnit->pushI(msg, index)) {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
         VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << trafficDetectorStatus.hardCode << " crossID:" << trafficDetectorStatus.crossID
-                << "timestamp:" << (uint64_t) trafficDetectorStatus.timestamp << " dataUnit i_vector index:"
+                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
                 << index;
     }
     return ret;

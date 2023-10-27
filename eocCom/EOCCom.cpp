@@ -16,8 +16,9 @@ int EOCCom::Open() {
     ret = TlsClient::Open();
     if (ret != 0) {
         LOG(ERROR) << "eoc server connect fail";
+    } else {
+        LOG(WARNING) << "eoc server connect success";
     }
-    LOG(WARNING) << "eoc server connect success";
     return ret;
 }
 

@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <mutex>
 #include "db/eoc_configure.h"
 using namespace eoc_configure;
 /**
@@ -16,6 +17,7 @@ using namespace eoc_configure;
 
 extern DBBaseSet g_BaseSet;
 extern DBIntersection g_Intersection;
+extern std::mutex mtx_g_AssociatedEquips;
 extern std::vector<DBAssociatedEquip> g_AssociatedEquips;
 
 /**

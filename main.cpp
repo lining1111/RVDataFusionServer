@@ -154,19 +154,26 @@ int main(int argc, char **argv) {
             }
         }
 
-        //打印下连入客户端信息
-        string summary;
-        summary += "client num:";
-        summary += conns.size();
-        summary += "\n";
-        for (auto &iter: conns) {
-            if (iter != nullptr) {
-                auto client = (MyTcpServerHandler *) iter;
-                summary += "client :" + client->_peerAddress;
-                summary += "\n";
-            }
-        }
-        LOG(WARNING) << summary;
+//        //打印下连入客户端信息
+//        string summary;
+//        summary += "client num:";
+//        summary += conns.size();
+//        summary += "\n";
+//        string pa;
+//        if (conns.size() > 1) {
+//            pa = ((MyTcpServerHandler *) conns[0])->_peerAddress;
+//        }
+//        for (auto &iter: conns) {
+//            if (iter != nullptr) {
+//                auto client = (MyTcpServerHandler *) iter;
+//                summary += "client :" + client->_peerAddress;
+//                summary += "\n";
+//                if (pa == client->_peerAddress) {
+//                    client->_socket.shutdown();
+//                }
+//            }
+//        }
+//        LOG(WARNING) << summary;
 
     }
     delete businessLocal;
