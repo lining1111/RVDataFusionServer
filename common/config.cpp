@@ -15,6 +15,21 @@ SignalControl *signalControl = nullptr;
 mutex conns_mutex;
 vector<void *> conns;
 
+bool isShowMsgType(string msgType) {
+    if (localConfig.msgType.empty()) {
+        return false;
+    } else {
+        bool isExist = false;
+        for (auto iter: localConfig.msgType) {
+            if (iter==msgType){
+                isExist = true;
+                break;
+            }
+        }
+        return isExist;
+    }
+}
+
 int getAlgorithmParam(string file, AlgorithmParam &out) {
     //打开文件
     std::ifstream ifs;
@@ -52,4 +67,4 @@ void CalNetStatus(int s) {
     }
 }
 
-string homePath ="/home/nvidianx";
+string homePath = "/home/nvidianx";

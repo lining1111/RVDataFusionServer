@@ -24,6 +24,7 @@ typedef struct {
     bool isSaveRVJson = false;
     string algorithmParamFile;
     AlgorithmParam algorithmParam;
+    vector<string> msgType;
     int mode = 0;
 } LocalConfig;
 
@@ -34,6 +35,8 @@ typedef enum {
 } MergerMode;
 
 extern LocalConfig localConfig;
+
+bool isShowMsgType(string msgType);
 
 extern int fixrPort;
 

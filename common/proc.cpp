@@ -104,7 +104,6 @@ static int judge(string hardCode, string peerAddress) {
 }
 
 
-
 int PkgProcessFun_CmdResponse(string ip, string content) {
     VLOG(2) << "应答指令";
     return 0;
@@ -112,6 +111,7 @@ int PkgProcessFun_CmdResponse(string ip, string content) {
 
 int PkgProcessFun_CmdControl(string ip, string content) {
     int ret = 0;
+    string msgType = "Control";
     Control msg;
     try {
         json::decode(content, msg);
@@ -119,7 +119,9 @@ int PkgProcessFun_CmdControl(string ip, string content) {
         LOG(ERROR) << e.what();
         return -1;
     }
-    LOG(INFO) << "control:" << content << "," << msg.isSendVideoInfo;
+
+    LOG_IF(INFO, isShowMsgType(msgType)) << "Control:" << content << "," << msg.isSendVideoInfo;
+
     //处理控制命令
     localConfig.isSendPIC = msg.isSendVideoInfo;
 
@@ -141,11 +143,11 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     int ret = 0;
 
     if (localConfig.mode == 2) {
-        LOG(ERROR) << "程序模式2，不处理数据 WatchData";
+        LOG(ERROR) << "程序模式2，不处理实时数据";
         return -1;
     }
 
-    string msgType = "WatchData";
+    string msgType = "DataUnitFusionData";
     WatchData msg;
     try {
         json::decode(content, msg);
@@ -198,13 +200,14 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
     }
     //存入队列
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.matrixNo
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.matrixNo
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
+
     }
 
     return ret;
@@ -214,7 +217,7 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
 int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     int ret = 0;
 
-    string msgType = "CrossTrafficJamAlarm";
+    string msgType = "DateUnitCrossTrafficJamAlarm";
     CrossTrafficJamAlarm msg;
     try {
         json::decode(content, msg);
@@ -243,13 +246,13 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -257,7 +260,7 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
 int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     int ret = 0;
 
-    string msgType = "IntersectionOverflowAlarm";
+    string msgType = "DataUnitIntersectionOverflowAlarm";
     IntersectionOverflowAlarm msg;
     try {
         json::decode(content, msg);
@@ -285,14 +288,14 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode
-                << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode
+                                             << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -302,7 +305,7 @@ CacheTimestamp CT_trafficFlowGather;
 int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     int ret = 0;
 
-    string msgType = "TrafficFlow";
+    string msgType = "DataUnitTrafficFlowGather";
     TrafficFlow msg;
     try {
         json::decode(content, msg);
@@ -349,13 +352,13 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
         return -1;
     }
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -363,7 +366,7 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
 int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     int ret = 0;
 
-    string msgType = "InWatchData_1_3_4";
+    string msgType = "DataUnitInWatchData_1_3_4";
     InWatchData_1_3_4 msg;
     try {
         json::decode(content, msg);
@@ -391,13 +394,13 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -405,7 +408,7 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
 int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     int ret = 0;
 
-    string msgType = "InWatchData_2";
+    string msgType = "DataUnitInWatchData_2";
     InWatchData_2 msg;
     try {
         json::decode(content, msg);
@@ -433,13 +436,13 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -447,7 +450,7 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
 int PkgProcessFun_StopLinePassData(string ip, string content) {
     int ret = 0;
 
-    string msgType = "StopLinePassData";
+    string msgType = "DataUnitStopLinePassData";
     StopLinePassData msg;
     try {
         json::decode(content, msg);
@@ -476,13 +479,13 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -490,7 +493,7 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
 int PkgProcessFun_AbnormalStopData(string ip, string content) {
     int ret = 0;
 
-    string msgType = "AbnormalStopData";
+    string msgType = "DataUnitAbnormalStopData";
     AbnormalStopData msg;
     try {
         json::decode(content, msg);
@@ -518,13 +521,13 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -532,7 +535,7 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
 int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     int ret = 0;
 
-    string msgType = "LongDistanceOnSolidLineAlarm";
+    string msgType = "DataUnitLongDistanceOnSolidLineAlarm";
     LongDistanceOnSolidLineAlarm msg;
     try {
         json::decode(content, msg);
@@ -559,14 +562,14 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
         return -1;
     }
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:"
-                << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:"
+                                             << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -574,7 +577,7 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
 int PkgProcessFun_HumanData(string ip, string content) {
     int ret = 0;
 
-    string msgType = "HumanData";
+    string msgType = "DataUnitHumanData";
     HumanData msg;
     try {
         json::decode(content, msg);
@@ -602,13 +605,13 @@ int PkgProcessFun_HumanData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -616,7 +619,7 @@ int PkgProcessFun_HumanData(string ip, string content) {
 int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     int ret = 0;
 
-    string msgType = "HumanLitPoleData";
+    string msgType = "DataUnitHumanLitPoleData";
     HumanLitPoleData msg;
     try {
         json::decode(content, msg);
@@ -644,13 +647,13 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
@@ -659,7 +662,7 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
 int PkgProcessFun_0xf1(string ip, string content) {
     int ret = 0;
 
-    string msgType = "TrafficData";
+    string msgType = "DataUnitTrafficData";
     TrafficData msg;
     try {
         json::decode(content, msg);
@@ -677,7 +680,7 @@ int PkgProcessFun_0xf1(string ip, string content) {
         return -1;
     }
 
-    VLOG(2) << "0xf1 cmd recv:vehicleCount " << msg.vehicleCount;
+    LOG_IF(INFO, isShowMsgType(msgType)) << "0xf1 cmd recv:vehicleCount " << msg.vehicleCount;
     //根据人数和车数进行设置
     uint8_t num = 0;
     if (msg.vehicleCount > 0) {
@@ -723,17 +726,17 @@ int PkgProcessFun_0xf1(string ip, string content) {
 
         vector<uint8_t> bytesSend;
         frameSend.setToBytesWithTF(bytesSend);
-        VLOG(2) << fmt::format("bytesSend:{::#x}", bytesSend);
+        LOG_IF(INFO, isShowMsgType(msgType)) << fmt::format("bytesSend:{::#x}", bytesSend);
 
         FrameAll frameRecv;
         if (signalControl->Communicate(frameSend, frameRecv) == 0) {
             vector<uint8_t> bytesRecv;
             frameRecv.setToBytes(bytesRecv);
-            VLOG(2) << fmt::format("bytesRecv:{::#x}", bytesRecv);
+            LOG_IF(INFO, isShowMsgType(msgType)) << fmt::format("bytesRecv:{::#x}", bytesRecv);
         }
 
     } else {
-        VLOG(2) << "信控机未打开";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "信控机未打开";
         ret = -1;
     }
 
@@ -743,7 +746,7 @@ int PkgProcessFun_0xf1(string ip, string content) {
 int PkgProcessFun_0xf2(string ip, string content) {
     int ret = 0;
 
-    string msgType = "AlarmBroken";
+    string msgType = "DataUnitAlarmBroken";
     AlarmBroken msg;
     try {
         json::decode(content, msg);
@@ -762,7 +765,7 @@ int PkgProcessFun_0xf2(string ip, string content) {
     }
 
 
-    VLOG(2) << "0xf2 cmd recv";
+    LOG_IF(INFO, isShowMsgType(msgType)) << "0xf2 cmd recv";
     //根据
 
 //    if (signalControl->isOpen) {
@@ -808,7 +811,7 @@ int PkgProcessFun_0xf2(string ip, string content) {
 int PkgProcessFun_0xf3(string ip, string content) {
     int ret = 0;
 
-    string msgType = "UrgentPriority";
+    string msgType = "DataUnitUrgentPriority";
     UrgentPriority msg;
     try {
         json::decode(content, msg);
@@ -825,7 +828,7 @@ int PkgProcessFun_0xf3(string ip, string content) {
         return -1;
     }
 
-    VLOG(2) << "0xf3 cmd recv";
+    LOG_IF(INFO, isShowMsgType(msgType)) << "0xf3 cmd recv";
     //根据
 
 //    if (signalControl->isOpen) {
@@ -875,7 +878,7 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     //透传
     int ret = 0;
 
-    string msgType = "TrafficDetectorStatus";
+    string msgType = "DataUnitTrafficDetectorStatus";
     TrafficDetectorStatus msg;
     try {
         json::decode(content, msg);
@@ -917,13 +920,13 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
     }
 
     if (!dataUnit->pushI(msg, index)) {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",丢弃消息";
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
     } else {
-        VLOG(2) << "client ip:" << ip << " " << msgType << ",存入消息,"
-                << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
-                << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
-                << index;
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",存入消息,"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp << " dataUnit i_vector index:"
+                                             << index;
     }
     return ret;
 }
