@@ -117,4 +117,46 @@ namespace common {
         }
     }
 
+    void PrintSendInfoFs(int fs, int s, string serverIp, int serverPort,
+                         string name, uint64_t timestampS, uint64_t timestampE, uint64_t timestamp) {
+        switch (s) {
+            case 0: {
+                LOG_EVERY_N(INFO, fs) << name << " 发送成功 " << serverIp << ":" << serverPort
+                                      << ",发送开始时间:" << to_string(timestampS)
+                                      << ",发送结束时间:" << to_string(timestampE)
+                                      << ",帧内时间:" << to_string(timestamp)
+                                      << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            case -1: {
+                LOG_EVERY_N(INFO, fs) << name << " 发送失败,未连接 " << serverIp << ":" << serverPort
+                                      << ",发送开始时间:" << to_string(timestampS)
+                                      << ",发送结束时间:" << to_string(timestampE)
+                                      << ",帧内时间:" << to_string(timestamp)
+                                      << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            case -2: {
+                LOG_EVERY_N(INFO, fs) << name << " 发送失败,send fail " << serverIp << ":" << serverPort
+                                      << ",发送开始时间:" << to_string(timestampS)
+                                      << ",发送结束时间:" << to_string(timestampE)
+                                      << ",帧内时间:" << to_string(timestamp)
+                                      << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            case -3: {
+                LOG_EVERY_N(INFO, fs) << name << " 发送失败,发送超时 " << serverIp << ":" << serverPort
+                                      << ",发送开始时间:" << to_string(timestampS)
+                                      << ",发送结束时间:" << to_string(timestampE)
+                                      << ",帧内时间:" << to_string(timestamp)
+                                      << ",耗时:" << (timestampE - timestampS) << " ms";
+            }
+                break;
+            default: {
+
+            }
+                break;
+        }
+    }
+
 }

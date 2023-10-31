@@ -26,6 +26,7 @@ typedef struct {
     AlgorithmParam algorithmParam;
     vector<string> msgType;
     int mode = 0;
+    int summaryFs = 10;
 } LocalConfig;
 
 typedef enum {

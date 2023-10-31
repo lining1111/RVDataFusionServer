@@ -39,6 +39,7 @@ DEFINE_bool(isSendSTDOUT, false, "输出到控制台，默认false");
 
 DEFINE_string(logDir, "/mnt/mnt_hd", "日志的输出目录,默认/mnt/mnt_hd");
 DEFINE_string(msgType, "", "输出制定的信息类型，默认空，多个信息类型用英文逗号隔开");
+DEFINE_int32(summaryFs, 10, "总结信息打印的频率，默认为10");
 
 DEFINE_bool(isSaveInObj, false, "存算法输入，默认false");
 DEFINE_bool(isSaveOutObj, false, "存算法输出，默认false");
@@ -98,6 +99,9 @@ int main(int argc, char **argv) {
     localConfig.mode = FLAGS_mode;
     if (!FLAGS_msgType.empty()) {
         localConfig.msgType = os::split(FLAGS_msgType, ",");
+    }
+    if (FLAGS_summaryFs > 0) {
+        localConfig.summaryFs = FLAGS_summaryFs;
     }
 
     LOG(WARNING) << "程序模式:" << FLAGS_mode;

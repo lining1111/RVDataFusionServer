@@ -27,6 +27,10 @@ namespace common {
 
     void PrintSendInfo(int s, string serverIp, int serverPort,
                        string name, uint64_t timestampS, uint64_t timestampE, uint64_t timestamp);
+
+    void PrintSendInfoFs(int fs, int s, string serverIp, int serverPort,
+                         string name, uint64_t timestampS, uint64_t timestampE, uint64_t timestamp);
+
     /**
      * 整体通信大帧结构
      *  1byte   1byte   1byte       2bytes  4bytes  4bytes  Nbytes      2bytes

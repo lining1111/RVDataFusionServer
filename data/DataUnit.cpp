@@ -147,8 +147,8 @@ void DataUnitTrafficFlowGather::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
-                          this->name, timestampStart, timestampEnd, item.timestamp);
+            PrintSendInfoFs(localConfig.summaryFs, ret, cli.second->server_ip, cli.second->server_port,
+                            this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
@@ -358,8 +358,8 @@ void DataUnitInWatchData_2::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
-                          this->name, timestampStart, timestampEnd, item.timestamp);
+            PrintSendInfoFs(localConfig.summaryFs, ret, cli.second->server_ip, cli.second->server_port,
+                            this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 
@@ -606,8 +606,8 @@ void DataUnitHumanLitPoleData::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
-                          this->name, timestampStart, timestampEnd, item.timestamp);
+            PrintSendInfoFs(localConfig.summaryFs, ret, cli.second->server_ip, cli.second->server_port,
+                            this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
@@ -647,8 +647,8 @@ void DataUnitTrafficDetectorStatus::taskO() {
             int ret = cli.second->SendBase(pkg);
             uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
-            PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
-                          this->name, timestampStart, timestampEnd, item.timestamp);
+            PrintSendInfoFs(localConfig.summaryFs, ret, cli.second->server_ip, cli.second->server_port,
+                            this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
 }
