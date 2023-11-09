@@ -44,13 +44,14 @@ void LocalBusiness::Run() {
 //            iter.second->Run();
         }
         iter.second->Run();
+        sleep(5);
     }
     for (auto &iter: clientList) {
         if (iter.second->Open() == 0) {
 //            iter.second->Run();
         }
         iter.second->Run();
-
+        sleep(5);
     }
 
     StartTimerTask();

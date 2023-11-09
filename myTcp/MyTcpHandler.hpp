@@ -23,6 +23,7 @@ using namespace std;
 class MyTcpHandler {
 public:
     std::string _peerAddress;
+    bool isNeedReconnect = true;
     enum {
         BUFFER_SIZE = 1024 * 1024 * 64
     };
@@ -44,14 +45,32 @@ public:
     bool isLocalThreadRun = false;
     shared_future<int> future_t1;
     shared_future<int> future_t2;
+    uint64_t timeSend = 0;
+    uint64_t timeRecv = 0;
 
     MyTcpHandler() {
         rb = new RingBuffer(BUFFER_SIZE);
         pkgs.setMax(30);
-        startBussness();
     }
 
     ~MyTcpHandler() {
+        if (rb != nullptr) {
+            delete rb;
+            rb = nullptr;
+        }
+        LOG(WARNING) << _peerAddress << " release";
+    }
+
+    void startBusiness() {
+        _isRun = true;
+        LOG(WARNING) << _peerAddress << " start business";
+        isLocalThreadRun = true;
+        future_t1 = std::async(std::launch::async, ThreadStateMachine, this);
+        future_t2 = std::async(std::launch::async, ThreadProcessPkg, this);
+
+    }
+
+    void stopBusiness(){
         _isRun = false;
 
         if (isLocalThreadRun == true) {
@@ -67,21 +86,7 @@ public:
                 LOG(ERROR) << e.what();
             }
         }
-
-        if (rb != nullptr) {
-            delete rb;
-            rb = nullptr;
-        }
-        LOG(WARNING) << _peerAddress << " release";
-    }
-
-    void startBussness() {
-        _isRun = true;
-        LOG(WARNING) << _peerAddress << "start business";
-        isLocalThreadRun = true;
-        future_t1 = std::async(std::launch::async, ThreadStateMachine, this);
-        future_t2 = std::async(std::launch::async, ThreadProcessPkg, this);
-
+        LOG(WARNING) << _peerAddress << " stop business";
     }
 
     static int ThreadStateMachine(MyTcpHandler *local) {
@@ -211,7 +216,7 @@ public:
                 //按照cmd分别处理
                 auto iter = PkgProcessMap.find(CmdType(pkg.head.cmd));
                 if (iter != PkgProcessMap.end()) {
-                    iter->second(local->_peerAddress, pkg.body);
+                    iter->second(local, pkg.body);
                 } else {
                     //最后没有对应的方法名
                     VLOG(2) << local->_peerAddress << " 最后没有对应的方法名:" << pkg.head.cmd << ",内容:" << pkg.body;

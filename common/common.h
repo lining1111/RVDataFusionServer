@@ -149,16 +149,74 @@ namespace common {
      */
     int Unpack(uint8_t *in, uint32_t len, Pkg &pkg);
 
-    typedef struct {
+    //回复帧
+    class Reply : public PkgClass {
+    public:
         int state;// `json "state"`
         string desc;// `json "desc"`
-        string value;// `json "value"`
-    } Reply;//回复帧
+        string oprNum;
+    public:
+        Reply() {
+            this->cmdType = CmdResponse;
+        }
 
-    typedef struct {
+    XPACK(O(state, desc, oprNum));
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
+    };
+
+    //心跳帧 "Beats"
+    class Beats : public PkgClass {
+    public:
         string hardCode;// `json "hardCode"` 设备唯一标识
         double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
-    } Beats;//心跳帧 "Beats"
+    public:
+        Beats() {
+            this->cmdType = CmdResponse;
+        }
+
+    XPACK(O(hardCode, timestamp));
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
+    };
 
     class Control : public PkgClass {
     public:

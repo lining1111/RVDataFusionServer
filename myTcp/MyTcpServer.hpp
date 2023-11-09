@@ -50,10 +50,12 @@ public:
         _reactor.addEventHandler(_socket, NObserver<MyTcpServerHandler, ShutdownNotification>(*this,
                                                                                               &MyTcpServerHandler::onSocketShutdown));
         recvBuf = new char[1024 * 1024];
+        startBusiness();
     }
 
     ~MyTcpServerHandler() {
         LOG(WARNING) << _peerAddress << " disconnected ...";
+        stopBusiness();
         _reactor.removeEventHandler(_socket, Observer<MyTcpServerHandler, ReadableNotification>(*this,
                                                                                                 &MyTcpServerHandler::onReadable));
         _reactor.removeEventHandler(_socket, NObserver<MyTcpServerHandler, ShutdownNotification>(*this,

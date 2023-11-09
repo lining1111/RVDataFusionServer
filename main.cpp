@@ -51,6 +51,12 @@ DEFINE_string(algorithmParamFile, "./algorithmParam.json", "算法配置文件,�
 
 DEFINE_int32(mode, 0, "程序模式，0:起9000,9001端口服务 1:起9000端口服务 2:起9001端口服务 默认 0");
 
+DEFINE_int32(thresholdReconnect, 5, "多久没收到回复信息就重连，单位秒，默认 5");
+DEFINE_bool(isUseThresholdReconnect, false, "是否启用没收到回复信息就重连，默认 false");
+DEFINE_int32(thresholdTimeRecv, 60 * 3, "接收信息的时间戳判断，单位秒，默认 60*3");
+DEFINE_bool(isUseThresholdTimeRecv, true, "是否启用接收信息的时间戳判断，默认 true");
+DEFINE_bool(isUseJudgeHardCode, true, "是否启用设备号关联判断，默认 true");
+
 #include "os/os.h"
 #include "eocCom/DBCom.h"
 
@@ -103,6 +109,15 @@ int main(int argc, char **argv) {
     if (FLAGS_summaryFs > 0) {
         localConfig.summaryFs = FLAGS_summaryFs;
     }
+    if (FLAGS_thresholdReconnect > 0) {
+        localConfig.thresholdReconnect = FLAGS_thresholdReconnect;
+    }
+    localConfig.isUseThresholdReconnect = FLAGS_isUseThresholdReconnect;
+    if (FLAGS_thresholdTimeRecv > 0) {
+        localConfig.thresholdTimeRecv = FLAGS_thresholdTimeRecv;
+    }
+    localConfig.isUseThresholdTimeRecv = FLAGS_isUseThresholdTimeRecv;
+    localConfig.isUseJudgeHardCode = FLAGS_isUseJudgeHardCode;
 
     LOG(WARNING) << "程序模式:" << FLAGS_mode;
     if (localConfig.mode == 0 || localConfig.mode == 1) {
@@ -119,6 +134,7 @@ int main(int argc, char **argv) {
     LOG(WARNING) << "开启本地tcp通信，包括本地服务端和连接上层的客户端";
     signalIgnPipe();
     auto businessLocal = LocalBusiness::instance();
+    sleep(10);
     if (localConfig.mode == 0 || localConfig.mode == 1) {
         businessLocal->AddServer("server1", port);
     }

@@ -21,23 +21,37 @@ void CacheTimestamp::update(int index, uint64_t timestamp, int caches) {
         //判断是否设置了index，index默认为-1
         if (dataIndex == -1) {
             dataIndex = index;
+            dataTimestamps.clear();
+            dataTimestamps.push_back(timestamp);
         } else {
             //判断是否是对应的index
             if (dataIndex == index) {
-                //是对应的index的话，将时间戳存进队列
-                dataTimestamps.push_back(timestamp);
-//                printf("存入index %d timestamp %d\n", index, timestamp);
-//                printf("已存的容量%d\n", dataTimestamps.size());
+                //判断时间戳是否是递增的，如果不是的话，清除之前的内容，重新开始
+                if (dataTimestamps.empty()) {
+                    //是对应的index的话，将时间戳存进队列
+                    dataTimestamps.push_back(timestamp);
+                } else {
+                    if (timestamp <= dataTimestamps.back()) {
+                        //恢复到最初状态
+                        LOG(ERROR) << "当前插入时间戳 " << timestamp << " 小于已插入的最新时间戳 "
+                                   << dataTimestamps.back() << "，将恢复到最初状态";
+                        dataTimestamps.clear();
+                        dataIndex = -1;
+                    } else {
+                        //是对应的index的话，将时间戳存进队列，正常插入
+                        dataTimestamps.push_back(timestamp);
+                    }
+                }
             }
         }
         //如果存满缓存帧后，计算帧率，并设置标志位
         if (dataTimestamps.size() == caches) {
+            //打印下原始时间戳队列
+            LOG(WARNING) << "动态帧率原始时间戳队列:" << fmt::format("{}", dataTimestamps);
             std::vector<uint64_t> intervals;
             for (int i = 1; i < dataTimestamps.size(); i++) {
                 auto cha = dataTimestamps.at(i) - dataTimestamps.at(i - 1);
-                if (cha > 0) {
-                    intervals.push_back(cha);
-                }
+                intervals.push_back(cha);
             }
             //计算差值的平均数
             uint64_t sum = 0;
@@ -82,6 +96,7 @@ static bool isAssociatedEquip(string hardCode) {
 #include "config.h"
 
 static void deleteFromConns(string peerAddress) {
+	std::unique_lock<std::mutex> lock(conns_mutex);
     for (auto iter: conns) {
         auto conn = (MyTcpServerHandler *) iter;
         if (conn->_peerAddress == peerAddress) {
@@ -91,26 +106,75 @@ static void deleteFromConns(string peerAddress) {
 }
 
 
-static int judge(string hardCode, string peerAddress) {
-    int ret = 0;
+static bool judgeHardCode(string hardCode, string peerAddress) {
+    bool ret = true;
     //判断是否在关联设备中
-    if (!isAssociatedEquip(hardCode)) {
-        //不在关联设备中就踢掉
-        LOG(WARNING) << "应该踢掉设备,hardCode:" << hardCode;
-        deleteFromConns(peerAddress);
-        ret = -1;
+    if (localConfig.isUseJudgeHardCode) {
+        if (!isAssociatedEquip(hardCode)) {
+            //不在关联设备中就踢掉
+            LOG(WARNING) << "踢掉设备,ip:" << peerAddress << ",hardCode:" << hardCode;
+            deleteFromConns(peerAddress);
+            ret = false;
+        }
     }
     return ret;
 }
 
+static bool judgeTimestamp(uint64_t timestamp, string peerAddress) {
+    bool ret = true;
+    uint64_t now = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    //判断时间戳是否过于新或者过于旧
+    if (localConfig.isUseThresholdTimeRecv) {
+        if ((timestamp > now) || (timestamp < (now - localConfig.thresholdTimeRecv * 1000))) {
+            LOG(WARNING) << "ip:" << peerAddress << "时间戳不符合要求,timestamp:" << timestamp << ",now:" << now;
+//            deleteFromConns(peerAddress);
+            ret = false;
+        }
+    }
 
-int PkgProcessFun_CmdResponse(string ip, string content) {
-    VLOG(2) << "应答指令";
-    return 0;
+    return ret;
 }
 
-int PkgProcessFun_CmdControl(string ip, string content) {
+
+
+int PkgProcessFun_CmdResponse(void *p, string content) {
+    VLOG(2) << "应答指令";
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
+
+    string msgType = "Reply";
+    Reply msg;
+    try {
+        json::decode(content, msg);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
+        return -1;
+    }
+
+    //1.记录下接收回复的时间
+    local->timeRecv = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    //2.检验下回复时间和发送时间的差，是否大于阈值，大于就重连
+    if (localConfig.isUseThresholdReconnect) {
+        if (std::abs((long long) local->timeRecv - (long long) local->timeSend) >=
+            (1000 * localConfig.thresholdReconnect)) {
+            LOG(WARNING) << "接收和发送时间差大于阈值，需要重连，ip:" << ip
+                         << " timeRecv:" << local->timeRecv << " timeSend:" << local->timeSend
+                         << " oprNum:" << msg.oprNum;
+            local->isNeedReconnect = true;
+        }
+    }
+
+    return ret;
+}
+
+int PkgProcessFun_CmdControl(void *p, string content) {
+    int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
+
     string msgType = "Control";
     Control msg;
     try {
@@ -129,8 +193,9 @@ int PkgProcessFun_CmdControl(string ip, string content) {
 
 }
 
-int PkgProcessFun_CmdHeartBeat(string ip, string content) {
+int PkgProcessFun_CmdHeartBeat(void *p, string content) {
     VLOG(2) << "心跳指令";
+    auto local = (MyTcpHandler *) p;
     return 0;
 }
 
@@ -139,8 +204,10 @@ bool issave = false;
 
 CacheTimestamp CT_fusionData;
 
-int PkgProcessFun_CmdFusionData(string ip, string content) {
+int PkgProcessFun_CmdFusionData(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     if (localConfig.mode == 2) {
         LOG(ERROR) << "程序模式2，不处理实时数据";
@@ -156,13 +223,16 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
-
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -214,8 +284,10 @@ int PkgProcessFun_CmdFusionData(string ip, string content) {
 }
 
 
-int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
+int PkgProcessFun_CmdCrossTrafficJamAlarm(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DateUnitCrossTrafficJamAlarm";
     CrossTrafficJamAlarm msg;
@@ -226,12 +298,16 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -257,8 +333,10 @@ int PkgProcessFun_CmdCrossTrafficJamAlarm(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
+int PkgProcessFun_CmdIntersectionOverflowAlarm(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitIntersectionOverflowAlarm";
     IntersectionOverflowAlarm msg;
@@ -269,12 +347,16 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -302,8 +384,10 @@ int PkgProcessFun_CmdIntersectionOverflowAlarm(string ip, string content) {
 
 CacheTimestamp CT_trafficFlowGather;
 
-int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
+int PkgProcessFun_CmdTrafficFlowGather(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitTrafficFlowGather";
     TrafficFlow msg;
@@ -314,12 +398,16 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -363,8 +451,10 @@ int PkgProcessFun_CmdTrafficFlowGather(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
+int PkgProcessFun_CmdInWatchData_1_3_4(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitInWatchData_1_3_4";
     InWatchData_1_3_4 msg;
@@ -375,12 +465,16 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -405,8 +499,10 @@ int PkgProcessFun_CmdInWatchData_1_3_4(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
+int PkgProcessFun_CmdInWatchData_2(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitInWatchData_2";
     InWatchData_2 msg;
@@ -417,12 +513,16 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -447,8 +547,10 @@ int PkgProcessFun_CmdInWatchData_2(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_StopLinePassData(string ip, string content) {
+int PkgProcessFun_StopLinePassData(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitStopLinePassData";
     StopLinePassData msg;
@@ -459,12 +561,16 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -490,8 +596,10 @@ int PkgProcessFun_StopLinePassData(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_AbnormalStopData(string ip, string content) {
+int PkgProcessFun_AbnormalStopData(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitAbnormalStopData";
     AbnormalStopData msg;
@@ -502,12 +610,16 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -532,8 +644,10 @@ int PkgProcessFun_AbnormalStopData(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
+int PkgProcessFun_LongDistanceOnSolidLineAlarm(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitLongDistanceOnSolidLineAlarm";
     LongDistanceOnSolidLineAlarm msg;
@@ -544,12 +658,16 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -574,8 +692,10 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_HumanData(string ip, string content) {
+int PkgProcessFun_HumanData(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitHumanData";
     HumanData msg;
@@ -586,12 +706,16 @@ int PkgProcessFun_HumanData(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -616,8 +740,10 @@ int PkgProcessFun_HumanData(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_HumanLitPoleData(string ip, string content) {
+int PkgProcessFun_HumanLitPoleData(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitHumanLitPoleData";
     HumanLitPoleData msg;
@@ -628,12 +754,16 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -659,8 +789,10 @@ int PkgProcessFun_HumanLitPoleData(string ip, string content) {
 }
 
 
-int PkgProcessFun_0xf1(string ip, string content) {
+int PkgProcessFun_0xf1(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitTrafficData";
     TrafficData msg;
@@ -671,12 +803,16 @@ int PkgProcessFun_0xf1(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -743,8 +879,10 @@ int PkgProcessFun_0xf1(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_0xf2(string ip, string content) {
+int PkgProcessFun_0xf2(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitAlarmBroken";
     AlarmBroken msg;
@@ -755,12 +893,16 @@ int PkgProcessFun_0xf2(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 
@@ -808,8 +950,10 @@ int PkgProcessFun_0xf2(string ip, string content) {
     return ret;
 }
 
-int PkgProcessFun_0xf3(string ip, string content) {
+int PkgProcessFun_0xf3(void *p, string content) {
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitUrgentPriority";
     UrgentPriority msg;
@@ -819,14 +963,20 @@ int PkgProcessFun_0xf3(string ip, string content) {
         LOG(ERROR) << e.what();
         return -1;
     }
+
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
+
 
     LOG_IF(INFO, isShowMsgType(msgType)) << "0xf3 cmd recv";
     //根据
@@ -873,10 +1023,12 @@ int PkgProcessFun_0xf3(string ip, string content) {
 
 //CacheTimestamp CT_trafficDetectorStatus;
 
-int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
+int PkgProcessFun_TrafficDetectorStatus(void *p, string content) {
     VLOG(4) << content;
     //透传
     int ret = 0;
+    auto local = (MyTcpHandler *) p;
+    string ip = local->_peerAddress;
 
     string msgType = "DataUnitTrafficDetectorStatus";
     TrafficDetectorStatus msg;
@@ -887,12 +1039,16 @@ int PkgProcessFun_TrafficDetectorStatus(string ip, string content) {
         return -1;
     }
 
+    if (!judgeTimestamp(msg.timestamp, ip)) {
+        return -1;
+    }
+
     if (msg.hardCode.empty()) {
         LOG(ERROR) << "hardCode empty," << content;
         return -1;
     }
     //不在关联设备中就踢掉
-    if (judge(msg.hardCode, ip) != 0) {
+    if (!judgeHardCode(msg.hardCode, ip)) {
         return -1;
     }
 

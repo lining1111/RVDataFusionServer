@@ -27,6 +27,11 @@ typedef struct {
     vector<string> msgType;
     int mode = 0;
     int summaryFs = 10;
+    int thresholdReconnect = 5;//多久没回复信息就重连,单位s
+    bool isUseThresholdReconnect = true;
+    int thresholdTimeRecv = 60*3;//接收时间戳判断，单位s
+    bool isUseThresholdTimeRecv= true;
+    bool isUseJudgeHardCode = true;
 } LocalConfig;
 
 typedef enum {
