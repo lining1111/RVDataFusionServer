@@ -97,8 +97,8 @@ static bool isAssociatedEquip(string hardCode) {
 
 static void deleteFromConns(string peerAddress) {
 	std::unique_lock<std::mutex> lock(conns_mutex);
-    for (auto iter: conns) {
-        auto conn = (MyTcpServerHandler *) iter;
+    for (int i = 0; i < conns.size(); i++) {
+        auto conn = (MyTcpServerHandler *) conns.at(i);
         if (conn->_peerAddress == peerAddress) {
             conn->_socket.shutdown();
         }

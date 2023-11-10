@@ -84,7 +84,6 @@ public:
             }
         }
         catch (Poco::Exception &exc) {
-            pNf->release();
             delete this;
         }
     }
