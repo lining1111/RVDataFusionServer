@@ -24,9 +24,8 @@ class MyTcpHandler {
 public:
     std::string _peerAddress;
     bool isNeedReconnect = true;
-    enum {
-        BUFFER_SIZE = 1024 * 1024 * 64
-    };
+
+    int BUFFER_SIZE = 1024 * 1024 * 4;
     bool _isRun = false;
     RingBuffer *rb = nullptr;
     Queue<common::Pkg> pkgs;
@@ -70,10 +69,10 @@ public:
 
     }
 
-    void stopBusiness(){
+    void stopBusiness() {
         _isRun = false;
 
-        if (isLocalThreadRun == true) {
+        if (isLocalThreadRun) {
             isLocalThreadRun = false;
             try {
                 future_t1.wait();

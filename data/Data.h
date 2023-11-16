@@ -9,6 +9,7 @@
 #include "DataUnit.h"
 #include "DataUnitFusionData.h"
 #include <mutex>
+#include "ReSendQueue.h"
 
 class Data : public NonCopyable {
 public:
@@ -41,6 +42,9 @@ public:
     DataUnitHumanLitPoleData *dataUnitHumanLitPoleData;
     //-----检测器状态----//
     DataUnitTrafficDetectorStatus *dataUnitTrafficDetectorStatus;
+
+    //-------重发队列------//
+    ReSendQueue *reSendQueue;//拥堵、溢出、异常停车 需要加入队列
 public:
     //本地参数
     //FusionData相关

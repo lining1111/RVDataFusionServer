@@ -97,15 +97,15 @@ public:
             Poco::Timespan ts(1000 * 1000);
             _s.connect(sa, ts);
         } catch (ConnectionRefusedException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "connect refuse";
+            LOG(ERROR) << server_ip << ":" << server_port << " connect refuse";
             return -1;
         }
         catch (TimeoutException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "connect time out";
+            LOG(ERROR) << server_ip << ":" << server_port << " connect time out";
             return -1;
         }
         catch (NetException &) {
-            LOG(ERROR) << server_ip << ":" << server_port << "net exception";
+            LOG(ERROR) << server_ip << ":" << server_port << " net exception";
             return -1;
         }
 
@@ -126,6 +126,13 @@ public:
             while (this->_isRun) {
                 usleep(10);
                 if (!this->isNeedReconnect) {
+                    if (rb == nullptr) {
+                        LOG(ERROR) << _peerAddress << " rb null";
+                        continue;
+                    }
+                    if (_s.available() <= 0) {
+                        continue;
+                    }
                     bzero(recvBuf, 1024 * 1024);
                     int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
                     try {
@@ -189,7 +196,7 @@ public:
             }
         }
         //记录发送时间
-        if (this->timeSend == 0){
+        if (this->timeSend == 0) {
             this->timeRecv = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
         }
@@ -242,7 +249,7 @@ public:
         }
 
         //记录发送时间
-        if (this->timeSend == 0){
+        if (this->timeSend == 0) {
             this->timeRecv = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
         }

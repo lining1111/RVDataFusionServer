@@ -96,7 +96,7 @@ static bool isAssociatedEquip(string hardCode) {
 #include "config.h"
 
 static void deleteFromConns(string peerAddress) {
-	std::unique_lock<std::mutex> lock(conns_mutex);
+    std::unique_lock<std::mutex> lock(conns_mutex);
     for (int i = 0; i < conns.size(); i++) {
         auto conn = (MyTcpServerHandler *) conns.at(i);
         if (conn->_peerAddress == peerAddress) {
@@ -126,7 +126,7 @@ static bool judgeTimestamp(uint64_t timestamp, string peerAddress) {
             std::chrono::system_clock::now().time_since_epoch()).count();
     //判断时间戳是否过于新或者过于旧
     if (localConfig.isUseThresholdTimeRecv) {
-        if ((timestamp > now) || (timestamp < (now - localConfig.thresholdTimeRecv * 1000))) {
+        if (std::abs((long long) now - (long long) timestamp) >= 1000 * localConfig.thresholdTimeRecv) {
             LOG(WARNING) << "ip:" << peerAddress << "时间戳不符合要求,timestamp:" << timestamp << ",now:" << now;
 //            deleteFromConns(peerAddress);
             ret = false;
@@ -135,7 +135,6 @@ static bool judgeTimestamp(uint64_t timestamp, string peerAddress) {
 
     return ret;
 }
-
 
 
 int PkgProcessFun_CmdResponse(void *p, string content) {

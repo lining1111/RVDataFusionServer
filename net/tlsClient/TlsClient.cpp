@@ -13,6 +13,7 @@
 #include <openssl/err.h>
 #include <net/com.h>
 #include <glog/logging.h>
+#include <sys/ioctl.h>
 #include "TlsClient.h"
 
 TlsClient::TlsClient(string ip, int port, string caPath) {
@@ -37,7 +38,10 @@ int TlsClient::connectServer() {
 
     int opt = 1;
     setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    //连接前设置非阻塞
+    ioctl(sock,FIONBIO,1);
     int ret = connect(sock, (struct sockaddr *) &server, sizeof(struct sockaddr));
+    ioctl(sock,FIONBIO,0);
     if (ret < 0) {
         close(sock);
         LOG(ERROR) << "tls connect server failed:" << serverIp << ":" << serverPort;

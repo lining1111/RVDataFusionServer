@@ -950,6 +950,7 @@ int EOCCom::intervalPro(void *p) {
 
                 if (len < 0) {
                     LOG(ERROR) << "eoc s101_login_send err, return:" << len;
+                    local->isLive.store(false);
                 } else {
                     LOG(INFO) << "eoc s101_login_send ok";
                 }
@@ -984,6 +985,7 @@ int EOCCom::intervalPro(void *p) {
 
                     if (len < 0) {
                         LOG(ERROR) << "eoc s104 send err, return:" << len;
+                        local->isLive.store(false);
                     } else {
                         LOG(INFO) << "eoc s104 send ok";
                     }
@@ -1008,6 +1010,7 @@ int EOCCom::intervalPro(void *p) {
 
                 if (len < 0) {
                     LOG(ERROR) << "eoc s100 send err, return:" << len;
+                    local->isLive.store(false);
                 } else {
                     LOG(INFO) << "eoc s100 send ok";
                 }
@@ -1040,6 +1043,7 @@ int EOCCom::intervalPro(void *p) {
 
                 if (len < 0) {
                     LOG(ERROR) << "eoc s105 send err, return:" << len;
+                    local->isLive.store(false);
                 } else {
                     LOG(INFO) << "eoc s105 send ok";
                 }
@@ -1063,6 +1067,7 @@ int EOCCom::intervalPro(void *p) {
 
                 if (len < 0) {
                     LOG(ERROR) << "eoc s103 send err, return:" << len;
+                    local->isLive.store(false);
                 } else {
                     LOG(INFO) << "eoc s103 send ok";
                 }
@@ -1118,6 +1123,7 @@ int EOCCom::intervalPro(void *p) {
                             if (len < 0) {
                                 LOG(ERROR) << "eoc s106 send err, return:" << len;
                                 //发送失败立即退出循环
+                                local->isLive.store(false);
                                 break;
                             } else {
                                 LOG(INFO) << "eoc s106 send ok";

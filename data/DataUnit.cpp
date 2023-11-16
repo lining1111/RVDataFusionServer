@@ -233,6 +233,14 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
                     std::chrono::system_clock::now().time_since_epoch()).count();
             PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
                           this->name, timestampStart, timestampEnd, item.timestamp);
+            if (ret != 0) {
+                ReSendQueue::Msg msg;
+                msg.name = "client2";
+                msg.pkg = pkg;
+                msg.timestampFrame = item.timestamp;
+                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                data->reSendQueue->add(msg);
+            }
         }
     }
 }
@@ -277,6 +285,14 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
                     std::chrono::system_clock::now().time_since_epoch()).count();
             PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
                           this->name, timestampStart, timestampEnd, item.timestamp);
+            if (ret != 0) {
+                ReSendQueue::Msg msg;
+                msg.name = "client2";
+                msg.pkg = pkg;
+                msg.timestampFrame = item.timestamp;
+                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                data->reSendQueue->add(msg);
+            }
         }
     }
 }
@@ -524,6 +540,14 @@ void DataUnitAbnormalStopData::taskO() {
                     std::chrono::system_clock::now().time_since_epoch()).count();
             PrintSendInfo(ret, cli.second->server_ip, cli.second->server_port,
                           this->name, timestampStart, timestampEnd, item.timestamp);
+            if (ret != 0) {
+                ReSendQueue::Msg msg;
+                msg.name = "client2";
+                msg.pkg = pkg;
+                msg.timestampFrame = item.timestamp;
+                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                data->reSendQueue->add(msg);
+            }
         }
     }
 

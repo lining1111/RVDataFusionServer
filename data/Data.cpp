@@ -68,6 +68,7 @@ Data *Data::instance() {
         m_pInstance->dataUnitTrafficDetectorStatus->init(10, 500, cliNum, 1, m_pInstance,
                                                          "DataUnitTrafficDetectorStatus", 10);//这个cliNum待定
 
+        m_pInstance->reSendQueue = new ReSendQueue();
         m_pInstance->isRun = true;
         lck.unlock();
     }

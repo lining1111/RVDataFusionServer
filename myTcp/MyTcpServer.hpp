@@ -73,17 +73,24 @@ public:
 
     void onReadable(ReadableNotification *pNf) {
         pNf->release();
+        if (rb == nullptr) {
+            LOG(ERROR) << _peerAddress << " rb null";
+            return;
+        }
+
         bzero(recvBuf, 1024 * 1024);
         int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
         try {
             int len = _socket.receiveBytes(recvBuf, recvLen);
             if (len <= 0) {
+                LOG(WARNING)<<_peerAddress<<" receive len <=0";
                 delete this;
             } else {
                 rb->Write(recvBuf, len);
             }
         }
         catch (Poco::Exception &exc) {
+            LOG(WARNING)<<exc.what();
             delete this;
         }
     }

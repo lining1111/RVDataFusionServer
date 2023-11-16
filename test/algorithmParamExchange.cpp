@@ -13,12 +13,12 @@
 using namespace xpack;
 
 
-string readFile(const string path){
+string readFile(const string path) {
     //打开文件
     std::ifstream ifs;
     ifs.open(path);
     if (!ifs.is_open()) {
-        fmt::print("打开文件失败:{}\n",path);
+        fmt::print("打开文件失败:{}\n", path);
         return "";
     } else {
         std::stringstream buf;
@@ -29,7 +29,7 @@ string readFile(const string path){
     }
 }
 
-int writeFile(const string path,const string content){
+int writeFile(const string path, const string content) {
     //写入文件
     ofstream file;
     file.open(path, ios::trunc);
@@ -38,8 +38,8 @@ int writeFile(const string path,const string content){
         file.flush();
         file.close();
         return 0;
-    }else{
-        fmt::print("写入文件失败:{}\n",path);
+    } else {
+        fmt::print("写入文件失败:{}\n", path);
         return -1;
     }
 }
@@ -57,19 +57,19 @@ enum Direction_Algorithm_face {
     Northwest = 7,//西北
 };
 
-typedef struct{
+typedef struct {
     int oldIndex;
     int newIndex;
-}IndexPair;
+} IndexPair;
 
-void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam &newParam){
+void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmParam &newParam) {
 
     //1.转换矩阵
     // H_east
     {
         TransMatrixItem item;
         item.faceDirection = East;
-        for (auto iter:oldParam.H_east) {
+        for (auto iter: oldParam.H_east) {
             DoubleValue item1;
             item1.index = iter.index;
             item1.value = iter.value;
@@ -81,7 +81,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
     {
         TransMatrixItem item;
         item.faceDirection = North;
-        for (auto iter:oldParam.H_north) {
+        for (auto iter: oldParam.H_north) {
             DoubleValue item1;
             item1.index = iter.index;
             item1.value = iter.value;
@@ -94,7 +94,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
     {
         TransMatrixItem item;
         item.faceDirection = West;
-        for (auto iter:oldParam.H_west) {
+        for (auto iter: oldParam.H_west) {
             DoubleValue item1;
             item1.index = iter.index;
             item1.value = iter.value;
@@ -107,7 +107,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
     {
         TransMatrixItem item;
         item.faceDirection = South;
-        for (auto iter:oldParam.H_south) {
+        for (auto iter: oldParam.H_south) {
             DoubleValue item1;
             item1.index = iter.index;
             item1.value = iter.value;
@@ -118,24 +118,25 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
 
     //2.路口的倾斜角度
     {
-        IndexPair pair[4]={
+        IndexPair pair[4] = {
                 {.oldIndex = 0, .newIndex = East},
                 {.oldIndex = 1, .newIndex = North},
                 {.oldIndex = 2, .newIndex = West},
                 {.oldIndex = 3, .newIndex = South},
         };
-        for(auto iter:oldParam.angle){
+        for (auto iter: oldParam.angle) {
             AngleItem item;
             int faceDirection = -1;
-            for (auto iter1:pair) {
-                if (iter.index == iter1.oldIndex){
+            for (auto iter1: pair) {
+                if (iter.index == iter1.oldIndex) {
                     faceDirection = iter1.newIndex;
                     break;
                 }
             }
-            if (faceDirection==-1){
-                fmt::print("angle : faceDirection is -1,old index:{}\n",iter.index);
-            }else{
+            if (faceDirection == -1) {
+                fmt::print("angle : faceDirection is -1,old index:{}\n", iter.index);
+            } else {
+                item.faceDirection = faceDirection;
                 item.value = iter.value;
                 newParam.angle.push_back(item);
             }
@@ -181,7 +182,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
-            for (auto iter:src->at(i).points) {
+            for (auto iter: src->at(i).points) {
                 PointF item2;
                 item2.x = iter.x;
                 item2.y = iter.y;
@@ -199,7 +200,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
-            for (auto iter:src->at(i).points) {
+            for (auto iter: src->at(i).points) {
                 PointF item2;
                 item2.x = iter.x;
                 item2.y = iter.y;
@@ -217,7 +218,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
-            for (auto iter:src->at(i).points) {
+            for (auto iter: src->at(i).points) {
                 PointF item2;
                 item2.x = iter.x;
                 item2.y = iter.y;
@@ -235,7 +236,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
-            for (auto iter:src->at(i).points) {
+            for (auto iter: src->at(i).points) {
                 PointF item2;
                 item2.x = iter.x;
                 item2.y = iter.y;
@@ -252,7 +253,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = North;
         auto src = &oldParam.east_north_driving_missing_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -268,7 +269,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = West;
         auto src = &oldParam.north_west_driving_missing_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -284,7 +285,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = South;
         auto src = &oldParam.west_south_driving_missing_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -300,7 +301,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = East;
         auto src = &oldParam.south_east_driving_missing_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -318,7 +319,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = North;
         auto src = &oldParam.east_north_driving_in_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -334,7 +335,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = West;
         auto src = &oldParam.north_west_driving_in_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -350,7 +351,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = South;
         auto src = &oldParam.west_south_driving_in_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -366,7 +367,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
         DrivingAreaX item;
         item.flowDirection = East;
         auto src = &oldParam.south_east_driving_in_area;
-        for (auto iter:*src) {
+        for (auto iter: *src) {
             RectFValue item1;
             item1.index = iter.index;
             item1.x = iter.x;
@@ -381,24 +382,24 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam,AlgorithmParam
     //7.GPS修正
     {
         //索引新旧转换
-        IndexPair pair[4]={
+        IndexPair pair[4] = {
                 {.oldIndex = 0, .newIndex = East},
                 {.oldIndex = 1, .newIndex = North},
                 {.oldIndex = 2, .newIndex = West},
                 {.oldIndex = 3, .newIndex = South},
         };
-        for (auto iter:oldParam.correctedValueGPSs) {
+        for (auto iter: oldParam.correctedValueGPSs) {
             CorrectedValueGPS item;
             int faceDirection = -1;
-            for (auto iter1:pair) {
-                if (iter.index == iter1.oldIndex){
+            for (auto iter1: pair) {
+                if (iter.index == iter1.oldIndex) {
                     faceDirection = iter1.newIndex;
                     break;
                 }
             }
-            if (faceDirection == -1){
-                fmt::print("GPS faceDirection error,old index:{}\n",iter.index);
-            }else{
+            if (faceDirection == -1) {
+                fmt::print("GPS faceDirection error,old index:{}\n", iter.index);
+            } else {
                 item.faceDirection = faceDirection;
                 item.longitude = iter.longitude;
                 item.latitude = iter.latitude;
@@ -460,7 +461,7 @@ DEFINE_string(oldPath, "./old.json", "旧版json位置，默认 old.json");
 DEFINE_string(newPath, "./new.json", "新版json位置，默认 new.json");
 DEFINE_string(roadName, "roadName", "路口名称，默认 roadName");
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 
     gflags::ParseCommandLineFlags(&argc, &argv, true);
 
@@ -471,9 +472,9 @@ int main(int argc, char **argv){
     AlgorithmParamOld::AlgorithmParam oldParam;
 
     string oldContent = readFile(FLAGS_oldPath);
-    if (oldContent.empty()){
+    if (oldContent.empty()) {
         return -1;
-    }else{
+    } else {
         try {
             json::decode(oldContent, oldParam);
         } catch (std::exception &e) {
@@ -491,7 +492,7 @@ int main(int argc, char **argv){
     string newContent = json::encode(newParam);
     writeFile(FLAGS_newPath, newContent);
     string webUrl = R"(https://www.sojson.com/)";
-    fmt::print("新版文件内容json未格式化，请手动格式化，比如{}\n",webUrl);
+    fmt::print("新版文件内容json未格式化，请手动格式化，比如{}\n", webUrl);
     return 0;
 }
 
