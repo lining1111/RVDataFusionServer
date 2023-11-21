@@ -83,14 +83,14 @@ public:
         try {
             int len = _socket.receiveBytes(recvBuf, recvLen);
             if (len <= 0) {
-                LOG(WARNING)<<_peerAddress<<" receive len <=0";
+                LOG(WARNING) << _peerAddress << " receive len <=0";
                 delete this;
             } else {
                 rb->Write(recvBuf, len);
             }
         }
         catch (Poco::Exception &exc) {
-            LOG(WARNING)<<exc.what();
+            LOG(WARNING) << exc.what();
             delete this;
         }
     }
@@ -122,6 +122,8 @@ public:
         try {
             _s.bind(Poco::Net::SocketAddress(_port));
             _s.listen();
+            _s.setReuseAddress(true);
+            _s.setReusePort(true);
         } catch (Poco::Exception &exc) {
             LOG(ERROR) << exc.what();
             isListen = false;
@@ -137,6 +139,8 @@ public:
             _s.close();
             _s.bind(Poco::Net::SocketAddress(_port));
             _s.listen();
+            _s.setReuseAddress(true);
+            _s.setReusePort(true);
         } catch (Poco::Exception &exc) {
             LOG(ERROR) << exc.what();
             isListen = false;

@@ -8,14 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <pthread.h>
+#include <mutex>
 
 
 class RingBuffer {
 private:
-    pthread_mutex_t rwlock = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-    uint8_t *buff;
+    std::mutex *mtx = nullptr;
+    uint8_t *buff = nullptr;
 
     size_t capacity;
     int read_pos;

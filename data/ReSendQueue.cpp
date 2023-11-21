@@ -45,13 +45,13 @@ void ReSendQueue::startBusiness() {
                 int result = doSend(iter);
                 //判断重复的结果，成功的话，踢出重发队列，失败的话，判断重发条件，不满足重发条件的踢出重发队列
                 if (result == 0) {
-                    LOG(WARNING) << "重发:踢出重发队列:" << iter.name << "-" << iter.type << ",cmd:"
+                    LOG(WARNING) << "重发成功:踢出重发队列:" << iter.name << "-" << iter.type << ",cmd:"
                                  << iter.pkg.head.cmd
                                  << ",帧内时间:" << iter.timestampFrame << ",插入时间:" << iter.timestampInsert;
                     msgQueue.erase(msgQueue.begin() + i);
                 } else {
                     if (judge(iter)) {
-                        LOG(WARNING) << "重发:踢出重发队列:" << iter.name << "-" << iter.type << ",cmd:"
+                        LOG(WARNING) << "重发失败:踢出重发队列:" << iter.name << "-" << iter.type << ",cmd:"
                                      << iter.pkg.head.cmd
                                      << ",帧内时间:" << iter.timestampFrame << ",插入时间:" << iter.timestampInsert;
                         msgQueue.erase(msgQueue.begin() + i);

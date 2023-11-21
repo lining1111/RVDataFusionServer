@@ -16,12 +16,14 @@ RingBuffer::RingBuffer(size_t capacity) {
     this->available_for_read = 0;
     this->available_for_write = this->capacity - this->available_for_read;
 
+    if (mtx == nullptr) {
+        mtx = new std::mutex();
+    }
 }
 
 RingBuffer::~RingBuffer() {
-    pthread_mutex_destroy(&this->rwlock);
-    pthread_cond_destroy(&this->cond);
     delete[] buff;
+    delete mtx;
 }
 
 size_t RingBuffer::Read(void *data, size_t count) {
@@ -31,10 +33,7 @@ size_t RingBuffer::Read(void *data, size_t count) {
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);
 
-    pthread_mutex_lock(&rwlock);
-    while (available_for_read < count) {
-        pthread_cond_wait(&cond, &rwlock);
-    }
+    std::unique_lock<std::mutex> lock(*mtx);
 //	printf("READ[%d]count=%ld,cap=%ld,read_pos=%d,write_pos=%d,ava_read=%d\n",
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);
@@ -56,9 +55,9 @@ size_t RingBuffer::Read(void *data, size_t count) {
         available_for_write = capacity - available_for_read;
     } else {
         printf("READ read error !\n");
+        return 0;
     }
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&rwlock);
+
 //	printf("READ[%d]count=%ld,cap=%ld,read_pos=%d,write_pos=%d,ava_read=%d\n",
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);
@@ -72,10 +71,7 @@ size_t RingBuffer::Write(const void *data, size_t count) {
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);
 
-    pthread_mutex_lock(&rwlock);
-    while (available_for_write < count) {
-        pthread_cond_wait(&cond, &rwlock);
-    }
+    std::unique_lock<std::mutex> lock(*mtx);
 //	printf("WRITE[%d]count=%ld,cap=%ld,read_pos=%d,write_pos=%d,ava_read=%d\n",
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);
@@ -97,9 +93,8 @@ size_t RingBuffer::Write(const void *data, size_t count) {
         available_for_write = capacity - available_for_read;
     } else {
         printf("WRITE   error !\n");
+        return 0;
     }
-    pthread_cond_signal(&cond);
-    pthread_mutex_unlock(&rwlock);
 //	printf("WRITE[%d]count=%ld,cap=%ld,read_pos=%d,write_pos=%d,ava_read=%d\n",
 //			__LINE__, count, rb->capacity, rb->read_pos, rb->write_pos,
 //			rb->available_for_read);

@@ -48,6 +48,20 @@ int TlsClient::connectServer() {
         return -1;
     }
     LOG(WARNING) << "tls connect server success:" << serverIp << ":" << serverPort;
+    struct timeval tv;
+    tv.tv_sec  = 30;
+    tv.tv_usec = 0;
+    ret = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval));
+    if (ret == -1) {
+        close(sock);
+        return -1;
+    }
+    ret = setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(struct timeval));
+    if (ret == -1) {
+        close(sock);
+        return -1;
+    }
+
     return 0;
 }
 

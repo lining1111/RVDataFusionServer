@@ -37,7 +37,7 @@ public:
     RecvStatus status = Start;
     //用于缓存解包
     common::PkgHead pkgHead;//分包头
-    int bodyLen = 0;//获取分包头后，得到的包长度
+    uint64_t bodyLen = 0;//获取分包头后，得到的包长度
     uint8_t *pkgBuffer = nullptr;
     int pkgBufferIndex = 0;
 
@@ -131,16 +131,29 @@ public:
                 }
                     break;
                 case GetHead: {
-                    if (local->bodyLen <= 0) {
-                        local->bodyLen = local->pkgHead.len - sizeof(PkgHead) - sizeof(PkgCRC);
-                    }
-                    if (local->rb->GetReadLen() >= local->bodyLen) {
+                    if (0) {
+                        //这个是一次性获取全部包内容
+                        if (local->rb->GetReadLen() >= local->bodyLen) {
+                            //获取正文
+                            uint64_t readLen = local->bodyLen;
+                            local->rb->Read(local->pkgBuffer + local->pkgBufferIndex, readLen);
+                            local->pkgBufferIndex += readLen;
+                            local->status = GetBody;
+                        }
+                    } else {
+                        //这个是分多次获取包内容
+                        uint64_t readLen =
+                                local->rb->GetReadLen() < local->bodyLen ? local->rb->GetReadLen() : local->bodyLen;
                         //获取正文
-                        local->rb->Read(local->pkgBuffer + local->pkgBufferIndex, local->bodyLen);
+                        local->rb->Read(local->pkgBuffer + local->pkgBufferIndex, readLen);
+                        local->bodyLen -= readLen;
+                        local->pkgBufferIndex += readLen;
 
-                        local->pkgBufferIndex += local->bodyLen;
-                        local->status = GetBody;
+                        if (local->bodyLen == 0) {
+                            local->status = GetBody;
+                        }
                     }
+
                 }
                     break;
                 case GetBody: {
@@ -163,7 +176,8 @@ public:
 //                PrintHex(local->pkgBuffer, local->pkgHead.len);
                     uint16_t crc = Crc16TabCCITT(local->pkgBuffer, local->pkgHead.len - 2);
                     if (crc != pkg.crc.data) {//CRC校验失败
-                        VLOG(2) << "CRC fail, 计算值:" << crc << ",包内值:%d" << pkg.crc.data;
+                        LOG(ERROR) << local->_peerAddress << "cmd:" << to_string(pkg.head.cmd)
+                                   << " CRC fail, 计算值:" << crc << ",包内值:" << pkg.crc.data;
                         local->bodyLen = 0;//获取分包头后，得到的包长度
                         if (local->pkgBuffer != nullptr) {
                             delete[] local->pkgBuffer;

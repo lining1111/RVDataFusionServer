@@ -56,24 +56,74 @@
 #include <string>
 #include "Poco/Data/Session.h"
 #include "Poco/Data/SQLite/Connector.h"
+#include "Poco/Data/SessionFactory.h"
+#include "Poco/Data/RecordSet.h"
+#include "Poco/Data/SQLite/SQLiteException.h"
+#include "Poco/Data/Column.h"
+
 using namespace Poco::Data;
 using Poco::Data::Keywords::now;
 using Poco::Data::Keywords::use;
 using Poco::Data::Keywords::bind;
 using Poco::Data::Keywords::into;
+using Poco::Data::Keywords::limit;
 using Poco::Data::Statement;
 
 using namespace std;
-int main()
-{
-    std::string caseno="CNO1311";
-    SQLite::Connector::registerConnector();
-    int count = 0;
-    Session ses("SQLite","/tmp/hongrui.db");
-    ses << "DROP TABLE IF EXISTS Simpsons", now;
-    ses << "CREATE TABLE IF NOT EXISTS Simpsons (LastName VARCHAR(30), FirstName VARCHAR, Address VARCHAR, Age INTEGER(3))", now;
-    ses << "SELECT COUNT(*) FROM Simpsons ", into(count), now;
-    std::cout << "People in Simpsons " << count;
-    SQLite::Connector::unregisterConnector();
+
+int main() {
+//    std::string caseno="CNO1311";
+//    SQLite::Connector::registerConnector();
+//    int count = 0;
+//    Session ses("SQLite","/tmp/hongrui.db");
+//    ses << "DROP TABLE IF EXISTS Simpsons", now;
+//    ses << "CREATE TABLE IF NOT EXISTS Simpsons (LastName VARCHAR(30), FirstName VARCHAR, Address VARCHAR, Age INTEGER(3))", now;
+//    ses << "SELECT COUNT(*) FROM Simpsons ", into(count), now;
+//    std::cout << "People in Simpsons " << count;
+//    SQLite::Connector::unregisterConnector();
+//
+
+    int ret = 0;
+    std::string server_path;
+    int server_port;
+    std::string file_server_path;
+    int file_server_port;
+    Poco::Data::SQLite::Connector::registerConnector();
+    try {
+        Poco::Data::Session session(Poco::Data::SQLite::Connector::KEY, "db/RoadsideParking.db", 3);
+
+//        session << "select CloudServerPath,CloudServerPort,TransferServicePath,FileServicePort from TB_ParkingLot "
+//                   "where ID=(select MIN(ID) from TB_ParkingLot)",
+//                into(server_path),
+//                into(server_port),
+//                into(file_server_path),
+//                into(file_server_port),now;
+        session << "select FileServicePort from TB_ParkingLot "
+                   "where ID=(select MIN(ID) from TB_ParkingLot)",
+                into(server_port),now;
+
+    }
+    catch (Poco::Data::ConnectionFailedException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        printf("%s\n", ex.displayText().c_str());
+        ret = -1;
+    }
+    catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        printf("%s\n", ex.displayText().c_str());
+        ret = -1;
+    }
+    catch (Poco::Data::ExecutionException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        printf("%s\n", ex.displayText().c_str());
+        ret = -1;
+    }
+//    catch (Poco::Exception &ex) {
+//        //        LOG(ERROR) << ex.displayText();
+//        printf("%s\n", ex.displayText().c_str());
+//        ret = -1;
+//    }
+    Poco::Data::SQLite::Connector::unregisterConnector();
+
     return 0;
 }

@@ -1,10 +1,8 @@
 list(TRANSFORM SRC_FILES PREPEND ../)
-###testIni
-#add_executable(testIni testIni.cpp
-#        ../simpleini/ConvertUTF.c
-#        )
-#target_link_libraries(testIni ${LIBS})
-#redefine_file_macro(testIni)
+##testIni
+add_executable(testIni testIni.cpp)
+target_link_libraries(testIni ${LIBS})
+redefine_file_macro(testIni)
 
 ##测试通讯
 add_executable(testCommon testCommon.cpp ${SRC_FILES})
