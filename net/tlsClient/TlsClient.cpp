@@ -265,7 +265,7 @@ int TlsClient::Open() {
     } else {
         showCerts(ssl);
     }
-    rb = new RingBuffer(1024 * 1024 * 64);
+    rb = new RingBuffer(1024 * 1024 * 4);
     return 0;
 }
 

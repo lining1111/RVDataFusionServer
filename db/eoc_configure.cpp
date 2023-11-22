@@ -4,7 +4,18 @@
 
 #include "eoc_configure.h"
 #include <glog/logging.h>
-#include "sqliteApi.h"
+#include "os/os.h"
+#include "Poco/Data/Session.h"
+#include "Poco/Data/SQLite/Connector.h"
+#include "Poco/Data/RecordSet.h"
+#include "Poco/Data/SQLite/SQLiteException.h"
+
+using namespace Poco::Data;
+using Poco::Data::Keywords::now;
+using Poco::Data::Keywords::use;
+using Poco::Data::Keywords::bind;
+using Poco::Data::Keywords::into;
+using Poco::Data::Keywords::limit;
 
 namespace eoc_configure {
 
@@ -16,26 +27,26 @@ namespace eoc_configure {
 
 //核心板基础配置
     static DBTableInfo base_set_table[] = {
-            {"base_set", "DevIndex",                "INTERGE"},
+            {"base_set", "DevIndex",                "INTEGER"},
             {"base_set", "City",                    "TEXT"},
-            {"base_set", "IsUploadToPlatform",      "INTERGE"},
-            {"base_set", "Is4Gmodel",               "INTERGE"},
-            {"base_set", "IsIllegalCapture",        "INTERGE"},
-            {"base_set", "IsPrintIntersectionName", "INTERGE"},
+            {"base_set", "IsUploadToPlatform",      "INTEGER"},
+            {"base_set", "Is4Gmodel",               "INTEGER"},
+            {"base_set", "IsIllegalCapture",        "INTEGER"},
+            {"base_set", "IsPrintIntersectionName", "INTEGER"},
             {"base_set", "FilesServicePath",        "TEXT"},
-            {"base_set", "FilesServicePort",        "INTERGE"},
+            {"base_set", "FilesServicePort",        "INTEGER"},
             {"base_set", "MainDNS",                 "TEXT"},
             {"base_set", "AlternateDNS",            "TEXT"},
             {"base_set", "PlatformTcpPath",         "TEXT"},
-            {"base_set", "PlatformTcpPort",         "INTERGE"},
+            {"base_set", "PlatformTcpPort",         "INTEGER"},
             {"base_set", "PlatformHttpPath",        "TEXT"},
-            {"base_set", "PlatformHttpPort",        "INTERGE"},
+            {"base_set", "PlatformHttpPort",        "INTEGER"},
             {"base_set", "SignalMachinePath",       "TEXT"},
-            {"base_set", "SignalMachinePort",       "INTERGE"},
-            {"base_set", "IsUseSignalMachine",      "INTERGE"},
+            {"base_set", "SignalMachinePort",       "INTEGER"},
+            {"base_set", "IsUseSignalMachine",      "INTEGER"},
             {"base_set", "NtpServerPath",           "TEXT"},
             {"base_set", "FusionMainboardIp",       "TEXT"},
-            {"base_set", "FusionMainboardPort",     "INTERGE"},
+            {"base_set", "FusionMainboardPort",     "INTEGER"},
             {"base_set", "IllegalPlatformAddress",  "TEXT"},
             {"base_set", "Remarks",                 "TEXT"}};
 
@@ -43,18 +54,18 @@ namespace eoc_configure {
     static DBTableInfo belong_intersection_table[] = {
             {"belong_intersection", "Guid",        "TEXT"},
             {"belong_intersection", "Name",        "TEXT"},
-            {"belong_intersection", "Type",        "INTERGE"},
+            {"belong_intersection", "Type",        "INTEGER"},
             {"belong_intersection", "PlatId",      "TEXT"},
             {"belong_intersection", "XLength",     "REAL"},
             {"belong_intersection", "YLength",     "REAL"},
-            {"belong_intersection", "LaneNumber",  "INTERGE"},
+            {"belong_intersection", "LaneNumber",  "INTEGER"},
             {"belong_intersection", "Latitude",    "TEXT"},
             {"belong_intersection", "Longitude",   "TEXT"},
 
-            {"belong_intersection", "FlagEast",    "INTERGE"},
-            {"belong_intersection", "FlagSouth",   "INTERGE"},
-            {"belong_intersection", "FlagWest",    "INTERGE"},
-            {"belong_intersection", "FlagNorth",   "INTERGE"},
+            {"belong_intersection", "FlagEast",    "INTEGER"},
+            {"belong_intersection", "FlagSouth",   "INTEGER"},
+            {"belong_intersection", "FlagWest",    "INTEGER"},
+            {"belong_intersection", "FlagNorth",   "INTEGER"},
             {"belong_intersection", "DeltaXEast",  "REAL"},
             {"belong_intersection", "DeltaYEast",  "REAL"},
             {"belong_intersection", "DeltaXSouth", "REAL"},
@@ -81,565 +92,698 @@ namespace eoc_configure {
 
 //关联设备
     static DBTableInfo associated_equip_table[] = {
-            {"associated_equip", "EquipType", "INTERGE"},
+            {"associated_equip", "EquipType", "INTEGER"},
             {"associated_equip", "EquipCode", "TEXT"}
     };
-
+#include <sqlite3.h>
     int tableInit() {
+        std::string dbFile = dbInfo.path;
+        os::CreatePath(dbFile);
+
+        //检查数据库文件是否存在
+        if (access(dbFile.c_str(), R_OK | W_OK | F_OK) != 0) {
+            LOG(ERROR) << "db file not exist:" << dbFile;
+            int ret1 = 0;
+            sqlite3 *db;
+            ret1 = sqlite3_open(dbFile.c_str(), &db);//这步如果db文件不存在，则会创建一个sqlite的db文件
+            if (ret1 != SQLITE_OK) {
+                LOG(ERROR) << "can not open db file:" << dbFile;
+                return -1;
+            }
+            sqlite3_close(db);
+        }
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         int ret = 0;
         LOG(INFO) << "using database file path:" << dbInfo.path << ",version:" << dbInfo.version;
         bool isFindVersion = false;
-        char *sqlStr = new char[1024 * 2];
-        char **sqlData;
-        int nRow = 0;//行
-        int nCol = 0;//列
-        std::string cur_version;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
 
-        //查看表结构
-        memset(sqlStr, 0, 1024 * 2);
-        snprintf(sqlStr, 1024 * 2 - 1, "select tbl_name from sqlite_master where type='table'");
-        ret = dbFileExecSqlTable(dbInfo.path, sqlStr, &sqlData, &nRow, &nCol);
-        if (ret < 0) {
-            LOG(ERROR) << "db fail,sql:" << sqlStr;
-            delete[] sqlStr;
-            return -1;
-        }
-
-        //分析结果
-        //寻找版本号
-        for (int i = 0; i < nRow; i++) {
-            std::string name = std::string(sqlData[i + 1]);
-            if (name.rfind("V_", 0) == 0) {
-                cur_version = std::string(sqlData[i + 1]);
-                if (cur_version == dbInfo.version) {
-                    isFindVersion = true;
+            Statement stmt(session);
+            //寻找版本号
+            std::string curVersion;
+            stmt.reset(session);
+            stmt << "select tbl_name from sqlite_master where type='table';";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                if (iter.get(0).toString().find("V_", 0) == 0) {
+                    curVersion = iter.get(0).toString();
+                    if (curVersion == dbInfo.version) {
+                        isFindVersion = true;
+                        break;
+                    }
                 }
-                break;
+            }
+            //如果没找到版本号，则创建表
+            if (!isFindVersion) {
+                LOG(ERROR) << "check db version from" << dbInfo.path << " fail,get:" << curVersion << ",local:"
+                           << dbInfo.version;
+                //1.创建版本号表
+                stmt.reset(session);
+                stmt << "create table IF NOT EXISTS conf_version("
+                        "Id INTEGER PRIMARY KEY NOT NULL,"
+                        "version TEXT NOT NULL,"
+                        "time       TEXT NOT NULL);";
+                stmt.execute(true);
+                //1.1删除版本号表的内容
+                stmt << "delete from conf_version";
+                stmt.execute(true);
+                //2.基础配置表
+                ret = checkTable(dbInfo.path, base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
+                if (ret != 0) {
+                    LOG(ERROR) << "checkTable fail:base_set_table";
+                    return -1;
+                }
+                //3.所属路口信息表
+                ret = checkTable(dbInfo.path, belong_intersection_table,
+                                 sizeof(belong_intersection_table) / sizeof(DBTableInfo));
+                if (ret != 0) {
+                    LOG(ERROR) << "checkTable fail:belong_intersection_table";
+                    return -1;
+                }
+                //4.融合参数设置表
+                ret = checkTable(dbInfo.path, fusion_para_set_table,
+                                 sizeof(fusion_para_set_table) / sizeof(DBTableInfo));
+                if (ret != 0) {
+                    LOG(ERROR) << "checkTable fail:fusion_para_set_table";
+                    return -1;
+                }
+                //5.关联设备表
+                ret = checkTable(dbInfo.path, associated_equip_table,
+                                 sizeof(associated_equip_table) / sizeof(DBTableInfo));
+                if (ret != 0) {
+                    LOG(ERROR) << "checkTable fail:fusion_para_set_table";
+                    return -1;
+                }
+                //6.更新为新版本数据库版本表
+                stmt.reset(session);
+                if (curVersion.empty()) {
+                    stmt << "create table IF NOT EXISTS " << dbInfo.version << "(id INTEGER PRIMARY KEY NOT NULL)";
+                } else {
+                    stmt << "alter table " << curVersion << " rename to " << dbInfo.version;
+                }
+                stmt.execute(true);
             }
         }
-
-        //没找到版本号
-        if (!isFindVersion) {
-            LOG(ERROR) << "check db version from" << dbInfo.path << "fail,get:" << cur_version << "local:"
-                       << dbInfo.version;
-
-            //判断表是否存在创建表，并检查补充字段
-            memset(sqlStr, 0, 1024 * 2);
-            snprintf(sqlStr, 1024 * 2 - 1, "create table IF NOT EXISTS conf_version("
-                                           "Id INTEGER PRIMARY KEY NOT NULL,"
-                                           "version TEXT NOT NULL,"
-                                           "time       TEXT NOT NULL)");
-            ret = dbFileExecSql(dbInfo.path, sqlStr, nullptr, nullptr);
-            if (ret < 0) {
-                LOG(ERROR) << "db fail,sql:" << sqlStr;
-                delete[] sqlStr;
-                return -1;
-            }
-            //删除数据版本,登录成功后会主动要一次配置
-            memset(sqlStr, 0, 1024 * 2);
-            snprintf(sqlStr, 1024 * 2 - 1, "delete from conf_version");
-            ret = dbFileExecSql(dbInfo.path, sqlStr, nullptr, nullptr);
-            if (ret < 0) {
-                LOG(ERROR) << "db sql:" << sqlStr << "fail";
-                delete[] sqlStr;
-                return -1;
-            }
-
-            //基础配置表
-            ret = checkTable(dbInfo.path, base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
-            if (ret != 0) {
-                LOG(ERROR) << "checkTable fail:base_set_table";
-                delete[] sqlStr;
-                return -1;
-            }
-            //所属路口信息表
-            ret = checkTable(dbInfo.path, belong_intersection_table,
-                             sizeof(belong_intersection_table) / sizeof(DBTableInfo));
-            if (ret != 0) {
-                LOG(ERROR) << "checkTable fail:belong_intersection_table";
-                delete[] sqlStr;
-                return -1;
-            }
-            //融合参数设置表
-            ret = checkTable(dbInfo.path, fusion_para_set_table,
-                             sizeof(fusion_para_set_table) / sizeof(DBTableInfo));
-            if (ret != 0) {
-                LOG(ERROR) << "checkTable fail:fusion_para_set_table";
-                delete[] sqlStr;
-                return -1;
-            }
-            //关联设备表
-            ret = checkTable(dbInfo.path, associated_equip_table,
-                             sizeof(associated_equip_table) / sizeof(DBTableInfo));
-            if (ret != 0) {
-                LOG(ERROR) << "checkTable fail:fusion_para_set_table";
-                delete[] sqlStr;
-                return -1;
-            }
-
-            //更新为新版本数据库版本表
-            memset(sqlStr, 0x0, 1024);
-            if (cur_version.empty()) {
-                snprintf(sqlStr, 1024, "create table IF NOT EXISTS %s(id INTEGER PRIMARY KEY NOT NULL)",
-                         dbInfo.version.c_str());
-            } else {
-                snprintf(sqlStr, 1024, "alter table %s rename to %s",
-                         cur_version.c_str(),
-                         dbInfo.version.c_str());
-            }
-            ret = dbFileExecSql(dbInfo.path, sqlStr, nullptr, nullptr);
-            if (ret < 0) {
-                LOG(ERROR) << "db fail,sql:" << sqlStr;
-                delete[] sqlStr;
-                return -1;
-            }
-        } else {
-            LOG(INFO) << "check db version:" << dbInfo.version << " success, from " << dbInfo.path;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
         }
-
-        delete[] sqlStr;
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
         return 0;
     }
 
     int DBDataVersion::deleteFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char sqlstr[1024] = {0};
-        memset(sqlstr, 0x0, 1024);
-        sprintf(sqlstr, "delete from conf_version");
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db fail,sql:" << sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "delete from conf_version";
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBDataVersion::insertToDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char sqlstr[1024] = {0};
-        memset(sqlstr, 0x0, 1024);
-        snprintf(sqlstr, 1024, "insert into conf_version(version,time) values('%s','%s')",
-                 this->version.c_str(), this->time.c_str());
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db fail,sql:" << sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "insert into conf_version(version,time) values(?,?)", use(this->version), use(this->time);
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBDataVersion::selectFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char sqlstr[1024] = {0};
-        char **sqldata;
-        int nrow = 0;
-        int ncol = 0;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "select version from conf_version where id=(select MIN(id) from conf_version)";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                this->version = iter.get(0).toString();
+            }
 
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "select version from conf_version where id=(select MIN(id) from conf_version)");
-        ret = dbFileExecSqlTable(this->db, sqlstr, &sqldata, &nrow, &ncol);
-        if (ret < 0) {
-            LOG(ERROR) << "db fail,sql:" << sqlstr;
-            return -1;
         }
-        if (nrow == 1) {
-            this->version = sqldata[1] ? sqldata[1] : "";
-        } else {
-            this->version = "";
-            LOG(ERROR) << "get version fail";
-            dbFreeTable(sqldata);
-            return 1;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
         }
-        dbFreeTable(sqldata);
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
         return 0;
     }
 
     int DBBaseSet::deleteFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "delete from base_set");
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "delete from base_set";
+            stmt.execute(true);
         }
-        delete[] sqlstr;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBBaseSet::insertToDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0x0, 1024);
-        snprintf(sqlstr, 1024, "insert into base_set("
-                               "DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,"
-                               "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
-                               "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
-                               "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
-                               "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress,Remarks) "
-                               "values(%d,'%s',%d,%d,%d,%d,'%s',%d,'%s','%s',"
-                               "'%s',%d,'%s',%d,'%s',%d,%d,'%s','%s',%d,'%s','%s')",
-                 this->Index,
-                 this->City.c_str(),
-                 this->IsUploadToPlatform,
-                 this->Is4Gmodel,
-                 this->IsIllegalCapture,
-                 this->IsPrintIntersectionName,
-                 this->FilesServicePath.c_str(),
-                 this->FilesServicePort,
-                 this->MainDNS.c_str(),
-                 this->AlternateDNS.c_str(),
-                 this->PlatformTcpPath.c_str(),
-                 this->PlatformTcpPort,
-                 this->PlatformHttpPath.c_str(),
-                 this->PlatformHttpPort,
-                 this->SignalMachinePath.c_str(),
-                 this->SignalMachinePort,
-                 this->IsUseSignalMachine,
-                 this->NtpServerPath.c_str(),
-                 this->FusionMainboardIp.c_str(),
-                 this->FusionMainboardPort,
-                 this->IllegalPlatformAddress.c_str(),
-                 this->Remarks.c_str());
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "insert into base_set("
+                    "DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,"
+                    "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
+                    "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
+                    "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
+                    "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress,Remarks) "
+                    "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    use(this->Index), use(this->City), use(this->IsUploadToPlatform),
+                    use(this->Is4Gmodel), use(this->IsIllegalCapture), use(this->IsPrintIntersectionName),
+                    use(this->FilesServicePath), use(this->FilesServicePort), use(this->MainDNS),
+                    use(this->AlternateDNS), use(this->PlatformTcpPath), use(this->PlatformTcpPort),
+                    use(this->PlatformHttpPath), use(this->PlatformHttpPort), use(this->SignalMachinePath),
+                    use(this->SignalMachinePort), use(this->IsUseSignalMachine), use(this->NtpServerPath),
+                    use(this->FusionMainboardIp), use(this->FusionMainboardPort), use(this->IllegalPlatformAddress),
+                    use(this->Remarks);
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
-        delete[] sqlstr;
         return 0;
     }
 
     int DBBaseSet::selectFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-        char **sqldata;
-        int nrow = 0;
-        int ncol = 0;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "select id,DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,Remarks,"
+                    "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
+                    "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
+                    "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
+                    "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
+                    "from base_set order by id desc limit 1";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                this->Index = strtol(iter.get(1).toString().c_str(), nullptr, 10);
+                this->City = iter.get(2).toString();
+                this->IsUploadToPlatform = strtol(iter.get(3).toString().c_str(), nullptr, 10);
+                this->Is4Gmodel = strtol(iter.get(4).toString().c_str(), nullptr, 10);
+                this->IsIllegalCapture = strtol(iter.get(5).toString().c_str(), nullptr, 10);
+                this->Remarks = iter.get(6).toString();
+                this->IsPrintIntersectionName = strtol(iter.get(7).toString().c_str(), nullptr, 10);
+                this->FilesServicePath = iter.get(8).toString();
+                this->FilesServicePort = strtol(iter.get(9).toString().c_str(), nullptr, 10);
+                this->MainDNS = iter.get(10).toString();
+                this->AlternateDNS = iter.get(11).toString();
+                this->PlatformTcpPath = iter.get(12).toString();
+                this->PlatformTcpPort = strtol(iter.get(13).toString().c_str(), nullptr, 10);
+                this->PlatformHttpPath = iter.get(14).toString();
+                this->PlatformHttpPort = strtol(iter.get(15).toString().c_str(), nullptr, 10);
+                this->SignalMachinePath = iter.get(16).toString();
+                this->SignalMachinePort = strtol(iter.get(17).toString().c_str(), nullptr, 10);
+                this->IsUseSignalMachine = strtol(iter.get(18).toString().c_str(), nullptr, 10);
+                this->NtpServerPath = iter.get(19).toString();
+                this->FusionMainboardIp = iter.get(20).toString();
+                this->FusionMainboardPort = strtol(iter.get(21).toString().c_str(), nullptr, 10);
+                this->IllegalPlatformAddress = iter.get(22).toString();
+            }
 
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "select id,DevIndex,City,IsUploadToPlatform,Is4Gmodel,IsIllegalCapture,Remarks,"
-                        "IsPrintIntersectionName,FilesServicePath,FilesServicePort,MainDNS,AlternateDNS,"
-                        "PlatformTcpPath,PlatformTcpPort,PlatformHttpPath,PlatformHttpPort,"
-                        "SignalMachinePath,SignalMachinePort,IsUseSignalMachine,NtpServerPath,"
-                        "FusionMainboardIp,FusionMainboardPort,IllegalPlatformAddress "
-                        "from base_set order by id desc limit 1");
-        ret = dbFileExecSqlTable(this->db, sqlstr, &sqldata, &nrow, &ncol);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return -1;
         }
-        if (nrow == 1) {
-            this->Index = atoi(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0");
-            this->City = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
-            this->IsUploadToPlatform = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
-            this->Is4Gmodel = atoi(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0");
-            this->IsIllegalCapture = atoi(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0");
-            this->Remarks = sqldata[ncol + 6] ? sqldata[ncol + 6] : "";
-            this->IsPrintIntersectionName = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
-            this->FilesServicePath = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
-            this->FilesServicePort = atoi(sqldata[ncol + 9] ? sqldata[ncol + 9] : "0");
-            this->MainDNS = sqldata[ncol + 10] ? sqldata[ncol + 10] : "";
-            this->AlternateDNS = sqldata[ncol + 11] ? sqldata[ncol + 11] : "";
-            this->PlatformTcpPath = sqldata[ncol + 12] ? sqldata[ncol + 12] : "";
-            this->PlatformTcpPort = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
-            this->PlatformHttpPath = sqldata[ncol + 14] ? sqldata[ncol + 14] : "";
-            this->PlatformHttpPort = atoi(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0");
-            this->SignalMachinePath = sqldata[ncol + 16] ? sqldata[ncol + 16] : "";
-            this->SignalMachinePort = atoi(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0");
-            this->IsUseSignalMachine = atoi(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0");
-            this->NtpServerPath = sqldata[ncol + 19] ? sqldata[ncol + 19] : "";
-            this->FusionMainboardIp = sqldata[ncol + 20] ? sqldata[ncol + 20] : "";
-            this->FusionMainboardPort = atoi(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0");
-            this->IllegalPlatformAddress = sqldata[ncol + 22] ? sqldata[ncol + 22] : "";
-        } else {
-            LOG(ERROR) << "db select count err,sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return 1;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
         }
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBIntersection::deleteFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "delete from belong_intersection");
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "delete from belong_intersection";
+            stmt.execute(true);
         }
-        delete[] sqlstr;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBIntersection::insertToDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024 * 2];
-
-        memset(sqlstr, 0x0, 2048);
-        snprintf(sqlstr, 2048, "insert into belong_intersection("
-                               "Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
-                               "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
-                               "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY) "
-                               "values('%s','%s',%d,'%s',%f,%f,%d,'%s','%s',%d,%d,%d,%d,%f,%f,%f,%f,%f,"
-                               "%f,%f,%f,%f,%f)",
-                 this->Guid.c_str(),
-                 this->Name.c_str(),
-                 this->Type,
-                 this->PlatId.c_str(),
-                 this->XLength,
-                 this->YLength,
-                 this->LaneNumber,
-                 this->Latitude.c_str(),
-                 this->Longitude.c_str(),
-                 this->FlagEast,
-                 this->FlagSouth,
-                 this->FlagWest,
-                 this->FlagNorth,
-                 this->DeltaXEast,
-                 this->DeltaYEast,
-                 this->DeltaXSouth,
-                 this->DeltaYSouth,
-                 this->DeltaXWest,
-                 this->DeltaYWest,
-                 this->DeltaXNorth,
-                 this->DeltaYNorth,
-                 this->WidthX,
-                 this->WidthY);
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "insert into belong_intersection(Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,"
+                    "Latitude,Longitude,FlagEast,FlagSouth,FlagWest,FlagNorth,"
+                    "DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
+                    "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY) "
+                    "values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    use(this->Guid), use(this->Name), use(this->Type),
+                    use(this->PlatId), use(this->XLength), use(this->YLength),
+                    use(this->LaneNumber), use(this->Latitude), use(this->Longitude),
+                    use(this->FlagEast), use(this->FlagSouth), use(this->FlagWest),
+                    use(this->FlagNorth), use(this->DeltaXEast), use(this->DeltaYEast),
+                    use(this->DeltaXSouth), use(this->DeltaYSouth), use(this->DeltaXWest),
+                    use(this->DeltaYWest), use(this->DeltaXNorth), use(this->DeltaYNorth),
+                    use(this->WidthX), use(this->WidthY);
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
-        delete[] sqlstr;
         return 0;
     }
 
     int DBIntersection::selectFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024 * 4];
-        char **sqldata;
-        int nrow = 0;
-        int ncol = 0;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "select id,Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
+                    "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
+                    "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
+                    "from belong_intersection order by id desc limit 1";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                this->Guid = iter.get(1).toString();
+                this->Name = iter.get(2).toString();
+                this->Type = strtol(iter.get(3).toString().c_str(), nullptr, 10);
+                this->PlatId = iter.get(4).toString();
+                this->XLength = strtof(iter.get(5).toString().c_str(), nullptr);
+                this->YLength = strtof(iter.get(6).toString().c_str(), nullptr);
+                this->LaneNumber = strtol(iter.get(7).toString().c_str(), nullptr, 10);
+                this->Latitude = iter.get(8).toString();
+                this->Longitude = iter.get(9).toString();
+                this->FlagEast = strtol(iter.get(10).toString().c_str(), nullptr, 10);
+                this->FlagSouth = strtol(iter.get(11).toString().c_str(), nullptr, 10);
+                this->FlagWest = strtol(iter.get(12).toString().c_str(), nullptr, 10);
+                this->FlagNorth = strtol(iter.get(13).toString().c_str(), nullptr, 10);
+                this->DeltaXEast = strtof(iter.get(14).toString().c_str(), nullptr);
+                this->DeltaYEast = strtof(iter.get(15).toString().c_str(), nullptr);
+                this->DeltaXSouth = strtof(iter.get(16).toString().c_str(), nullptr);
+                this->DeltaYSouth = strtof(iter.get(17).toString().c_str(), nullptr);
+                this->DeltaXWest = strtof(iter.get(18).toString().c_str(), nullptr);
+                this->DeltaYWest = strtof(iter.get(19).toString().c_str(), nullptr);
+                this->DeltaXNorth = strtof(iter.get(20).toString().c_str(), nullptr);
+                this->DeltaYNorth = strtof(iter.get(21).toString().c_str(), nullptr);
+                this->WidthX = strtof(iter.get(22).toString().c_str(), nullptr);
+                this->WidthY = strtof(iter.get(23).toString().c_str(), nullptr);
+            }
 
-        sprintf(sqlstr, "select id,Guid,Name,Type,PlatId,XLength,YLength,LaneNumber,Latitude,Longitude,"
-                        "FlagEast,FlagSouth,FlagWest,FlagNorth,DeltaXEast,DeltaYEast,DeltaXSouth,DeltaYSouth,"
-                        "DeltaXWest,DeltaYWest,DeltaXNorth,DeltaYNorth,WidthX,WidthY "
-                        "from belong_intersection order by id desc limit 1");
-        ret = dbFileExecSqlTable(this->db, sqlstr, &sqldata, &nrow, &ncol);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return -1;
         }
-        if (nrow == 1) {
-            this->Guid = sqldata[ncol + 1] ? sqldata[ncol + 1] : "";
-            this->Name = sqldata[ncol + 2] ? sqldata[ncol + 2] : "";
-            this->Type = atoi(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0");
-            this->PlatId = sqldata[ncol + 4] ? sqldata[ncol + 4] : "0";
-            this->XLength = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
-            this->YLength = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
-            this->LaneNumber = atoi(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0");
-            this->Latitude = sqldata[ncol + 8] ? sqldata[ncol + 8] : "";
-            this->Longitude = sqldata[ncol + 9] ? sqldata[ncol + 9] : "";
-            this->FlagEast = atoi(sqldata[ncol + 10] ? sqldata[ncol + 10] : "0");
-            this->FlagSouth = atoi(sqldata[ncol + 11] ? sqldata[ncol + 11] : "0");
-            this->FlagWest = atoi(sqldata[ncol + 12] ? sqldata[ncol + 12] : "0");
-            this->FlagNorth = atoi(sqldata[ncol + 13] ? sqldata[ncol + 13] : "0");
-            this->DeltaXEast = atof(sqldata[ncol + 14] ? sqldata[ncol + 14] : "0.0");
-            this->DeltaYEast = atof(sqldata[ncol + 15] ? sqldata[ncol + 15] : "0.0");
-            this->DeltaXSouth = atof(sqldata[ncol + 16] ? sqldata[ncol + 16] : "0.0");
-            this->DeltaYSouth = atof(sqldata[ncol + 17] ? sqldata[ncol + 17] : "0.0");
-            this->DeltaXWest = atof(sqldata[ncol + 18] ? sqldata[ncol + 18] : "0.0");
-            this->DeltaYWest = atof(sqldata[ncol + 19] ? sqldata[ncol + 19] : "0.0");
-            this->DeltaXNorth = atof(sqldata[ncol + 20] ? sqldata[ncol + 20] : "0.0");
-            this->DeltaYNorth = atof(sqldata[ncol + 21] ? sqldata[ncol + 21] : "0.0");
-            this->WidthX = atof(sqldata[ncol + 22] ? sqldata[ncol + 22] : "0.0");
-            this->WidthY = atof(sqldata[ncol + 23] ? sqldata[ncol + 23] : "0.0");
-        } else {
-            LOG(ERROR) << "db select count err,sql:" << sqlstr;
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return 1;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
         }
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBFusionParaSet::deleteFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "delete from fusion_para_set");
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "delete from fusion_para_set";
+            stmt.execute(true);
         }
-        delete[] sqlstr;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBFusionParaSet::insertToDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0x0, 1024);
-        snprintf(sqlstr, 1024, "insert into fusion_para_set("
-                               "IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
-                               "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y) "
-                               "values(%f,%f,%f,%f,%f,%f,%f,%f)",
-                 this->IntersectionAreaPoint1X,
-                 this->IntersectionAreaPoint1Y,
-                 this->IntersectionAreaPoint2X,
-                 this->IntersectionAreaPoint2Y,
-                 this->IntersectionAreaPoint3X,
-                 this->IntersectionAreaPoint3Y,
-                 this->IntersectionAreaPoint4X,
-                 this->IntersectionAreaPoint4Y);
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "insert into fusion_para_set(IntersectionAreaPoint1X,IntersectionAreaPoint1Y,"
+                    "IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
+                    "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,"
+                    "IntersectionAreaPoint4X,IntersectionAreaPoint4Y) "
+                    "values(?,?,?,?,?,?,?,?)",
+                    use(this->IntersectionAreaPoint1X), use(this->IntersectionAreaPoint1Y),
+                    use(this->IntersectionAreaPoint2X), use(this->IntersectionAreaPoint2Y),
+                    use(this->IntersectionAreaPoint3X), use(this->IntersectionAreaPoint3Y),
+                    use(this->IntersectionAreaPoint4X), use(this->IntersectionAreaPoint4Y);
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
-        delete[] sqlstr;
         return 0;
     }
 
     int DBFusionParaSet::selectFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-        char **sqldata;
-        int nrow = 0;
-        int ncol = 0;
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr,
-                "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
-                "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
-                "from fusion_para_set order by id desc limit 1");
-        ret = dbFileExecSqlTable(this->db, sqlstr, &sqldata, &nrow, &ncol);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "select id,IntersectionAreaPoint1X,IntersectionAreaPoint1Y,"
+                    "IntersectionAreaPoint2X,IntersectionAreaPoint2Y,"
+                    "IntersectionAreaPoint3X,IntersectionAreaPoint3Y,"
+                    "IntersectionAreaPoint4X,IntersectionAreaPoint4Y "
+                    "from fusion_para_set order by id desc limit 1";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                this->IntersectionAreaPoint1X = strtof(iter.get(1).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint1Y = strtof(iter.get(2).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint2X = strtof(iter.get(3).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint2Y = strtof(iter.get(4).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint3X = strtof(iter.get(5).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint3Y = strtof(iter.get(6).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint4X = strtof(iter.get(7).toString().c_str(), nullptr);
+                this->IntersectionAreaPoint4Y = strtof(iter.get(8).toString().c_str(), nullptr);
+            }
+
         }
-        if (nrow == 1) {
-            this->IntersectionAreaPoint1X = atof(sqldata[ncol + 1] ? sqldata[ncol + 1] : "0.0");
-            this->IntersectionAreaPoint1Y = atof(sqldata[ncol + 2] ? sqldata[ncol + 2] : "0.0");
-            this->IntersectionAreaPoint2X = atof(sqldata[ncol + 3] ? sqldata[ncol + 3] : "0.0");
-            this->IntersectionAreaPoint2Y = atof(sqldata[ncol + 4] ? sqldata[ncol + 4] : "0.0");
-            this->IntersectionAreaPoint3X = atof(sqldata[ncol + 5] ? sqldata[ncol + 5] : "0.0");
-            this->IntersectionAreaPoint3Y = atof(sqldata[ncol + 6] ? sqldata[ncol + 6] : "0.0");
-            this->IntersectionAreaPoint4X = atof(sqldata[ncol + 7] ? sqldata[ncol + 7] : "0.0");
-            this->IntersectionAreaPoint4Y = atof(sqldata[ncol + 8] ? sqldata[ncol + 8] : "0.0");
-        } else {
-            LOG(ERROR) << "db select count err,sql:" << sqlstr;
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return 1;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
         }
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBAssociatedEquip::deleteAllFromDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "delete from associated_equip");
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "delete from associated_equip";
+            stmt.execute(true);
         }
-        delete[] sqlstr;
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 
     int DBAssociatedEquip::insertToDB() {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
-        LOG(INFO) << "db file:" << this->db;
+        LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-
-        memset(sqlstr, 0x0, 1024);
-        snprintf(sqlstr, 1024 - 1, "insert into associated_equip("
-                                   "EquipType,EquipCode) values (%d,'%s')",
-                 this->EquipType,
-                 this->EquipCode.c_str());
-
-        ret = dbFileExecSql(this->db, sqlstr, nullptr, nullptr);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "insert into associated_equip(EquipType,EquipCode) values (?,?)",
+                    use(this->EquipType), use(this->EquipCode);
+            stmt.execute(true);
         }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
 
-        delete[] sqlstr;
         return 0;
     }
 
@@ -647,35 +791,40 @@ namespace eoc_configure {
         std::unique_lock<std::mutex> lock(*dbInfo.mtx);
         LOG(INFO) << "db file:" << dbInfo.path;
         int ret = 0;
-        char *sqlstr = new char[1024];
-        char **sqldata;
-        int nrow = 0;
-        int ncol = 0;
-
-        memset(sqlstr, 0, 1024);
-        sprintf(sqlstr, "select id,EquipType,EquipCode from associated_equip");
-        ret = dbFileExecSqlTable(dbInfo.path, sqlstr, &sqldata, &nrow, &ncol);
-        if (ret < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            dbFreeTable(sqldata);
-            return -1;
-        }
-        data.clear();
-        if (nrow <= 0) {
-            LOG(ERROR) << "db select count err.sql:" << sqlstr << "fail";
-        } else {
-            DBAssociatedEquip tmp_data;
-            for (int i = 0; i < nrow; i++) {
-                int index = ncol * (i + 1);
-                tmp_data.EquipType = atoi(sqldata[index + 1] ? sqldata[index + 1] : "0");
-                tmp_data.EquipCode = sqldata[index + 2] ? sqldata[index + 2] : "";
-                data.push_back(tmp_data);
+        SQLite::Connector::registerConnector();
+        try {
+            Session session(SQLite::Connector::KEY, dbInfo.path, 3);
+            Statement stmt(session);
+            stmt.reset(session);
+            stmt << "select id,EquipType,EquipCode from associated_equip";
+            stmt.execute(true);
+            RecordSet rs(stmt);
+            for (auto iter: rs) {
+                DBAssociatedEquip item;
+                item.EquipType = strtol(iter.get(1).toString().c_str(), nullptr, 10);
+                item.EquipCode = iter.get(2).toString();
+                data.push_back(item);
             }
-        }
 
-        delete[] sqlstr;
-        dbFreeTable(sqldata);
+        }
+        catch (Poco::Data::ConnectionFailedException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Data::ExecutionException &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        catch (Poco::Exception &ex) {
+            LOG(ERROR) << ex.displayText();
+            ret = -1;
+        }
+        Poco::Data::SQLite::Connector::unregisterConnector();
+
         return 0;
     }
 

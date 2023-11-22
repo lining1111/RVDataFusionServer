@@ -295,6 +295,60 @@ public:
 
 XPACK(O(EquipType, EquipCode));
 };
+class StartEndTime {
+public:
+    string StartTime;
+    string EndTime;//格式“XX:XX:XX”
+XPACK(O(StartTime, EndTime));
+};
+
+class RelatedAreaParamsContent {
+public:
+    int PersonCount;
+    int Duration;//时长，单位秒
+XPACK(O(PersonCount, Duration));
+};
+
+class RuleDetail {
+public:
+    string StartDay;
+    string EndDay;
+    vector<StartEndTime> StartEndTimes;
+    vector<int> DayOfWeeks;// 0=星期日，1=星期一，2=星期二，3=星期三，4=星期四，5=星期五，6=星期六
+    int ParamsEnableIndex;
+    RelatedAreaParamsContent Params;//启用参数
+XPACK(O(StartDay, EndDay, StartEndTimes, DayOfWeeks, ParamsEnableIndex, Params));
+};
+
+//检测区规则参数
+class AreaRule_t {
+public:
+    string Name;//名称
+    int EventType;//事件类型：1=行人等待报警事件，2=异常停车事件，3.溢出事件，4.拥堵事件
+    vector<RuleDetail> Content;
+    string Remark;
+XPACK(O(Name, EventType, Content, Remark));
+};
+
+
+class RelatedArea_t {
+public:
+    string IntersectionGuid;//路口GUID
+    string Name;//检测区名称
+    string PavementGuid;//关联人行道1
+    string PavementGuid2;//关联人行道2
+    string PavementName;//关联人行道1名称
+    string PavementName2;//关联人行道2名称
+    string AreaGuid;//关联区域1
+    string AreaGuid2;//关联区域2
+    string AreaName;//关联区域1名称
+    string AreaName2;//关联区域2名称
+    int Type;//检测区类型
+    AreaRule_t AreaRule;//检测区规则参数
+XPACK(O(IntersectionGuid, Name, PavementGuid, PavementGuid2, PavementName, PavementName2,
+        AreaGuid, AreaGuid2, AreaName, AreaName2, Type, AreaRule));
+};
+
 #include "../lib/AlgorithmParam.h"
 class DataR102 {
     std::string Code = "MCCR102";
@@ -305,9 +359,10 @@ public:
     BaseSettingEntity BaseSetting;
     std::vector<AssociatedEquip> AssociatedEquips;
     //融合参数
-    AlgorithmParam FusionParas;
+//    AlgorithmParam FusionParas;
+//    RelatedArea_t RelatedAreas;
 
-XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips,FusionParas));
+XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips/*,FusionParas,RelatedAreas*/));
 };
 
 class R102 {

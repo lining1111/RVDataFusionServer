@@ -6,8 +6,19 @@
 #include "dbInfo.h"
 #include <glog/logging.h>
 #include "os/os.h"
-#include "sqliteApi.h"
+#include "Poco/Data/Session.h"
+#include "Poco/Data/SQLite/Connector.h"
+#include "Poco/Data/RecordSet.h"
+#include "Poco/Data/SQLite/SQLiteException.h"
 
+using namespace Poco::Data;
+using Poco::Data::Keywords::now;
+using Poco::Data::Keywords::use;
+using Poco::Data::Keywords::bind;
+using Poco::Data::Keywords::into;
+using Poco::Data::Keywords::limit;
+
+#include <sqlite3.h>
 int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     int ret = 0;
     LOG(INFO) << "db file:" << dbFile;
@@ -16,17 +27,14 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     //检查数据库文件是否存在
     if (access(dbFile.c_str(), R_OK | W_OK | F_OK) != 0) {
         LOG(ERROR) << "db file not exist:" << dbFile;
-        char *cmd = new char[512];
-        memset(cmd, 0, 512);
-        sprintf(cmd, "sqlite3 %s", dbFile.c_str());
-        LOG(INFO) << "create db file,cmd=" << cmd;
-        int result = os::runCmd(cmd);
-        if (result < 0) {
-            LOG(ERROR) << "exec cmd err" << cmd;
-            delete[] cmd;
+        int ret1 = 0;
+        sqlite3 *db;
+        ret1 = sqlite3_open(dbFile.c_str(), &db);//这步如果db文件不存在，则会创建一个sqlite的db文件
+        if (ret1 != SQLITE_OK) {
+            LOG(ERROR) << "can not open db file:" << dbFile;
             return -1;
         }
-        delete[] cmd;
+        sqlite3_close(db);
     }
 
     if (column_size <= 0) {
@@ -34,70 +42,57 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
         return -1;
     }
 
-    for (int i = 0; i < column_size; i++) {
-        bool check_succeed = true;
+    SQLite::Connector::registerConnector();
+    try {
+        Session session(SQLite::Connector::KEY, dbFile, 3);
+
+        Statement stmt(session);
+
         //先检查table
-        ret = dbCheckORAddTable(dbFile, table[0].tableName);
-        if (ret != 0) {
-            LOG(ERROR) << "dbCheckORAddTable err";
-            return -1;
-        }
-        for (int c_index = 0; c_index < column_size; c_index++) {
-            ret = dbCheckOrAddColumn(dbFile, table[0].tableName,
-                                     c_index + 1,
-                                     table[c_index].columnName,
-                                     table[c_index].columnDescription);
-            if (ret != 0) {
-                check_succeed = false;
-                LOG(ERROR) << "dbCheckOrAddColumn err delete table and retry";
-                dbDeleteTable(dbFile, table[0].tableName.c_str());
-                break;
+        stmt << "create table IF NOT EXISTS " << table[0].tableName << "(id INTEGER PRIMARY KEY NOT NULL);";
+        stmt.execute(true);
+
+        for (int i = 0; i < column_size; i++) {
+            //查看表内字段是否存在
+            bool isColumnExist = false;
+            stmt.reset(session);
+            stmt << "pragma table_info(" << table[0].tableName << ");";
+            stmt.execute(true);
+            Poco::Data::RecordSet rs(stmt);
+            for (auto iter:rs) {
+                std::string name = iter.get(1).toString();
+                if (name == table[i].columnName){
+                    isColumnExist = true;
+                    break;
+                }
+            }
+            //如果不存在，增加表内字段
+            if (!isColumnExist) {
+                stmt << "alter table " << table[i].tableName <<
+                     " add column " << table[i].columnName << " " << table[i].columnDescription << ";";
+                stmt.execute(true);
             }
         }
-        if (check_succeed) {
-            LOG(INFO) << " check table:" << table[0].tableName << "success,column size:" << column_size;
-            return 0;
-        }
     }
-    LOG(ERROR) << " check table:" << table[0].tableName << "fail,column size:" << column_size;
-    return -1;
-}
-
-int checkTableColumn(std::string dbPath, std::string tab_name, DBTableColInfo *tab_column, int check_num) {
-    LOG(INFO) << "db file:" << dbPath;
-    int rtn = 0;
-    char *sqlstr = new char[1024];
-    char **sqldata;
-    int nrow = 0;
-    int ncol = 0;
-    int icol = 0;
-
-    for (icol = 0; icol < check_num; icol++) {
-        nrow = 2;
-        ncol = 0;
-        memset(sqlstr, 0x0, 1024);
-        sprintf(sqlstr, "select * from sqlite_master where name='%s' and sql like '%%%s%%';",
-                tab_name.c_str(), tab_column[icol].name.c_str());
-        rtn = dbFileExecSqlTable(dbPath, sqlstr, &sqldata, &nrow, &ncol);
-        if (rtn < 0) {
-            LOG(ERROR) << "db sql:" << sqlstr << "fail";
-            delete[] sqlstr;
-            return -1;
-        }
-        if (nrow == 0) {
-            //添加字段
-            memset(sqlstr, 0x0, 1024);
-            sprintf(sqlstr, "alter table %s add %s %s", tab_name.c_str(), tab_column[icol].name.c_str(),
-                    tab_column[icol].type.c_str());
-            rtn = dbFileExecSql(dbPath, sqlstr, nullptr, nullptr);
-            if (rtn < 0) {
-                LOG(ERROR) << "db fail,sql:" << sqlstr;
-            } else {
-                LOG(INFO) << "add column ok,sql:" << sqlstr;
-            }
-        }
-        dbFreeTable(sqldata);
+    catch (Poco::Data::ConnectionFailedException &ex) {
+        LOG(ERROR) << ex.displayText();
+        ret = -1;
     }
-    delete[] sqlstr;
-    return 0;
+    catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    catch (Poco::Data::ExecutionException &ex) {
+        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    catch (Poco::Exception &ex) {
+        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    Poco::Data::SQLite::Connector::unregisterConnector();
+    if (ret != 0) {
+        LOG(ERROR) << " check table:" << table[0].tableName << " fail,column size:" << column_size;
+    }
+    return ret;
 }

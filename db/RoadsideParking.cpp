@@ -12,7 +12,8 @@ namespace RoadsideParking {
 
     DBInfo dbInfo = {
             .mtx = new std::mutex(),
-            .path=HOME_PATH"/bin/RoadsideParking.db",
+//            .path=HOME_PATH"/bin/RoadsideParking.db",
+            .path="./RoadsideParking.db",
             .version="V1_0"};
 
     int

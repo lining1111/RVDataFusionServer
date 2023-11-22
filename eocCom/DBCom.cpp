@@ -71,10 +71,10 @@ int globalConfigInit(void) {
     dbDataVersion.selectFromDB();
     version = dbDataVersion.version;
     if (!version.empty()) {
-        LOG(ERROR) << "get version:" << version;
+        LOG(WARNING) << "get version:" << version;
         return 1;
     }
-    LOG(INFO) << "eoc version null";
+    LOG(ERROR) << "eoc version null";
     return 0;
 }
 

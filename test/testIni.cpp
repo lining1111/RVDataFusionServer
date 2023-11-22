@@ -84,45 +84,75 @@ int main() {
 //
 
     int ret = 0;
-    std::string server_path;
-    int server_port;
-    std::string file_server_path;
-    int file_server_port;
-    Poco::Data::SQLite::Connector::registerConnector();
-    try {
-        Poco::Data::Session session(Poco::Data::SQLite::Connector::KEY, "db/RoadsideParking.db", 3);
-
-//        session << "select CloudServerPath,CloudServerPort,TransferServicePath,FileServicePort from TB_ParkingLot "
-//                   "where ID=(select MIN(ID) from TB_ParkingLot)",
-//                into(server_path),
-//                into(server_port),
-//                into(file_server_path),
-//                into(file_server_port),now;
-        session << "select FileServicePort from TB_ParkingLot "
-                   "where ID=(select MIN(ID) from TB_ParkingLot)",
-                into(server_port),now;
-
-    }
-    catch (Poco::Data::ConnectionFailedException &ex) {
-//        LOG(ERROR) << ex.displayText();
-        printf("%s\n", ex.displayText().c_str());
-        ret = -1;
-    }
-    catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
-//        LOG(ERROR) << ex.displayText();
-        printf("%s\n", ex.displayText().c_str());
-        ret = -1;
-    }
-    catch (Poco::Data::ExecutionException &ex) {
-//        LOG(ERROR) << ex.displayText();
-        printf("%s\n", ex.displayText().c_str());
-        ret = -1;
-    }
+//    std::string server_path;
+//    int server_port;
+//    std::string file_server_path;
+//    int file_server_port;
+//    Poco::Data::SQLite::Connector::registerConnector();
+//    try {
+//        Poco::Data::Session session(Poco::Data::SQLite::Connector::KEY, "db/RoadsideParking.db", 3);
+//
+//        Poco::Data::Statement stmt(session);
+//        stmt << "select CloudServerPath,CloudServerPort,TransferServicePath,FileServicePort from TB_ParkingLot "
+//                  "where ID=(select MIN(ID) from TB_ParkingLot)";
+//        stmt.execute();
+//        Poco::Data::RecordSet rs(stmt);
+//        for (auto iter: rs) {
+//            server_path = iter.get(0).toString();
+//            server_port = stoi(iter.get(1).toString());
+//            file_server_path = iter.get(2).toString();
+//            file_server_port = stoi(iter.get(3).toString());
+//        }
+//
+//    }
+//    catch (Poco::Data::ConnectionFailedException &ex) {
+////        LOG(ERROR) << ex.displayText();
+//        printf("%s\n", ex.displayText().c_str());
+//        ret = -1;
+//    }
+//    catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+////        LOG(ERROR) << ex.displayText();
+//        printf("%s\n", ex.displayText().c_str());
+//        ret = -1;
+//    }
+//    catch (Poco::Data::ExecutionException &ex) {
+////        LOG(ERROR) << ex.displayText();
+//        printf("%s\n", ex.displayText().c_str());
+//        ret = -1;
+//    }
 //    catch (Poco::Exception &ex) {
 //        //        LOG(ERROR) << ex.displayText();
 //        printf("%s\n", ex.displayText().c_str());
 //        ret = -1;
 //    }
+//    Poco::Data::SQLite::Connector::unregisterConnector();
+
+    string version = "V_1";
+    string time = "2019-01-01 00:00:00";
+    SQLite::Connector::registerConnector();
+    try {
+        Session session(SQLite::Connector::KEY, "db/eoc_configure.db", 3);
+
+        Statement stmt(session);
+        stmt << "insert into conf_version(version,time) values(?,?)", use(version), use(time);
+        stmt.execute();
+    }
+    catch (Poco::Data::ConnectionFailedException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    catch (Poco::Data::SQLite::InvalidSQLStatementException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    catch (Poco::Data::ExecutionException &ex) {
+//        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
+    catch (Poco::Exception &ex) {
+//        LOG(ERROR) << ex.displayText();
+        ret = -1;
+    }
     Poco::Data::SQLite::Connector::unregisterConnector();
 
     return 0;

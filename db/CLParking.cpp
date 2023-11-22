@@ -6,13 +6,15 @@
 #include <glog/logging.h>
 #include "sqliteApi.h"
 
+
 namespace CLParking {
 
 #define HOME_PATH "/home/nvidianx"
 
     DBInfo dbInfo = {
             .mtx = new std::mutex(),
-            .path=HOME_PATH"/bin/CLParking.db",
+//            .path=HOME_PATH"/bin/CLParking.db",
+            .path="./CLParking.db",
             .version="V_1_0_0"};
 
     int dbGetUname(std::string &uname) {

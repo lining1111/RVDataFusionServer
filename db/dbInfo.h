@@ -35,13 +35,4 @@ typedef struct {
  */
 int checkTable(std::string dbFile, const DBTableInfo *table, int column_size);
 
-/**
- * 检查表内字段，不存在的话则添加
- * @param tab_name
- * @param tab_column
- * @param check_num
- * @return
- */
-int checkTableColumn(std::string dbPath, std::string tab_name, DBTableColInfo *tab_column, int check_num);
-
 #endif //TABLEINFO_H

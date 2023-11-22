@@ -162,3 +162,8 @@
 ### 20231121
 
     由于历史原因，一些数据库的数据类型INTEGER写成了interger,导致Poco数据库在查询时，无法查询到数据，所以不采用Poco Data数据库
+
+### 20231122
+
+    eoc_configure.db采用Poco库的数据库读写来操作，剩下的两个库用sqlite3库操作，原因是，历史原因，库里有些字段的数据类型不对，
+    应该为INTEGER的写成了interge，导致Poco库的数据读取失败，基于上述原因，更新旧版程序的时候，需要将eoc_configure.db库删除

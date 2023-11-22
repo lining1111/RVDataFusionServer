@@ -19,6 +19,8 @@ int EOCCom::Open() {
     } else {
         LOG(WARNING) << "eoc server connect success";
     }
+    pkgs.setMax(10);
+    pkgs.clear();
     return ret;
 }
 
@@ -280,18 +282,18 @@ void processR102(void *p, string content, string cmd) {
     }
 
     //写入算法融合参数
-    AlgorithmParam algorithmParam;
-    algorithmParam = data.Data.FusionParas;
-    //写入文件
-    string jsonStr;
-    jsonStr = json::encode(algorithmParam);
-    ofstream of;
-    of.open("algorithm.json", ios::out | ios::trunc);
-    if (of.is_open()) {
-        of << jsonStr;
-        of.close();
-        LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
-    }
+//    AlgorithmParam algorithmParam;
+//    algorithmParam = data.Data.FusionParas;
+//    //写入文件
+//    string jsonStr;
+//    jsonStr = json::encode(algorithmParam);
+//    ofstream of;
+//    of.open("algorithm.json", ios::out | ios::trunc);
+//    if (of.is_open()) {
+//        of << jsonStr;
+//        of.close();
+//        LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
+//    }
 
     //配置处理完成后,发送S102信息 添加重启任务
     if (result != 0) {

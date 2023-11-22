@@ -103,9 +103,13 @@ size_t RingBuffer::Write(const void *data, size_t count) {
 }
 
 int RingBuffer::GetReadLen() {
-    return available_for_read;
+    std::unique_lock<std::mutex> lock(*mtx);
+    int ret = available_for_read;
+    return ret;
 }
 
 int RingBuffer::GetWriteLen() {
-    return available_for_write;
+    std::unique_lock<std::mutex> lock(*mtx);
+    int ret = available_for_write;
+    return ret;
 }
