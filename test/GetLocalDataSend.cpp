@@ -142,7 +142,7 @@ void readPicName(string path, vector<string> &picNameArray) {
     });
     //3.依次读取文件，并编成base64,压入输出
     for (auto iter: files) {
-      picNameArray.push_back(path+"/"+iter);
+        picNameArray.push_back(path + "/" + iter);
     }
 
 }
@@ -152,12 +152,12 @@ void readPicName(string path, vector<string> &picNameArray) {
 int sn = 0;
 
 int SendServer(int sock, FusionData fusionData, string matrixNo) {
-    uint8_t buff[1024 * 1024];
-    uint32_t len = 0;
+    uint8_t buff[1024 * 1024 * 4];
+    uint32_t len = 1024.1024 * 4;
     uint32_t deviceNo = stoi(matrixNo.substr(0, 10));
     Pkg pkg;
     fusionData.PkgWithoutCRC(sn, deviceNo, pkg);
-    Pack(pkg, buff, &len);
+    len = Pack(pkg, buff, len);
     int ret = send(sock, buff, len, 0);
     if (ret == -1) {
         printf("发生失败 errno:%d\n", errno);
@@ -176,7 +176,7 @@ int SendServer(int sock, FusionData fusionData, string matrixNo) {
 13---4 1030065331
 14---1 1030065346
  */
-vector<string> hardCode ={
+vector<string> hardCode = {
         "1030065346",
         "1030065111",
         "1030065212",
@@ -224,7 +224,7 @@ int main(int argc, char **argv) {
     setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     timeval timeout;
 //    timeout.tv_sec = 3;
-    timeout.tv_usec = 100*1000;
+    timeout.tv_usec = 100 * 1000;
     setsockopt(sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *) &timeout, sizeof(struct timeval));
 //    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *) &timeout, sizeof(struct timeval));
 //

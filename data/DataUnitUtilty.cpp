@@ -167,8 +167,8 @@ int savePic(string base64Pic, uint64_t timestamp, string path) {
 
     //将base64字符串转换为图片
     uint8_t *pic = nullptr;
-    pic = new uint8_t[1024 * 1024];
-    unsigned int len = 1024 * 1024;
+    pic = new uint8_t[base64Pic.length()];
+    unsigned int len = base64Pic.length();
     os::base64_decode((unsigned char *) base64Pic.data(), base64Pic.length(), pic, &len);
 
     int ret = 0;

@@ -168,11 +168,15 @@ public:
             return -1;
         }
 
-        uint8_t *buf_send = new uint8_t[1024 * 1024];
-        uint32_t len_send = 0;
-        len_send = 0;
+        uint8_t *buf_send = new uint8_t[(sizeof(pkg.head) + sizeof(pkg.crc) + pkg.body.length())];
+        uint32_t len_send = (sizeof(pkg.head) + sizeof(pkg.crc) + pkg.body.length());
         //pack
-        common::Pack(pkg, buf_send, &len_send);
+        len_send = common::Pack(pkg, buf_send, len_send);
+        if (len_send == 0) {
+            delete[] buf_send;
+            LOG(ERROR) << "pack error";
+            return -1;
+        }
         try {
             auto len = _s.sendBytes(buf_send, len_send);
             VLOG(2) << server_ip << ":" << server_port << " send len:" << len << " len_send:" << len_send;

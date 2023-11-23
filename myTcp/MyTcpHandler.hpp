@@ -169,7 +169,17 @@ public:
                     //获取CRC 就获取全部的分包内容，转换为结构体
                     Pkg pkg;
 
-                    Unpack(local->pkgBuffer, local->pkgHead.len, pkg);
+                    if (Unpack(local->pkgBuffer, local->pkgHead.len, pkg) != 0) {
+                        LOG(ERROR) << local->_peerAddress << "cmd:" << to_string(pkg.head.cmd)
+                                   << " unpack err";
+                        local->bodyLen = 0;//获取分包头后，得到的包长度
+                        if (local->pkgBuffer != nullptr) {
+                            delete[] local->pkgBuffer;
+                            local->pkgBuffer = nullptr;
+                        }
+                        local->pkgBufferIndex = 0;//分包缓冲的索引
+                        local->status = Start;
+                    }
 
                     //判断CRC是否正确
                     //打印下buffer

@@ -133,11 +133,11 @@ namespace common {
     /**
      * 组包函数,此时pkg内 校验码不对，要在组包的时候更新校验码
      * @param pkg 帧数据
-     * @param out 组帧后的数据地址
-     * @param len 组帧后的数据长度
-     * @return 0：success -1：fail
+     * @param out 组帧后的数据缓存地址
+     * @param len 组帧后的数据缓存长度
+     * @return 0：fail 实际数据长度
      */
-    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len);
+    uint32_t Pack(Pkg &pkg, uint8_t *out, uint32_t len);
 
 
     /**

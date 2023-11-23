@@ -17,6 +17,8 @@ namespace os {
     int runCmd(const std::string &command, std::string *output = nullptr,
                bool redirect_stderr = false);
 
+    uint64_t getTimestampMs();
+
     // 取文件夹名字 无后缀
     string getFolderPath(string str);
 

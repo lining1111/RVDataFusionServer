@@ -15,8 +15,13 @@ namespace common {
         return ComVersion;
     }
 
-    int Pack(Pkg &pkg, uint8_t *out, uint32_t *len) {
-        int index = 0;
+    uint32_t Pack(Pkg &pkg, uint8_t *out, uint32_t len) {
+        //判断长度是否满足
+        if (len < (sizeof(pkg.head) + sizeof(pkg.crc) + pkg.body.length())) {
+            return 0;
+        }
+
+        uint32_t index = 0;
 
         //1.头部
         memcpy(out + index, &pkg.head, sizeof(pkg.head));
@@ -28,20 +33,18 @@ namespace common {
         pkg.crc.data = Crc16TabCCITT(out, index);
         memcpy(out + index, &pkg.crc, sizeof(pkg.crc));
         index += sizeof(pkg.crc);
-        //4.设置长度
-        *len = pkg.head.len;
 
         //如果最后拷贝的长度和头部信息的长度相同则说明组包成功，否则失败
         if (index != pkg.head.len) {
-            return -1;
-        } else {
             return 0;
+        } else {
+            return index;
         }
     }
 
 
     int Unpack(uint8_t *in, uint32_t len, Pkg &pkg) {
-        int index = 0;
+        uint32_t index = 0;
 
         //长度小于头部长度 退出
         if (len < sizeof(pkg.head)) {

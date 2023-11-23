@@ -49,9 +49,9 @@ void examplePkg() {
 
     //组包
     uint8_t dataEncode[1024 * 1024];
-    uint32_t dataEncodeLen = 0;
+    uint32_t dataEncodeLen = 1024 * 1024;
     bzero(dataEncode, sizeof(dataEncode) / sizeof(dataEncode[0]));
-    Pack(pkg, dataEncode, &dataEncodeLen);
+    dataEncodeLen = Pack(pkg, dataEncode, dataEncodeLen);
     //解包
     Pkg frameDecode;
     Unpack(dataEncode, dataEncodeLen, frameDecode);
@@ -136,7 +136,7 @@ void exampleJsonWatchData() {
     watchData.lstObjTarget.push_back(objTarget2);
 
     Pkg pkg;
-    watchData.PkgWithoutCRC(1,12,pkg);
+    watchData.PkgWithoutCRC(1, 12, pkg);
 
     string jsonMarshal = json::encode(watchData);
 
@@ -305,7 +305,7 @@ void exampleAlgorithm() {
     DrivingAreaX rectFValueArrayItem;
     vector<RectF> values_tmp_rect;
     values_tmp_rect.clear();
-    values_tmp_rect.push_back(RectF( 0.000015, 0.000035,0.0002,0.2555));
+    values_tmp_rect.push_back(RectF(0.000015, 0.000035, 0.0002, 0.2555));
     rectFValueArrayItem.set(0, values_tmp_rect);
     algorithmParam.drivingInArea.push_back(rectFValueArrayItem);
     algorithmParam.drivingMissingArea.push_back(rectFValueArrayItem);
@@ -365,9 +365,9 @@ void aysntest() {
 typedef struct {
     int a = 0;
     string b;
-}S1;
+} S1;
 
-void example1(){
+void example1() {
     vector<OneFlowData> v_src;
     OneFlowData item;
     item.laneCode = "l1";
@@ -388,11 +388,13 @@ void example1(){
 
     DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(v_src);
 }
-class A{
+
+class A {
 public:
     vector<vector<vector<double>>> v;
 XPACK(O(v));
 };
+
 int main(int argc, char **argv) {
 
     string dataStr =

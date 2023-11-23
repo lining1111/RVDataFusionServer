@@ -18,6 +18,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <chrono>
 
 using namespace std;
 
@@ -40,6 +41,11 @@ namespace os {
             }
         }
         return pclose(pipe);
+    }
+
+    uint64_t getTimestampMs() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
     }
 
 

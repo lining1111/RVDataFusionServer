@@ -17,6 +17,7 @@
 #include "os/timeTask.hpp"
 #include "myTcp/MyTcpClient.hpp"
 #include <uuid/uuid.h>
+#include "os/os.h"
 
 
 using namespace std;
@@ -99,10 +100,10 @@ void Task_FusionData(int sock, FusionData fusionData) {
     snFusionData++;
     Pkg pkg;
     fusionData.PkgWithoutCRC(snFusionData, 1030033983, pkg);
-    uint8_t buf[1024 * 1024];
-    uint32_t buf_len = 0;
-    memset(buf, 0, 1024 * 1024);
-    Pack(pkg, buf, &buf_len);
+    uint8_t buf[1024 * 1024 * 4];
+    uint32_t buf_len = 1024 * 1024 * 4;
+    memset(buf, 0, 1024 * 1024 * 4);
+    buf_len = Pack(pkg, buf, buf_len);
 
     auto ret = send(sock, buf, buf_len, 0);
     if (ret < 0) {
@@ -137,14 +138,14 @@ static void Task_FusionData1(MyTcpClient *client, FusionData fusionData) {
     snFusionData++;
     Pkg pkg;
     fusionData.PkgWithoutCRC(snFusionData, 1030033983, pkg);
-    uint8_t buf[1024 * 1024];
-    uint32_t buf_len = 0;
-    memset(buf, 0, 1024 * 1024);
-    Pack(pkg, buf, &buf_len);
+    uint8_t buf[1024 * 1024 * 4];
+    uint32_t buf_len = 1024 * 1024 * 4;
+    memset(buf, 0, 1024 * 1024 * 4);
+    buf_len = Pack(pkg, buf, buf_len);
 
 //    auto ret = send(sock, buf, buf_len, 0);
 
-    if (client->_s.isNull() || client->isNeedReconnect){
+    if (client->_s.isNull() || client->isNeedReconnect) {
         return;
     }
 
@@ -176,8 +177,6 @@ static void Task_FusionData1(MyTcpClient *client, FusionData fusionData) {
 
 }
 
-
-
 uint64_t snTrafficFlowGather = 0;
 
 void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
@@ -200,10 +199,10 @@ void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
     snTrafficFlowGather++;
     Pkg pkg;
     trafficFlowGather.PkgWithoutCRC(snTrafficFlowGather, 1030033983, pkg);
-    uint8_t buf[1024 * 1024];
-    uint32_t buf_len = 0;
-    memset(buf, 0, 1024 * 1024);
-    Pack(pkg, buf, &buf_len);
+    uint8_t buf[1024 * 1024 * 4];
+    uint32_t buf_len = 1024 * 1024 * 4;
+    memset(buf, 0, 1024 * 1024 * 4);
+    buf_len = Pack(pkg, buf, buf_len);
 
     try {
 
@@ -213,7 +212,7 @@ void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
         } else if (ret != buf_len) {
             std::cout << "发送失败" << msgType << std::endl;
         }
-    }catch (...){
+    } catch (...) {
 
     }
     auto now = std::chrono::system_clock::now();
@@ -229,8 +228,86 @@ void Task_TrafficFlowGather(int sock, TrafficFlowGather trafficFlowGather) {
 
 }
 
-DEFINE_string(cloudIp, "10.110.60.122", "云端ip，默认 10.110.60.122");
-DEFINE_int32(cloudPort, 9988, "云端端口号，默认9988");
+int getCrossTrafficJamAlarm(CrossTrafficJamAlarm &out, string pic) {
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    out.oprNum = string(uuid_str);
+    out.crossID = "crossID";
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestampNow = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
+
+    out.timestamp = timestampNow;
+
+    std::time_t t(out.timestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+    out.alarmTime = ss.str();
+
+    vector<uint8_t> data;
+    if (os::GetVectorFromFile(data, pic) != 0) {
+        return -1;
+    }
+    char *base64 = new char[1024 * 1024 * 4];
+    unsigned int base64Len = 0;
+    os::base64_encode(data.data(), data.size(), (unsigned char *) base64, &base64Len);
+    out.imageData = string(base64);
+    delete[]base64;
+
+    return 0;
+}
+
+uint64_t snCrossTrafficJamAlarm = 0;
+
+void Task_CrossTrafficJamAlarm(MyTcpClient *client, CrossTrafficJamAlarm crossTrafficJamAlarm) {
+
+    pthread_mutex_lock(&mtx);
+    string msgType = "TrafficFlowGather";
+
+    auto timestamp = std::chrono::system_clock::now();
+    uint64_t timestamp_u = std::chrono::duration_cast<std::chrono::milliseconds>(
+            timestamp.time_since_epoch()).count();
+
+    crossTrafficJamAlarm.timestamp = timestamp_u;
+
+    std::time_t t(crossTrafficJamAlarm.timestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+    crossTrafficJamAlarm.alarmTime = ss.str();
+
+
+    snCrossTrafficJamAlarm++;
+    Pkg pkg;
+    crossTrafficJamAlarm.PkgWithoutCRC(snCrossTrafficJamAlarm, 1030033983, pkg);
+
+    try {
+
+        auto ret = client->SendBase(pkg);
+        if (ret < 0) {
+            std::cout << "发送失败" << msgType << std::endl;
+        }
+    } catch (...) {
+
+    }
+    auto now = std::chrono::system_clock::now();
+    uint64_t timestampSend = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()).count();
+    std::cout << "发送" << msgType << ",发送时间:" << to_string(timestampSend) << ",帧内时间:"
+              << to_string(crossTrafficJamAlarm.timestamp) << std::endl;
+    auto cost = timestampSend - timestamp_u;
+    if (cost > 80) {
+        std::cout << msgType << "发送耗时" << cost << "ms" << std::endl;
+    }
+//    pthread_mutex_unlock(&mtx);
+
+}
+
+DEFINE_string(cloudIp, "127.0.0.1", "云端ip，默认127.0.0.1");
+DEFINE_int32(cloudPort, 9001, "云端端口号，默认9001");
+DEFINE_string(pic, "test.jpeg", "测试图片，默认test.jpeg");
 
 int main(int argc, char **argv) {
 
@@ -242,22 +319,26 @@ int main(int argc, char **argv) {
     client->Run();
 
 //获取实时数据和统计数据
-    FusionData fusionData;
-    TrafficFlowGather trafficFlowGather;
-
-    if (getFusionData(fusionData) != 0) {
-        std::cout << "fusionData get fail" << std::endl;
-    }
-
-    if (getTrafficFlowGather(trafficFlowGather) != 0) {
-        std::cout << "trafficFlowGather get fail" << std::endl;
-    }
-
-    //开启两个定时任务
-    os::Timer timerFusionData;
-    os::Timer timerTrafficFlowGather;
+//    FusionData fusionData;
+//    TrafficFlowGather trafficFlowGather;
+//
+//    if (getFusionData(fusionData) != 0) {
+//        std::cout << "fusionData get fail" << std::endl;
+//    }
+//
+//    if (getTrafficFlowGather(trafficFlowGather) != 0) {
+//        std::cout << "trafficFlowGather get fail" << std::endl;
+//    }
+//
+//    //开启两个定时任务
+//    os::Timer timerFusionData;
+//    os::Timer timerTrafficFlowGather;
 //    timerFusionData.start(80, std::bind(Task_FusionData, sockfd, fusionData));
 //    timerTrafficFlowGather.start(500, std::bind(Task_TrafficFlowGather, sockfd, trafficFlowGather));
+    CrossTrafficJamAlarm crossTrafficJamAlarm;
+    if (getCrossTrafficJamAlarm(crossTrafficJamAlarm, FLAGS_pic) != 0) {
+        return -1;
+    }
 
     bool isExit = false;
 
@@ -271,14 +352,15 @@ int main(int argc, char **argv) {
 //            isExit = true;
 //            continue;
 //        }
-        usleep(1000*80);
-        Task_FusionData1(client,fusionData);
-        if (client->isNeedReconnect){
+        usleep(1000 * 80);
+//        Task_FusionData1(client,fusionData);
+        Task_CrossTrafficJamAlarm(client, crossTrafficJamAlarm);
+        if (client->isNeedReconnect) {
             client->Reconnect();
         }
     }
 
-    timerFusionData.stop();
+//    timerFusionData.stop();
 //    timerTrafficFlowGather.stop();
 //    close(sockfd);
 

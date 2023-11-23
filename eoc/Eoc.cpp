@@ -19,7 +19,7 @@ string GetEocCommonVersion(){
 }
 
 static void ThreadEOCCom(std::string ip, int port, std::string cert) {
-    LOG(WARNING) << "eoc thread:" << ip << ":" << port << "cert:" << cert;
+    LOG(WARNING) << "eoc thread:" << ip << ":" << port << " cert:" << cert;
     EOCCom *eocCom = new EOCCom(ip, port, cert);
 //    EOCCom *eocCom = new EOCCom("127.0.0.1",8000,"./cert.pem");
     if (eocCom->Open() == 0) {

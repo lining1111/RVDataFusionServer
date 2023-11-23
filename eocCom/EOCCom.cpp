@@ -68,9 +68,8 @@ int EOCCom::getPkgs(void *p) {
     }
     EOCCom *local = (EOCCom *) p;
     LOG(WARNING) << __FUNCTION__ << "run";
-    char *buf = new char[4096];
-    int index = 0;
-    memset(buf, 0, 4096);
+    string content;
+    content.clear();
     while (local->isLive.load()) {
         usleep(1000);
         while (local->rb->GetReadLen() > 0) {
@@ -78,18 +77,14 @@ int EOCCom::getPkgs(void *p) {
             if (local->rb->Read(&value, 1) > 0) {
                 if (value == '*') {
                     //得到分包尾部
-                    std::string pkg = std::string(buf);
-                    local->pkgs.push(pkg);
-                    index = 0;
-                    memset(buf, 0, 4096);
+                    local->pkgs.push(content);
+                    content.clear();
                 } else {
-                    buf[index] = value;
-                    index++;
+                    content.push_back(value);
                 }
             }
         }
     }
-    delete[] buf;
     LOG(WARNING) << __FUNCTION__ << "exit";
     return 0;
 }
@@ -954,7 +949,7 @@ int EOCCom::intervalPro(void *p) {
                     LOG(ERROR) << "eoc s101_login_send err, return:" << len;
                     local->isLive.store(false);
                 } else {
-                    LOG(INFO) << "eoc s101_login_send ok";
+                    LOG(INFO) << "eoc s101_login_send ok:" << body;
                 }
                 local->last_send_heart_t = now - 20;
             }
@@ -989,7 +984,7 @@ int EOCCom::intervalPro(void *p) {
                         LOG(ERROR) << "eoc s104 send err, return:" << len;
                         local->isLive.store(false);
                     } else {
-                        LOG(INFO) << "eoc s104 send ok";
+                        LOG(INFO) << "eoc s104 send ok:" << body;
                     }
                 }
             }
@@ -1014,7 +1009,7 @@ int EOCCom::intervalPro(void *p) {
                     LOG(ERROR) << "eoc s100 send err, return:" << len;
                     local->isLive.store(false);
                 } else {
-                    LOG(INFO) << "eoc s100 send ok";
+                    LOG(INFO) << "eoc s100 send ok:" << body;
                 }
                 local->heartFlag++;
                 if (local->heartFlag > 10) {
@@ -1047,7 +1042,7 @@ int EOCCom::intervalPro(void *p) {
                     LOG(ERROR) << "eoc s105 send err, return:" << len;
                     local->isLive.store(false);
                 } else {
-                    LOG(INFO) << "eoc s105 send ok";
+                    LOG(INFO) << "eoc s105 send ok:" << body;
                 }
             }
             //主控机状态
@@ -1071,7 +1066,7 @@ int EOCCom::intervalPro(void *p) {
                     LOG(ERROR) << "eoc s103 send err, return:" << len;
                     local->isLive.store(false);
                 } else {
-                    LOG(INFO) << "eoc s103 send ok";
+                    LOG(INFO) << "eoc s103 send ok:" << body;
                 }
             }
 
@@ -1128,7 +1123,7 @@ int EOCCom::intervalPro(void *p) {
                                 local->isLive.store(false);
                                 break;
                             } else {
-                                LOG(INFO) << "eoc s106 send ok";
+                                LOG(INFO) << "eoc s106 send ok:" << body;
                             }
                         }
                     }
