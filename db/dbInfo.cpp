@@ -19,6 +19,7 @@ using Poco::Data::Keywords::into;
 using Poco::Data::Keywords::limit;
 
 #include <sqlite3.h>
+
 int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
     int ret = 0;
     LOG(INFO) << "db file:" << dbFile;
@@ -47,7 +48,8 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
         Session session(SQLite::Connector::KEY, dbFile, 3);
 
         Statement stmt(session);
-
+        check:
+        stmt.reset(session);
         //先检查table
         stmt << "create table IF NOT EXISTS " << table[0].tableName << "(id INTEGER PRIMARY KEY NOT NULL);";
         stmt.execute(true);
@@ -59,9 +61,19 @@ int checkTable(std::string dbFile, const DBTableInfo *table, int column_size) {
             stmt << "pragma table_info(" << table[0].tableName << ");";
             stmt.execute(true);
             Poco::Data::RecordSet rs(stmt);
-            for (auto iter:rs) {
+            for (auto iter: rs) {
                 std::string name = iter.get(1).toString();
-                if (name == table[i].columnName){
+                std::string type = iter.get(2).toString();
+                if (name == table[i].columnName) {
+                    //字段名相同，但数据类型不同，直接退出
+                    if (type != table[i].columnDescription) {
+                        LOG(ERROR) << "table " << table[0].tableName << " column " << name
+                                   << " data type is different";
+                        LOG(ERROR) << "dbCheckOrAddColumn err delete table and retry";
+                        stmt << "drop table " << table[0].tableName;
+                        stmt.execute(true);
+                        goto check;
+                    }
                     isColumnExist = true;
                     break;
                 }

@@ -95,10 +95,12 @@ namespace eoc_configure {
             {"associated_equip", "EquipType", "INTEGER"},
             {"associated_equip", "EquipCode", "TEXT"}
     };
+
 #include <sqlite3.h>
+
     int tableInit() {
         std::string dbFile = dbInfo.path;
-        os::CreatePath(dbFile);
+        os::CreatePath(os::getFolderPath(dbFile));
 
         //检查数据库文件是否存在
         if (access(dbFile.c_str(), R_OK | W_OK | F_OK) != 0) {
@@ -154,28 +156,24 @@ namespace eoc_configure {
                 ret = checkTable(dbInfo.path, base_set_table, sizeof(base_set_table) / sizeof(DBTableInfo));
                 if (ret != 0) {
                     LOG(ERROR) << "checkTable fail:base_set_table";
-                    return -1;
                 }
                 //3.所属路口信息表
                 ret = checkTable(dbInfo.path, belong_intersection_table,
                                  sizeof(belong_intersection_table) / sizeof(DBTableInfo));
                 if (ret != 0) {
                     LOG(ERROR) << "checkTable fail:belong_intersection_table";
-                    return -1;
                 }
                 //4.融合参数设置表
                 ret = checkTable(dbInfo.path, fusion_para_set_table,
                                  sizeof(fusion_para_set_table) / sizeof(DBTableInfo));
                 if (ret != 0) {
                     LOG(ERROR) << "checkTable fail:fusion_para_set_table";
-                    return -1;
                 }
                 //5.关联设备表
                 ret = checkTable(dbInfo.path, associated_equip_table,
                                  sizeof(associated_equip_table) / sizeof(DBTableInfo));
                 if (ret != 0) {
                     LOG(ERROR) << "checkTable fail:fusion_para_set_table";
-                    return -1;
                 }
                 //6.更新为新版本数据库版本表
                 stmt.reset(session);
