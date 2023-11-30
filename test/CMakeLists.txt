@@ -53,3 +53,8 @@ redefine_file_macro(GetLocalDataSend)
 add_executable(algorithmParamExchange algorithmParamExchange.cpp ${SRC_FILES})
 target_link_libraries(algorithmParamExchange ${LIBS})
 redefine_file_macro(algorithmParamExchange)
+
+##添加启动文件
+add_executable(addConfigXML addConfigXML.cpp ${SRC_FILES})
+target_link_libraries(addConfigXML ${LIBS})
+redefine_file_macro(addConfigXML)
