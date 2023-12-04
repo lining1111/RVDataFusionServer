@@ -595,8 +595,97 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
 
 }
 
+
 void DataUnitHumanLitPoleData::taskI() {
-    this->runTask(std::bind(DataUnit::TransparentTransmission, this));
+    this->runTask(std::bind(DataUnitHumanLitPoleData::FindOneFrame, this, this->cache / 2));
+}
+
+void DataUnitHumanLitPoleData::FindOneFrame(DataUnitHumanLitPoleData *dataUnit, int offset) {
+    if (DataUnit::FindOneFrame(dataUnit, offset) == 0) {
+        //调用后续的处理
+        dataUnit->TaskProcessOneFrame();
+    }
+}
+
+#include "eocCom/DBCom.h"
+
+int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
+    auto data = (Data *) owner;
+    OType item;
+    uuid_t uuid;
+    char uuid_str[37];
+    memset(uuid_str, 0, 37);
+    uuid_generate_time(uuid);
+    uuid_unparse(uuid, uuid_str);
+    item.oprNum = string(uuid_str);
+    item.timestamp = curTimestamp;
+    item.crossID = data->plateId;
+    item.hardCode = data->matrixNo;
+    std::time_t t(item.timestamp / 1000);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&t), "%F %T");
+    //先从全局的配置中获取配对的规则，现在只有斑马线号配对
+    std::vector<vector<string>> pairs;
+    getRelatedAreasPairs(pairs);
+    //打印下匹配的内容
+    for (auto iter: oneFrame) {
+        string content;
+        content.clear();
+        content += this->name;
+        content += ":";
+        content += to_string((uint64_t) iter.timestamp);
+        content += ",";
+        content += iter.crossID;
+        content += ",";
+        content += iter.hardCode;
+        content += ",";
+        for (auto iter1: iter.deviceList) {
+            content += iter1.zebraCrossingCode;
+            content += ":";
+            content += iter1.humanNum;
+            content += ":";
+            content += iter1.waitingTime;
+        }
+        VLOG(3) << content;
+    }
+    VLOG(3) << this->name << " 按规则配对处理";
+    //按照配对的规则，从配对规则开始遍历，如配对规则是10 11,则遍历匹配上的帧，如果属于配对规则中的任何一个，就规则中的处理办法来，办法是，等待人数相加、等待时长取最大
+    for (auto iter: pairs) {
+        VLOG(3) << "当前配对的是:" << fmt::format("{}", iter);
+        HumanLitPoleData_deviceListItem item1;
+        for (auto iter1: oneFrame) {
+            for (auto iter2: iter1.deviceList) {
+                string zbcCode = iter2.zebraCrossingCode.substr(0, 2);
+                bool isExist = false;
+                for (auto iter_iter: iter) {
+                    if (zbcCode == iter_iter) {
+                        isExist = true;
+                        break;
+                    }
+                }
+                if (isExist) {
+                    VLOG(3) << iter2.zebraCrossingCode << " 在配对内";
+                    //等待人数相加
+                    item1.humanNum += iter2.humanNum;
+                    //等待时间取最大
+                    item1.waitingTime = (iter2.waitingTime > item1.waitingTime) ? iter2.waitingTime : item1.waitingTime;
+                }
+            }
+        }
+        item1.zebraCrossingCode = iter.at(0);//配对后的斑马线号取配对的第1个值
+        VLOG(3) << "配对后的数据是:" << item1.zebraCrossingCode
+                << " 等待人数:" << item1.humanNum << " 等待时长:" << item1.waitingTime;
+
+        item.deviceList.push_back(item1);
+    }
+
+
+    if (!pushO(item)) {
+        VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+    } else {
+        VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
+    }
+    return 0;
 }
 
 void DataUnitHumanLitPoleData::taskO() {

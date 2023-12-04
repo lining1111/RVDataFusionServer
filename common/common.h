@@ -979,16 +979,16 @@ namespace common {
     class HumanLitPoleData_deviceListItem {
     public:
         string deviceCode;
-        int deviceLocation;
+        int deviceLocation = 0;
         string waitingAreaLocation;
         string zebraCrossingCode;
-        int detectDirection;
-        int direction;
-        int humanNum;//等待区人数
-        int humanFlow;//穿行人数
+        int detectDirection = 0;
+        int direction = 0;
+        int humanNum = 0;//等待区人数
+        int humanFlow = 0;//穿行人数
         vector<int> humanWaitList;
-        int waitingTime;//等待时间
-        int lightStatus;
+        int waitingTime = 0;//等待时间
+        int lightStatus = 0;
         string imageData;
     public:
     XPACK(O(deviceCode, deviceLocation, waitingAreaLocation, zebraCrossingCode, detectDirection, direction, humanNum,

@@ -244,6 +244,12 @@ int PkgProcessFun_CmdFusionData(void *p, string content) {
             break;
         }
     }
+
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
+        return -1;
+    }
+
     //存到帧率缓存
     auto ct = &CT_fusionData;
     ct->update(msg.direction, msg.timestamp, 15);
@@ -263,10 +269,6 @@ int PkgProcessFun_CmdFusionData(void *p, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
-    if (index == -1 || index >= dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
-        return -1;
-    }
     //存入队列
     if (!dataUnit->pushI(msg, index)) {
         LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
@@ -415,6 +417,11 @@ int PkgProcessFun_CmdTrafficFlowGather(void *p, string content) {
     auto dataUnit = data->dataUnitTrafficFlowGather;
     int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
 
+    if (index == -1 || index >= dataUnit->numI) {
+        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
+        return -1;
+    }
+
     //存到帧率缓存
     auto ct = &CT_trafficFlowGather;
     ct->update(index, msg.timestamp, 3);
@@ -434,10 +441,6 @@ int PkgProcessFun_CmdTrafficFlowGather(void *p, string content) {
     }
     pthread_mutex_unlock(&ct->mtx);
 
-    if (index == -1 || index >= dataUnit->numI) {
-        LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
-        return -1;
-    }
     if (!dataUnit->pushI(msg, index)) {
         LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";
         ret = -1;
@@ -739,6 +742,8 @@ int PkgProcessFun_HumanData(void *p, string content) {
     return ret;
 }
 
+
+CacheTimestamp CT_humanLitPoleData;
 int PkgProcessFun_HumanLitPoleData(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
@@ -770,10 +775,30 @@ int PkgProcessFun_HumanLitPoleData(void *p, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitHumanLitPoleData;
     int index = dataUnit->FindIndexInUnOrder(msg.hardCode);
+
     if (index == -1 || index >= dataUnit->numI) {
         LOG(ERROR) << ip << "插入接收数据 " << msgType << " 时，index 错误" << index;
         return -1;
     }
+
+    //存到帧率缓存
+    auto ct = &CT_humanLitPoleData;
+    ct->update(index, msg.timestamp, 3);
+    pthread_mutex_lock(&ct->mtx);
+    if (ct->isSetInterval) {
+        if (!ct->isStartTask) {
+            ct->isStartTask = true;
+//            dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+//                           "DataUnitTrafficFlowGather", 10);
+            //以线程方式开启处理流程
+            std::thread tp([&] {
+                dataUnit->init(3, ct->interval, localConfig.roadNum, 3, data,
+                               "DataUnitHumanLitPoleData", 10);
+            });
+            tp.detach();
+        }
+    }
+    pthread_mutex_unlock(&ct->mtx);
 
     if (!dataUnit->pushI(msg, index)) {
         LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",丢弃消息";

@@ -247,6 +247,36 @@ void processR102(void *p, string content, string cmd) {
             result = -1;
         }
     }
+//    //写入算法融合参数
+//    AlgorithmParam algorithmParam;
+//    algorithmParam = data.Data.FusionParas;
+//    //写入文件
+//    string jsonStr;
+//    jsonStr = json::encode(algorithmParam);
+//    if (!jsonStr.empty()){
+//        ofstream of;
+//        of.open("algorithm.json", ios::out | ios::trunc);
+//        if (of.is_open()) {
+//            of << jsonStr;
+//            of.close();
+//            LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
+//        }
+//    }
+
+    //人形灯杆相关规则
+    string relatedAreas;
+    relatedAreas = json::encode(data.Data.RelatedAreas);
+    LOG(INFO) << "eoc 接收 RelatedAreas:" << relatedAreas;
+    if (!relatedAreas.empty()) {
+        ofstream of;
+        of.open("relatedAreas.json", ios::out | ios::trunc);
+        if (of.is_open()) {
+            of << relatedAreas;
+            of.close();
+            LOG(INFO) << "eoc 写入RelatedAreas:" << relatedAreas;
+        }
+    }
+
     //数据版本
     std::string version = data.Data.DataVersion;
     if (!version.empty()) {
@@ -275,20 +305,6 @@ void processR102(void *p, string content, string cmd) {
             result = -1;
         }
     }
-
-    //写入算法融合参数
-//    AlgorithmParam algorithmParam;
-//    algorithmParam = data.Data.FusionParas;
-//    //写入文件
-//    string jsonStr;
-//    jsonStr = json::encode(algorithmParam);
-//    ofstream of;
-//    of.open("algorithm.json", ios::out | ios::trunc);
-//    if (of.is_open()) {
-//        of << jsonStr;
-//        of.close();
-//        LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
-//    }
 
     //配置处理完成后,发送S102信息 添加重启任务
     if (result != 0) {

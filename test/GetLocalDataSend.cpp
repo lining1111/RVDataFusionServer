@@ -153,7 +153,7 @@ int sn = 0;
 
 int SendServer(int sock, FusionData fusionData, string matrixNo) {
     uint8_t buff[1024 * 1024 * 4];
-    uint32_t len = 1024.1024 * 4;
+    uint32_t len = 1024 * 1024 * 4;
     uint32_t deviceNo = stoi(matrixNo.substr(0, 10));
     Pkg pkg;
     fusionData.PkgWithoutCRC(sn, deviceNo, pkg);

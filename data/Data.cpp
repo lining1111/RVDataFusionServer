@@ -61,8 +61,9 @@ Data *Data::instance() {
                                              "DataUnitHumanData", 10);//这个cliNum待定
 
         m_pInstance->dataUnitHumanLitPoleData = new DataUnitHumanLitPoleData();
-        m_pInstance->dataUnitHumanLitPoleData->init(10, 500, cliNum, 1, m_pInstance,
-                                                    "DataUnitHumanLitPoleData", 10);//这个cliNum待定
+        m_pInstance->dataUnitHumanLitPoleData->setCapNumI(3, cliNum);
+//        m_pInstance->dataUnitHumanLitPoleData->init(10, 500, cliNum, 1, m_pInstance,
+//                                                    "DataUnitHumanLitPoleData", 10);//这个cliNum待定 1s1帧
 
         m_pInstance->dataUnitTrafficDetectorStatus = new DataUnitTrafficDetectorStatus();
         m_pInstance->dataUnitTrafficDetectorStatus->init(10, 500, cliNum, 1, m_pInstance,

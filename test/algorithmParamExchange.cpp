@@ -178,7 +178,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     {
         DrivingAreaItem item;
         item.flowDirection = West;
-        auto src = &oldParam.east_west_driving_area;
+        auto src = &oldParam.west_east_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
@@ -196,7 +196,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     {
         DrivingAreaItem item;
         item.flowDirection = East;
-        auto src = &oldParam.west_east_driving_area;
+        auto src = &oldParam.east_west_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
@@ -214,7 +214,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     {
         DrivingAreaItem item;
         item.flowDirection = South;
-        auto src = &oldParam.north_south_driving_area;
+        auto src = &oldParam.south_north_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
@@ -232,7 +232,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     {
         DrivingAreaItem item;
         item.flowDirection = North;
-        auto src = &oldParam.south_north_driving_area;
+        auto src = &oldParam.north_south_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;

@@ -29,7 +29,7 @@ set(LIBS m pthread ${3rdLibs})
 
 set(filtration_dirlist cmake-build-debug cmake-build-release-aarch64 .idea .git conan lib test nebulalink)
 SUBDIRLISTINCLUDE(SRC_DIRS ${CMAKE_SOURCE_DIR} 2 ${filtration_dirlist})
-message(STATUS "3.7 SRC_DIRS : ${SRC_DIRS}")
+message(STATUS "SRC_DIRS:${SRC_DIRS}")
 include_directories(.)
 include_directories(eoc_comm/utility)
 include_directories(eoc_comm)

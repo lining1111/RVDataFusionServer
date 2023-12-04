@@ -591,6 +591,10 @@ public:
 
     void taskI();
 
+    static void FindOneFrame(DataUnitHumanLitPoleData *dataUnit, int offset);
+
+    int TaskProcessOneFrame();
+
     void taskO();
 };
 

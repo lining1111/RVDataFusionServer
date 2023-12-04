@@ -18,6 +18,9 @@ using namespace xpack;
 #include "os/os.h"
 #include "db/CLParking.h"
 #include "db/eoc_configure.h"
+
+using namespace std;
+
 using namespace eoc_configure;
 
 class ReqHead {
@@ -295,6 +298,7 @@ public:
 
 XPACK(O(EquipType, EquipCode));
 };
+
 class StartEndTime {
 public:
     string StartTime;
@@ -350,6 +354,7 @@ XPACK(O(IntersectionGuid, Name, PavementGuid, PavementGuid2, PavementName, Pavem
 };
 
 #include "../lib/AlgorithmParam.h"
+
 class DataR102 {
     std::string Code = "MCCR102";
 public:
@@ -360,9 +365,9 @@ public:
     std::vector<AssociatedEquip> AssociatedEquips;
     //融合参数
 //    AlgorithmParam FusionParas;
-//    RelatedArea_t RelatedAreas;
+    vector<RelatedArea_t> RelatedAreas;
 
-XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips/*,FusionParas,RelatedAreas*/));
+XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips/*,FusionParas*/, RelatedAreas));
 };
 
 class R102 {
@@ -471,7 +476,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            os::dirInfo("~/mnt_tf",state.Size,state.ResidualSize);
+            os::dirInfo("/mnt/mnt_tf", state.Size, state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
@@ -483,7 +488,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            os::dirInfo("/",state.Size,state.ResidualSize);
+            os::dirInfo("/", state.Size, state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
@@ -494,7 +499,7 @@ XPACK(O(MainboardGuid, State, CpuState, CpuUtilizationRatio, CpuTemperature, Mem
         {
             PartsState_t state;
             state.State = 1;
-            os::dirInfo("/mnt/mnt_hd",state.Size,state.ResidualSize);
+            os::dirInfo("/mnt/mnt_hd", state.Size, state.ResidualSize);
             if (state.Size == 0) {
                 state.State = 0;
             }
