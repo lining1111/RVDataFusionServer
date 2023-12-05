@@ -142,8 +142,8 @@ public:
                         }
                     } else {
                         //这个是分多次获取包内容
-                        uint64_t readLen =
-                                local->rb->GetReadLen() < local->bodyLen ? local->rb->GetReadLen() : local->bodyLen;
+                        uint64_t canRead = local->rb->GetReadLen();
+                        uint64_t readLen = canRead < local->bodyLen ? canRead : local->bodyLen;
                         //获取正文
                         local->rb->Read(local->pkgBuffer + local->pkgBufferIndex, readLen);
                         local->bodyLen -= readLen;
@@ -179,37 +179,35 @@ public:
                         }
                         local->pkgBufferIndex = 0;//分包缓冲的索引
                         local->status = Start;
-                    }
-
-                    //判断CRC是否正确
-                    //打印下buffer
-//                PrintHex(local->pkgBuffer, local->pkgHead.len);
-                    uint16_t crc = Crc16TabCCITT(local->pkgBuffer, local->pkgHead.len - 2);
-                    if (crc != pkg.crc.data) {//CRC校验失败
-                        LOG(ERROR) << local->_peerAddress << "cmd:" << to_string(pkg.head.cmd)
-                                   << " CRC fail, 计算值:" << crc << ",包内值:" << pkg.crc.data;
-                        local->bodyLen = 0;//获取分包头后，得到的包长度
-                        if (local->pkgBuffer != nullptr) {
-                            delete[] local->pkgBuffer;
-                            local->pkgBuffer = nullptr;
-                        }
-                        local->pkgBufferIndex = 0;//分包缓冲的索引
-                        local->status = Start;
                     } else {
-                        VLOG(4) << local->_peerAddress << " 包内容：" << pkg.body;
-                        //存入分包队列
-                        if (!local->pkgs.push(pkg)) {
-                            VLOG(2) << local->_peerAddress << " 包缓存压入失败";
+                        //接包正确，判断CRC是否正确
+                        uint16_t crc = Crc16TabCCITT(local->pkgBuffer, local->pkgHead.len - 2);
+                        if (crc != pkg.crc.data) {//CRC校验失败
+                            LOG(ERROR) << local->_peerAddress << "cmd:" << to_string(pkg.head.cmd)
+                                       << " CRC fail, 计算值:" << crc << ",包内值:" << pkg.crc.data;
+                            local->bodyLen = 0;//获取分包头后，得到的包长度
+                            if (local->pkgBuffer != nullptr) {
+                                delete[] local->pkgBuffer;
+                                local->pkgBuffer = nullptr;
+                            }
+                            local->pkgBufferIndex = 0;//分包缓冲的索引
+                            local->status = Start;
                         } else {
-                            VLOG(2) << local->_peerAddress << " 包缓存压入成功";
+                            VLOG(4) << local->_peerAddress << " 包内容：" << pkg.body;
+                            //存入分包队列
+                            if (!local->pkgs.push(pkg)) {
+                                VLOG(2) << local->_peerAddress << " 包缓存压入失败";
+                            } else {
+                                VLOG(2) << local->_peerAddress << " 包缓存压入成功";
+                            }
+                            local->bodyLen = 0;//获取分包头后，得到的包长度
+                            if (local->pkgBuffer != nullptr) {
+                                delete[] local->pkgBuffer;
+                                local->pkgBuffer = nullptr;
+                            }
+                            local->pkgBufferIndex = 0;//分包缓冲的索引
+                            local->status = Start;
                         }
-                        local->bodyLen = 0;//获取分包头后，得到的包长度
-                        if (local->pkgBuffer != nullptr) {
-                            delete[] local->pkgBuffer;
-                            local->pkgBuffer = nullptr;
-                        }
-                        local->pkgBufferIndex = 0;//分包缓冲的索引
-                        local->status = Start;
                     }
                 }
                     break;
