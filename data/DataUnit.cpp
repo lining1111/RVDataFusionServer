@@ -627,6 +627,7 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
     //先从全局的配置中获取配对的规则，现在只有斑马线号配对
     std::vector<vector<string>> pairs;
     getRelatedAreasPairs(pairs);
+    VLOG(3) << this->name << "配对规则:" << fmt::format("{}", pairs);
     //打印下匹配的内容
     for (auto iter: oneFrame) {
         string content;
@@ -646,12 +647,38 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
             content += ":";
             content += iter1.waitingTime;
         }
-        VLOG(3) << content;
+        VLOG(3) << this->name << "需要匹配的内容 " << content;
     }
-    VLOG(3) << this->name << " 按规则配对处理";
-    //按照配对的规则，从配对规则开始遍历，如配对规则是10 11,则遍历匹配上的帧，如果属于配对规则中的任何一个，就规则中的处理办法来，办法是，等待人数相加、等待时长取最大
+    VLOG(3) << this->name << " 1.得到不在配对规则中的";
+    //1.把不在配对规则中的数据单独拿出来，放入数组
+    vector<string> list;
     for (auto iter: pairs) {
-        VLOG(3) << "当前配对的是:" << fmt::format("{}", iter);
+        for (auto iter1: iter) {
+            list.push_back(iter1);
+        }
+    }
+    for (auto iter: oneFrame) {
+        for (auto iter1: iter.deviceList) {
+            string zbcCode = iter1.zebraCrossingCode.substr(0, 2);
+            bool isExist = false;
+            for (auto list_iter: list) {
+                if (zbcCode == list_iter) {
+                    isExist = true;
+                    break;
+                }
+            }
+            if (!isExist) {
+                VLOG(3) << this->name << " 发现不在配对规则中的帧 " << iter1.zebraCrossingCode << " 加入输出数组";
+                item.deviceList.push_back(iter1);
+            }
+        }
+    }
+
+
+    VLOG(3) << this->name << " 2.按规则配对处理";
+    //2.按照配对的规则，从配对规则开始遍历，如配对规则是10 11,则遍历匹配上的帧，如果属于配对规则中的任何一个，就规则中的处理办法来，办法是，等待人数相加、等待时长取最大
+    for (auto iter: pairs) {
+        VLOG(3) << this->name << " 当前配对的是:" << fmt::format("{}", iter);
         HumanLitPoleData_deviceListItem item1;
         for (auto iter1: oneFrame) {
             for (auto iter2: iter1.deviceList) {
@@ -664,7 +691,7 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
                     }
                 }
                 if (isExist) {
-                    VLOG(3) << iter2.zebraCrossingCode << " 在配对内";
+                    VLOG(3) << this->name << iter2.zebraCrossingCode << " 在配对内";
                     //等待人数相加
                     item1.humanNum += iter2.humanNum;
                     //等待时间取最大
@@ -673,7 +700,7 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
             }
         }
         item1.zebraCrossingCode = iter.at(0);//配对后的斑马线号取配对的第1个值
-        VLOG(3) << "配对后的数据是:" << item1.zebraCrossingCode
+        VLOG(3) << this->name << " 配对后的数据是:" << item1.zebraCrossingCode
                 << " 等待人数:" << item1.humanNum << " 等待时长:" << item1.waitingTime;
 
         item.deviceList.push_back(item1);
