@@ -174,25 +174,7 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     }
 
     //4.驶入区域
-    //East
-    {
-        DrivingAreaItem item;
-        item.flowDirection = East;
-        auto src = &oldParam.east_west_driving_area;
-        for (int i = 0; i < src->size(); i++) {
-            PointFArray item1;
-            item1.index = src->at(i).index;
-            for (auto iter: src->at(i).points) {
-                PointF item2;
-                item2.x = iter.x;
-                item2.y = iter.y;
-                item1.value.push_back(item2);
-            }
-            item.value.push_back(item1);
-        }
-        newParam.drivingArea.push_back(item);
-    }
-    //West
+    //west
     {
         DrivingAreaItem item;
         item.flowDirection = West;
@@ -210,11 +192,11 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
         }
         newParam.drivingArea.push_back(item);
     }
-    //North
+    //east
     {
         DrivingAreaItem item;
-        item.flowDirection = North;
-        auto src = &oldParam.north_south_driving_area;
+        item.flowDirection = East;
+        auto src = &oldParam.east_west_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
@@ -228,11 +210,29 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
         }
         newParam.drivingArea.push_back(item);
     }
-    //South
+    //south
     {
         DrivingAreaItem item;
         item.flowDirection = South;
         auto src = &oldParam.south_north_driving_area;
+        for (int i = 0; i < src->size(); i++) {
+            PointFArray item1;
+            item1.index = src->at(i).index;
+            for (auto iter: src->at(i).points) {
+                PointF item2;
+                item2.x = iter.x;
+                item2.y = iter.y;
+                item1.value.push_back(item2);
+            }
+            item.value.push_back(item1);
+        }
+        newParam.drivingArea.push_back(item);
+    }
+    //north
+    {
+        DrivingAreaItem item;
+        item.flowDirection = North;
+        auto src = &oldParam.north_south_driving_area;
         for (int i = 0; i < src->size(); i++) {
             PointFArray item1;
             item1.index = src->at(i).index;
@@ -457,8 +457,8 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     //newParam.associateDistanceRadar?
 }
 
-DEFINE_string(oldPath, "/home/fx/test/nansha/json/algorithmParam_old.json", "旧版json位置，默认 old.json");
-DEFINE_string(newPath, "/home/fx/test/nansha/json/algorithmParam_new.json", "新版json位置，默认 new.json");
+DEFINE_string(oldPath, "./old.json", "旧版json位置，默认 old.json");
+DEFINE_string(newPath, "./new.json", "新版json位置，默认 new.json");
 DEFINE_string(roadName, "roadName", "路口名称，默认 roadName");
 
 int main(int argc, char **argv) {

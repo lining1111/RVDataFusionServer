@@ -391,16 +391,15 @@ void example1() {
 
 class A {
 public:
-    vector<vector<vector<double>>> v;
-XPACK(O(v));
+    int a;
+XPACK(O(a));
 };
 
 int main(int argc, char **argv) {
 
-    string dataStr =
-            "{\"v\":[[[1.0,2.0],[4.0,5.0]],[[7.0,8.0],[10.0,11.0]]]}";
+    string dataStr = R"([{"a":1},{"a":2}])";
 
-    A a1;
+    vector<A> a1;
     json::decode(dataStr, a1);
 
     example1();

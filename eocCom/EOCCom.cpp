@@ -187,6 +187,28 @@ void processS102(void *p, string content, string cmd) {
     return;
 }
 
+#include <iostream>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
+static string formatJson(const string &jsonStr){
+    rapidjson::Document document;
+    if (document.Parse(jsonStr.c_str()).HasParseError()) {
+        std::cout << "Failed to parse the JSON string." << std::endl;
+        return "";
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> prettyWriter(buffer);
+
+    // 输出格式化后的JSON字符串
+    document.Accept(prettyWriter);
+    std::cout << buffer.GetString();
+    return buffer.GetString();
+}
+
 void processR102(void *p, string content, string cmd) {
     if (p == nullptr) {
         return;
@@ -257,9 +279,10 @@ void processR102(void *p, string content, string cmd) {
 //        ofstream of;
 //        of.open("algorithm.json", ios::out | ios::trunc);
 //        if (of.is_open()) {
-//            of << jsonStr;
+//            string jsonStrFormat = formatJson(jsonStr);
+//            of << jsonStrFormat;
 //            of.close();
-//            LOG(INFO) << "eoc 写入算法参数成功:" << jsonStr;
+//            LOG(INFO) << "eoc 写入RelatedAreas:" << jsonStrFormat;
 //        }
 //    }
 
@@ -271,9 +294,10 @@ void processR102(void *p, string content, string cmd) {
         ofstream of;
         of.open("relatedAreas.json", ios::out | ios::trunc);
         if (of.is_open()) {
-            of << relatedAreas;
+            string jsonStrFormat = formatJson(relatedAreas);
+            of << jsonStrFormat;
             of.close();
-            LOG(INFO) << "eoc 写入RelatedAreas:" << relatedAreas;
+            LOG(INFO) << "eoc 写入RelatedAreas:" << jsonStrFormat;
         }
     }
 
