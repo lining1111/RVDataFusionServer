@@ -16,9 +16,10 @@ find_package(glog REQUIRED)
 find_package(fmt REQUIRED)
 find_package(Poco REQUIRED)
 find_package(xpack REQUIRED)
+find_package(RdKafka REQUIRED)
 
 set(3rdLibs gflags::gflags SQLite::SQLite3 CURL::libcurl openssl::openssl
-        libuuid::libuuid glog::glog fmt::fmt Poco::Poco xpack::xpack)
+        libuuid::libuuid glog::glog fmt::fmt Poco::Poco xpack::xpack RdKafka::rdkafka++)
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")

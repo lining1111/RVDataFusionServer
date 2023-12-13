@@ -10,6 +10,7 @@ fmt/10.1.1
 poco/1.12.4
 expat/2.5.0
 xpack/1.0.4
+librdkafka/2.3.0
 [options]
 poco*:enable_data_mysql=False
 [generators]

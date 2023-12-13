@@ -159,6 +159,18 @@ int main(int argc, char **argv) {
         delete signalControl;
     }
 
+    //打开kafka消费，接收信控机信息
+    std::string brokers = "13.145.180.179:9092,13.145.180.193:9092,13.145.180.213:9092";
+    std::string topic = "cross_phaseStatus";
+    kafkaConsumer = new KafkaConsumer(brokers, topic, dataLocal->plateId);
+    if (kafkaConsumer->init() != 0) {
+        LOG(ERROR) << "kafka消费初始化失败";
+        delete kafkaConsumer;
+    } else {
+        kafkaConsumer->startBusiness();
+    }
+
+
 //    FusionServer *server = new FusionServer(port);
 //    if (server->Open() == 0) {
 //        server->Run();

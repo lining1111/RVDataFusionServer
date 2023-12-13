@@ -457,6 +457,31 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     //newParam.associateDistanceRadar?
 }
 
+
+#include <iostream>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
+static string formatJson(const string &jsonStr) {
+    rapidjson::Document document;
+    if (document.Parse(jsonStr.c_str()).HasParseError()) {
+        std::cout << "Failed to parse the JSON string." << std::endl;
+        return "";
+    }
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> prettyWriter(buffer);
+
+    // 输出格式化后的JSON字符串
+    document.Accept(prettyWriter);
+    std::cout << buffer.GetString();
+    return buffer.GetString();
+}
+
+
+
 DEFINE_string(oldPath, "/home/fx/test/nansha/json/algorithmParam_old.json", "旧版json位置，默认 old.json");
 DEFINE_string(newPath, "/home/fx/test/nansha/json/algorithmParam_new.json", "新版json位置，默认 new.json");
 DEFINE_string(roadName, "roadName", "路口名称，默认 roadName");
@@ -490,7 +515,7 @@ int main(int argc, char **argv) {
 
     fmt::print("3.写入新版文件\n");
     string newContent = json::encode(newParam);
-    writeFile(FLAGS_newPath, newContent);
+    writeFile(FLAGS_newPath, formatJson(newContent));
     string webUrl = R"(https://www.sojson.com/)";
     fmt::print("新版文件内容json未格式化，请手动格式化，比如{}\n", webUrl);
     return 0;

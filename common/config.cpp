@@ -12,6 +12,8 @@ string savePath = "/mnt/mnt_hd/save/";
 
 SignalControl *signalControl = nullptr;
 
+KafkaConsumer *kafkaConsumer = nullptr;
+
 mutex conns_mutex;
 vector<void *> conns;
 
@@ -21,7 +23,7 @@ bool isShowMsgType(string msgType) {
     } else {
         bool isExist = false;
         for (auto iter: localConfig.msgType) {
-            if (iter==msgType){
+            if (iter == msgType) {
                 isExist = true;
                 break;
             }

@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <mutex>
 #include "signalControl/SignalControl.h"
+#include "kafka/KafkaConsumer.h"
 #include "lib/AlgorithmParam.h"
 
 
@@ -51,6 +52,8 @@ extern string savePath;
 extern int getAlgorithmParam(string file,AlgorithmParam &out);
 
 extern SignalControl *signalControl;
+
+extern KafkaConsumer *kafkaConsumer;
 
 extern mutex conns_mutex;
 extern vector<void *> conns;
