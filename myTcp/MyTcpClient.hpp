@@ -79,6 +79,10 @@ public:
             LOG(ERROR) << server_ip << ":" << server_port << " net exception";
             return -1;
         }
+        catch (Poco::IOException &) {
+            LOG(ERROR) << server_ip << ":" << server_port << " io exception";
+            return -1;
+        }
 
         _peerAddress = _s.peerAddress().toString();
         LOG(WARNING) << "connection to " << _peerAddress << " ...";
