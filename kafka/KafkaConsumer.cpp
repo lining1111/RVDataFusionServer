@@ -3,7 +3,9 @@
 //
 
 #include "KafkaConsumer.h"
+#include "KafkaCom.h"
 #include <stdlib.h>
+#include <uuid/uuid.h>
 
 KafkaConsumer::KafkaConsumer(string brokers, string topic, string crossId)
         : _brokers(brokers), _topic(topic), _crossId(crossId) {
@@ -46,7 +48,7 @@ void KafkaConsumer::startBusiness() {
         return;
     }
     _isRun = true;
-    LOG(WARNING) << "kafka" << this->_group_id << " start business";
+    LOG(WARNING) << "kafka " << this->_group_id << " start business";
     isLocalThreadRun = true;
     future_consume = std::async(std::launch::async, ThreadConsume, this);
 }
@@ -114,6 +116,27 @@ int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
                                               << ",当前相位名:" << string(tabStage.NewStageName);
                                     //TODO 将数据插入Data
                                     auto *data = Data::instance();
+                                    auto dataUnit = data->dataUnitCrossStageData;
+
+                                    CrossStageData item;
+                                    uuid_t uuid;
+                                    char uuid_str[37];
+                                    memset(uuid_str, 0, 37);
+                                    uuid_generate_time(uuid);
+                                    uuid_unparse(uuid, uuid_str);
+                                    item.oprNum = string(uuid_str);
+                                    item.crossID = data->plateId;
+                                    item.hardCode = data->matrixNo;
+                                    item.timestamp = msg->timestamp().timestamp;
+                                    item.lastStage = tabStage.NoOldStage;
+                                    item.lastStageDuration = tabStage.LenOldStage;
+                                    item.curStage = tabStage.NoNewStage;
+                                    item.curStageDuration = tabStage.LenNewStage;
+
+                                    if (!dataUnit.empty()) {
+                                        dataUnit.erase(dataUnit.begin());
+                                    }
+                                    dataUnit.push_back(item);
                                 }
                             } else {
                                 LOG(ERROR) << "kafka msg tab len no enough:"

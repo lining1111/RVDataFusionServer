@@ -140,7 +140,7 @@ static bool judgeTimestamp(uint64_t timestamp, string peerAddress) {
 int PkgProcessFun_CmdResponse(void *p, string content) {
     VLOG(2) << "应答指令";
     int ret = 0;
-    auto local = (MyTcpHandler *) p;
+    auto local = (MyTcpClient *) p;
     string ip = local->_peerAddress;
 
     string msgType = "Reply";
@@ -549,7 +549,7 @@ int PkgProcessFun_CmdInWatchData_2(void *p, string content) {
     return ret;
 }
 
-int PkgProcessFun_StopLinePassData(void *p, string content) {
+int PkgProcessFun_CmdStopLinePassData(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
     string ip = local->_peerAddress;
@@ -598,7 +598,7 @@ int PkgProcessFun_StopLinePassData(void *p, string content) {
     return ret;
 }
 
-int PkgProcessFun_AbnormalStopData(void *p, string content) {
+int PkgProcessFun_CmdAbnormalStopData(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
     string ip = local->_peerAddress;
@@ -646,7 +646,7 @@ int PkgProcessFun_AbnormalStopData(void *p, string content) {
     return ret;
 }
 
-int PkgProcessFun_LongDistanceOnSolidLineAlarm(void *p, string content) {
+int PkgProcessFun_CmdLongDistanceOnSolidLineAlarm(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
     string ip = local->_peerAddress;
@@ -694,7 +694,7 @@ int PkgProcessFun_LongDistanceOnSolidLineAlarm(void *p, string content) {
     return ret;
 }
 
-int PkgProcessFun_HumanData(void *p, string content) {
+int PkgProcessFun_CmdHumanData(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
     string ip = local->_peerAddress;
@@ -744,7 +744,8 @@ int PkgProcessFun_HumanData(void *p, string content) {
 
 
 CacheTimestamp CT_humanLitPoleData;
-int PkgProcessFun_HumanLitPoleData(void *p, string content) {
+
+int PkgProcessFun_CmdHumanLitPoleData(void *p, string content) {
     int ret = 0;
     auto local = (MyTcpHandler *) p;
     string ip = local->_peerAddress;
@@ -1047,7 +1048,7 @@ int PkgProcessFun_0xf3(void *p, string content) {
 
 //CacheTimestamp CT_trafficDetectorStatus;
 
-int PkgProcessFun_TrafficDetectorStatus(void *p, string content) {
+int PkgProcessFun_CmdTrafficDetectorStatus(void *p, string content) {
     VLOG(4) << content;
     //透传
     int ret = 0;
@@ -1111,6 +1112,67 @@ int PkgProcessFun_TrafficDetectorStatus(void *p, string content) {
     return ret;
 }
 
+uint64_t sn_CrossStageData = 0;
+
+int PkgProcessFun_CmdCrossStageData(void *p, string content) {
+    VLOG(4) << content;
+    //透传
+    int ret = 0;
+    auto local = (MyTcpServerHandler *) p;
+    string ip = local->_peerAddress;
+
+    string msgType = "DataUnitCrossStageData";
+    CrossStageData msg;
+    try {
+        json::decode(content, msg);
+    } catch (std::exception &e) {
+        LOG(ERROR) << e.what();
+        return -1;
+    }
+
+    if (msg.hardCode.empty()) {
+        LOG(ERROR) << "hardCode empty," << content;
+        return -1;
+    }
+    //不在关联设备中就踢掉
+    if (!judgeHardCode(msg.hardCode, ip)) {
+        return -1;
+    }
+
+    //存入队列
+    auto *data = Data::instance();
+    auto dataUnit = data->dataUnitCrossStageData;
+    CrossStageData msgSend;
+    if (dataUnit.empty()) {
+        uuid_t uuid;
+        char uuid_str[37];
+        memset(uuid_str, 0, 37);
+        uuid_generate_time(uuid);
+        uuid_unparse(uuid, uuid_str);
+        msgSend.oprNum = string(uuid_str);
+        msgSend.crossID = data->plateId;
+        msgSend.hardCode = data->matrixNo;
+        msgSend.timestamp = os::getTimestampMs();
+    } else {
+
+    }
+
+    uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
+    Pkg pkg;
+    msgSend.PkgWithoutCRC(sn_CrossStageData, deviceNo, pkg);
+    sn_CrossStageData++;
+
+    if (!local->SendBase(pkg)) {
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",发送消息失败";
+        ret = -1;
+    } else {
+        LOG_IF(INFO, isShowMsgType(msgType)) << "client ip:" << ip << " " << msgType << ",发送消息成功，"
+                                             << "hardCode:" << msg.hardCode << " crossID:" << msg.crossID
+                                             << "timestamp:" << (uint64_t) msg.timestamp;
+    }
+    return ret;
+}
+
 
 map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdResponse, PkgProcessFun_CmdResponse),
@@ -1122,18 +1184,19 @@ map<CmdType, PkgProcessFun> PkgProcessMap = {
         make_pair(CmdTrafficFlowGather, PkgProcessFun_CmdTrafficFlowGather),
         make_pair(CmdInWatchData_1_3_4, PkgProcessFun_CmdInWatchData_1_3_4),
         make_pair(CmdInWatchData_2, PkgProcessFun_CmdInWatchData_2),
-        make_pair(CmdStopLinePassData, PkgProcessFun_StopLinePassData),
-        make_pair(CmdAbnormalStopData, PkgProcessFun_AbnormalStopData),
-        make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_LongDistanceOnSolidLineAlarm),
-        make_pair(CmdHumanData, PkgProcessFun_HumanData),
-        make_pair(CmdHumanLitPoleData, PkgProcessFun_HumanLitPoleData),
+        make_pair(CmdStopLinePassData, PkgProcessFun_CmdStopLinePassData),
+        make_pair(CmdAbnormalStopData, PkgProcessFun_CmdAbnormalStopData),
+        make_pair(CmdLongDistanceOnSolidLineAlarm, PkgProcessFun_CmdLongDistanceOnSolidLineAlarm),
+        make_pair(CmdHumanData, PkgProcessFun_CmdHumanData),
+        make_pair(CmdHumanLitPoleData, PkgProcessFun_CmdHumanLitPoleData),
 
         //信控机测试
         make_pair((CmdType) 0xf1, PkgProcessFun_0xf1),
         make_pair((CmdType) 0xf2, PkgProcessFun_0xf2),
         make_pair((CmdType) 0xf3, PkgProcessFun_0xf3),
 
-        make_pair(CmdTrafficDetectorStatus, PkgProcessFun_TrafficDetectorStatus),
+        make_pair(CmdTrafficDetectorStatus, PkgProcessFun_CmdTrafficDetectorStatus),
+        make_pair(CmdCrossStageData, PkgProcessFun_CmdCrossStageData),
 };
 
 

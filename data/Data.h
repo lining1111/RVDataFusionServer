@@ -42,9 +42,12 @@ public:
     DataUnitHumanLitPoleData *dataUnitHumanLitPoleData;
     //-----检测器状态----//
     DataUnitTrafficDetectorStatus *dataUnitTrafficDetectorStatus;
+    //-----路口相位数据-------//
+    vector<CrossStageData> dataUnitCrossStageData;
 
     //-------重发队列------//
     ReSendQueue *reSendQueue;//拥堵、溢出、异常停车 需要加入队列
+
 public:
     //本地参数
     //FusionData相关

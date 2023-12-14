@@ -22,8 +22,9 @@ using namespace std;
 
 class MyTcpHandler {
 public:
+    std::mutex *mtx = nullptr;
+    StreamSocket _socket;
     std::string _peerAddress;
-    bool isNeedReconnect = true;
 
     int BUFFER_SIZE = 1024 * 1024 * 4;
     bool _isRun = false;
@@ -48,6 +49,9 @@ public:
     uint64_t timeRecv = 0;
 
     MyTcpHandler() {
+        if (mtx == nullptr) {
+            mtx = new std::mutex();
+        }
         rb = new RingBuffer(BUFFER_SIZE);
         pkgs.setMax(30);
     }
@@ -58,6 +62,7 @@ public:
             rb = nullptr;
         }
         LOG(WARNING) << _peerAddress << " release";
+        delete mtx;
     }
 
     void startBusiness() {

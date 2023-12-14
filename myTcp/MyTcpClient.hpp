@@ -40,33 +40,28 @@ using Poco::TimeoutException;
 
 class MyTcpClient : public MyTcpHandler {
 public:
-    std::mutex *mtx = nullptr;
     string server_ip;
     int server_port;
-    StreamSocket _s;
+    bool isNeedReconnect = true;
     char *recvBuf = nullptr;
     std::thread _t;
 public:
     MyTcpClient(string serverip, int serverport) :
             server_ip(serverip), server_port(serverport) {
         recvBuf = new char[1024 * 1024];
-        if (mtx == nullptr) {
-            mtx = new std::mutex();
-        }
     }
 
     ~MyTcpClient() {
         LOG(WARNING) << _peerAddress << " disconnected ...";
         stopBusiness();
         delete[]recvBuf;
-        delete mtx;
     }
 
     int Open() {
         SocketAddress sa(server_ip, server_port);
         try {
             Poco::Timespan ts(1000 * 1000);
-            _s.connect(sa, ts);
+            _socket.connect(sa, ts);
         } catch (ConnectionRefusedException &) {
             LOG(ERROR) << server_ip << ":" << server_port << " connect refuse";
             return -1;
@@ -84,10 +79,10 @@ public:
             return -1;
         }
 
-        _peerAddress = _s.peerAddress().toString();
+        _peerAddress = _socket.peerAddress().toString();
         LOG(WARNING) << "connection to " << _peerAddress << " ...";
         Poco::Timespan ts1(1000 * 100);
-        _s.setSendTimeout(ts1);
+        _socket.setSendTimeout(ts1);
         isNeedReconnect = false;
         timeSend = 0;
         timeRecv = 0;
@@ -95,11 +90,11 @@ public:
     }
 
     int Reconnect() {
-        _s.close();
+        _socket.close();
         SocketAddress sa(server_ip, server_port);
         try {
             Poco::Timespan ts(1000 * 1000);
-            _s.connect(sa, ts);
+            _socket.connect(sa, ts);
         } catch (ConnectionRefusedException &) {
             LOG(ERROR) << server_ip << ":" << server_port << " connect refuse";
             return -1;
@@ -117,10 +112,10 @@ public:
             return -1;
         }
 
-        _peerAddress = _s.peerAddress().toString();
+        _peerAddress = _socket.peerAddress().toString();
         LOG(WARNING) << "reconnection to " << _peerAddress << " ...";
         Poco::Timespan ts1(1000 * 100);
-        _s.setSendTimeout(ts1);
+        _socket.setSendTimeout(ts1);
         isNeedReconnect = false;
         timeSend = 0;
         timeRecv = 0;
@@ -138,13 +133,13 @@ public:
                         LOG(ERROR) << _peerAddress << " rb null";
                         continue;
                     }
-                    if (_s.available() <= 0) {
+                    if (_socket.available() <= 0) {
                         continue;
                     }
                     bzero(recvBuf, 1024 * 1024);
                     int recvLen = (rb->GetWriteLen() < (1024 * 1024)) ? rb->GetWriteLen() : (1024 * 1024);
                     try {
-                        int len = _s.receiveBytes(recvBuf, recvLen);
+                        int len = _socket.receiveBytes(recvBuf, recvLen);
                         if (len < 0) {
                             LOG(ERROR) << server_ip << ":" << server_port << " receive len <0";
                             isNeedReconnect = true;
@@ -186,20 +181,20 @@ public:
             return -1;
         }
         try {
-            auto len = _s.sendBytes(buf_send, len_send);
-            VLOG(2) << server_ip << ":" << server_port << " send len:" << len << " len_send:" << len_send;
+            auto len = _socket.sendBytes(buf_send, len_send);
+            VLOG(2) << _peerAddress << " send len:" << len << " len_send:" << len_send;
             if (len < 0) {
-                LOG(ERROR) << server_ip << ":" << server_port << " send len < 0";
+                LOG(ERROR) << _peerAddress << " send len < 0";
                 isNeedReconnect = true;
                 ret = -2;
             } else if (len != len_send) {
-                LOG(ERROR) << server_ip << ":" << server_port << " send len !=len_send";
+                LOG(ERROR) << _peerAddress << " send len !=len_send";
                 isNeedReconnect = true;
                 ret = -2;
             }
         }
         catch (Poco::Exception &exc) {
-            LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
+            LOG(ERROR) << _peerAddress << " send error:" << exc.code() << exc.displayText();
             if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
                 isNeedReconnect = true;
                 ret = -2;
@@ -238,20 +233,20 @@ public:
             return -1;
         }
         try {
-            auto len = _s.sendBytes(buf_send, len_send);
-            VLOG(2) << server_ip << ":" << server_port << " send len:" << len << " len_send:" << len_send;
+            auto len = _socket.sendBytes(buf_send, len_send);
+            VLOG(2) << _peerAddress << " send len:" << len << " len_send:" << len_send;
             if (len < 0) {
-                LOG(ERROR) << " send len < 0";
+                LOG(ERROR) << _peerAddress << " send len < 0";
                 isNeedReconnect = true;
                 ret = -2;
             } else if (len != len_send) {
-                LOG(ERROR) << " send len !=len_send";
+                LOG(ERROR) << _peerAddress << " send len !=len_send";
                 isNeedReconnect = true;
                 ret = -2;
             }
         }
         catch (Poco::Exception &exc) {
-            LOG(ERROR) << server_ip << ":" << server_port << " send error:" << exc.code() << exc.displayText();
+            LOG(ERROR) << _peerAddress << " send error:" << exc.code() << exc.displayText();
             if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
                 isNeedReconnect = true;
                 ret = -2;

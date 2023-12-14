@@ -34,13 +34,12 @@ using Poco::Net::NetException;
 
 class MyTcpServerHandler : public MyTcpHandler {
 public:
-    StreamSocket _socket;
     SocketReactor &_reactor;
     char *recvBuf = nullptr;
 public:
     MyTcpServerHandler(StreamSocket &socket, SocketReactor &reactor) :
-            _socket(socket),
             _reactor(reactor) {
+        _socket = socket;
         _peerAddress = socket.peerAddress().toString();
         LOG(WARNING) << "connection from " << _peerAddress << " ...";
         std::unique_lock<std::mutex> lock(conns_mutex);
@@ -98,6 +97,116 @@ public:
     void onSocketShutdown(const AutoPtr<ShutdownNotification> &pNf) {
         pNf->release();
         delete this;
+    }
+
+    int SendBase(common::Pkg pkg) {
+        int ret = 0;
+        //阻塞调用，加锁
+        std::unique_lock<std::mutex> lock(*mtx);
+
+        uint8_t *buf_send = new uint8_t[(sizeof(pkg.head) + sizeof(pkg.crc) + pkg.body.length())];
+        uint32_t len_send = (sizeof(pkg.head) + sizeof(pkg.crc) + pkg.body.length());
+        //pack
+        len_send = common::Pack(pkg, buf_send, len_send);
+        if (len_send == 0) {
+            delete[] buf_send;
+            LOG(ERROR) << "pack error";
+            return -1;
+        }
+        try {
+            auto len = _socket.sendBytes(buf_send, len_send);
+            VLOG(2) << _peerAddress << " send len:" << len << " len_send:" << len_send;
+            if (len < 0) {
+                LOG(ERROR) << _peerAddress << " send len < 0";
+                delete this;
+                ret = -2;
+            } else if (len != len_send) {
+                LOG(ERROR) << _peerAddress << " send len !=len_send";
+                delete this;
+                ret = -2;
+            }
+        }
+        catch (Poco::Exception &exc) {
+            LOG(ERROR) << _peerAddress << " send error:" << exc.code() << exc.displayText();
+            if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
+                delete this;
+                ret = -2;
+            } else {
+                ret = -3;
+            }
+        }
+        //记录发送时间
+        if (this->timeSend == 0) {
+            this->timeRecv = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+        }
+
+        this->timeSend = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+//        //检验下回复时间和发送时间的差，是否大于阈值，大于就重连
+//        if (localConfig.isUseThresholdReconnect) {
+//            if (std::abs((long long) this->timeRecv - (long long) this->timeSend) >=
+//                (1000 * localConfig.thresholdReconnect)) {
+//                LOG(WARNING) << "接收和发送时间差大于阈值，需要重连，ip:" << this->_peerAddress
+//                             << " timeRecv:" << this->timeRecv << " timeSend:" << this->timeSend;
+//                this->isNeedReconnect = true;
+//            }
+//        }
+
+        delete[] buf_send;
+        return ret;
+    }
+
+    int Send(char *buf_send, int len_send) {
+        int ret = 0;
+        //阻塞调用，加锁
+        std::unique_lock<std::mutex> lock(*mtx);
+
+        try {
+            auto len = _socket.sendBytes(buf_send, len_send);
+            VLOG(2) << _peerAddress << " send len:" << len << " len_send:" << len_send;
+            if (len < 0) {
+                LOG(ERROR) << _peerAddress << " send len < 0";
+                delete this;
+                ret = -2;
+            } else if (len != len_send) {
+                LOG(ERROR) << _peerAddress << " send len !=len_send";
+                delete this;
+                ret = -2;
+            }
+        }
+        catch (Poco::Exception &exc) {
+            LOG(ERROR) << _peerAddress << " send error:" << exc.code() << exc.displayText();
+            if (exc.code() != POCO_ETIMEDOUT && exc.code() != POCO_EWOULDBLOCK && exc.code() != POCO_EAGAIN) {
+                delete this;
+                ret = -2;
+            } else {
+                ret = -3;
+            }
+        }
+
+        //记录发送时间
+        if (this->timeSend == 0) {
+            this->timeRecv = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::system_clock::now().time_since_epoch()).count();
+        }
+
+        this->timeSend = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+//        //检验下回复时间和发送时间的差，是否大于阈值，大于就重连
+//        if (localConfig.isUseThresholdReconnect) {
+//            if (std::abs((long long) this->timeRecv - (long long) this->timeSend) >=
+//                (1000 * localConfig.thresholdReconnect)) {
+//                this->isNeedReconnect = true;
+//                LOG(WARNING) << "接收和发送时间差大于阈值，需要重连，ip:" << this->_peerAddress
+//                             << " timeRecv:" << this->timeRecv << " timeSend:" << this->timeSend;
+//            }
+//        }
+
+        delete[] buf_send;
+        return ret;
     }
 };
 

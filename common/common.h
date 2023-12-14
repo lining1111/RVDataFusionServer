@@ -59,6 +59,8 @@ namespace common {
         CmdHumanData = 0x0c,//3516相机预警信息 行人感知
         CmdHumanLitPoleData = 0x0d,//人形灯杆数据
         CmdTrafficDetectorStatus = 0x0e,//检测器状态
+
+        CmdCrossStageData = 0xfe,//路口相位数据
         CmdUnknown = 0xff,
     };//命令字类型
 
@@ -1173,6 +1175,50 @@ namespace common {
         }
 
     XPACK(O(oprNum, timestamp, crossID, hardCode, signalControlList));
+
+        int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
+            int len = 0;
+            //1.头部
+            pkg.head.tag = '$';
+            pkg.head.version = 1;
+            pkg.head.cmd = this->cmdType;
+            pkg.head.sn = sn;
+            pkg.head.deviceNO = deviceNO;
+            pkg.head.len = 0;
+            len += sizeof(pkg.head);
+            //正文
+            string jsonStr = json::encode(*this);
+            pkg.body = jsonStr;
+            len += jsonStr.length();
+            //校验,可以先不设置，等待组包的时候更新
+            pkg.crc.data = 0x0000;
+            len += sizeof(pkg.crc);
+            pkg.head.len = len;
+            return 0;
+        }
+    };
+
+    //路口相位数据
+    class CrossStageData : public PkgClass {
+    public:
+        string oprNum;
+        double timestamp;
+        string crossID;
+        string hardCode;
+        int lastStage = -1;
+        int lastStageDuration = -1;
+        int lastControlMode = -1;
+        int curStage = -1;
+        int curStageDuration = -1;
+        int curControlMode = -1;
+
+        CrossStageData() {
+            this->cmdType = CmdCrossStageData;
+        }
+
+    XPACK(O(oprNum, timestamp, crossID, hardCode,
+            lastStage, lastStageDuration, lastControlMode,
+            curStage, curStageDuration, curControlMode));
 
         int PkgWithoutCRC(uint16_t sn, uint32_t deviceNO, Pkg &pkg) {
             int len = 0;

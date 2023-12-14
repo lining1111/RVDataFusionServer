@@ -58,3 +58,8 @@ redefine_file_macro(algorithmParamExchange)
 add_executable(addConfigXML addConfigXML.cpp ${SRC_FILES})
 target_link_libraries(addConfigXML ${LIBS})
 redefine_file_macro(addConfigXML)
+
+##测试kafka
+add_executable(testKafka testKafka.cpp ${SRC_FILES})
+target_link_libraries(testKafka ${LIBS})
+redefine_file_macro(testKafka)

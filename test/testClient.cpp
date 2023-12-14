@@ -145,12 +145,12 @@ static void Task_FusionData1(MyTcpClient *client, FusionData fusionData) {
 
 //    auto ret = send(sock, buf, buf_len, 0);
 
-    if (client->_s.isNull() || client->isNeedReconnect) {
+    if (client->_socket.isNull() || client->isNeedReconnect) {
         return;
     }
 
     try {
-        auto ret = client->_s.sendBytes(buf, buf_len);
+        auto ret = client->_socket.sendBytes(buf, buf_len);
 
         if (ret < 0) {
             std::cout << "发送失败" << msgType << std::endl;
