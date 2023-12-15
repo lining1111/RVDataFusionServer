@@ -192,7 +192,7 @@ DEFINE_string(matrixNo, "123456789", "matrixNo，默认 123456789");
 DEFINE_string(crossID, "123456ts", "路口号，默认 123456ts");
 DEFINE_int32(fs, 80, "数据帧率，默认80,单位ms");
 
-//#define isSendPIC
+#define isSendPIC
 
 int main(int argc, char **argv) {
     gflags::ParseCommandLineFlags(&argc, &argv, true);
@@ -283,24 +283,30 @@ int main(int argc, char **argv) {
         for (int j = 0; j < pics.size(); j++) {
             VideoData videoData;
             videoData.direction = j + 1;
-            videoData.rvHardCode = hardCode.at(j);
-            //读取图片并编成base64
-            vector<uint8_t> plain;
-            string base64;
-            string filePath = pics.at(j).at(i);
-            os::GetVectorFromFile(plain, filePath);
-            if (!plain.empty()) {
-                unsigned char buf[1 * 1024 * 1024];
-                unsigned int len = 0;
-                memset(buf, 0, 1 * 1024 * 1024);
-                os::base64_encode(plain.data(), plain.size(), buf, &len);
-                base64.clear();
-                for (int i = 0; i < len; i++) {
-                    base64.push_back(buf[i]);
+            if (j < hardCode.size()) {
+                videoData.rvHardCode = hardCode.at(j);
+                //读取图片并编成base64
+                vector<uint8_t> plain;
+                string base64;
+                if (i < pics.at(j).size()) {
+                    string filePath = pics.at(j).at(i);
+                    os::GetVectorFromFile(plain, filePath);
                 }
+                if (!plain.empty()) {
+                    unsigned char *buf = new unsigned char[plain.size() * 2];
+                    unsigned int len = 0;
+                    memset(buf, 0, plain.size() * 2);
+                    os::base64_encode(plain.data(), plain.size(), buf, &len);
+                    base64.clear();
+                    for (int m = 0; m < len; m++) {
+                        base64.push_back(buf[m]);
+                    }
+                    delete[]buf;
+                }
+
+                videoData.imageData = base64;
+                fusionData.lstVideos.push_back(videoData);
             }
-            videoData.imageData = base64;
-            fusionData.lstVideos.push_back(videoData);
         }
 #endif
 
@@ -309,11 +315,11 @@ int main(int argc, char **argv) {
                 std::chrono::system_clock::now().time_since_epoch()).count();
         fusionData.timestamp = timestampStart;
         fusionData.crossID = FLAGS_crossID;
-        int ret = SendServer(sockfd, fusionData, matrixNo);
+        int ret1 = SendServer(sockfd, fusionData, matrixNo);
         uint64_t timestampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count();
         string result;
-        if (ret == 0) {
+        if (ret1 == 0) {
             result = "成功";
         } else {
             result = "失败";

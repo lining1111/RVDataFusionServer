@@ -395,7 +395,34 @@ public:
 XPACK(O(a));
 };
 
+string readFile(const string path) {
+    //打开文件
+    std::ifstream ifs;
+    ifs.open(path);
+    if (!ifs.is_open()) {
+        fmt::print("打开文件失败:{}\n", path);
+        return "";
+    } else {
+        std::stringstream buf;
+        buf << ifs.rdbuf();
+        std::string content(buf.str());
+        ifs.close();
+        return content;
+    }
+}
+
 int main(int argc, char **argv) {
+
+    string content = readFile("a.json");
+
+    AlgorithmParam algorithmParam;
+
+    try {
+        json::decode(content,algorithmParam);
+    } catch (std::exception &e) {
+        fmt::print("json解析失败:{}\n", string(e.what()));
+        return -1;
+    }
 
     string dataStr = R"([{"a":1},{"a":2}])";
 
