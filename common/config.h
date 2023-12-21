@@ -30,9 +30,12 @@ typedef struct {
     int summaryFs = 10;
     int thresholdReconnect = 5;//多久没回复信息就重连,单位s
     bool isUseThresholdReconnect = true;
-    int thresholdTimeRecv = 60*3;//接收时间戳判断，单位s
-    bool isUseThresholdTimeRecv= true;
+    int thresholdTimeRecv = 60 * 3;//接收时间戳判断，单位s
+    bool isUseThresholdTimeRecv = true;
     bool isUseJudgeHardCode = true;
+    bool isUseKafka = false;
+    string kafkaBrokers = "13.145.180.179:9092,13.145.180.193:9092,13.145.180.213:9092";
+    string kafkaTopic_c = "cross_phaseStatus";
 } LocalConfig;
 
 typedef enum {
@@ -49,7 +52,7 @@ extern int fixrPort;
 
 extern string savePath;
 
-extern int getAlgorithmParam(string file,AlgorithmParam &out);
+extern int getAlgorithmParam(string file, AlgorithmParam &out);
 
 extern SignalControl *signalControl;
 

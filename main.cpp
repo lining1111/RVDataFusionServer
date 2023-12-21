@@ -56,6 +56,10 @@ DEFINE_bool(isUseThresholdReconnect, false, "是否启用没收到回复信息�
 DEFINE_int32(thresholdTimeRecv, 60 * 3, "接收信息的时间戳判断，单位秒，默认 60*3");
 DEFINE_bool(isUseThresholdTimeRecv, true, "是否启用接收信息的时间戳判断，默认 true");
 DEFINE_bool(isUseJudgeHardCode, true, "是否启用设备号关联判断，默认 true");
+DEFINE_bool(isUseKafka, false, "是否开启kafka消费，默认 false");
+DEFINE_string(kafkaBrokers, "13.145.180.179:9092,13.145.180.193:9092,13.145.180.213:9092",
+              "kafka brokers,默认 13.145.180.179:9092,13.145.180.193:9092,13.145.180.213:9092");
+DEFINE_string(kafkaTopic_c, "cross_phaseStatus", "kafka consumer topic,默认 cross_phaseStatus");
 
 #include "os/os.h"
 #include "eocCom/DBCom.h"
@@ -118,6 +122,9 @@ int main(int argc, char **argv) {
     }
     localConfig.isUseThresholdTimeRecv = FLAGS_isUseThresholdTimeRecv;
     localConfig.isUseJudgeHardCode = FLAGS_isUseJudgeHardCode;
+    localConfig.isUseKafka = FLAGS_isUseKafka;
+    localConfig.kafkaBrokers = FLAGS_kafkaBrokers;
+    localConfig.kafkaTopic_c = FLAGS_kafkaTopic_c;
 
     LOG(WARNING) << "程序模式:" << FLAGS_mode;
     if (localConfig.mode == 0 || localConfig.mode == 1) {
@@ -160,14 +167,17 @@ int main(int argc, char **argv) {
     }
 
     //打开kafka消费，接收信控机信息
-    std::string brokers = "13.145.180.179:9092,13.145.180.193:9092,13.145.180.213:9092";
-    std::string topic = "cross_phaseStatus";
-    kafkaConsumer = new KafkaConsumer(brokers, topic, dataLocal->plateId);
-    if (kafkaConsumer->init() != 0) {
-        LOG(ERROR) << "kafka消费初始化失败";
-        delete kafkaConsumer;
-    } else {
-        kafkaConsumer->startBusiness();
+    if (localConfig.isUseKafka) {
+        std::string brokers = localConfig.kafkaBrokers;
+        std::string topic = localConfig.kafkaTopic_c;
+        LOG(WARNING) << "开启kafka消费，brokers:" << brokers << ",topic:" << topic;
+        kafkaConsumer = new KafkaConsumer(brokers, topic, dataLocal->plateId);
+        if (kafkaConsumer->init() != 0) {
+            LOG(ERROR) << "kafka消费初始化失败";
+            delete kafkaConsumer;
+        } else {
+            kafkaConsumer->startBusiness();
+        }
     }
 
 
