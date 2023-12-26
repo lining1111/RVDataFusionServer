@@ -132,7 +132,7 @@ int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
                                     item.lastStageDuration = tabStage.LenOldStage;
                                     item.curStage = tabStage.NoNewStage;
                                     item.curStageDuration = tabStage.LenNewStage;
-
+                                    std::unique_lock<std::mutex> lock(data->mtx_dataUnitCrossStageData);
                                     if (!dataUnit.empty()) {
                                         dataUnit.erase(dataUnit.begin());
                                     }

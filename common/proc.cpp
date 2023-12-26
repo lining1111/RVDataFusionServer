@@ -1143,6 +1143,7 @@ int PkgProcessFun_CmdCrossStageData(void *p, string content) {
     auto *data = Data::instance();
     auto dataUnit = data->dataUnitCrossStageData;
     CrossStageData msgSend;
+    std::unique_lock<std::mutex> lock(data->mtx_dataUnitCrossStageData);
     if (dataUnit.empty()) {
         uuid_t uuid;
         char uuid_str[37];

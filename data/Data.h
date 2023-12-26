@@ -43,6 +43,7 @@ public:
     //-----检测器状态----//
     DataUnitTrafficDetectorStatus *dataUnitTrafficDetectorStatus;
     //-----路口相位数据-------//
+    mutex mtx_dataUnitCrossStageData;
     vector<CrossStageData> dataUnitCrossStageData;
 
     //-------重发队列------//
