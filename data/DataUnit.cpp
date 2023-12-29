@@ -696,6 +696,10 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
                     item1.humanNum += iter2.humanNum;
                     //等待时间取最大
                     item1.waitingTime = (iter2.waitingTime > item1.waitingTime) ? iter2.waitingTime : item1.waitingTime;
+                    //图片取配对规则的第一个单元内的图
+                    if (item1.imageData.empty()){
+                        item1.imageData = iter2.imageData;
+                    }
                 }
             }
         }
