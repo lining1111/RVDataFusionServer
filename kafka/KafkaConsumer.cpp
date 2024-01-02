@@ -70,7 +70,7 @@ void KafkaConsumer::stopBusiness() {
 
 int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
     LOG(WARNING) << "kafka " << local->_group_id << " thread consume start";
-    vector<string> topics = {local->_topic};
+    vector <string> topics = {local->_topic};
     RdKafka::ErrorCode err = local->_consumer->subscribe(topics);
     if (err != RdKafka::ERR_NO_ERROR) {
         LOG(ERROR) << "kafka failed to subscribe:" << RdKafka::err2str(err);
@@ -81,11 +81,12 @@ int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
         RdKafka::Message *msg = local->_consumer->consume(1000 * 20);
         switch (msg->err()) {
             case RdKafka::ERR_NO_ERROR: {
+                LOG(INFO) << "kafka msg len:" << msg->len();
                 uint8_t *buffer = nullptr;
-                buffer = new uint8_t(msg->len());
+                buffer = new uint8_t[msg->len()];
                 memcpy(buffer, msg->payload(), msg->len());
                 //判断信息的字节长度 TabStageWithHeader
-                LOG(INFO) << "kafka msg len:" << msg->len();
+//                LOG(INFO) << "kafka head len:" << sizeof(TabStageFrameHeader);
                 //至少保证一个头的长度
                 if (msg->len() >= sizeof(TabStageFrameHeader)) {
                     //先取下头看看数据类型
@@ -107,12 +108,12 @@ int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
                                 //判断信息的路口号和当前的路口号是否一致
                                 if (local->_crossId_c == tabStage.NoJunc) {
                                     LOG(INFO) << "kafka msg:"
-                                              << "区域号:" << tabStage.NoArea
-                                              << ",路口号:" << tabStage.NoJunc
-                                              << ",上一相位号:" << tabStage.NoOldStage
-                                              << ",上一相位长(秒):" << tabStage.LenOldStage
-                                              << ",当前相位号:" << tabStage.NoNewStage
-                                              << ",当前相位长:" << tabStage.LenNewStage
+                                              << "区域号:" << to_string(tabStage.NoArea)
+                                              << ",路口号:" << to_string(tabStage.NoJunc)
+                                              << ",上一相位号:" << to_string(tabStage.NoOldStage)
+                                              << ",上一相位长(秒):" << to_string(tabStage.LenOldStage)
+                                              << ",当前相位号:" << to_string(tabStage.NoNewStage)
+                                              << ",当前相位长:" << to_string(tabStage.LenNewStage)
                                               << ",当前相位名:" << string(tabStage.NewStageName);
                                     //TODO 将数据插入Data
                                     auto *data = Data::instance();
@@ -132,11 +133,15 @@ int KafkaConsumer::ThreadConsume(KafkaConsumer *local) {
                                     item.lastStageDuration = tabStage.LenOldStage;
                                     item.curStage = tabStage.NoNewStage;
                                     item.curStageDuration = tabStage.LenNewStage;
-                                    std::unique_lock<std::mutex> lock(data->mtx_dataUnitCrossStageData);
+                                    std::unique_lock <std::mutex> lock(data->mtx_dataUnitCrossStageData);
                                     if (!dataUnit.empty()) {
                                         dataUnit.erase(dataUnit.begin());
                                     }
                                     dataUnit.push_back(item);
+                                } else {
+                                    LOG(INFO) << "kafka msg:"
+                                              << ",路口号:" << to_string(tabStage.NoJunc)
+                                              << ",not match:" << to_string(local->_crossId_c);
                                 }
                             } else {
                                 LOG(ERROR) << "kafka msg tab len no enough:"
