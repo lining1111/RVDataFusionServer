@@ -32,15 +32,15 @@ public:
     int faceDirection;
     double value;
 
-    AngleItem(){
+    AngleItem() {
 
     }
 
-    AngleItem(int faceDirection, double value):faceDirection(faceDirection),value(value){
+    AngleItem(int faceDirection, double value) : faceDirection(faceDirection), value(value) {
 
     }
 
-XPACK(O(faceDirection,value));
+XPACK(O(faceDirection, value));
 };
 
 //浮点数+index
@@ -61,16 +61,16 @@ XPACK(O(index, value));
 
 };
 
-class Distance{
+class Distance {
 public:
     int faceDirection;
     double value;
 
-    Distance(){
+    Distance() {
 
     }
 
-    Distance(int faceDirection, double value):faceDirection(faceDirection),value(value){
+    Distance(int faceDirection, double value) : faceDirection(faceDirection), value(value) {
 
     }
 
@@ -180,7 +180,7 @@ public:
     double max = 0.0;
     double mid = 0.0;
 
-    Threshold(){
+    Threshold() {
 
     }
 
@@ -194,12 +194,12 @@ XPACK(O(min, max, mid));
 //midCar
 class MidCar {
 public:
-    int rangeLeftX = 0;
-    int rangeRightX = 0;
-    int mergeWithLeftcarLeftx = 0;
-    int mergeWithRightcarRightx = 0;
+    double rangeLeftX = 0;
+    double rangeRightX = 0;
+    double mergeWithLeftcarLeftx = 0;
+    double mergeWithRightcarRightx = 0;
 
-    MidCar(){
+    MidCar() {
 
     }
 
@@ -221,7 +221,7 @@ public:
     int carRangeUpX = 0;
     int carRangeBottomY = 0;
 
-    TrackDistanceRegionDivision(){
+    TrackDistanceRegionDivision() {
 
     }
 
@@ -409,7 +409,7 @@ public:
     vector<AngleItem> angle;
 
     //3 路口中心距离每侧停止线的距离（m）
-    vector<Distance> distanceOfStoplineFromRoadcenter;
+    vector<Distance> distanceOfStopLineFromRoadCenter;
 
     //4 驶入区域
     vector<DrivingAreaItem> drivingArea;
@@ -424,7 +424,7 @@ public:
     int startUTMY = 4512985;
     double midLongitude = 114.8901745;//经度
     double midLatitude = 40.7745085;//纬度
-    int piexlType = 1;
+    int pixelType = 1;
     int minTrackDistance = 80;
     int maxTrackDistance = 120;
     double areaRatio = 0.8;
@@ -432,36 +432,52 @@ public:
     int failCount2 = 5;
     int imageWidth = 1920;
     int imageHeight = 1080;
-    double piexlByMeterX = 10.245;
-    double piexlByMeterY = 7.76;
+    double pixelByMeterX = 10.245;
+    double pixelByMeterY = 7.76;
     double speedMovingAverage = 0.3;
-    int minIntersectionArea = 50;
+    double minIntersectionArea = 50.0;
     int roadLength = 300;
     double shakingPixelThreshold = 0.5;
-    int stoplineLength = 5;
+    int stopLineLength = 5;
     int trackInLength = 0;
     int trackOutLength = 20;
-    int maxSpeedByPiexl = 30;
+    int intersectionsNumber = 4;
+    int maxSpeedByPixel = 30;
     int carMatchCount = 3;
     Threshold centerDistanceThreshold;
     Threshold areaThreshold;
     Threshold stopSpeedThreshold;
     int selectionCriteria = 1;
     MidCar midCar;
-    vector<TrackDistanceRegionDivision> trackDistanceRegionDivisionList;
+//    vector<TrackDistanceRegionDivision> trackDistanceRegionDivisionList;
     int zone = 50;
     double maxMatchDistance = 2.5;
-    int minSize = 25;
+    double minSize = 25.0;
     double distanceThresh = 4.0;
     double maxRadarInvisiblePeriod = 0.5;
     double maxCameraInvisiblePeriod = 0.5;
     double fusionMinDistance = 60.0;
     double fusionMaxDistance = 100.0;
-    int associateDistanceCamera = 20;
-    int associateDistanceRadar = 20;
+    double associateDistanceCamera = 20.0;
+    double associateDistanceRadar = 20.0;
+    string reserve1;
+    string reserve2;
+    string reserve3;
+    string reserve4;
+    string reserve5;
+    string reserve6;
+    string reserve7;
+    string reserve8;
+    string reserve9;
+    string reserve10;
+    string reserve11;
+    string reserve12;
+    string reserve13;
+    string reserve14;
+    string reserve15;
+    vector<string> selectedErvGuids;
 
-
-    AlgorithmParam(){
+    AlgorithmParam() {
         centerDistanceThreshold.max = 0.4;
         centerDistanceThreshold.min = 0.2;
 
@@ -479,18 +495,21 @@ XPACK(O(intersectionName,
         angle,
         startUTMX, startUTMY,
         midLongitude, midLatitude,
-        distanceOfStoplineFromRoadcenter,
+        distanceOfStopLineFromRoadCenter,
         selectionCriteria,
         drivingArea, drivingMissingArea, drivingInArea,
-        piexlType, minTrackDistance, maxTrackDistance, areaRatio,
-        failCount1, failCount2, imageWidth, imageHeight, piexlByMeterX, piexlByMeterY,
+        pixelType, minTrackDistance, maxTrackDistance, areaRatio,
+        failCount1, failCount2, imageWidth, imageHeight, pixelByMeterX, pixelByMeterY,
         speedMovingAverage, minIntersectionArea, roadLength, shakingPixelThreshold,
-        stoplineLength, trackInLength, trackOutLength,
-        fusionMinDistance, fusionMaxDistance, maxSpeedByPiexl, carMatchCount,
+        stopLineLength, trackInLength, trackOutLength,intersectionsNumber,
+        fusionMinDistance, fusionMaxDistance, maxSpeedByPixel, carMatchCount,
         centerDistanceThreshold, areaThreshold, stopSpeedThreshold,
-        correctedValueGPSs, zone, midCar,trackDistanceRegionDivisionList,maxMatchDistance,minSize,
-        distanceThresh,maxRadarInvisiblePeriod,maxCameraInvisiblePeriod,
-        associateDistanceCamera,associateDistanceRadar));
+        correctedValueGPSs, zone, midCar, maxMatchDistance, minSize,
+        distanceThresh, maxRadarInvisiblePeriod, maxCameraInvisiblePeriod,
+        associateDistanceCamera, associateDistanceRadar,
+        reserve1, reserve2, reserve3, reserve4, reserve5, reserve6, reserve7, reserve8, reserve9, reserve10,
+        reserve11, reserve12, reserve13, reserve14, reserve15,
+        selectedErvGuids));
 
 };
 

@@ -72,7 +72,6 @@ public:
 //    };
     //无特定顺序存入的数据
     //本地属性
-    string db = "CLParking.db";
     string matrixNo = "0123456789";
     string plateId;
 public:

@@ -149,28 +149,28 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
         Distance item;
         item.faceDirection = East;
         item.value = oldParam.distance_of_east_stopline_from_roadcenter;
-        newParam.distanceOfStoplineFromRoadcenter.push_back(item);
+        newParam.distanceOfStopLineFromRoadCenter.push_back(item);
     }
     //west
     {
         Distance item;
         item.faceDirection = West;
         item.value = oldParam.distance_of_west_stopline_from_roadcenter;
-        newParam.distanceOfStoplineFromRoadcenter.push_back(item);
+        newParam.distanceOfStopLineFromRoadCenter.push_back(item);
     }
     //north
     {
         Distance item;
         item.faceDirection = North;
         item.value = oldParam.distance_of_north_stopline_from_roadcenter;
-        newParam.distanceOfStoplineFromRoadcenter.push_back(item);
+        newParam.distanceOfStopLineFromRoadCenter.push_back(item);
     }
     //south
     {
         Distance item;
         item.faceDirection = South;
         item.value = oldParam.distance_of_south_stopline_from_roadcenter;
-        newParam.distanceOfStoplineFromRoadcenter.push_back(item);
+        newParam.distanceOfStopLineFromRoadCenter.push_back(item);
     }
 
     //4.驶入区域
@@ -412,22 +412,22 @@ void oldParam2newParam(AlgorithmParamOld::AlgorithmParam oldParam, AlgorithmPara
     newParam.startUTMY = oldParam.start_utm_y;
     newParam.midLongitude = oldParam.crossroad_mid_longitude;
     newParam.midLatitude = oldParam.crossroad_mid_latitude;
-    newParam.piexlType = oldParam.piexl_type;
+    newParam.pixelType = oldParam.piexl_type;
     newParam.minTrackDistance = oldParam.min_track_distance;
     newParam.maxTrackDistance = oldParam.max_track_distance;
     newParam.areaRatio = oldParam.area_ratio;
     newParam.failCount1 = oldParam.failCount1;
     newParam.failCount2 = oldParam.failCount2;
-    newParam.piexlByMeterX = oldParam.piexlbymeter_x;
-    newParam.piexlByMeterY = oldParam.piexlbymeter_y;
+    newParam.pixelByMeterX = oldParam.piexlbymeter_x;
+    newParam.pixelByMeterY = oldParam.piexlbymeter_y;
     newParam.speedMovingAverage = oldParam.speed_moving_average;
     newParam.minIntersectionArea = oldParam.min_intersection_area;
     newParam.roadLength = oldParam.road_length;
     newParam.shakingPixelThreshold = oldParam.shaking_pixel_threshold;
-    newParam.stoplineLength = oldParam.stopline_length;
+    newParam.stopLineLength = oldParam.stopline_length;
     newParam.trackInLength = oldParam.track_in_length;
     newParam.trackOutLength = oldParam.track_out_length;
-    newParam.maxSpeedByPiexl = oldParam.max_speed_by_piexl;
+    newParam.maxSpeedByPixel = oldParam.max_speed_by_piexl;
     newParam.carMatchCount = oldParam.car_match_count;
 
     newParam.centerDistanceThreshold.max = oldParam.max_center_distance_threshold;

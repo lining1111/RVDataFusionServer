@@ -193,7 +193,7 @@ namespace common {
         double timestamp;// `json "timstamp"` 自1970.1.1 00:00:00到当前的秒数 date +%s获取秒数 date -d @秒数获取时间格式
     public:
         Beats() {
-            this->cmdType = CmdResponse;
+            this->cmdType = CmdHeartBeat;
         }
 
     XPACK(O(hardCode, timestamp));

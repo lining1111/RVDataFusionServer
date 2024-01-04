@@ -82,8 +82,11 @@ int Data::getMatrixNo() {
     //打开数据库
     sqlite3 *db;
     string dbName;
-//    dbName = "/home/nvidianx/bin/CLParking.db";
+#ifdef aarch64
+    dbName = "/home/nvidianx/bin/CLParking.db";
+#else
     dbName = "CLParking.db";
+#endif
     //open
     int rc = sqlite3_open(dbName.c_str(), &db);
     if (rc != SQLITE_OK) {

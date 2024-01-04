@@ -247,22 +247,22 @@ void exampleAlgorithm() {
         Distance value;
         value.faceDirection = 0;
         value.value = 20;
-        algorithmParam.distanceOfStoplineFromRoadcenter.push_back(value);
+        algorithmParam.distanceOfStopLineFromRoadCenter.push_back(value);
 
         value.faceDirection = 1;
         value.value = 20;
 
-        algorithmParam.distanceOfStoplineFromRoadcenter.push_back(value);
+        algorithmParam.distanceOfStopLineFromRoadCenter.push_back(value);
     }
 
-    //trackList
-    {
-        TrackDistanceRegionDivision value;
-        value.faceDirection = 0;
-        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
-        value.faceDirection = 1;
-        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
-    }
+//    //trackList
+//    {
+//        TrackDistanceRegionDivision value;
+//        value.faceDirection = 0;
+//        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
+//        value.faceDirection = 1;
+//        algorithmParam.trackDistanceRegionDivisionList.push_back(value);
+//    }
 
     //south_north_driving_area
 

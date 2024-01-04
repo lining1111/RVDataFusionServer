@@ -364,10 +364,10 @@ public:
     BaseSettingEntity BaseSetting;
     std::vector<AssociatedEquip> AssociatedEquips;
     //融合参数
-//    AlgorithmParam FusionParas;
+    AlgorithmParam FusionParas;
     vector<RelatedArea_t> RelatedAreas;
 
-XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips/*,FusionParas*/, RelatedAreas));
+XPACK(O(DataVersion, IntersectionInfo, Index, BaseSetting, AssociatedEquips, FusionParas, RelatedAreas));
 };
 
 class R102 {

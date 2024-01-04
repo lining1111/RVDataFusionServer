@@ -269,22 +269,22 @@ void processR102(void *p, string content, string cmd) {
             result = -1;
         }
     }
-//    //写入算法融合参数
-//    AlgorithmParam algorithmParam;
-//    algorithmParam = data.Data.FusionParas;
-//    //写入文件
-//    string jsonStr;
-//    jsonStr = json::encode(algorithmParam);
-//    if (!jsonStr.empty()){
-//        ofstream of;
-//        of.open("algorithm.json", ios::out | ios::trunc);
-//        if (of.is_open()) {
-//            string jsonStrFormat = formatJson(jsonStr);
-//            of << jsonStrFormat;
-//            of.close();
-//            LOG(INFO) << "eoc 写入RelatedAreas:" << jsonStrFormat;
-//        }
-//    }
+    //写入算法融合参数
+    AlgorithmParam algorithmParam;
+    algorithmParam = data.Data.FusionParas;
+    //写入文件
+    string jsonStr;
+    jsonStr = json::encode(algorithmParam);
+    if (!jsonStr.empty()){
+        ofstream of;
+        of.open("algorithm.json", ios::out | ios::trunc);
+        if (of.is_open()) {
+            string jsonStrFormat = formatJson(jsonStr);
+            of << jsonStrFormat;
+            of.close();
+            LOG(INFO) << "eoc algorithmParam:" << jsonStrFormat;
+        }
+    }
 
     //人形灯杆相关规则
     string relatedAreas;

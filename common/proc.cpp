@@ -1155,7 +1155,7 @@ int PkgProcessFun_CmdCrossStageData(void *p, string content) {
         msgSend.hardCode = data->matrixNo;
         msgSend.timestamp = os::getTimestampMs();
     } else {
-
+        msgSend = dataUnit.back();
     }
 
     uint32_t deviceNo = stoi(data->matrixNo.substr(0, 10));
