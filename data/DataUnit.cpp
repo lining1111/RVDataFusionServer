@@ -13,7 +13,7 @@
 #include "Data.h"
 #include "DataUnitUtilty.h"
 #include "localBussiness/localBusiness.h"
-
+#include "ReSendQueue.h"
 
 void DataUnitTrafficFlowGather::taskI() {
     this->runTask(std::bind(DataUnitTrafficFlowGather::FindOneFrame, this, this->cache / 2));
@@ -51,12 +51,12 @@ int DataUnitTrafficFlowGather::TaskProcessOneFrame() {
     }
     //根据车道号取排队长度最大
     getMaxQueueLenByLaneCode(item.trafficFlow);
-
     if (!pushO(item)) {
         VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
     } else {
         VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
     }
+
     return 0;
 }
 
@@ -64,7 +64,7 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
     //1.先打印下原始数据
     string src;
     for (auto iter: v) {
-        src += "lancode:";
+        src += "lanCode:";
         src += iter.laneCode;
         src += ",queueLen:";
         src += iter.queueLen;
@@ -77,15 +77,15 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
     vector<int> indices;
     indices.clear();
     for (int i = 0; i < v.size(); i++) {
-        auto iter = v.at(i);
-        auto curLaneCode = iter.laneCode;
-        auto curQueueLen = iter.queueLen;
+        auto iter = &v.at(i);
+        auto curLaneCode = iter->laneCode;
+        auto curQueueLen = iter->queueLen;
         bool isRef = true;
         for (int j = 0; j < v.size(); j++) {
             if (i != j) {
-                auto iter_t = v.at(j);
-                auto laneCode_t = iter_t.laneCode;
-                auto queueLen_t = iter_t.queueLen;
+                auto iter_t = &v.at(j);
+                auto laneCode_t = iter_t->laneCode;
+                auto queueLen_t = iter_t->queueLen;
                 if (curLaneCode == laneCode_t && curQueueLen < queueLen_t) {
                     isRef = false;
                     break;
@@ -103,18 +103,19 @@ void DataUnitTrafficFlowGather::getMaxQueueLenByLaneCode(vector<OneFlowData> &v)
         v_copy.push_back(v.at(iter));
     }
     //3.打印下拷贝出的数组
-    string src_copy;
+    string src_cpoy;
     for (auto iter: v_copy) {
-        src_copy += "lancode:";
-        src_copy += iter.laneCode;
-        src_copy += ",queueLen:";
-        src_copy += iter.queueLen;
-        src_copy += "\n";
+        src_cpoy += "lanCode:";
+        src_cpoy += iter.laneCode;
+        src_cpoy += ",queueLen:";
+        src_cpoy += iter.queueLen;
+        src_cpoy += "\n";
     }
-    VLOG(3) << src_copy;
+    VLOG(3) << src_cpoy;
     //4.将拷贝数组设置到输出
     v = v_copy;
 }
+
 
 void DataUnitTrafficFlowGather::taskO() {
     //1.取数组织发送内容
@@ -170,21 +171,23 @@ void DataUnitCrossTrafficJamAlarm::specialBusiness(DataUnitCrossTrafficJamAlarm 
             if (alarmStatus == -1) {
                 //如果第一次赋值
                 alarmStatus = cur.alarmStatus;
-                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus"
-                        << " 状态第一次获取 timestamp:" << cur.timestamp;
+                VLOG(3) << dataUnit->name << " alarmStatus:" << to_string(alarmStatus) << " cur.alarmStatus:"
+                        << to_string(cur.alarmStatus) << " 状态第一次获取 timestamp:"
+                        << to_string((uint64_t) cur.timestamp);
             } else if (alarmStatus != cur.alarmStatus) {
                 //状态不一致，获取状态，并上报
-                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus" << cur.alarmStatus
-                        << " 状态不一致上报 timestamp:" << cur.timestamp;
+                VLOG(3) << dataUnit->name << " alarmStatus" << to_string(alarmStatus) << " cur.alarmStatus:"
+                        << to_string(cur.alarmStatus) << " 状态不一致上报 timestamp:"
+                        << to_string(cur.timestamp);
                 alarmStatus = cur.alarmStatus;
 
             } else {
                 //状态一致不上报
-                VLOG(3) << dataUnit->name << "alarmStatus" << alarmStatus << "cur.alarmStatus" << cur.alarmStatus
-                        << " 状态一致不上报 timestamp:" << cur.timestamp;
+                VLOG(3) << dataUnit->name << " alarmStatus:" << to_string(alarmStatus) << " cur.alarmStatus:"
+                        << to_string(cur.alarmStatus) << " 状态一致不上报 timestamp:"
+                        << to_string((uint64_t) cur.timestamp);
                 continue;
             }
-
 
             OType item = cur;
             if (!dataUnit->pushO(item)) {
@@ -226,6 +229,9 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
                 LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
+            //打印下图片大小
+            LOG(INFO) << this->name << " alarmStatus:" << to_string(item.alarmStatus) << " 图片大小:"
+                      << item.imageData.size();
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
             int ret = cli.second->SendBase(pkg);
@@ -238,7 +244,8 @@ void DataUnitCrossTrafficJamAlarm::taskO() {
                 msg.name = "client2";
                 msg.pkg = pkg;
                 msg.timestampFrame = item.timestamp;
-                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                msg.type = ReSendQueue::RESEND_TYPE_COUNT;
+                msg.threshold = 2;
                 data->reSendQueue->add(msg);
             }
         }
@@ -278,6 +285,9 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
                 LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
+            //打印下图片大小
+            LOG(INFO) << this->name << " alarmStatus:" << to_string(item.alarmStatus) << " 图片大小:"
+                      << item.imageData.size();
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
             int ret = cli.second->SendBase(pkg);
@@ -290,12 +300,14 @@ void DataUnitIntersectionOverflowAlarm::taskO() {
                 msg.name = "client2";
                 msg.pkg = pkg;
                 msg.timestampFrame = item.timestamp;
-                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                msg.type = ReSendQueue::RESEND_TYPE_COUNT;
+                msg.threshold = 2;
                 data->reSendQueue->add(msg);
             }
         }
     }
 }
+
 
 void DataUnitInWatchData_1_3_4::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
@@ -336,8 +348,8 @@ void DataUnitInWatchData_1_3_4::taskO() {
                           this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
-
 }
+
 
 void DataUnitInWatchData_2::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
@@ -378,8 +390,8 @@ void DataUnitInWatchData_2::taskO() {
                             this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
-
 }
+
 
 void DataUnitStopLinePassData::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
@@ -420,8 +432,8 @@ void DataUnitStopLinePassData::taskO() {
                           this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
-
 }
+
 
 void DataUnitHumanData::taskI() {
     this->runTask(std::bind(DataUnitHumanData::specialBusiness, this));
@@ -497,8 +509,8 @@ void DataUnitHumanData::taskO() {
                           this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
-
 }
+
 
 void DataUnitAbnormalStopData::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
@@ -533,6 +545,8 @@ void DataUnitAbnormalStopData::taskO() {
                 LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
+            //打印下图片大小
+            LOG(INFO) << this->name << " 图片大小:" << item.imageData.size();
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
             int ret = cli.second->SendBase(pkg);
@@ -545,13 +559,14 @@ void DataUnitAbnormalStopData::taskO() {
                 msg.name = "client2";
                 msg.pkg = pkg;
                 msg.timestampFrame = item.timestamp;
-                msg.type = ReSendQueue::RESEND_TYPE_NONE;
+                msg.type = ReSendQueue::RESEND_TYPE_COUNT;
+                msg.threshold = 2;
                 data->reSendQueue->add(msg);
             }
         }
     }
-
 }
+
 
 void DataUnitLongDistanceOnSolidLineAlarm::taskI() {
     this->runTask(std::bind(DataUnit::TransparentTransmission, this));
@@ -583,6 +598,8 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
                 LOG(INFO) << "未连接" << cli.second->server_ip << ":" << cli.second->server_port;
                 return;
             }
+            //打印下图片大小
+            LOG(INFO) << this->name << " alarmStatus:" << to_string(item.alarmStatus);
             uint64_t timestampStart = std::chrono::duration_cast<std::chrono::milliseconds>(
                     std::chrono::system_clock::now().time_since_epoch()).count();
             int ret = cli.second->SendBase(pkg);
@@ -592,7 +609,6 @@ void DataUnitLongDistanceOnSolidLineAlarm::taskO() {
                           this->name, timestampStart, timestampEnd, item.timestamp);
         }
     }
-
 }
 
 
@@ -697,7 +713,7 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
                     //等待时间取最大
                     item1.waitingTime = (iter2.waitingTime > item1.waitingTime) ? iter2.waitingTime : item1.waitingTime;
                     //图片取配对规则的第一个单元内的图
-                    if (item1.imageData.empty()){
+                    if (item1.imageData.empty()) {
                         item1.imageData = iter2.imageData;
                     }
                 }
@@ -711,6 +727,12 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
     }
 
 
+    if (!pushO(item)) {
+        VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
+    } else {
+        VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
+    }
+    return 0;
     if (!pushO(item)) {
         VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
     } else {
