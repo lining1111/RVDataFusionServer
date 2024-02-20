@@ -733,12 +733,6 @@ int DataUnitHumanLitPoleData::TaskProcessOneFrame() {
         VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
     }
     return 0;
-    if (!pushO(item)) {
-        VLOG(2) << name << " 队列已满，未存入数据 timestamp:" << (uint64_t) item.timestamp;
-    } else {
-        VLOG(2) << name << " 数据存入 timestamp:" << (uint64_t) item.timestamp;
-    }
-    return 0;
 }
 
 void DataUnitHumanLitPoleData::taskO() {
