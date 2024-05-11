@@ -89,7 +89,7 @@ void LocalBusiness::Task_Keep(void *p) {
 //    LOG(INFO) << __FUNCTION__ << " START";
     auto local = (LocalBusiness *) p;
 
-    if (local->serverList.empty() || local->clientList.empty()) {
+    if (local->serverList.empty() && local->clientList.empty()) {
         return;
     }
 
